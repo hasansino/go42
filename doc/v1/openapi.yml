@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: 'api'
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api/v1'
+    description: local
+paths:
+  /health-check:
+    get:
+      tags:
+        - system
+      summary: Service Health-Check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: Service Unavailable
