@@ -48,3 +48,6 @@ Golang application template.
 + [ ] https://github.com/FiloSottile/mkcert
 + [ ] https://github.com/daixiang0/gci
 + [ ] https://github.com/mvdan/gofumpt
++ [ ] docker lint
++ [ ] helm lint
++ [ ] goproxy (https://github.com/gomods/athens)
