@@ -3,7 +3,7 @@
 services:
   app:
     image: "ghcr.io/hasansino/golang:1.24"
-    command: build
+    command: build # or debug
     working_dir: /go/src/goapp/cmd/app
     # env_file: .config.env
     volumes:
@@ -13,6 +13,7 @@ services:
       - go-build-cache:/root/.cache/go-build
     ports:
       - "8080:8080"
+      - "40000:40000" # debug port
 
 volumes:
   go-build-cache:
@@ -21,4 +22,4 @@ volumes:
 networks:
   default:
     driver: bridge
-    name: "unifying_network"
+    name: "goapp_network"

@@ -4,10 +4,7 @@ Golang application template.
 
 ## todo
 
-+ [ ] gh workflow - golangci-lint
-+ [ ] gh workflow - unit tests with matrix strategy
-+ [ ] gh workflow - docker image build
-  + [ ] rootless
++ [ ] rootless docker image
 + [ ] gh workflow - goreleaser
 + [ ] gh workflow - gitleaks
 + [ ] gh workflow - dependabot
@@ -17,8 +14,6 @@ Golang application template.
 + [ ] build -trimpath
 + [ ] build flags / ldflags
 + [ ] build GOGC
-+ [ ] https://github.com/KimMachineGun/automemlimit
-+ [ ] https://github.com/uber-go/automaxprocs
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
 + [ ] logger sentry integration

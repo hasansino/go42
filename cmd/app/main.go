@@ -8,6 +8,9 @@ import (
 	"reflect"
 	"syscall"
 
+	_ "github.com/KimMachineGun/automemlimit"
+	_ "go.uber.org/automaxprocs"
+
 	"github.com/hasansino/goapp/internal/config"
 )
 
