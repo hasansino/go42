@@ -3,3 +3,21 @@
 services:
   app:
     image: "ghcr.io/hasansino/golang:1.24"
+    command: build
+    working_dir: /go/src/goapp/cmd/app
+    volumes:
+      - .:/go/src/goapp
+      - ./doc:/usr/share/www/api
+      - ./schema:/schema
+      - go-build-cache:/root/.cache/go-build
+    ports:
+      - "8080:8080"
+
+volumes:
+  go-build-cache:
+    name: go-build-cache
+
+networks:
+  default:
+    driver: bridge
+    name: "unifying_network"
