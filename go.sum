@@ -1,0 +1,4 @@
+github.com/caarlos0/env/v11 v11.3.1 h1:cArPWC15hWmEt+gWk7YBi7lEXTXCvpaSdCiZE2X5mCA=
+github.com/caarlos0/env/v11 v11.3.1/go.mod h1:qupehSf/Y0TUTsxKywqRt/vJjN5nz6vauiYEUUr8P4U=
+github.com/hasansino/cfg2env v1.1.0 h1:AnkpF8EQKrHiMdXZAD5g/2tAhYliEPZtgWZGt0LVHbA=
+github.com/hasansino/cfg2env v1.1.0/go.mod h1:adB2Kv5yJFgbtnUra5i/W7/tQg2OKswPdO7Zk4abzbQ=

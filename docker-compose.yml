@@ -5,6 +5,7 @@ services:
     image: "ghcr.io/hasansino/golang:1.24"
     command: build
     working_dir: /go/src/goapp/cmd/app
+    env_file: config.env
     volumes:
       - .:/go/src/goapp
       - ./doc:/usr/share/www/api

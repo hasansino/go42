@@ -1,0 +1,24 @@
+package main
+
+import (
+	"log"
+
+	"github.com/hasansino/cfg2env"
+
+	"github.com/hasansino/goapp/internal/config"
+)
+
+func main() {
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	e := cfg2env.New(
+		cfg2env.WithExportedFileName(".config.env.example"),
+		cfg2env.WithExtraEntry("COMPOSE_PROJECT_NAME", cfg.ServiceName),
+	)
+	err = e.ToFile(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
