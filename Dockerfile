@@ -15,6 +15,7 @@ COPY --from=builder /tmp/build/app /usr/bin/
 
 # static files
 COPY doc /usr/share/www/api
+COPY static/* /usr/share/www
 
 # database migrations
 COPY schema /schema
