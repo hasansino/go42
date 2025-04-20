@@ -1,4 +1,4 @@
-FROM golang:alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /tmp/build
 COPY go.mod go.sum ./
@@ -18,6 +18,6 @@ COPY doc /usr/share/www/api
 COPY static/* /usr/share/www
 
 # database migrations
-COPY schema /schema
+COPY migrate /migrate
 
 CMD ["app"]

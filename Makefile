@@ -9,19 +9,15 @@ help: Makefile
 
 ## test | run unit tests
 test:
-	echo "${GREEN}test${NC}"
+	go test -v -race ./...
 
-## build | build binary
-build:
-	echo "${GREEN}build${NC}"
-
-## run | run application in docker
+## run | run application (docker compose)
 run:
-	echo "${GREEN}run${NC}"
+	docker compose up
 
-## image | build docker image
-image:
-	echo "${GREEN}image${NC}"
+## build | build docker image
+build:
+	docker build -t ghcr.io/hasansino/goapp:dev .
 
 ## golangci-lint | lint go files
 golangci-lint:

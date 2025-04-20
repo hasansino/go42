@@ -46,3 +46,6 @@ Golang application template.
 + [ ] docker lint
 + [ ] helm lint
 + [ ] goproxy (https://github.com/gomods/athens)
+
++ [ ] https://docs.docker.com/build/ci/github-actions/reproducible-builds/
++ [ ] https://go.dev/blog/rebuild

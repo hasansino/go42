@@ -34,7 +34,6 @@ type Logger struct {
 // New parses environments and creates new instance of config.
 func New() (*Config, error) {
 	cfg := new(Config)
-
 	err := env.ParseWithOptions(cfg, env.Options{
 		TagName:             TagNameEnvVarName,
 		DefaultValueTagName: TagNameDefaultValue,
@@ -42,7 +41,6 @@ func New() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return cfg, nil
 }
 
