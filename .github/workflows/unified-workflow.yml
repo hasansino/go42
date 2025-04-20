@@ -6,21 +6,27 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   golangci-lint:
     uses: ./.github/workflows/golangci-lint.yml
 
   golang-unit-tests:
     uses: ./.github/workflows/golang-unit-tests.yml
-    needs: golangci-lint
+    needs: [ golangci-lint ]
 
   go-vuln-check:
     uses: ./.github/workflows/go-vuln-check.yml
-    needs: golangci-lint
+    needs: [ golangci-lint, golang-unit-tests ]
 
   docker-build:
     uses: ./.github/workflows/docker-build.yml
-    needs: golangci-lint
+    needs: [ golangci-lint, golang-unit-tests, go-vuln-check ]
     with:
       image_tag: ${{ github.event.inputs.image_tag }}
       latest_tag: ${{ github.event.inputs.latest_tag }}
