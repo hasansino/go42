@@ -14,9 +14,7 @@ Golang application template.
 
 + [ ] rootless docker image
 + [ ] gh workflow - goreleaser
-+ [ ] gh workflow - gitleaks
 + [ ] gh workflow - dependabot
-+ [ ] gh workflow - vulnerability checks
 + [ ] gh workflow - AI code review
 + [ ] gh workflow - https://github.com/gitleaks/gitleaks
 

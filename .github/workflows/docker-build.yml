@@ -43,3 +43,16 @@ jobs:
             ${{ github.event.inputs.image_tag != 'latest' && github.event.inputs.latest_tag && format('ghcr.io/{0}/goapp:latest', github.repository_owner) || '' }}
           build-args: |
             GO_VERSION=${{ env.go_version }}
+  docker-vuln-check:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/goapp:${{ github.event.inputs.image_tag }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
