@@ -6,11 +6,18 @@ on:
       image_tag:
         description: 'tag'
         required: true
-        default: ''
+        type: string
       latest_tag:
         description: 'latest'
         required: true
-        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      latest_tag:
+        required: true
         type: boolean
 
 jobs:
