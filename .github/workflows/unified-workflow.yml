@@ -5,16 +5,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'tag'
-        required: true
-        type: string
-      latest_tag:
-        description: 'latest'
-        required: true
-        type: boolean
 
 permissions:
   contents: read
@@ -39,5 +29,4 @@ jobs:
     uses: ./.github/workflows/docker-build.yml
     needs: [ golangci-lint, golang-unit-tests, go-vuln-check ]
     with:
-      image_tag: ${{ github.event.inputs.image_tag }}
-      latest_tag: ${{ github.event.inputs.latest_tag }}
+      image_tag: "latest"

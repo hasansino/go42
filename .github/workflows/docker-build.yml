@@ -7,18 +7,12 @@ on:
         description: 'tag'
         required: true
         type: string
-      latest_tag:
-        description: 'latest'
-        required: true
-        type: boolean
   workflow_call:
     inputs:
       image_tag:
         required: true
         type: string
-      latest_tag:
-        required: true
-        type: boolean
+
 
 jobs:
   docker-build:
