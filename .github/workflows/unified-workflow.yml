@@ -32,3 +32,5 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     needs: [ golangci-lint, golang-unit-tests, go-vuln-check, gitleaks ]
+    with:
+      image_tag: 'latest'
