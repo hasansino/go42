@@ -2,7 +2,15 @@
 
 Golang application template.
 
-## todo
+## Backlog
+
++ [ ] GOGC during build stage (https://tip.golang.org/doc/gc-guide)
++ [ ] Reproducible builds
+  * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
+  * https://go.dev/blog/rebuild
++ [ ]
+
+---
 
 + [ ] rootless docker image
 + [ ] gh workflow - goreleaser
@@ -11,8 +19,6 @@ Golang application template.
 + [ ] gh workflow - vulnerability checks
 + [ ] gh workflow - AI code review
 + [ ] gh workflow - https://github.com/gitleaks/gitleaks
-+ [ ] build flags / ldflags
-+ [ ] build GOGC
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
 + [ ] logger sentry integration
@@ -45,6 +51,3 @@ Golang application template.
 + [ ] docker lint
 + [ ] helm lint
 + [ ] goproxy (https://github.com/gomods/athens)
-
-+ [ ] https://docs.docker.com/build/ci/github-actions/reproducible-builds/
-+ [ ] https://go.dev/blog/rebuild

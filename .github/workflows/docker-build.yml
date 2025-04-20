@@ -1,4 +1,4 @@
-name: docker build
+name: docker-build
 
 on:
   workflow_dispatch:
@@ -15,7 +15,11 @@ on:
 
 jobs:
   build:
+
+    name: docker-build
+
     runs-on: ubuntu-latest
+
     permissions:
       packages: write
       contents: read
@@ -23,25 +27,19 @@ jobs:
       id-token: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Set up Docker buildx
-      uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-buildx-action@v3
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
+    - uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract Go Version
-      id: extract-go-version
-      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
+    - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
 
-    - name: Build and Push Docker Image
-      uses: docker/build-push-action@v6
+    - uses: docker/build-push-action@v6
       with:
         context: ${{ github.workspace }}/
         file: ${{ github.workspace }}/Dockerfile
