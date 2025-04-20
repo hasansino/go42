@@ -16,10 +16,9 @@ Golang application template.
 + [ ] gh workflow - goreleaser
 + [ ] gh workflow - dependabot
 + [ ] gh workflow - AI code review
-+ [ ] gh workflow - https://github.com/gitleaks/gitleaks
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
-+ [ ] logger sentry integration
++ [ ] logger sentry **integration**
 + [ ] metrics
 + [ ] metrics prometheus status page
   + [ ] metrics grafana dashboard   

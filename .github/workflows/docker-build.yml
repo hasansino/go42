@@ -13,7 +13,6 @@ on:
         required: true
         type: string
 
-
 jobs:
   docker-build:
     name: docker-build

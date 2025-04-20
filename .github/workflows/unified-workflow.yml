@@ -24,9 +24,13 @@ jobs:
     uses: ./.github/workflows/go-vuln-check.yml
     needs: [ golangci-lint, golang-unit-tests ]
 
+  gitleaks:
+    uses: ./.github/workflows/gitleaks.yml
+    needs: [ golangci-lint, golang-unit-tests ]
+
   docker-build:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
-    needs: [ golangci-lint, golang-unit-tests, go-vuln-check ]
+    needs: [ golangci-lint, golang-unit-tests, go-vuln-check, gitleaks ]
     with:
       image_tag: "latest"
