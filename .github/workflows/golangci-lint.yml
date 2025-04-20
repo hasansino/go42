@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  golangci:
+  langci-lint:
 
     name: golangci-lint
 

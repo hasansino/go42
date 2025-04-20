@@ -14,7 +14,7 @@ on:
         type: boolean
 
 jobs:
-  build:
+  docker-build:
 
     name: docker-build
 

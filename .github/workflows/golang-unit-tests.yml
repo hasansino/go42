@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  golang-unit-tests:
 
     name: golang-unit-tests
 
