@@ -14,7 +14,6 @@ Golang application template.
 
 + [ ] rootless docker image
 + [ ] gh workflow - goreleaser
-+ [ ] gh workflow - dependabot
 + [ ] gh workflow - AI code review
 
 + [ ] logger (try https://pkg.go.dev/log/slog)

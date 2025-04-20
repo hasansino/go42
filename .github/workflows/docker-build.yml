@@ -12,6 +12,7 @@ on:
       image_tag:
         required: true
         type: string
+        default: 'latest'
 
 jobs:
   docker-build:
