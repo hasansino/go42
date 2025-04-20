@@ -49,4 +49,4 @@ jobs:
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/goapp:${{ github.event.inputs.image_tag }}
         build-args: |
-          GO_VERSION: ${{ steps.extract-go-version.outputs.go_version }}
+          GO_VERSION: ${{ env.go_version }}
