@@ -1,7 +1,6 @@
-# Intentionally omited default values.
 # We want to fail if arguments were not passed.
-ARG GO_VERSION
-ARG COMMIT_HASH
+ARG GO_VERSION=INVALID
+ARG COMMIT_HASH=INVALID
 
 # For build stage use standard, non-stripped version of image.
 FROM golang:${GO_VERSION} AS builder

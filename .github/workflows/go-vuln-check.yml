@@ -2,10 +2,10 @@ name: go-vuln-check
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+#  push:
+#    branches: [ master ]
+#  pull_request:
+#    branches: [ master ]
 
 jobs:
   # https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
