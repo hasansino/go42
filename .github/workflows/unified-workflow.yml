@@ -5,6 +5,16 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'tag'
+        required: true
+        type: string
+      latest_tag:
+        description: 'latest'
+        required: true
+        type: boolean
 
 permissions:
   contents: read
@@ -25,6 +35,7 @@ jobs:
     needs: [ golangci-lint, golang-unit-tests ]
 
   docker-build:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: ./.github/workflows/docker-build.yml
     needs: [ golangci-lint, golang-unit-tests, go-vuln-check ]
     with:
