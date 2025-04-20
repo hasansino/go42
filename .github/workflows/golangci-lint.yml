@@ -12,22 +12,16 @@ permissions:
 
 jobs:
   langci-lint:
-
     name: golangci-lint
-
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
-
     runs-on: ${{ matrix.os }}
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.2
