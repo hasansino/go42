@@ -3,11 +3,9 @@ name: golang-unit-tests
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
+    branches: [ master ]
   pull_request:
-    branches:
-      - master
+    branches: [ master ]
 
 permissions:
   contents: read
