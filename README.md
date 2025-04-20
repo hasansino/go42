@@ -11,7 +11,6 @@ Golang application template.
 + [ ] gh workflow - vulnerability checks
 + [ ] gh workflow - AI code review
 + [ ] gh workflow - https://github.com/gitleaks/gitleaks
-+ [ ] build -trimpath
 + [ ] build flags / ldflags
 + [ ] build GOGC
 
