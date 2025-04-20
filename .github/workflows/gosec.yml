@@ -17,7 +17,7 @@ jobs:
       - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
       - uses: golang/govulncheck-action@
         with:
-          go-version-input: { env.go_version }}
+          go-version-input: ${{ env.go_version }}
   # https://github.com/securego/gosec
   gosec:
     name: gosec
