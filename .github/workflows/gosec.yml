@@ -1,4 +1,4 @@
-name: vuln-check ${{ github.run_number }} - ${{ github.ref_name }} - ${{ github.event_name }} - ${{ github.workflow }}
+name: vuln-check
 
 on:
   workflow_dispatch:
@@ -14,7 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: golang/govulncheck-action@v1
+      - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
+      - uses: golang/govulncheck-action@
+        with:
+          go-version-input: { env.go_version }}
   # https://github.com/securego/gosec
   gosec:
     name: gosec
