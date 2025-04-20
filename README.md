@@ -8,13 +8,13 @@ Golang application template.
 + [ ] Reproducible builds
   * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
   * https://go.dev/blog/rebuild
-+ [ ]
++ [ ] GOPROXY & GOPRIVATE
+  * https://goproxy.githubapp.com
+  * https://proxy.golang.org
+  * https://github.com/gomods/athens
++ [ ] LLM code review for PRs
 
 ---
-
-+ [ ] rootless docker image
-+ [ ] gh workflow - goreleaser
-+ [ ] gh workflow - AI code review
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
 + [ ] logger sentry **integration**
@@ -46,4 +46,3 @@ Golang application template.
 + [ ] https://github.com/mvdan/gofumpt
 + [ ] docker lint
 + [ ] helm lint
-+ [ ] goproxy (https://github.com/gomods/athens)

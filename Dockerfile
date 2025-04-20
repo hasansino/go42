@@ -25,16 +25,22 @@ RUN readelf -h app && du -h app && sha256sum app
 
 # For package stage, we use minimal, stripped image.
 # This reduces resulting image size and vulnerability vectors.
-FROM alpine:latest
+FROM alpine:3.21
 
-# binary from builder phase
-COPY --from=builder /tmp/build/app /usr/bin/
+RUN addgroup -g 1000 appuser && \
+    adduser -u 1000 -G appuser -s /bin/sh -D appuser
 
-# static files
-COPY doc /usr/share/www/api
-COPY static/* /usr/share/www
+# Binary from builder phase.
+COPY --from=builder /tmp/build/app /usr/local/bin/
+RUN chown appuser:appuser /usr/local/bin/app
 
-# database migrations
-COPY migrate /migrate
+# Static files.
+COPY --chown=appuser:appuser doc /usr/share/www/api
+COPY --chown=appuser:appuser static/* /usr/share/www
 
-CMD ["app"]
+# Database migrations.
+COPY --chown=appuser:appuser migrate /migrate
+
+USER appuser
+
+CMD ["/usr/local/bin/app"]
