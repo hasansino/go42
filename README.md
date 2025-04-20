@@ -1,4 +1,4 @@
-# goapp
+# GoApp
 
 Golang application template.
 

@@ -36,6 +36,10 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Extract Go Version
+      id: extract-go-version
+      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
+
     - name: Build and Push Docker Image
       uses: docker/build-push-action@v6
       with:
@@ -44,3 +48,5 @@ jobs:
         platforms: linux/amd64, linux/arm64
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/goapp:${{ github.event.inputs.image_tag }}
+        build-args: |
+          GO_VERSION: ${{ steps.extract-go-version.outputs.go_version }}

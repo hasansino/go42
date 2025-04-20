@@ -15,9 +15,12 @@ test:
 run:
 	docker compose up
 
-## build | build docker image
+## build | build docker image (requires containerd)
 build:
-	docker build -t ghcr.io/hasansino/goapp:dev .
+	docker buildx build --platform linux/amd64,linux/arm64 \
+    --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
+	-t ghcr.io/hasansino/goapp:dev \
+	.
 
 ## golangci-lint | lint go files
 golangci-lint:
