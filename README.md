@@ -13,8 +13,18 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + [ ] LLM code review for PRs
++ [ ] GOOS & GOARCH @ build stage
++ [ ] docker LABELs
 
 ---
+
++ [ ] docker lint
++ [ ] helm lint
+
++ [ ] https://github.com/daixiang0/gci
++ [ ] https://github.com/mvdan/gofumpt
+
++ [ ] https://github.com/FiloSottile/mkcert
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
 + [ ] logger sentry **integration**
@@ -40,9 +50,3 @@ Golang application template.
 + [ ] https://github.com/rivo/tview
 + [ ] https://github.com/mum4k/termdash
 + [ ] https://github.com/charmbracelet
-
-+ [ ] https://github.com/FiloSottile/mkcert
-+ [ ] https://github.com/daixiang0/gci
-+ [ ] https://github.com/mvdan/gofumpt
-+ [ ] docker lint
-+ [ ] helm lint

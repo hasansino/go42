@@ -1,0 +1,14 @@
+.idea/
+.vscode/
+.git/
+.github/
+infra/
+
+.DS_Store
+.env*
+.config.env*
+.golangci.yaml
+docker-compose.yml
+LICENCE
+Makefile
+README.md
