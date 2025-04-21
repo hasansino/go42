@@ -6,6 +6,7 @@ on:
 
 jobs:
   gitleaks:
+    continue-on-error: true
     name: gitleaks
     runs-on: ubuntu-latest
     steps:

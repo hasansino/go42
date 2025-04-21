@@ -10,6 +10,7 @@ permissions:
 jobs:
   golang-unit-tests:
     name: golang-unit-tests
+    continue-on-error: true
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]

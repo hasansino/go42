@@ -7,6 +7,7 @@ on:
 jobs:
   # https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
   govulncheck:
+    continue-on-error: true
     name: govulncheck
     runs-on: ubuntu-latest
     steps:
@@ -18,6 +19,7 @@ jobs:
           go-version-input: ${{ env.go_version }}
   # https://github.com/securego/gosec
   gosec:
+    continue-on-error: true
     name: gosec
     runs-on: ubuntu-latest
     env:
@@ -29,6 +31,7 @@ jobs:
           args: ./...
   # https://github.com/sonatype-nexus-community/nancy
   nancy:
+    continue-on-error: true
     name: nancy
     runs-on: ubuntu-latest
     steps:

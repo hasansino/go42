@@ -17,6 +17,7 @@ Golang application template.
   * helm chart 
   * kubernetes
   * cloud environment
++ [ ] global `continue-on-error`
 
 ---
 

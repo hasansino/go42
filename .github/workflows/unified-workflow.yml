@@ -16,21 +16,24 @@ jobs:
   golangci-lint:
     uses: ./.github/workflows/golangci-lint.yml
 
+  docker-lint:
+    uses: ./.github/workflows/docker-lint.yml
+
   golang-unit-tests:
     uses: ./.github/workflows/golang-unit-tests.yml
-    needs: [ golangci-lint ]
+    needs: [ golangci-lint, docker-lint ]
 
   go-vuln-check:
     uses: ./.github/workflows/go-vuln-check.yml
-    needs: [ golangci-lint, golang-unit-tests ]
+    needs: [ golangci-lint, docker-lint, golang-unit-tests ]
 
   gitleaks:
     uses: ./.github/workflows/gitleaks.yml
-    needs: [ golangci-lint, golang-unit-tests ]
+    needs: [ golangci-lint, docker-lint, golang-unit-tests ]
 
   docker-build:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
-    needs: [ golangci-lint, golang-unit-tests, go-vuln-check, gitleaks ]
+    needs: [ golangci-lint, docker-lint, golang-unit-tests, go-vuln-check, gitleaks ]
     with:
       image_tag: 'latest'
