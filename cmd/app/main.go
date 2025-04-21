@@ -48,7 +48,7 @@ func main() {
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg.Server.ListenPprof)
 
-	slog.Error("Starting application...", slog.String("listen", cfg.Server.Listen))
+	slog.Info("Starting application...", slog.String("listen", cfg.Server.Listen))
 
 	// listen for signals
 	sys := make(chan os.Signal, 1)
@@ -64,7 +64,7 @@ func initLogging(cfg *config.Config) {
 	case "stderr":
 		slogOutput = os.Stderr
 	case "file":
-		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			log.Fatalf("Failed to open log file: %s", err)
 		}
@@ -95,10 +95,10 @@ func initLogging(cfg *config.Config) {
 		slog.String("hostname", hostname),
 	)
 
-	slog.Info("Logging initialized")
-
 	// for both 'log' and 'slog'
 	slog.SetDefault(enrichedLogger)
+
+	slog.Info("Logging initialized")
 }
 
 func initLimits(cfg *config.Config) {
@@ -142,9 +142,13 @@ func initSentry(cfg *config.Config) {
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn:        cfg.Sentry.DSN,
-		ServerName: hostname,
-		Release:    xBuildCommit,
+		Dsn:              cfg.Sentry.DSN,
+		ServerName:       hostname,
+		Environment:      cfg.Environment,
+		Release:          xBuildCommit,
+		SampleRate:       cfg.Sentry.SampleRate,
+		Debug:            cfg.Sentry.Debug,
+		AttachStacktrace: cfg.Sentry.Stacktrace,
 		Tags: map[string]string{
 			"service":      cfg.ServiceName,
 			"build_commit": xBuildCommit,

@@ -16,6 +16,7 @@ const (
 
 type Config struct {
 	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
+	Environment string `env:"ENVIRONMENT"  default:"dev"`
 	Limits      Limits
 	Logger      Logger
 	Sentry      Sentry
@@ -34,6 +35,8 @@ type Server struct {
 	ListenPprof  string        `env:"SERVER_LISTEN_PPROF" default:":6060"`
 	ReadTimeout  time.Duration `env:"SERVER_READ_TO"      default:"5s"`
 	WriteTimeout time.Duration `env:"SERVER_WRITE_TO"     default:"5s"`
+	StaticRoot   string        `env:"SERVER_STATIC_ROOT"  default:"/usr/share/www"`
+	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT" default:"/usr/share/www/api"`
 }
 
 type Logger struct {
@@ -58,7 +61,10 @@ func (sl *Logger) Level() slog.Level {
 }
 
 type Sentry struct {
-	DSN string `env:"SENTRY_DSN" default:""`
+	DSN        string  `env:"SENTRY_DSN"         default:""`
+	Debug      bool    `env:"SENTRY_DEBUG"       default:"false"`
+	Stacktrace bool    `env:"SENTRY_STACKTRACE"  default:"false"`
+	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"`
 }
 
 // New parses environments and creates new instance of config.

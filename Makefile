@@ -10,7 +10,7 @@ test:
 ## run | run application (docker compose)
 # Not invoked in CI/CD pipeline.
 run:
-	docker compose up
+	go run -gcflags="all=-N -l" ./cmd/app/main.go
 
 ## build | build docker image (requires containerd)
 # Not invoked in CI/CD pipeline, should stay consistent with docker-build.yml.

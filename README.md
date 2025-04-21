@@ -19,13 +19,14 @@ Golang application template.
   * kubernetes
   * cloud environment
   * revert deployment
++ [ ] make debug
++ [ ] deprecate "ghcr.io/hasansino/golang:1.24.2"
 
 ---
 
 + [ ] metrics
 + [ ] metrics prometheus status page
-  + [ ] metrics grafana dashboard   
-+ [ ] config
+  + [ ] metrics grafana dashboard
 + [ ] config vault integration
 + [ ] config etcd integration
 + [ ] config consul integration
