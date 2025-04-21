@@ -11,6 +11,7 @@ run:
 	docker compose up
 
 ## build | build docker image (requires containerd)
+# `docker buildx` is not strictly necessary here, but let's maintain consistency with CI/CD.
 build:
 	docker buildx build --no-cache --platform linux/amd64,linux/arm64 \
     --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
@@ -20,7 +21,7 @@ build:
 
 ## golangci-lint | lint go files
 golangci-lint:
-	echo "${GREEN}golangci-lint${NC}"
+	go tool golangci-lint run --config $(shell pwd)/.golangci.yml
 
 ## docker-lint | lint dockerfile
 docker-lint:

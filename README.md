@@ -13,13 +13,12 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + [ ] LLM code review for PRs
-+ [ ] GOOS & GOARCH @ build stage
-+ [ ] docker LABELs
++ [ ] Deployment
+  * helm chart 
+  * kubernetes
+  * cloud environment
 
 ---
-
-+ [ ] docker lint
-+ [ ] helm lint
 
 + [ ] https://github.com/daixiang0/gci
 + [ ] https://github.com/mvdan/gofumpt

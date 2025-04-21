@@ -7,7 +7,7 @@ infra/
 .DS_Store
 .env*
 .config.env*
-.golangci.yaml
+.golangci.yml
 docker-compose.yml
 LICENCE
 Makefile

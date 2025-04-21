@@ -2,7 +2,7 @@
 ARG GO_VERSION=INVALID
 ARG COMMIT_HASH=INVALID
 
-# For build stage use standard debian version of image.
+# For build stage we use standard debian version of image.
 FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /tmp/build
@@ -11,9 +11,14 @@ RUN go mod download
 
 COPY . .
 
+# Disable CGO by default.
+ENV CGO_ENABLED=0
+
 # Build.
 #
-# Disable CGO by default.
+# `docker buildx` automates cross-complation and handles GOOS and GOARCH automatically.
+# It creates a single multi-arch image manifest that points to platform-specific
+# image layers, each built with the correct GOOS and GOARCH.
 #
 # -trimpath removes file system paths from the binary, improves build reproducibility.
 #
@@ -23,8 +28,7 @@ COPY . .
 #
 # buildDate and buildCommit are variables accessable in main.go
 #
-ENV CGO_ENABLED=0
-RUN go build -json -trimpath \
+RUN go build -trimpath \
 -ldflags "-s -w -X main.buildDate=$(date -u +%Y%m%d.%H%M%S) -X main.buildCommit=${COMMIT_HASH}" \
 -o app cmd/app/main.go
 
@@ -33,8 +37,8 @@ RUN readelf -h app && du -h app && sha256sum app
 
 # ---
 
-# For package stage, we use minimal, stripped image.
-# This reduces resulting image size and reduces potential security risks.
+# For packaging stage, we use minimal(slim) image.
+# This reduces resulting image size and potential security risks.
 FROM alpine:3.21
 
 # Install dependencies.
