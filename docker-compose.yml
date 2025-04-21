@@ -9,7 +9,7 @@ services:
     volumes:
       - .:/go/src/goapp
       - ./doc:/usr/share/www/api
-      - ./schema:/schema
+      - ./migrate:/migrate
       - go-build-cache:/root/.cache/go-build
     ports:
       - "8080:8080"

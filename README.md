@@ -13,6 +13,7 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + [ ] LLM code review for PRs
++ [ ] semver for builds
 + [ ] Deployment
   * helm chart + linter
   * kubernetes
@@ -21,8 +22,6 @@ Golang application template.
 
 ---
 
-+ [ ] logger (try https://pkg.go.dev/log/slog)
-+ [ ] logger sentry **integration**
 + [ ] metrics
 + [ ] metrics prometheus status page
   + [ ] metrics grafana dashboard   
@@ -30,7 +29,6 @@ Golang application template.
 + [ ] config vault integration
 + [ ] config etcd integration
 + [ ] config consul integration
-+ [ ] helm chart
 
 + [ ] http
 + [ ] grpc

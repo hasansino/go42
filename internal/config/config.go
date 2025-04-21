@@ -2,6 +2,8 @@ package config
 
 import (
 	"encoding/json"
+	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -14,8 +16,17 @@ const (
 
 type Config struct {
 	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
+	Limits      Limits
 	Logger      Logger
+	Sentry      Sentry
 	Server      Server
+}
+
+type Limits struct {
+	AutoMaxProcsEnabled bool    `env:"AUTOMAXPROCS_ENABLED" default:"false"`
+	MinMaxProcs         int     `env:"MIN_MAXPROCS"         default:"1"`
+	AutoMemLimitEnabled bool    `env:"AUTOMEMLIMIT_ENABLED" default:"false"`
+	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"`
 }
 
 type Server struct {
@@ -26,9 +37,28 @@ type Server struct {
 }
 
 type Logger struct {
-	Level  string `env:"LOG_LEVEL"  default:"info"`
-	Output string `env:"LOG_OUTPUT" default:"stdout"`
-	Format string `env:"LOG_FORMAT" default:"json"`
+	LogLevel  string `env:"LOG_LEVEL"  default:"info"`
+	LogOutput string `env:"LOG_OUTPUT" default:"stdout"`
+	LogFormat string `env:"LOG_FORMAT" default:"json"`
+}
+
+func (sl *Logger) Level() slog.Level {
+	switch strings.ToLower(sl.LogLevel) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+type Sentry struct {
+	DSN string `env:"SENTRY_DSN" default:""`
 }
 
 // New parses environments and creates new instance of config.

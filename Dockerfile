@@ -29,7 +29,7 @@ ENV CGO_ENABLED=0
 # buildDate and buildCommit are variables accessable in main.go
 #
 RUN go build -trimpath \
--ldflags "-s -w -X main.buildDate=$(date -u +%Y%m%d.%H%M%S) -X main.buildCommit=${COMMIT_HASH}" \
+-ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH}" \
 -o app cmd/app/main.go
 
 # Validate binary.
