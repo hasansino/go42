@@ -24,7 +24,7 @@ golangci-lint:
 
 ## docker-lint | lint dockerfile
 docker-lint:
-	echo "${GREEN}docker-lint${NC}"
+	docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
 
 ## helm-lint | lint helm files
 helm-lint:
