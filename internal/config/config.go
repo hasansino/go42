@@ -19,14 +19,14 @@ type Config struct {
 }
 
 type Server struct {
-	Listen       string        `env:"SERVER_LISTEN_HTTP" default:":8080"`
+	Listen       string        `env:"SERVER_LISTEN_HTTP"  default:":8080"`
 	ListenPprof  string        `env:"SERVER_LISTEN_PPROF" default:":6060"`
-	ReadTimeout  time.Duration `env:"SERVER_READ_TO" default:"5s"`
-	WriteTimeout time.Duration `env:"SERVER_WRITE_TO" default:"5s"`
+	ReadTimeout  time.Duration `env:"SERVER_READ_TO"      default:"5s"`
+	WriteTimeout time.Duration `env:"SERVER_WRITE_TO"     default:"5s"`
 }
 
 type Logger struct {
-	Level  string `env:"LOG_LEVEL" default:"info"`
+	Level  string `env:"LOG_LEVEL"  default:"info"`
 	Output string `env:"LOG_OUTPUT" default:"stdout"`
 	Format string `env:"LOG_FORMAT" default:"json"`
 }
