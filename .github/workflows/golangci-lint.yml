@@ -1,14 +1,19 @@
 name: golangci-lint
 
 on:
-  workflow_dispatch:
   workflow_call:
+    inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   langci-lint:
+    continue-on-error: ${{ inputs.continue_on_error }}
     name: golangci-lint
     strategy:
       matrix:

@@ -1,8 +1,12 @@
 name: golang-unit-tests
 
 on:
-  workflow_dispatch:
   workflow_call:
+    inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -10,7 +14,7 @@ permissions:
 jobs:
   golang-unit-tests:
     name: golang-unit-tests
-    continue-on-error: true
+    continue-on-error: ${{ inputs.continue_on_error }}
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]

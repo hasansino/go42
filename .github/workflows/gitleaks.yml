@@ -1,12 +1,16 @@
 name: gitleaks
 
 on:
-  workflow_dispatch:
   workflow_call:
+    inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   gitleaks:
-    continue-on-error: true
+    continue-on-error: ${{ inputs.continue_on_error }}
     name: gitleaks
     runs-on: ubuntu-latest
     steps:

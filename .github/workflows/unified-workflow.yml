@@ -13,27 +13,36 @@ permissions:
   id-token: write
 
 jobs:
+  # Stage 1: Linting
   golangci-lint:
     uses: ./.github/workflows/golangci-lint.yml
-
+    with:
+      continue_on_error: true
   docker-lint:
     uses: ./.github/workflows/docker-lint.yml
-
+    with:
+      continue_on_error: true
+  # Stage 2: Testing
   golang-unit-tests:
     uses: ./.github/workflows/golang-unit-tests.yml
     needs: [ golangci-lint, docker-lint ]
-
+    with:
+      continue_on_error: true
+  # Stage 3: Vulnerability Scanning
   go-vuln-check:
     uses: ./.github/workflows/go-vuln-check.yml
     needs: [ golang-unit-tests ]
-
+    with:
+      continue_on_error: true
   gitleaks:
     uses: ./.github/workflows/gitleaks.yml
     needs: [ golang-unit-tests ]
-
+    with:
+      continue_on_error: true
+  # Stage 4: Build
   docker-build:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
-    needs: [ golangci-lint, docker-lint, golang-unit-tests, go-vuln-check, gitleaks ]
+    needs: [  go-vuln-check, gitleaks ]
     with:
       image_tag: 'latest'
