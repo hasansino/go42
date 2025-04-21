@@ -14,17 +14,12 @@ Golang application template.
   * https://github.com/gomods/athens
 + [ ] LLM code review for PRs
 + [ ] Deployment
-  * helm chart 
+  * helm chart + linter
   * kubernetes
   * cloud environment
-+ [ ] global `continue-on-error`
+  * revert deployment
 
 ---
-
-+ [ ] https://github.com/daixiang0/gci
-+ [ ] https://github.com/mvdan/gofumpt
-
-+ [ ] https://github.com/FiloSottile/mkcert
 
 + [ ] logger (try https://pkg.go.dev/log/slog)
 + [ ] logger sentry **integration**
