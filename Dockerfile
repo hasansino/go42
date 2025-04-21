@@ -48,7 +48,7 @@ FROM alpine:3.21
 # Also, may be needed:
 #   * libc6-compat, libgcc, libstdc++ - for cgo to work properly
 #   * curl - to be able to debug from inside running container
-RUN apk add --no-cache ca-certificates tzdata tini
+RUN apk add --no-cache ca-certificates=20241121-r1 tzdata=2025b-r0 tini=0.19.0-r3
 
 RUN addgroup -g 1000 appuser && \
     adduser -u 1000 -G appuser -s /bin/sh -D appuser

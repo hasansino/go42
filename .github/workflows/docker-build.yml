@@ -32,6 +32,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
+      - run: echo "commit_hash=$(grep git rev-parse HEAD)" >> $GITHUB_ENV
       - uses: docker/build-push-action@v6
         with:
           context: ${{ github.workspace }}/
@@ -42,6 +43,7 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/goapp:${{ inputs.image_tag }}
           build-args: |
             GO_VERSION=${{ env.go_version }}
+            COMMIT_HASH=${{ commit_hash }}
   docker-vuln-check:
     needs: docker-build
     runs-on: ubuntu-latest
