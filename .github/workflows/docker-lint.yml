@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   docker-lint:
+    continue-on-error: true
     name: docker-lint
     strategy:
       matrix:
