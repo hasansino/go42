@@ -16,6 +16,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	_ "net/http/pprof"
+
 	sentryslog "github.com/getsentry/sentry-go/slog"
 
 	"github.com/hasansino/goapp/internal/config"
@@ -46,7 +48,7 @@ func main() {
 	initLogging(cfg)
 	initLimits(cfg)
 	initSentry(cfg)
-	pprofCloser := initProfiling(cfg.Server.ListenPprof)
+	pprofCloser := initProfiling(cfg)
 
 	slog.Info("Starting application...", slog.String("listen", cfg.Server.Listen))
 
@@ -98,6 +100,7 @@ func initLogging(cfg *config.Config) {
 	// for both 'log' and 'slog'
 	slog.SetDefault(enrichedLogger)
 
+	// any log calls before this point will be non-structured
 	slog.Info("Logging initialized")
 }
 
@@ -170,13 +173,17 @@ func initSentry(cfg *config.Config) {
 	slog.Info("Sentry initialized")
 }
 
-func initProfiling(listen string) io.Closer {
-	if len(listen) == 0 {
+func initProfiling(cfg *config.Config) io.Closer {
+	if len(cfg.Server.ListenPprof) == 0 {
 		slog.Warn("Pprof is disabled")
 		return nil
 	}
-	slog.Info("Starting pprof http server...", slog.String("port", listen))
-	server := &http.Server{Addr: listen}
+	slog.Info("Starting pprof http server...", slog.String("port", cfg.Server.ListenPprof))
+	server := &http.Server{
+		Addr:         cfg.Server.ListenPprof,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+	}
 	go func() {
 		if err := server.ListenAndServe(); errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Failed to start pprof http server: %s", err.Error())
