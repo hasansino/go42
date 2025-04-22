@@ -7,10 +7,20 @@ help: Makefile
 test:
 	go test -v -race ./...
 
-## run | run application (docker compose)
+## run | run application
 # Not invoked in CI/CD pipeline.
 run:
 	go run -gcflags="all=-N -l" ./cmd/app/main.go
+
+## debug | run application with delve debugger
+# Not invoked in CI/CD pipeline.
+debug:
+	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2 -- ${@:2}
+
+## debug-kill | kill delve process
+# Not invoked in CI/CD pipeline.
+debug-kill:
+	pkill -f "dlv debug"
 
 ## build | build docker image (requires containerd)
 # Not invoked in CI/CD pipeline, but should stay consistent with docker-build.yml anyway.

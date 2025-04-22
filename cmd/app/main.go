@@ -53,6 +53,7 @@ func main() {
 	initLimits(cfg)
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
+	initMetrics(cfg)
 
 	slog.Info("Starting application...", slog.String("listen", cfg.Server.Listen))
 
@@ -192,7 +193,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 
 	slog.Info("Starting pprof http server...", slog.String("port", cfg.Server.ListenPprof))
 
-	prefix := strings.TrimRight(cfg.Server.ListenPprof, " /")
+	prefix := strings.TrimRight(cfg.Server.PprofPrefix, " /")
 
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc(prefix+"/", pprof.Index)
@@ -208,6 +209,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 		WriteTimeout:                 time.Second * 60, // for dumping heap
 		DisableGeneralOptionsHandler: true,
 		Handler:                      pprofMux,
+		ErrorLog:                     slog.NewLogLogger(slog.Default().Handler(), slog.LevelError),
 	}
 
 	go func() {
@@ -217,6 +219,10 @@ func initProfiling(cfg *config.Config) io.Closer {
 	}()
 
 	return server
+}
+
+func initMetrics(cfg *config.Config) {
+
 }
 
 // shutdown implements all graceful shutdown logic.

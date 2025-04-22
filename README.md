@@ -19,7 +19,6 @@ Golang application template.
   * kubernetes
   * cloud environment
   * revert deployment
-+ make debug
 + deprecate "ghcr.io/hasansino/golang:1.24.2"
 + https://github.com/google/perfetto
 + https://github.com/sony/gobreaker
