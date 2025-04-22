@@ -6,9 +6,11 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,23 +18,25 @@ import (
 	"github.com/getsentry/sentry-go"
 	"go.uber.org/automaxprocs/maxprocs"
 
-	_ "net/http/pprof"
-
 	sentryslog "github.com/getsentry/sentry-go/slog"
+	slogmulti "github.com/samber/slog-multi"
 
 	"github.com/hasansino/goapp/internal/config"
-	"github.com/hasansino/goapp/internal/utils"
 )
 
 // These variables are passed as arguments to compiler.
 var (
 	xBuildDate   string
+	xBuildTag    string
 	xBuildCommit string
 )
 
 func init() {
 	if len(xBuildDate) == 0 {
 		xBuildDate = "dev"
+	}
+	if len(xBuildTag) == 0 {
+		xBuildTag = "dev"
 	}
 	if len(xBuildCommit) == 0 {
 		xBuildCommit = "dev"
@@ -92,8 +96,9 @@ func initLogging(cfg *config.Config) {
 	logger := slog.New(slogHandler)
 	enrichedLogger := logger.With(
 		slog.String("service", cfg.ServiceName),
-		slog.String("build_commit", xBuildCommit),
 		slog.String("build_date", xBuildDate),
+		slog.String("build_tag", xBuildTag),
+		slog.String("build_commit", xBuildCommit),
 		slog.String("hostname", hostname),
 	)
 
@@ -148,47 +153,69 @@ func initSentry(cfg *config.Config) {
 		Dsn:              cfg.Sentry.DSN,
 		ServerName:       hostname,
 		Environment:      cfg.Environment,
-		Release:          xBuildCommit,
+		Release:          xBuildTag,
 		SampleRate:       cfg.Sentry.SampleRate,
 		Debug:            cfg.Sentry.Debug,
 		AttachStacktrace: cfg.Sentry.Stacktrace,
 		Tags: map[string]string{
 			"service":      cfg.ServiceName,
-			"build_commit": xBuildCommit,
 			"build_date":   xBuildDate,
+			"build_tag":    xBuildTag,
+			"build_commit": xBuildCommit,
 			"hostname":     hostname,
 		},
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	sentryHandler := sentryslog.Option{
 		Level: slog.LevelError,
 	}.NewSentryHandler()
 
-	multiHandler := utils.NewSlogMultiHandler(slog.Default().Handler(), sentryHandler)
-	multiLogger := slog.New(multiHandler)
-	slog.SetDefault(multiLogger)
+	multiLogger := slog.New(
+		slogmulti.Fanout(
+			slog.Default().Handler(),
+			sentryHandler,
+		),
+	)
 
+	slog.SetDefault(multiLogger)
 	slog.Info("Sentry initialized")
 }
 
 func initProfiling(cfg *config.Config) io.Closer {
 	if len(cfg.Server.ListenPprof) == 0 {
-		slog.Warn("Pprof is disabled")
+		slog.Warn("pprof is disabled")
 		return nil
 	}
+
 	slog.Info("Starting pprof http server...", slog.String("port", cfg.Server.ListenPprof))
+
+	prefix := strings.TrimRight(cfg.Server.ListenPprof, " /")
+
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc(prefix+"/", pprof.Index)
+	pprofMux.HandleFunc(prefix+"/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc(prefix+"/profile", pprof.Profile)
+	pprofMux.HandleFunc(prefix+"/symbol", pprof.Symbol)
+	pprofMux.HandleFunc(prefix+"/trace", pprof.Trace)
+
 	server := &http.Server{
-		Addr:         cfg.Server.ListenPprof,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
+		Addr:                         cfg.Server.ListenPprof,
+		ReadTimeout:                  time.Second * 5,  // headers+body
+		ReadHeaderTimeout:            time.Second * 2,  // only headers
+		WriteTimeout:                 time.Second * 60, // for dumping heap
+		DisableGeneralOptionsHandler: true,
+		Handler:                      pprofMux,
 	}
+
 	go func() {
-		if err := server.ListenAndServe(); errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to start pprof http server: %s", err.Error())
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Failed to start pprof http server", slog.Any("error", err.Error()))
 		}
 	}()
+
 	return server
 }
 

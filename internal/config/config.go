@@ -33,6 +33,7 @@ type Limits struct {
 type Server struct {
 	Listen       string        `env:"SERVER_LISTEN_HTTP"  default:":8080"`
 	ListenPprof  string        `env:"SERVER_LISTEN_PPROF" default:":6060"`
+	PprofPrefix  string        `env:"SERVER_PPROF_PREFIX" default:"/debug/pprof"`
 	ReadTimeout  time.Duration `env:"SERVER_READ_TO"      default:"5s"`
 	WriteTimeout time.Duration `env:"SERVER_WRITE_TO"     default:"5s"`
 	StaticRoot   string        `env:"SERVER_STATIC_ROOT"  default:"/usr/share/www"`

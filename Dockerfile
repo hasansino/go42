@@ -1,6 +1,7 @@
 # We want to fail if arguments were not passed.
 ARG GO_VERSION=INVALID
 ARG COMMIT_HASH=INVALID
+ARG RELEASE_TAG=INVALID
 
 # For build stage we use standard debian version of image.
 FROM golang:${GO_VERSION} AS builder
@@ -29,7 +30,7 @@ ENV CGO_ENABLED=0
 # buildDate and buildCommit are variables accessable in main.go
 #
 RUN go build -trimpath \
--ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH}" \
+-ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
 -o app cmd/app/main.go
 
 # Validate binary.

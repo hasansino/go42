@@ -13,11 +13,13 @@ run:
 	go run -gcflags="all=-N -l" ./cmd/app/main.go
 
 ## build | build docker image (requires containerd)
-# Not invoked in CI/CD pipeline, should stay consistent with docker-build.yml.
+# Not invoked in CI/CD pipeline, but should stay consistent with docker-build.yml anyway.
+# Build only for local platform, avoid QEMU emulation for performance reasons.
 build:
-	docker buildx build --no-cache --platform linux/amd64,linux/arm64 \
+	docker buildx build --no-cache --platform linux/arm64 \
     --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
-    --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD)" \
+    --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
+    --build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
 	-t ghcr.io/hasansino/goapp:dev \
 	.
 
