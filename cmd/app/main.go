@@ -16,12 +16,16 @@ import (
 
 	"github.com/KimMachineGun/automemlimit/memlimit"
 	"github.com/getsentry/sentry-go"
+	sentryslog "github.com/getsentry/sentry-go/slog"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	slogmulti "github.com/samber/slog-multi"
 	"go.uber.org/automaxprocs/maxprocs"
 
-	sentryslog "github.com/getsentry/sentry-go/slog"
-	slogmulti "github.com/samber/slog-multi"
-
+	"github.com/hasansino/goapp/internal/api"
 	"github.com/hasansino/goapp/internal/config"
+	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
 
 // These variables are passed as arguments to compiler.
@@ -53,14 +57,34 @@ func main() {
 	initLimits(cfg)
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
-	initMetrics(cfg)
+	metricsHandler := initMetrics(cfg)
 
-	slog.Info("Starting application...", slog.String("listen", cfg.Server.Listen))
+	httpServer := api.New(
+		api.WithReadTimeout(cfg.Server.ReadTimeout),
+		api.WithWriteTimeout(cfg.Server.WriteTimeout),
+	)
+
+	httpServer.Register(metricsprovider.New(metricsHandler))
+
+	// ---
+
+	// Business logic
+
+	// ---
+
+	go func() {
+		if err := httpServer.Start(cfg.Server.Listen); err != nil &&
+			!errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Failed to start HTTP server", slog.Any("error", err))
+		}
+	}()
 
 	// listen for signals
 	sys := make(chan os.Signal, 1)
 	signal.Notify(sys, syscall.SIGINT, syscall.SIGTERM)
-	shutdown(<-sys, pprofCloser)
+	shutdown(<-sys,
+		pprofCloser, httpServer,
+	)
 }
 
 func initLogging(cfg *config.Config) {
@@ -115,7 +139,7 @@ func initLimits(cfg *config.Config) {
 	if cfg.Limits.AutoMaxProcsEnabled {
 		_, err = maxprocs.Set(maxprocs.Logger(log.Printf))
 		if err != nil {
-			slog.Error("Failed to set maxprocs", slog.Any("error", err.Error()))
+			slog.Error("Failed to set maxprocs", slog.Any("error", err))
 		}
 	} else {
 		slog.Warn("Package `automaxprocs` is disabled")
@@ -132,7 +156,7 @@ func initLimits(cfg *config.Config) {
 			),
 		)
 		if err != nil {
-			slog.Error("Failed to set memory limits", slog.Any("error", err.Error()))
+			slog.Error("Failed to set memory limits", slog.Any("error", err))
 		}
 	} else {
 		slog.Warn("Package `automemlimit` is disabled")
@@ -186,14 +210,14 @@ func initSentry(cfg *config.Config) {
 }
 
 func initProfiling(cfg *config.Config) io.Closer {
-	if len(cfg.Server.ListenPprof) == 0 {
+	if !cfg.Pprof.Enabled {
 		slog.Warn("pprof is disabled")
 		return nil
 	}
 
-	slog.Info("Starting pprof http server...", slog.String("port", cfg.Server.ListenPprof))
+	slog.Info("Starting pprof http server...", slog.String("port", cfg.Pprof.Listen))
 
-	prefix := strings.TrimRight(cfg.Server.PprofPrefix, " /")
+	prefix := strings.TrimRight(cfg.Pprof.Prefix, " /")
 
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc(prefix+"/", pprof.Index)
@@ -203,32 +227,45 @@ func initProfiling(cfg *config.Config) io.Closer {
 	pprofMux.HandleFunc(prefix+"/trace", pprof.Trace)
 
 	server := &http.Server{
-		Addr:                         cfg.Server.ListenPprof,
-		ReadTimeout:                  time.Second * 5,  // headers+body
-		ReadHeaderTimeout:            time.Second * 2,  // only headers
-		WriteTimeout:                 time.Second * 60, // for dumping heap
-		DisableGeneralOptionsHandler: true,
-		Handler:                      pprofMux,
-		ErrorLog:                     slog.NewLogLogger(slog.Default().Handler(), slog.LevelError),
+		Addr:         cfg.Pprof.Listen,
+		ReadTimeout:  cfg.Pprof.ReadTimeout,
+		WriteTimeout: cfg.Pprof.WriteTimeout,
+		Handler:      pprofMux,
+		ErrorLog:     slog.NewLogLogger(slog.Default().Handler(), slog.LevelError),
 	}
 
 	go func() {
-		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("Failed to start pprof http server", slog.Any("error", err.Error()))
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Failed to start pprof http server", slog.Any("error", err))
 		}
 	}()
 
 	return server
 }
 
-func initMetrics(cfg *config.Config) {
-
+func initMetrics(cfg *config.Config) http.Handler {
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewBuildInfoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+	prometheus.DefaultRegisterer = reg
+	return promhttp.HandlerFor(reg,
+		promhttp.HandlerOpts{
+			Registry: reg,
+			ErrorLog: log.Default(),
+			Timeout:  cfg.Metrics.Timeout,
+		})
 }
 
 // shutdown implements all graceful shutdown logic.
 func shutdown(_ os.Signal, closers ...io.Closer) {
 	log.Println("Shutting down...")
 	for _, c := range closers {
+		if c == nil {
+			continue
+		}
 		if err := c.Close(); err != nil {
 			log.Printf(
 				"Error closing %s: %v",

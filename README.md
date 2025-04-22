@@ -22,13 +22,10 @@ Golang application template.
 + deprecate "ghcr.io/hasansino/golang:1.24.2"
 + https://github.com/google/perfetto
 + https://github.com/sony/gobreaker
-+ https://github.com/FiloSottile/mkcert
++ https://github.com/FiloSottile/mkcert 
++ grafana dashboard
 
 ---
-
-+ [ ] metrics
-+ [ ] metrics prometheus status page
-  + [ ] metrics grafana dashboard
 
 + [ ] config vault integration
 + [ ] config etcd integration

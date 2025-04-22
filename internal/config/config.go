@@ -20,6 +20,8 @@ type Config struct {
 	Limits      Limits
 	Logger      Logger
 	Sentry      Sentry
+	Metrics     Metrics
+	Pprof       Pprof
 	Server      Server
 }
 
@@ -28,16 +30,6 @@ type Limits struct {
 	MinMaxProcs         int     `env:"MIN_MAXPROCS"         default:"1"`
 	AutoMemLimitEnabled bool    `env:"AUTOMEMLIMIT_ENABLED" default:"false"`
 	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"`
-}
-
-type Server struct {
-	Listen       string        `env:"SERVER_LISTEN_HTTP"  default:":8080"`
-	ListenPprof  string        `env:"SERVER_LISTEN_PPROF" default:""`
-	PprofPrefix  string        `env:"SERVER_PPROF_PREFIX" default:""`
-	ReadTimeout  time.Duration `env:"SERVER_READ_TO"      default:"5s"`
-	WriteTimeout time.Duration `env:"SERVER_WRITE_TO"     default:"5s"`
-	StaticRoot   string        `env:"SERVER_STATIC_ROOT"  default:"/usr/share/www"`
-	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT" default:"/usr/share/www/api"`
 }
 
 type Logger struct {
@@ -66,6 +58,26 @@ type Sentry struct {
 	Debug      bool    `env:"SENTRY_DEBUG"       default:"false"`
 	Stacktrace bool    `env:"SENTRY_STACKTRACE"  default:"false"`
 	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"`
+}
+
+type Metrics struct {
+	Timeout time.Duration `env:"METRICS_TIMEOUT" default:"10s"`
+}
+
+type Pprof struct {
+	Enabled      bool          `env:"PPROF_ENABLED"       default:"false"`
+	Listen       string        `env:"PPROF_LISTEN"        default:":6060"`
+	Prefix       string        `env:"PPROF_PREFIX"        default:"/debug/pprof"`
+	ReadTimeout  time.Duration `env:"PPROF_READ_TIMEOUT"  default:"5s"`
+	WriteTimeout time.Duration `env:"PPROF_WRITE_TIMEOUT" default:"60s"`
+}
+
+type Server struct {
+	Listen       string        `env:"SERVER_LISTEN"        default:":8080"`
+	ReadTimeout  time.Duration `env:"SERVER_READ_TIMEOUT"  default:"5s"`
+	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
+	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
+	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
 
 // New parses environments and creates new instance of config.

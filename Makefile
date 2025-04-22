@@ -9,13 +9,18 @@ test:
 
 ## run | run application
 # Not invoked in CI/CD pipeline.
-run:
+run: prep-local-env
 	go run -gcflags="all=-N -l" ./cmd/app/main.go
 
 ## debug | run application with delve debugger
 # Not invoked in CI/CD pipeline.
-debug:
+debug: prep-local-env
 	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2 -- ${@:2}
+
+prep-local-env:
+	source .config.env 2>/dev/null
+	export SERVER_STATIC_ROOT=$(shell pwd)/static
+	export SERVER_SWAGGER_ROOT=$(shell pwd)/doc
 
 ## debug-kill | kill delve process
 # Not invoked in CI/CD pipeline.
