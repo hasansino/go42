@@ -71,8 +71,8 @@ func main() {
 	// Business logic
 
 	// ---
-
 	go func() {
+		slog.Info("Starting http server...", slog.String("port", cfg.Server.Listen))
 		if err := httpServer.Start(cfg.Server.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Failed to start HTTP server", slog.Any("error", err))

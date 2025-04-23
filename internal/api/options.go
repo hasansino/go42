@@ -3,19 +3,19 @@ package api
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/labstack/echo"
 )
 
-type Option func(f *fiber.Config)
+type Option func(e *echo.Echo)
 
 func WithReadTimeout(d time.Duration) Option {
-	return func(f *fiber.Config) {
-		f.ReadTimeout = d
+	return func(e *echo.Echo) {
+		e.Server.ReadTimeout = d
 	}
 }
 
 func WithWriteTimeout(d time.Duration) Option {
-	return func(f *fiber.Config) {
-		f.WriteTimeout = d
+	return func(e *echo.Echo) {
+		e.Server.WriteTimeout = d
 	}
 }

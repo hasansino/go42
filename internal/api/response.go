@@ -3,11 +3,11 @@ package api
 import (
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/labstack/echo"
 )
 
-func SendJSON(ctx *fiber.Ctx, data interface{}) error {
-	return ctx.JSON(data)
+func SendJSON(ctx echo.Context, data interface{}) error {
+	return ctx.JSON(http.StatusOK, data)
 }
 
 type Error struct {
@@ -16,13 +16,11 @@ type Error struct {
 	Details interface{} `json:"details,omitempty"`
 }
 
-func SendJSONError(ctx *fiber.Ctx, code int, msg string) error {
-	return ctx.
-		Status(code).
-		JSON(Error{code, msg, nil})
+func SendJSONError(ctx echo.Context, code int, msg string) error {
+	return ctx.JSON(code, Error{code, msg, nil})
 }
 
-func SendUnauthorisedError(ctx *fiber.Ctx) error {
+func SendUnauthorisedError(ctx echo.Context) error {
 	return SendJSONError(ctx, http.StatusUnauthorized,
 		http.StatusText(http.StatusUnauthorized))
 }
@@ -39,11 +37,10 @@ const (
 	DefaultErrorDetailCode      = "INVALID_VALUE"
 )
 
-func SendJSONValidationError(ctx *fiber.Ctx, vErrs ...ValidationError) error {
+func SendJSONValidationError(ctx echo.Context, vErrs ...ValidationError) error {
 	message := DefaultValidationErrMessage
-	return ctx.
-		Status(http.StatusBadRequest).
-		JSON(Error{
+	return ctx.JSON(http.StatusBadRequest,
+		Error{
 			Code:    http.StatusBadRequest,
 			Message: message,
 			Details: vErrs,

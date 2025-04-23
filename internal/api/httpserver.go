@@ -1,65 +1,76 @@
 package api
 
 import (
-	"errors"
-	"log/slog"
+	"log"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type Server struct {
-	f  *fiber.App
-	v1 fiber.Router
+	e    *echo.Echo
+	root *echo.Group
+	v1   *echo.Group
 }
 
 func New(opts ...Option) *Server {
-	cfg := fiber.Config{
-		DisableStartupMessage: true,
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			message := "Unexpected API Error"
-			code := fiber.StatusInternalServerError
-			var fiberErr *fiber.Error
-			if errors.As(err, &fiberErr) {
-				message = fiberErr.Message
-				code = fiberErr.Code
+	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+	e.StdLogger = log.Default()
+	e.Logger.SetOutput(log.Default().Writer())
+
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{}))
+	e.Use(middleware.RecoverWithConfig(middleware.DefaultRecoverConfig))
+
+	{ // --- @TODO -> Write library to handle metric creation & re-use
+		rpsCounter := promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "application_requests_total",
+		}, []string{
+			"method", "path",
+		})
+
+		e.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				rpsCounter.With(prometheus.Labels{
+					"method": c.Request().Method,
+					"path":   c.Path(),
+				}).Inc()
+				return handlerFunc(c)
 			}
-			slog.ErrorContext(ctx.UserContext(), "API Error", slog.Any("error", err))
-			return SendJSONError(ctx, code, message)
-		},
-	}
+		})
+	} // ---
 
 	for _, opt := range opts {
-		opt(&cfg)
+		opt(e)
 	}
 
-	f := fiber.New(cfg)
-	f.Use(recover.New(recover.Config{
-		EnableStackTrace: true,
-	}))
+	root := e.Group("")
 
-	apiV1 := f.Group("/apiV1/v1")
-	apiV1.Static("/", "/usr/share/www/apiV1/v1")
-	apiV1.Get("/health-check", func(c *fiber.Ctx) error {
-		return c.SendStatus(http.StatusOK)
+	apiV1 := e.Group("/api/v1")
+	apiV1.Static("/", "/usr/share/www/api/v1")
+	apiV1.GET("/health-check", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
 	})
 
-	return &Server{f: f, v1: apiV1}
+	return &Server{e: e, root: root, v1: apiV1}
 }
 
 func (s *Server) Start(addr string) error {
-	return s.f.Listen(addr)
+	return s.e.Start(addr)
 }
 
 func (s *Server) Close() error {
-	return s.f.Shutdown()
+	return s.e.Close()
 }
 
 // Register providers for /
 func (s *Server) Register(providers ...providerAccessor) {
 	for _, p := range providers {
-		p.Register(s.f)
+		p.Register(s.root)
 	}
 }
 

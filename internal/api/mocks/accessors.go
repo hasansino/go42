@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	fiber "github.com/gofiber/fiber/v2"
+	echo "github.com/labstack/echo"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +41,7 @@ func (m *MockproviderAccessor) EXPECT() *MockproviderAccessorMockRecorder {
 }
 
 // Register mocks base method.
-func (m *MockproviderAccessor) Register(r fiber.Router) {
+func (m *MockproviderAccessor) Register(r *echo.Group) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Register", r)
 }

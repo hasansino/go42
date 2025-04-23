@@ -3,8 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
+	"github.com/labstack/echo"
 )
 
 // Handler provider for fiber framework
@@ -18,6 +17,6 @@ func New(h http.Handler) *Handler {
 }
 
 // Register endpoints in fiber framework
-func (h *Handler) Register(r fiber.Router) {
-	r.Get("/metrics", adaptor.HTTPHandler(h.handler))
+func (h *Handler) Register(e *echo.Group) {
+	e.GET("/metrics", echo.WrapHandler(h.handler))
 }
