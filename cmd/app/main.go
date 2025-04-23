@@ -50,7 +50,7 @@ func init() {
 func main() {
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatalf("Failed to initialize config: %v\n", err)
+		log.Fatalf("failed to initialize config: %v\n", err)
 	}
 
 	initLogging(cfg)
@@ -72,10 +72,10 @@ func main() {
 
 	// ---
 	go func() {
-		slog.Info("Starting http server...", slog.String("port", cfg.Server.Listen))
+		slog.Info("starting http server...", slog.String("port", cfg.Server.Listen))
 		if err := httpServer.Start(cfg.Server.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
-			slog.Error("Failed to start HTTP server", slog.Any("error", err))
+			slog.Error("failed to start HTTP server", slog.Any("error", err))
 		}
 	}()
 
@@ -97,7 +97,7 @@ func initLogging(cfg *config.Config) {
 	case "file":
 		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
-			log.Fatalf("Failed to open log file: %s", err)
+			log.Fatalf("failed to open log file: %s", err)
 		}
 		slogOutput = file
 	}
@@ -110,12 +110,12 @@ func initLogging(cfg *config.Config) {
 		}
 		slogHandler = slog.NewJSONHandler(slogOutput, loggerOpts)
 	default:
-		log.Fatalf("Unsupported logging format: %s", cfg.Logger.LogFormat)
+		log.Fatalf("unsupported logging format: %s", cfg.Logger.LogFormat)
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Fatalf("Failed to retrieve hostname: %s", err)
+		log.Fatalf("failed to retrieve hostname: %s", err)
 	}
 
 	logger := slog.New(slogHandler)
@@ -131,7 +131,7 @@ func initLogging(cfg *config.Config) {
 	slog.SetDefault(enrichedLogger)
 
 	// any log calls before this point will be non-structured
-	slog.Info("Logging initialized")
+	slog.Info("logging initialized", slog.String("log_level", cfg.Logger.Level().String()))
 }
 
 func initLimits(cfg *config.Config) {
@@ -139,10 +139,10 @@ func initLimits(cfg *config.Config) {
 	if cfg.Limits.AutoMaxProcsEnabled {
 		_, err = maxprocs.Set(maxprocs.Logger(log.Printf))
 		if err != nil {
-			slog.Error("Failed to set maxprocs", slog.Any("error", err))
+			slog.Error("failed to set maxprocs", slog.Any("error", err))
 		}
 	} else {
-		slog.Warn("Package `automaxprocs` is disabled")
+		slog.Warn("package `automaxprocs` is disabled")
 	}
 	if cfg.Limits.AutoMemLimitEnabled {
 		_, err = memlimit.SetGoMemLimitWithOpts(
@@ -156,22 +156,22 @@ func initLimits(cfg *config.Config) {
 			),
 		)
 		if err != nil {
-			slog.Error("Failed to set memory limits", slog.Any("error", err))
+			slog.Error("failed to set memory limits", slog.Any("error", err))
 		}
 	} else {
-		slog.Warn("Package `automemlimit` is disabled")
+		slog.Warn("package `automemlimit` is disabled")
 	}
 }
 
 func initSentry(cfg *config.Config) {
 	if cfg.Sentry.DSN == "" {
-		slog.Warn("Sentry is disabled")
+		slog.Warn("sentry is disabled")
 		return
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Fatalf("Failed to retrieve hostname: %s", err)
+		log.Fatalf("failed to retrieve hostname: %s", err)
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
@@ -191,7 +191,7 @@ func initSentry(cfg *config.Config) {
 		},
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to initialize sentry: %s", err)
 	}
 
 	sentryHandler := sentryslog.Option{
@@ -206,7 +206,7 @@ func initSentry(cfg *config.Config) {
 	)
 
 	slog.SetDefault(multiLogger)
-	slog.Info("Sentry initialized")
+	slog.Info("sentry initialized")
 }
 
 func initProfiling(cfg *config.Config) io.Closer {
@@ -215,7 +215,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 		return nil
 	}
 
-	slog.Info("Starting pprof http server...", slog.String("port", cfg.Pprof.Listen))
+	slog.Info("starting pprof http server...", slog.String("port", cfg.Pprof.Listen))
 
 	prefix := strings.TrimRight(cfg.Pprof.Prefix, " /")
 
@@ -231,12 +231,15 @@ func initProfiling(cfg *config.Config) io.Closer {
 		ReadTimeout:  cfg.Pprof.ReadTimeout,
 		WriteTimeout: cfg.Pprof.WriteTimeout,
 		Handler:      pprofMux,
-		ErrorLog:     slog.NewLogLogger(slog.Default().Handler(), slog.LevelError),
+		ErrorLog: slog.NewLogLogger(
+			slog.Default().With(
+				slog.String("service", "pprof"),
+			).Handler(), slog.LevelError),
 	}
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("Failed to start pprof http server", slog.Any("error", err))
+			slog.Error("failed to start pprof http server", slog.Any("error", err))
 		}
 	}()
 
@@ -269,7 +272,7 @@ func shutdown(_ os.Signal, closers ...io.Closer) {
 		}
 		if err := c.Close(); err != nil {
 			log.Printf(
-				"Error closing %s: %v",
+				"shutdown: error closing %s: %v",
 				reflect.TypeOf(c).String(), err,
 			)
 		}

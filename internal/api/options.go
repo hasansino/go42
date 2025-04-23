@@ -3,7 +3,7 @@ package api
 import (
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type Option func(e *echo.Echo)

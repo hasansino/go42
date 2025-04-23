@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	echo "github.com/labstack/echo"
+	v4 "github.com/labstack/echo/v4"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,7 +41,7 @@ func (m *MockproviderAccessor) EXPECT() *MockproviderAccessorMockRecorder {
 }
 
 // Register mocks base method.
-func (m *MockproviderAccessor) Register(r *echo.Group) {
+func (m *MockproviderAccessor) Register(r *v4.Group) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Register", r)
 }

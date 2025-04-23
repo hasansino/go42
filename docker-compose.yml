@@ -1,23 +1,11 @@
 ---
 
 services:
-  app:
-    image: "ghcr.io/hasansino/golang:1.24.2"
-    command: build # or debug
-    working_dir: /go/src/goapp/cmd/app
-    # env_file: .config.env
-    volumes:
-      - .:/go/src/goapp
-      - ./doc:/usr/share/www/api
-      - ./migrate:/migrate
-      - go-build-cache:/root/.cache/go-build
-    ports:
-      - "8080:8080"
-      - "40000:40000" # debug port
-
-volumes:
-  go-build-cache:
-    name: go-build-cache
+  dummy:
+    image: alpine
+    command: ["sh", "-c", "while true; do sleep 30; done;"]
+    networks:
+      - default
 
 networks:
   default:

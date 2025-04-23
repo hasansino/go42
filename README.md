@@ -24,6 +24,7 @@ Golang application template.
 + https://github.com/sony/gobreaker
 + https://github.com/FiloSottile/mkcert 
 + grafana dashboard
++ echo have 4 loggers, research common sense
 
 ---
 
