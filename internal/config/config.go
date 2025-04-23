@@ -40,13 +40,13 @@ type Logger struct {
 
 func (sl *Logger) Level() slog.Level {
 	switch strings.ToLower(sl.LogLevel) {
-	case "debug":
+	case slog.LevelDebug.String():
 		return slog.LevelDebug
-	case "info":
+	case slog.LevelInfo.String():
 		return slog.LevelInfo
-	case "warn":
+	case slog.LevelWarn.String():
 		return slog.LevelWarn
-	case "error":
+	case slog.LevelError.String():
 		return slog.LevelError
 	default:
 		return slog.LevelInfo

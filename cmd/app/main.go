@@ -251,7 +251,8 @@ func initMetrics(cfg *config.Config) http.Handler {
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 	prometheus.DefaultRegisterer = reg
-	return promhttp.HandlerFor(reg,
+	return promhttp.HandlerFor(
+		reg,
 		promhttp.HandlerOpts{
 			Registry: reg,
 			ErrorLog: log.Default(),

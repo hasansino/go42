@@ -27,7 +27,7 @@ ENV CGO_ENABLED=0
 # Specifically, line numbers, paths and some panic information will be missing. Systems, like Sentry,
 # will not be able to provide detailed insights because of that.
 #
-# buildDate and buildCommit are variables accessable in main.go
+# xBuild... are variables accessable in main.go
 #
 RUN go build -trimpath \
 -ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
