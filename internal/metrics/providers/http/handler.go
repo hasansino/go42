@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Handler provider for fiber framework
+// Handler provider for echo framework
 type Handler struct {
 	handler http.Handler
 }
@@ -16,7 +16,7 @@ func New(h http.Handler) *Handler {
 	return &Handler{handler: h}
 }
 
-// Register endpoints in fiber framework
+// Register endpoints in echo framework
 func (h *Handler) Register(e *echo.Group) {
 	e.GET("/metrics", echo.WrapHandler(h.handler))
 }

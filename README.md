@@ -19,12 +19,10 @@ Golang application template.
   * kubernetes
   * cloud environment
   * revert deployment
-+ deprecate "ghcr.io/hasansino/golang:1.24.2"
 + https://github.com/google/perfetto
 + https://github.com/sony/gobreaker
 + https://github.com/FiloSottile/mkcert 
 + grafana dashboard
-+ echo have 4 loggers, research common sense
 
 ---
 

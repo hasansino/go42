@@ -25,6 +25,8 @@ import (
 
 	"github.com/hasansino/goapp/internal/api"
 	"github.com/hasansino/goapp/internal/config"
+	"github.com/hasansino/goapp/internal/database/pgsql"
+	"github.com/hasansino/goapp/internal/database/pgsql/migrate"
 	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
 
@@ -63,8 +65,31 @@ func main() {
 		api.WithReadTimeout(cfg.Server.ReadTimeout),
 		api.WithWriteTimeout(cfg.Server.WriteTimeout),
 	)
-
 	httpServer.Register(metricsprovider.New(metricsHandler))
+
+	// run database migrations
+	slog.Info("Running database migrations...")
+	err = migrate.Migrate(
+		cfg.Database.DSN(),
+		cfg.Database.SchemaPath,
+	)
+	if err != nil {
+		log.Fatalf("Failed to execute migrations: %v\n", err)
+	}
+
+	// connect to database
+	slog.Info("Connecting to PostgreSQL...")
+	_, pgsqlConnErr := pgsql.NewWrapper(
+		cfg.Database.DSN(),
+		pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
+		pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
+		pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),
+		pgsql.WithMaxIdleConns(cfg.Database.MaxIdleConns),
+	)
+	if pgsqlConnErr != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
+	}
+	slog.Info("Connected to PostgreSQL")
 
 	// ---
 

@@ -12,6 +12,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+type PanicError struct {
+	BaseErr error
+	Stack   []byte
+}
+
+func (e *PanicError) Error() string {
+	return e.BaseErr.Error()
+}
+
 type Server struct {
 	e    *echo.Echo
 	root *echo.Group
@@ -43,50 +52,57 @@ func New(opts ...Option) *Server {
 		slog.LevelError,
 	).Writer())
 
-	// any (non-panic) errors coming from router eventually land here
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		code := http.StatusInternalServerError
-		message := "Internal Server Error"
+	// panics are handled and passed to the HTTPErrorHandler
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+			return &PanicError{BaseErr: err, Stack: stack}
+		},
+	}))
 
-		var echoErr *echo.HTTPError
-		if errors.As(err, &echoErr) {
-			message = echoErr.Message.(string)
-			code = echoErr.Code
+	// all panics and errors are handled here
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		var (
+			httpCode    = http.StatusInternalServerError
+			httpMessage = "Internal Server Error"
+		)
+		var (
+			logMessage = "api error"
+			panicStack []byte
+		)
+
+		if panicErr := new(PanicError); errors.As(err, &panicErr) {
+			logMessage = "api panic"
+			panicStack = panicErr.Stack
+		} else if echoErr := new(echo.HTTPError); errors.As(err, &echoErr) {
+			httpMessage = echoErr.Message.(string)
+			httpCode = echoErr.Code
 		}
 
-		if code >= http.StatusInternalServerError {
-			slog.Error("api error",
-				slog.Any("error", err),
-				slog.String("message", message),
-				slog.Int("code", code),
+		// not all 5xx are unexpected
+		if httpCode >= http.StatusInternalServerError {
+			slogAttrs := []interface{}{
+				slog.String("error", err.Error()),
+				slog.String("httpMessage", httpMessage),
+				slog.Int("httpCode", httpCode),
 				slog.String("path", c.Path()),
 				slog.String("method", c.Request().Method),
 				slog.String("who", "echo.HTTPErrorHandler"),
-			)
+			}
+			if len(panicStack) > 0 {
+				slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
+			}
+			slog.Error(logMessage, slogAttrs...)
 		}
 
+		// during normal operation, for 4xx errors, response will be already written
 		if c.Response().Committed {
 			return
 		}
 
-		if err := SendJSONError(c, code, message); err != nil {
+		if err := SendJSONError(c, httpCode, httpMessage); err != nil {
 			slog.Error("failed to send json error response", slog.Any("error", err))
 		}
 	}
-
-	// panics are handled here, and NOT passed to the HTTPErrorHandler
-	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
-			slog.Error("api panic",
-				slog.Any("error", err),
-				slog.String("stack", string(stack)),
-				slog.String("path", c.Path()),
-				slog.String("method", c.Request().Method),
-				slog.String("who", "echo.Recover"),
-			)
-			return nil
-		},
-	}))
 
 	// Normal operation logging, http 100-499
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -103,9 +119,9 @@ func New(opts ...Option) *Server {
 				)
 			} else {
 				slog.Error("request error",
-					slog.Any("error", v.Error),
 					slog.String("uri", v.URI),
 					slog.Int("status", v.Status),
+					slog.Any("error", v.Error),
 					slog.String("who", "echo.RequestLogger"),
 				)
 			}

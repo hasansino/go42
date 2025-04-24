@@ -1,11 +1,14 @@
 ---
 
 services:
-  dummy:
-    image: alpine
-    command: ["sh", "-c", "while true; do sleep 30; done;"]
-    networks:
-      - default
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: goapp
+    ports:
+      - "5432:5432"
 
 networks:
   default:

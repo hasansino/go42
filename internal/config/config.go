@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type Config struct {
 	Metrics     Metrics
 	Pprof       Pprof
 	Server      Server
+	Database    Database
 }
 
 type Limits struct {
@@ -78,6 +80,31 @@ type Server struct {
 	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+}
+
+type Database struct {
+	Host            string        `env:"DB_HOST"               default:"localhost"`
+	Port            int           `env:"DB_PORT"               default:"5432"`
+	User            string        `env:"DB_USER"               default:"user"`
+	Password        string        `env:"DB_PASSWORD"           default:"qwerty"`
+	Name            string        `env:"DB_NAME"               default:"goapp"`
+	Timeout         time.Duration `env:"DB_TIMEOUT"            default:"5s"`
+	SchemaPath      string        `env:"DB_MIGRATE_PATH"       default:"/migrate/pgsql"`
+	ConnMaxIdleTime time.Duration `env:"DB_CONN_MAX_IDLE_TIME" default:"10m"`
+	ConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME"  default:"30m"`
+	MaxIdleConns    int           `env:"DB_MAX_IDLE_CONNS"     default:"10"`
+	MaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS"     default:"100"`
+}
+
+func (db Database) DSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s",
+		db.User,
+		db.Password,
+		db.Host,
+		db.Port,
+		db.Name,
+	)
 }
 
 // New parses environments and creates new instance of config.
