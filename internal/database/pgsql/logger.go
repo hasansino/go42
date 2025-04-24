@@ -21,15 +21,15 @@ func (s *SlogAdapter) LogMode(_ logger.LogLevel) logger.Interface {
 }
 
 func (s *SlogAdapter) Info(ctx context.Context, msg string, data ...interface{}) {
-	s.logger.InfoContext(ctx, msg, "data", data)
+	s.logger.InfoContext(ctx, msg, slog.Any("data", data))
 }
 
 func (s *SlogAdapter) Warn(ctx context.Context, msg string, data ...interface{}) {
-	s.logger.WarnContext(ctx, msg, "data", data)
+	s.logger.WarnContext(ctx, msg, slog.Any("data", data))
 }
 
 func (s *SlogAdapter) Error(ctx context.Context, msg string, data ...interface{}) {
-	s.logger.ErrorContext(ctx, msg, "data", data)
+	s.logger.ErrorContext(ctx, msg, slog.Any("data", data))
 }
 
 func (s *SlogAdapter) Trace(

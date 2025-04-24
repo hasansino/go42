@@ -40,7 +40,7 @@ func (h *Handler) fruitByID(ctx echo.Context) error {
 		return api.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	r, err := h.service.FruitByID(ctx.Request().Context(), uint(id))
+	r, err := h.service.FruitByID(ctx.Request().Context(), id)
 	if err != nil {
 		return h.processError(ctx, err)
 	}

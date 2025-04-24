@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"log/slog"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func Migrate(uri string, schemaPath string) error {
@@ -19,7 +20,7 @@ func Migrate(uri string, schemaPath string) error {
 	goose.SetLogger(
 		slog.NewLogLogger(
 			slog.Default().
-				With("service", "migrate").Handler(),
+				With(slog.String("service", "migrate")).Handler(),
 			slog.LevelInfo,
 		),
 	)

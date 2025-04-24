@@ -49,7 +49,6 @@ linters:
   settings:
     sloglint:
       attr-only: true
-      static-msg: true
       key-naming-case: snake
       args-on-sep-lines: true
 
