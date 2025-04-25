@@ -282,12 +282,12 @@ func initMetrics(cfg *config.Config) http.Handler {
 
 	hostname, _ := os.Hostname()
 
-	metrics.RegisterGlobalLabels(map[string]string{
+	metrics.RegisterGlobalLabels(map[string]interface{}{
+		"hostname":     hostname,
 		"service":      cfg.ServiceName,
 		"build_date":   xBuildDate,
 		"build_tag":    xBuildTag,
 		"build_commit": xBuildCommit,
-		"hostname":     hostname,
 	})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -41,3 +41,4 @@ Golang application template.
 + sketch REAMDME.md and choose doc generator
 + datadog test
 + validate config?
++ optimise or replace metrics.constructMetric()

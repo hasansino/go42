@@ -2,21 +2,29 @@ package metrics
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+	"sync"
 
 	vmetrics "github.com/VictoriaMetrics/metrics"
 )
 
-var globalLabels map[string]string
+var (
+	mutex        sync.RWMutex
+	globalLabels map[string]interface{}
+)
 
 func init() {
-	globalLabels = make(map[string]string)
+	globalLabels = make(map[string]interface{})
 }
 
-func RegisterGlobalLabels(lables map[string]string) {
-	if len(lables) == 0 {
+func RegisterGlobalLabels(labels map[string]interface{}) {
+	if len(labels) == 0 {
 		return
 	}
-	for k, v := range lables {
+	mutex.Lock()
+	defer mutex.Unlock()
+	for k, v := range labels {
 		globalLabels[k] = v
 	}
 }
@@ -30,13 +38,70 @@ func Gauge(name string, labels map[string]interface{}) *vmetrics.Gauge {
 }
 
 func constructMetric(name string, labels map[string]interface{}) string {
-	metric := name
-	if len(labels) > 0 {
-		metric += "{"
-		for k, v := range labels {
-			metric += fmt.Sprintf("%s=\"%s\",", k, v)
-		}
-		metric = metric[:len(metric)-1] + "}"
+	// mutex actually may not be needed at all if we don't modify globalLabels
+	// aside from single call in main.go, but keep it for safety anyway
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	if len(labels) == 0 && len(globalLabels) == 0 {
+		return name
 	}
-	return metric
+
+	totalLabels := len(labels)
+	globalLabelsCount := len(globalLabels)
+
+	if globalLabelsCount > 0 {
+		for k := range globalLabels {
+			if _, exists := labels[k]; !exists {
+				totalLabels++
+			}
+		}
+	}
+
+	if totalLabels == 0 {
+		return name
+	}
+
+	keys := make([]string, 0, totalLabels)
+
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	if globalLabelsCount > 0 {
+		for k := range globalLabels {
+			if _, exists := labels[k]; !exists {
+				keys = append(keys, k)
+			}
+		}
+	}
+
+	sort.Strings(keys)
+
+	var builder strings.Builder
+	builder.WriteString(name)
+	builder.WriteByte('{')
+
+	for i, k := range keys {
+		if i > 0 {
+			builder.WriteByte(',')
+		}
+
+		builder.WriteString(k)
+		builder.WriteString(`="`)
+
+		var v interface{}
+		if val, exists := labels[k]; exists {
+			v = val
+		} else {
+			v = globalLabels[k]
+		}
+
+		// fmt.Sprintf may be slow, but it is trade off for convenience
+		builder.WriteString(fmt.Sprintf("%v", v))
+		builder.WriteByte('"')
+	}
+
+	builder.WriteByte('}')
+
+	return builder.String()
 }
