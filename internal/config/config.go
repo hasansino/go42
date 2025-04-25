@@ -80,12 +80,13 @@ type Server struct {
 }
 
 type Database struct {
-	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"     v:"oneof=sqlite pgsql"`
+	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"         v:"oneof=sqlite pgsql"`
 	Host            string        `env:"DATABASE_HOST"               default:"localhost"`
 	Port            int           `env:"DATABASE_PORT"               default:"5432"`
 	User            string        `env:"DATABASE_USER"               default:"user"`
 	Password        string        `env:"DATABASE_PASSWORD"           default:"qwerty"`
 	Name            string        `env:"DATABASE_NAME"               default:"goapp"`
+	SqliteFile      string        `env:"DATABASE_SQLITE_FILE"        default:"/tmp/goapp.db"`
 	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate"`
 	ConnMaxIdleTime time.Duration `env:"DATABASE_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_CONN_MAX_LIFETIME"  default:"30m"`

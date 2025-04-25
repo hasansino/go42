@@ -27,10 +27,13 @@ import (
 	"github.com/hasansino/goapp/internal/api"
 	"github.com/hasansino/goapp/internal/config"
 	"github.com/hasansino/goapp/internal/database/pgsql"
-	"github.com/hasansino/goapp/internal/database/pgsql/migrate"
+	pgsqlMigrate "github.com/hasansino/goapp/internal/database/pgsql/migrate"
+	"github.com/hasansino/goapp/internal/database/sqlite"
+	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
 	"github.com/hasansino/goapp/internal/example"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
 	examplePgsqlRepository "github.com/hasansino/goapp/internal/example/repository/pgsql"
+	exampleSqliteRepository "github.com/hasansino/goapp/internal/example/repository/sqlite"
 	"github.com/hasansino/goapp/internal/metrics"
 	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
@@ -75,35 +78,72 @@ func main() {
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
-	// run database migrations
-	slog.Info("Running database migrations...")
-	err = migrate.Migrate(
-		cfg.Database.PgsqlDSN(),
-		cfg.Database.FullMigratePath(),
+	// declare required repositories
+	var (
+		exampleRepository example.Repository
 	)
-	if err != nil {
-		log.Fatalf("Failed to execute migrations: %v\n", err)
-	}
 
-	// connect to database
-	slog.Info("Connecting to PostgreSQL...")
-	pgsqlConn, pgsqlConnErr := pgsql.NewWrapper(
-		cfg.Database.PgsqlDSN(),
-		pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
-		pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
-		pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),
-		pgsql.WithMaxIdleConns(cfg.Database.MaxIdleConns),
-		pgsql.WithQueryTimeout(cfg.Database.QueryTimeout),
-	)
-	if pgsqlConnErr != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
-	}
-	slog.Info("Connected to PostgreSQL")
+	switch cfg.Database.Engine {
+	case "sqlite":
+		// run database migrations
+		slog.Info("Running database migrations...")
+		err = sqliteMigrate.Migrate(
+			cfg.Database.SqliteFile,
+			cfg.Database.FullMigratePath(),
+		)
+		if err != nil {
+			log.Fatalf("Failed to execute migrations: %v\n", err)
+		}
 
-	// register database metrics
-	prometheus.DefaultRegisterer.MustRegister(
-		collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
-	)
+		// connect to database
+		slog.Info("Connecting to sqlite...")
+		sqliteConn, sqliteConnErr := sqlite.NewWrapper(cfg.Database.SqliteFile)
+		if sqliteConnErr != nil {
+			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
+		}
+		slog.Info("Connected to sqlite")
+
+		// register database metrics
+		prometheus.DefaultRegisterer.MustRegister(
+			collectors.NewDBStatsCollector(sqliteConn.SqlDB(), "gorm"),
+		)
+
+		// initialize repositories
+		exampleRepository = exampleSqliteRepository.New(sqliteConn.GormDB())
+	case "pgsql":
+		// run database migrations
+		slog.Info("Running database migrations...")
+		err = pgsqlMigrate.Migrate(
+			cfg.Database.PgsqlDSN(),
+			cfg.Database.FullMigratePath(),
+		)
+		if err != nil {
+			log.Fatalf("Failed to execute migrations: %v\n", err)
+		}
+
+		// connect to database
+		slog.Info("Connecting to PostgreSQL...")
+		pgsqlConn, pgsqlConnErr := pgsql.NewWrapper(
+			cfg.Database.PgsqlDSN(),
+			pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
+			pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
+			pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),
+			pgsql.WithMaxIdleConns(cfg.Database.MaxIdleConns),
+			pgsql.WithQueryTimeout(cfg.Database.QueryTimeout),
+		)
+		if pgsqlConnErr != nil {
+			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
+		}
+		slog.Info("Connected to PostgreSQL")
+
+		// register database metrics
+		prometheus.DefaultRegisterer.MustRegister(
+			collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
+		)
+
+		// initialize repositories
+		exampleRepository = examplePgsqlRepository.New(pgsqlConn.GormDB())
+	}
 
 	// ---
 
@@ -111,7 +151,6 @@ func main() {
 
 	{
 		// Example domain
-		exampleRepository := examplePgsqlRepository.New(pgsqlConn.GormDB())
 		exampleService := example.NewService(exampleRepository)
 		exampleHandler := exampleHttpProvider.New(exampleService)
 		httpServer.RegisterV1(exampleHandler)

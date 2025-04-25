@@ -5,7 +5,7 @@ create table example_fruits
     created_at datetime default (datetime('now')) not null,
     updated_at datetime default (datetime('now')) not null,
     deleted_at datetime default null,
-    name       varchar(255) not null
+    name       varchar(255) not null unique
 );
 
 -- +goose Down
