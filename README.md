@@ -37,3 +37,7 @@ Golang application template.
     * beanstalkd
 + grpc server / client
 + queue processing (kafka / rabbitmq / nats / nsq)
++ https://github.com/valyala/fastjson
++ sketch REAMDME.md and choose doc generator
++ datadog test
++ validate config?

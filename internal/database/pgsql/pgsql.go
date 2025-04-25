@@ -1,27 +1,33 @@
 package pgsql
 
 import (
+	"database/sql"
 	"log/slog"
 
+	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type Wrapper struct {
-	*gorm.DB
+	gorm  *gorm.DB
+	sqlDB *sql.DB
 }
 
 func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
 	db, err := gorm.Open(
 		postgres.New(
-			postgres.Config{
-				DSN:                  dsn,
-				PreferSimpleProtocol: true,
-			},
+			postgres.Config{DSN: dsn},
 		),
 		&gorm.Config{
 			PrepareStmt: true,
-			Logger:      NewSlogAdapter(slog.Default()),
+			Logger: slogGorm.New(
+				slogGorm.WithHandler(slog.Default().Handler()),
+				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelError),
+				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelInfo),
+				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelDebug),
+				slogGorm.WithContextValue("system", "gorm"),
+			),
 		})
 	if err != nil {
 		return nil, err
@@ -36,13 +42,13 @@ func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
 		opt(sqlDB)
 	}
 
-	return &Wrapper{db}, nil
+	return &Wrapper{db, sqlDB}, nil
 }
 
 func (w *Wrapper) Close() error {
-	sqlDB, err := w.DB.DB()
-	if err != nil {
-		return err
-	}
-	return sqlDB.Close()
+	return w.sqlDB.Close()
+}
+
+func (w *Wrapper) DB() *sql.DB {
+	return w.sqlDB
 }

@@ -21,7 +21,7 @@ prep-local-env:
 	source .config.env 2>/dev/null
 	export SERVER_STATIC_ROOT=$(shell pwd)/static
 	export SERVER_SWAGGER_ROOT=$(shell pwd)/doc
-    export DB_MIGRATE_PATH=$(shell pwd)/migrate/pgsql
+    export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate/pgsql
 
 ## debug-kill | kill delve process
 # Not invoked in CI/CD pipeline.

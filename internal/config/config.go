@@ -10,11 +10,6 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-const (
-	TagNameEnvVarName   = "env"
-	TagNameDefaultValue = "default"
-)
-
 type Config struct {
 	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
 	Environment string `env:"ENVIRONMENT"  default:"dev"`
@@ -82,14 +77,19 @@ type Server struct {
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
 
+const (
+	DBDriverSqlite = "sqlite"
+	DBDriverPgsql  = "pgsql"
+)
+
 type Database struct {
-	Engine          string        `env:"DATABASE_ENGINE"             default:"sqlite"`
+	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"`
 	Host            string        `env:"DATABASE_HOST"               default:"localhost"`
 	Port            int           `env:"DATABASE_PORT"               default:"5432"`
 	User            string        `env:"DATABASE_USER"               default:"user"`
 	Password        string        `env:"DATABASE_PASSWORD"           default:"qwerty"`
 	Name            string        `env:"DATABASE_NAME"               default:"goapp"`
-	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate/sqlite"`
+	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate/pgsql"`
 	ConnMaxIdleTime time.Duration `env:"DATABASE_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_CONN_MAX_LIFETIME"  default:"30m"`
 	MaxIdleConns    int           `env:"DATABASE_MAX_IDLE_CONNS"     default:"10"`
@@ -108,7 +108,11 @@ func (db Database) PgsqlDSN() string {
 	)
 }
 
-// New parses environments and creates new instance of config.
+const (
+	TagNameEnvVarName   = "env"
+	TagNameDefaultValue = "default"
+)
+
 func New() (*Config, error) {
 	cfg := new(Config)
 	err := env.ParseWithOptions(cfg, env.Options{

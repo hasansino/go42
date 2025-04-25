@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/KimMachineGun/automemlimit/memlimit"
+	vmetrics "github.com/VictoriaMetrics/metrics"
 	"github.com/getsentry/sentry-go"
 	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,6 +28,7 @@ import (
 	"github.com/hasansino/goapp/internal/config"
 	"github.com/hasansino/goapp/internal/database/pgsql"
 	"github.com/hasansino/goapp/internal/database/pgsql/migrate"
+	"github.com/hasansino/goapp/internal/metrics"
 	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
 
@@ -79,7 +81,7 @@ func main() {
 
 	// connect to database
 	slog.Info("Connecting to PostgreSQL...")
-	_, pgsqlConnErr := pgsql.NewWrapper(
+	pgsqlConn, pgsqlConnErr := pgsql.NewWrapper(
 		cfg.Database.PgsqlDSN(),
 		pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
 		pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
@@ -90,6 +92,11 @@ func main() {
 		log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
 	}
 	slog.Info("Connected to PostgreSQL")
+
+	// register database metrics
+	prometheus.DefaultRegisterer.MustRegister(
+		collectors.NewDBStatsCollector(pgsqlConn.DB(), "gorm"),
+	)
 
 	// ---
 
@@ -138,10 +145,7 @@ func initLogging(cfg *config.Config) {
 		log.Fatalf("unsupported logging format: %s", cfg.Logger.LogFormat)
 	}
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Fatalf("failed to retrieve hostname: %s", err)
-	}
+	hostname, _ := os.Hostname()
 
 	logger := slog.New(slogHandler)
 	enrichedLogger := logger.With(
@@ -194,12 +198,9 @@ func initSentry(cfg *config.Config) {
 		return
 	}
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		log.Fatalf("failed to retrieve hostname: %s", err)
-	}
+	hostname, _ := os.Hostname()
 
-	err = sentry.Init(sentry.ClientOptions{
+	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              cfg.Sentry.DSN,
 		ServerName:       hostname,
 		Environment:      cfg.Environment,
@@ -275,17 +276,32 @@ func initMetrics(cfg *config.Config) http.Handler {
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(
 		collectors.NewGoCollector(),
-		collectors.NewBuildInfoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 	prometheus.DefaultRegisterer = reg
-	return promhttp.HandlerFor(
-		reg,
-		promhttp.HandlerOpts{
-			Registry: reg,
-			ErrorLog: log.Default(),
-			Timeout:  cfg.Metrics.Timeout,
-		})
+
+	hostname, _ := os.Hostname()
+
+	metrics.RegisterGlobalLabels(map[string]string{
+		"service":      cfg.ServiceName,
+		"build_date":   xBuildDate,
+		"build_tag":    xBuildTag,
+		"build_commit": xBuildCommit,
+		"hostname":     hostname,
+	})
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// write metrics from `github.com/prometheus/client_golang` collectors
+		promhttp.HandlerFor(
+			reg,
+			promhttp.HandlerOpts{
+				Registry: reg,
+				ErrorLog: log.Default(),
+				Timeout:  cfg.Metrics.Timeout,
+			}).ServeHTTP(w, r)
+		// append metrics from `github.com/VictoriaMetrics/metrics`
+		vmetrics.WritePrometheus(w, false)
+	})
 }
 
 // shutdown implements all graceful shutdown logic.

@@ -3,14 +3,12 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/hasansino/goapp/internal/metrics"
 )
@@ -108,7 +106,7 @@ func New(opts ...Option) *Server {
 		}
 	}
 
-	// Normal operation logging, http 100-499
+	// normal operation logging, http 100-499
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogError:  true,
 		LogStatus: true,
@@ -129,11 +127,13 @@ func New(opts ...Option) *Server {
 		},
 	}))
 
+	// metrics
 	e.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			metrics.RpsCounter.With(prometheus.Labels{
-				"status": fmt.Sprintf("%d", c.Response().Status),
-			}).Inc()
+			metrics.Counter("application_requests_total",
+				map[string]interface{}{
+					"method": c.Request().Method,
+				}).Inc()
 			return handlerFunc(c)
 		}
 	})
