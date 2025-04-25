@@ -3,6 +3,7 @@ package pgsql
 import (
 	"database/sql"
 	"log/slog"
+	"time"
 
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
@@ -10,12 +11,13 @@ import (
 )
 
 type Wrapper struct {
-	gorm  *gorm.DB
-	sqlDB *sql.DB
+	gorm    *gorm.DB
+	sqlDB   *sql.DB
+	timeout time.Duration
 }
 
 func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
-	db, err := gorm.Open(
+	gormDB, err := gorm.Open(
 		postgres.New(
 			postgres.Config{DSN: dsn},
 		),
@@ -33,16 +35,20 @@ func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
 		return nil, err
 	}
 
-	sqlDB, err := db.DB()
+	sqlDB, err := gormDB.DB()
 	if err != nil {
 		return nil, err
 	}
 
+	wrapper := &Wrapper{}
 	for _, opt := range opts {
-		opt(sqlDB)
+		opt(wrapper, gormDB, sqlDB)
 	}
 
-	return &Wrapper{db, sqlDB}, nil
+	wrapper.gorm = gormDB
+	wrapper.sqlDB = sqlDB
+
+	return wrapper, nil
 }
 
 func (w *Wrapper) Close() error {

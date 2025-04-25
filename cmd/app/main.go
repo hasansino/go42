@@ -90,6 +90,7 @@ func main() {
 		pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
 		pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),
 		pgsql.WithMaxIdleConns(cfg.Database.MaxIdleConns),
+		pgsql.WithQueryTimeout(cfg.Database.QueryTimeout),
 	)
 	if pgsqlConnErr != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)

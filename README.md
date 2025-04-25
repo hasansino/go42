@@ -40,4 +40,3 @@ Golang application template.
 + https://github.com/valyala/fastjson
 + sketch REAMDME.md and choose doc generator
 + research datadog
-+ rename doc -> swagger, reserve doc for project documentation
