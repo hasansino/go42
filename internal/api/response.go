@@ -20,24 +20,13 @@ func SendJSONError(ctx echo.Context, code int, msg string) error {
 	return ctx.JSON(code, Error{code, msg, nil})
 }
 
-type ValidationError struct {
-	Message string `json:"message"`
-	Code    string `json:"code,omitempty"`
-	Field   string `json:"field,omitempty"`
-}
+const DefaultValidationErrMessage = "validation error"
 
-const (
-	DefaultValidationErrMessage = "validation error"
-	DefaultErrorDetailMessage   = "invalid value"
-	DefaultErrorDetailCode      = "INVALID_VALUE"
-)
-
-func SendJSONValidationError(ctx echo.Context, vErrs ...ValidationError) error {
-	message := DefaultValidationErrMessage
+func SendJSONValidationError(ctx echo.Context, vErrs ...interface{}) error {
 	return ctx.JSON(http.StatusBadRequest,
 		Error{
 			Code:    http.StatusBadRequest,
-			Message: message,
+			Message: DefaultValidationErrMessage,
 			Details: vErrs,
 		})
 }

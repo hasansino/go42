@@ -39,6 +39,5 @@ Golang application template.
 + queue processing (kafka / rabbitmq / nats / nsq)
 + https://github.com/valyala/fastjson
 + sketch REAMDME.md and choose doc generator
-+ datadog test
-+ validate config?
-+ optimise or replace metrics.constructMetric()
++ research datadog
++ rename doc -> swagger, reserve doc for project documentation

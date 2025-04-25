@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
+
+	"github.com/hasansino/goapp/internal/utils"
 )
 
 type Config struct {
 	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
-	Environment string `env:"ENVIRONMENT"  default:"dev"`
+	Environment string `env:"ENVIRONMENT"  default:""`
 	Limits      Limits
 	Logger      Logger
 	Sentry      Sentry
@@ -26,13 +28,13 @@ type Limits struct {
 	AutoMaxProcsEnabled bool    `env:"AUTOMAXPROCS_ENABLED" default:"false"`
 	MinMaxProcs         int     `env:"MIN_MAXPROCS"         default:"1"`
 	AutoMemLimitEnabled bool    `env:"AUTOMEMLIMIT_ENABLED" default:"false"`
-	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"`
+	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"   v:"gte=0.2,lte=1.0"`
 }
 
 type Logger struct {
-	LogLevel  string `env:"LOG_LEVEL"  default:"info"`
-	LogOutput string `env:"LOG_OUTPUT" default:"stdout"`
-	LogFormat string `env:"LOG_FORMAT" default:"json"`
+	LogLevel  string `env:"LOG_LEVEL"  default:"info"   v:"oneof=debug info warn error"`
+	LogOutput string `env:"LOG_OUTPUT" default:"stdout" v:"oneof=stdout stderr file"`
+	LogFormat string `env:"LOG_FORMAT" default:"json"   v:"oneof=json text"`
 }
 
 func (sl *Logger) Level() slog.Level {
@@ -54,7 +56,7 @@ type Sentry struct {
 	DSN        string  `env:"SENTRY_DSN"         default:""`
 	Debug      bool    `env:"SENTRY_DEBUG"       default:"false"`
 	Stacktrace bool    `env:"SENTRY_STACKTRACE"  default:"false"`
-	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"`
+	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"   v:"gte=0.0,lte=1.0"`
 }
 
 type Metrics struct {
@@ -77,24 +79,27 @@ type Server struct {
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
 
-const (
-	DBDriverSqlite = "sqlite"
-	DBDriverPgsql  = "pgsql"
-)
-
 type Database struct {
-	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"`
+	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"     v:"oneof=sqlite pgsql"`
 	Host            string        `env:"DATABASE_HOST"               default:"localhost"`
 	Port            int           `env:"DATABASE_PORT"               default:"5432"`
 	User            string        `env:"DATABASE_USER"               default:"user"`
 	Password        string        `env:"DATABASE_PASSWORD"           default:"qwerty"`
 	Name            string        `env:"DATABASE_NAME"               default:"goapp"`
-	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate/pgsql"`
+	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate"`
 	ConnMaxIdleTime time.Duration `env:"DATABASE_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_CONN_MAX_LIFETIME"  default:"30m"`
 	MaxIdleConns    int           `env:"DATABASE_MAX_IDLE_CONNS"     default:"10"`
 	MaxOpenConns    int           `env:"DATABASE_MAX_OPEN_CONNS"     default:"100"`
 	QueryTimeout    time.Duration `env:"DATABASE_QUERY_TIMEOUT"      default:"10s"`
+}
+
+func (db Database) FullMigratePath() string {
+	return fmt.Sprintf(
+		"%s/%s",
+		strings.TrimRight(db.MigratePath, "/"),
+		db.Engine,
+	)
 }
 
 func (db Database) PgsqlDSN() string {
@@ -122,6 +127,16 @@ func New() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	vErrs := utils.ValidateStruct(cfg)
+	if len(vErrs) > 0 {
+		errs := make([]string, 0, len(vErrs))
+		for _, vErr := range vErrs {
+			errs = append(errs, fmt.Sprintf("(%s) - %s", vErr.Field, vErr.Message))
+		}
+		return nil, fmt.Errorf("validation errors: %s", strings.Join(errs, ", "))
+	}
+
 	return cfg, nil
 }
 

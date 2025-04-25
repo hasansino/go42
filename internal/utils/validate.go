@@ -1,4 +1,4 @@
-package api
+package utils
 
 import (
 	"reflect"
@@ -23,6 +23,17 @@ func init() {
 			ReplaceAll(jsonTag, ",omitempty", "")
 	})
 }
+
+type ValidationError struct {
+	Message string `json:"message"`
+	Code    string `json:"code,omitempty"`
+	Field   string `json:"field,omitempty"`
+}
+
+const (
+	DefaultErrorDetailMessage = "invalid value"
+	DefaultErrorDetailCode    = "INVALID_VALUE"
+)
 
 func ValidateStruct(s interface{}) []ValidationError {
 	var errs []ValidationError

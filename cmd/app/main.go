@@ -52,17 +52,20 @@ func init() {
 }
 
 func main() {
+	// configuration
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("failed to initialize config: %v\n", err)
 	}
 
+	// core systems
 	initLogging(cfg)
 	initLimits(cfg)
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
 	metricsHandler := initMetrics(cfg)
 
+	// http server
 	httpServer := api.New(
 		api.WithReadTimeout(cfg.Server.ReadTimeout),
 		api.WithWriteTimeout(cfg.Server.WriteTimeout),
@@ -73,7 +76,7 @@ func main() {
 	slog.Info("Running database migrations...")
 	err = migrate.Migrate(
 		cfg.Database.PgsqlDSN(),
-		cfg.Database.MigratePath,
+		cfg.Database.FullMigratePath(),
 	)
 	if err != nil {
 		log.Fatalf("Failed to execute migrations: %v\n", err)
@@ -136,6 +139,11 @@ func initLogging(cfg *config.Config) {
 
 	var slogHandler slog.Handler
 	switch cfg.Logger.LogFormat {
+	case "text":
+		loggerOpts := &slog.HandlerOptions{
+			Level: cfg.Logger.Level(),
+		}
+		slogHandler = slog.NewTextHandler(slogOutput, loggerOpts)
 	case "json":
 		loggerOpts := &slog.HandlerOptions{
 			Level: cfg.Logger.Level(),

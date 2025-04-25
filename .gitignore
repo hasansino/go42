@@ -5,3 +5,4 @@
 .config.env
 
 __debug*
+dep-graph.svg
