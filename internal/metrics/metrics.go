@@ -37,6 +37,11 @@ func Gauge(name string, labels map[string]interface{}) *vmetrics.Gauge {
 	return vmetrics.GetOrCreateGauge(constructMetric(name, labels), nil)
 }
 
+// constructMetric takes metrics name and labels, and returns a string representation of the metric.
+// It also adds global labels to the metric if they are set.
+// It is a little bit more complicated than just appending labels to the name, because
+// we need to sort the labels to make sure that the same labels in different order
+// will not create different metrics.
 func constructMetric(name string, labels map[string]interface{}) string {
 	// mutex actually may not be needed at all if we don't modify globalLabels
 	// aside from single call in main.go, but keep it for safety anyway
