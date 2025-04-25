@@ -28,6 +28,9 @@ import (
 	"github.com/hasansino/goapp/internal/config"
 	"github.com/hasansino/goapp/internal/database/pgsql"
 	"github.com/hasansino/goapp/internal/database/pgsql/migrate"
+	"github.com/hasansino/goapp/internal/example"
+	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
+	examplePgsqlRepository "github.com/hasansino/goapp/internal/example/repository/pgsql"
 	"github.com/hasansino/goapp/internal/metrics"
 	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
@@ -99,14 +102,23 @@ func main() {
 
 	// register database metrics
 	prometheus.DefaultRegisterer.MustRegister(
-		collectors.NewDBStatsCollector(pgsqlConn.DB(), "gorm"),
+		collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
 	)
 
 	// ---
 
-	// Business logic
+	// service layer
+
+	{
+		// Example domain
+		exampleRepository := examplePgsqlRepository.New(pgsqlConn.GormDB())
+		exampleService := example.NewService(exampleRepository)
+		exampleHandler := exampleHttpProvider.New(exampleService)
+		httpServer.RegisterV1(exampleHandler)
+	}
 
 	// ---
+
 	go func() {
 		slog.Info("starting http server...", slog.String("port", cfg.Server.Listen))
 		if err := httpServer.Start(cfg.Server.Listen); err != nil &&

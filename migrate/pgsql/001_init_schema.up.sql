@@ -10,6 +10,7 @@ create table example_fruits
     name       varchar(255)              not null
 );
 
+create unique index example_fruits_name_unique ON example_fruits (name);
 
 -- +goose Down
 drop table example_fruits;

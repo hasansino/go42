@@ -2,9 +2,11 @@ package pgsql
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -55,6 +57,22 @@ func (w *Wrapper) Close() error {
 	return w.sqlDB.Close()
 }
 
-func (w *Wrapper) DB() *sql.DB {
+func (w *Wrapper) GormDB() *gorm.DB {
+	return w.gorm
+}
+
+func (w *Wrapper) SqlDB() *sql.DB {
 	return w.sqlDB
+}
+
+func IsNotFoundError(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+func IsDuplicateKeyError(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
+	}
+	return false
 }

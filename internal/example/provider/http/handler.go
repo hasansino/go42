@@ -8,6 +8,8 @@ import (
 
 	"github.com/hasansino/goapp/internal/api"
 	"github.com/hasansino/goapp/internal/example"
+	"github.com/hasansino/goapp/internal/example/domain"
+	"github.com/hasansino/goapp/internal/utils"
 )
 
 // Handler provider for fiber framework
@@ -24,10 +26,19 @@ func New(s *example.Service) *Handler {
 func (h *Handler) Register(e *echo.Group) {
 	e.GET("/fruits", h.fruits)
 	e.GET("/fruits/:id", h.fruitByID)
+	e.POST("/fruits", h.createFruit)
 }
 
 func (h *Handler) fruits(ctx echo.Context) error {
-	r, err := h.service.Fruits(ctx.Request().Context())
+	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
+	if err != nil {
+		limit = domain.DefaultFetchLimit
+	}
+	offSet, err := strconv.Atoi(ctx.QueryParam("offset"))
+	if err != nil {
+		offSet = 0
+	}
+	r, err := h.service.Fruits(ctx.Request().Context(), limit, offSet)
 	if err != nil {
 		return h.processError(ctx, err)
 	}
@@ -44,5 +55,26 @@ func (h *Handler) fruitByID(ctx echo.Context) error {
 	if err != nil {
 		return h.processError(ctx, err)
 	}
+	return api.SendJSON(ctx, r)
+}
+
+func (h *Handler) createFruit(ctx echo.Context) error {
+	req := new(domain.CreateFruitRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return api.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := utils.ValidateStruct(req)
+	if vErrs != nil {
+		return api.SendJSONValidationError(ctx, vErrs)
+	}
+
+	r, err := h.service.Create(ctx.Request().Context(), req)
+	if err != nil {
+		return h.processError(ctx, err)
+	}
+
 	return api.SendJSON(ctx, r)
 }
