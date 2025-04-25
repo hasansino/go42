@@ -20,11 +20,6 @@ func SendJSONError(ctx echo.Context, code int, msg string) error {
 	return ctx.JSON(code, Error{code, msg, nil})
 }
 
-func SendUnauthorisedError(ctx echo.Context) error {
-	return SendJSONError(ctx, http.StatusUnauthorized,
-		http.StatusText(http.StatusUnauthorized))
-}
-
 type ValidationError struct {
 	Message string `json:"message"`
 	Code    string `json:"code,omitempty"`

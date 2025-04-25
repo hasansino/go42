@@ -7,11 +7,13 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const ValidateRulesTagName = "v"
+
 var validate *validator.Validate
 
 func init() {
 	validate = validator.New(validator.WithRequiredStructEnabled())
-	validate.SetTagName("v")
+	validate.SetTagName(ValidateRulesTagName)
 	validate.RegisterTagNameFunc(func(field reflect.StructField) string {
 		jsonTag := field.Tag.Get("json")
 		if len(jsonTag) == 0 || jsonTag == "-" {

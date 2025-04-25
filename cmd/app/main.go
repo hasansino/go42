@@ -70,8 +70,8 @@ func main() {
 	// run database migrations
 	slog.Info("Running database migrations...")
 	err = migrate.Migrate(
-		cfg.Database.DSN(),
-		cfg.Database.SchemaPath,
+		cfg.Database.PgsqlDSN(),
+		cfg.Database.MigratePath,
 	)
 	if err != nil {
 		log.Fatalf("Failed to execute migrations: %v\n", err)
@@ -80,7 +80,7 @@ func main() {
 	// connect to database
 	slog.Info("Connecting to PostgreSQL...")
 	_, pgsqlConnErr := pgsql.NewWrapper(
-		cfg.Database.DSN(),
+		cfg.Database.PgsqlDSN(),
 		pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
 		pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
 		pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),

@@ -23,27 +23,17 @@ Golang application template.
 + https://github.com/sony/gobreaker
 + https://github.com/FiloSottile/mkcert 
 + grafana dashboard
-
----
-
-+ [ ] config vault integration
-+ [ ] config etcd integration
-+ [ ] config consul integration
++ config external integrations
+  * vault
+  * etcd
 + https://github.com/thomaspoignant/go-feature-flag
-
----
-
-+ [ ] http
-+ [ ] grpc
-+ [ ] websocket
-+ [ ] redis + https://github.com/alicebob/miniredis
-+ [ ] memcached
-+ [ ] sqlite / mysql / postgres / clickhouse / mongo
-+ [ ] kafka / rabbitmq / nats / nsq
-
-+ [ ] fastjson /alike
-+ [ ] html templates /alike
-
-+ [ ] https://github.com/rivo/tview
-+ [ ] https://github.com/mum4k/termdash
-+ [ ] https://github.com/charmbracelet
++ cli example
+  * https://github.com/rivo/tview
+  * https://github.com/mum4k/termdash
+  *  https://github.com/charmbracelet
++ caching
+    * redis + https://github.com/alicebob/miniredis
+    * memcached
+    * beanstalkd
++ grpc server / client
++ queue processing (kafka / rabbitmq / nats / nsq)

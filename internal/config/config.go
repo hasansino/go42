@@ -83,20 +83,21 @@ type Server struct {
 }
 
 type Database struct {
-	Host            string        `env:"DB_HOST"               default:"localhost"`
-	Port            int           `env:"DB_PORT"               default:"5432"`
-	User            string        `env:"DB_USER"               default:"user"`
-	Password        string        `env:"DB_PASSWORD"           default:"qwerty"`
-	Name            string        `env:"DB_NAME"               default:"goapp"`
-	Timeout         time.Duration `env:"DB_TIMEOUT"            default:"5s"`
-	SchemaPath      string        `env:"DB_MIGRATE_PATH"       default:"/migrate/pgsql"`
-	ConnMaxIdleTime time.Duration `env:"DB_CONN_MAX_IDLE_TIME" default:"10m"`
-	ConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME"  default:"30m"`
-	MaxIdleConns    int           `env:"DB_MAX_IDLE_CONNS"     default:"10"`
-	MaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS"     default:"100"`
+	Engine          string        `env:"DATABASE_ENGINE"             default:"sqlite"`
+	Host            string        `env:"DATABASE_HOST"               default:"localhost"`
+	Port            int           `env:"DATABASE_PORT"               default:"5432"`
+	User            string        `env:"DATABASE_USER"               default:"user"`
+	Password        string        `env:"DATABASE_PASSWORD"           default:"qwerty"`
+	Name            string        `env:"DATABASE_NAME"               default:"goapp"`
+	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate/sqlite"`
+	ConnMaxIdleTime time.Duration `env:"DATABASE_CONN_MAX_IDLE_TIME" default:"10m"`
+	ConnMaxLifetime time.Duration `env:"DATABASE_CONN_MAX_LIFETIME"  default:"30m"`
+	MaxIdleConns    int           `env:"DATABASE_MAX_IDLE_CONNS"     default:"10"`
+	MaxOpenConns    int           `env:"DATABASE_MAX_OPEN_CONNS"     default:"100"`
+	QueryTimeout    time.Duration `env:"DATABASE_QUERY_TIMEOUT"      default:"10s"`
 }
 
-func (db Database) DSN() string {
+func (db Database) PgsqlDSN() string {
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User,
