@@ -283,12 +283,15 @@ func initMetrics(cfg *config.Config) http.Handler {
 	hostname, _ := os.Hostname()
 
 	metrics.RegisterGlobalLabels(map[string]interface{}{
-		"hostname":     hostname,
-		"service":      cfg.ServiceName,
+		"hostname": hostname,
+		"service":  cfg.ServiceName,
+	})
+
+	metrics.Gauge("application_build", map[string]interface{}{
 		"build_date":   xBuildDate,
 		"build_tag":    xBuildTag,
 		"build_commit": xBuildCommit,
-	})
+	}).Set(1)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// write metrics from `github.com/prometheus/client_golang` collectors
