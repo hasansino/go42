@@ -146,8 +146,9 @@ func (db Pgsql) DSN() string {
 }
 
 type Sqlite struct {
-	SqliteFile string `env:"DATABASE_SQLITE_PATH" default:"/tmp/goapp.db"`
-	Mode       string `env:"DATABASE_SQLITE_MODE" default:"rwc"           v:"oneof=rwc ro rwc memory"`
+	Mode string `env:"DATABASE_SQLITE_MODE" default:"memory"        v:"oneof=rwc ro rwc memory"`
+	// [Temporary](file::temp:) || [Location](file:/tmp/test.db)
+	SqliteFile string `env:"DATABASE_SQLITE_PATH" default:"file::memory:"`
 }
 
 const (

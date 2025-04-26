@@ -60,6 +60,8 @@ RUN addgroup -g 1000 appuser && \
 
 COPY --from=builder /tmp/build/app /usr/local/bin/
 RUN chown appuser:appuser /usr/local/bin/app
+COPY --from=builder /tmp/build/.env.example /usr/local/bin/
+RUN chown appuser:appuser /usr/local/bin/.env.example
 
 COPY --chown=appuser:appuser openapi/* /usr/share/www
 COPY --chown=appuser:appuser static/* /usr/share/www
