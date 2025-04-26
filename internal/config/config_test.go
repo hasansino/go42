@@ -1,9 +1,8 @@
 package config
 
 import (
-	"testing"
-
 	"log/slog"
+	"testing"
 )
 
 func TestLogger_Level(t *testing.T) {
