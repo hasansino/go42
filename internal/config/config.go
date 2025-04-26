@@ -111,7 +111,7 @@ type Server struct {
 }
 
 type Database struct {
-	Engine      string `env:"DATABASE_ENGINE"       default:"pgsql"    v:"oneof=sqlite pgsql"`
+	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql"`
 	MigratePath string `env:"DATABASE_MIGRATE_PATH" default:"/migrate"`
 	Pgsql       Pgsql
 	Sqlite      Sqlite
