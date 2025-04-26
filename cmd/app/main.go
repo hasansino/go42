@@ -18,6 +18,8 @@ import (
 	vmetrics "github.com/VictoriaMetrics/metrics"
 	"github.com/getsentry/sentry-go"
 	sentryslog "github.com/getsentry/sentry-go/slog"
+	"github.com/hasansino/libvault"
+	"github.com/hasansino/vault2cfg"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -66,6 +68,7 @@ func main() {
 
 	// core systems
 	initLogging(cfg)
+	initVault(cfg)
 	initLimits(cfg)
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
@@ -227,6 +230,36 @@ func initLogging(cfg *config.Config) {
 
 	// any log calls before this point will be non-structured
 	slog.Info("logging initialized", slog.String("log_level", cfg.Logger.Level().String()))
+}
+
+func initVault(cfg *config.Config) {
+	if !cfg.Vault.Enabled {
+		return
+	}
+
+	vaultClient, err := libvault.New(cfg.Vault.Host)
+	if err != nil {
+		log.Fatalf("failed to initialise vault: %v", err)
+	}
+
+	switch cfg.Vault.AuthType {
+	case "token":
+		err = vaultClient.TokenAuth(cfg.Vault.Token)
+		if err != nil {
+			log.Fatalf("failed to authenticate in vault: %v", err)
+		}
+	default:
+		log.Fatalf("unknown vault auth type: %s", cfg.Vault.AuthType)
+	}
+
+	slog.Info("connected to vault")
+
+	data, err := vaultClient.Retrieve(cfg.Vault.SecretPath)
+	if err != nil {
+		log.Fatalf("failed to retrieve vault data: %v", err)
+	}
+
+	vault2cfg.Bind(cfg, data)
 }
 
 func initLimits(cfg *config.Config) {

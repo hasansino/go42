@@ -23,6 +23,7 @@ type Config struct {
 	Pprof       Pprof
 	Server      Server
 	Database    Database
+	Vault       Vault
 }
 
 type Limits struct {
@@ -149,6 +150,14 @@ type Sqlite struct {
 	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
 	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
 	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
+}
+
+type Vault struct {
+	Enabled    bool   `env:"VAULT_ENABLED"     default:"true"`
+	Host       string `env:"VAULT_HOST"        default:"http://localhost:8200"`
+	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"                                   v:"oneof=token role k8"`
+	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
+	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
 }
 
 const (

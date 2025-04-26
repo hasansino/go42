@@ -23,7 +23,6 @@ Golang application template.
 + https://github.com/FiloSottile/mkcert 
 + grafana dashboard
 + config external integrations
-  * vault
   * etcd
 + https://github.com/thomaspoignant/go-feature-flag
 + cli example
