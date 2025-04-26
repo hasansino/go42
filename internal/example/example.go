@@ -9,7 +9,7 @@ import (
 	"github.com/hasansino/goapp/internal/example/models"
 )
 
-//go:generate mockgen -source $GOFILE -package mocks -destination mocks/accessors.go
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type Repository interface {
 	Begin(ctx context.Context) (context.Context, error)

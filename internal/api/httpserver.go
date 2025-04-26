@@ -13,7 +13,7 @@ import (
 	customMiddleware "github.com/hasansino/goapp/internal/api/middleware"
 )
 
-//go:generate mockgen -source $GOFILE -package mocks -destination mocks/accessors.go
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 // providerAccessor for all handler providers.
 type providerAccessor interface {
