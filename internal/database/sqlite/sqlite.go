@@ -6,10 +6,11 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/mattn/go-sqlite3"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	_ "modernc.org/sqlite"
 )
 
 type Wrapper struct {
@@ -19,7 +20,7 @@ type Wrapper struct {
 
 func NewWrapper(dbPath string, opts ...Option) (*Wrapper, error) {
 	gormDB, err := gorm.Open(
-		sqlite.Open(addOptions(dbPath, opts...)),
+		sqlite.Open(AddConnectionOptions(dbPath, opts...)),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger: slogGorm.New(
@@ -59,7 +60,7 @@ func (w *Wrapper) SqlDB() *sql.DB {
 	return w.sqlDB
 }
 
-func addOptions(dbPath string, opts ...Option) string {
+func AddConnectionOptions(dbPath string, opts ...Option) string {
 	if len(opts) == 0 {
 		return dbPath
 	}
@@ -79,9 +80,5 @@ func IsNotFoundError(err error) bool {
 }
 
 func IsDuplicateKeyError(err error) bool {
-	var sqErr sqlite3.Error
-	if errors.As(err, &sqErr) {
-		return sqErr.ExtendedCode == 2067
-	}
 	return false
 }

@@ -16,7 +16,7 @@ func main() {
 	e := cfg2env.New(
 		cfg2env.WithEnvironmentTagName(config.TagNameEnvVarName),
 		cfg2env.WithDefaultValueTagName(config.TagNameDefaultValue),
-		cfg2env.WithExportedFileName(".config.env.example"),
+		cfg2env.WithExportedFileName(".env.example"),
 		cfg2env.WithExtraEntry("COMPOSE_PROJECT_NAME", cfg.ServiceName),
 	)
 	err = e.ToFile(cfg)

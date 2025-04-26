@@ -5,10 +5,12 @@ import (
 	"log/slog"
 
 	"github.com/pressly/goose/v3"
+
+	"github.com/hasansino/goapp/internal/database/sqlite"
 )
 
 func Migrate(dbPath string, schemaPath string) error {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath))
 	if err != nil {
 		return err
 	}

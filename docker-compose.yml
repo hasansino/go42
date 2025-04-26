@@ -10,6 +10,16 @@ services:
     ports:
       - "5432:5432"
 
+  vault:
+    image: vault:1.13.3
+    command: server -dev
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=qwerty
+    ports:
+      - "8200:8200"
+
 networks:
   default:
     driver: bridge

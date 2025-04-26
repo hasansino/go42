@@ -12,7 +12,10 @@ RUN go mod download
 
 COPY . .
 
-# Disable CGO by default.
+# CGO disabled by default.
+# Any build that requires CGO will need to adjust build process:
+#   * pre-install dependancies for builder stage which are required for build
+#   * install runtime dependancies for packaging stage
 ENV CGO_ENABLED=0
 
 # Build.
@@ -46,9 +49,10 @@ FROM alpine:3.21
 #   * ca-certificates - required for https requests
 #   * tzdata - required for time zone operations
 #   * tini - proper signal handling for child processes
-# Also, may be needed:
-#   * libc6-compat, libgcc, libstdc++ - for cgo to work properly
-#   * curl - to be able to debug from inside running container
+#
+# Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.21
+# When updating image version, make sure to re-check package availability and versions
+# for that specific alpine version you are updating to.
 RUN apk add --no-cache ca-certificates=20241121-r1 tzdata=2025b-r0 tini=0.19.0-r3
 
 RUN addgroup -g 1000 appuser && \
