@@ -146,9 +146,9 @@ func (db Pgsql) DSN() string {
 }
 
 type Sqlite struct {
-	Mode string `env:"DATABASE_SQLITE_MODE" default:"memory"        v:"oneof=rwc ro rwc memory"`
-	// [Temporary](file::temp:) || [Location](file:/tmp/test.db)
-	SqliteFile string `env:"DATABASE_SQLITE_PATH" default:"file::memory:"`
+	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
+	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
+	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
 }
 
 const (
@@ -168,11 +168,7 @@ func New() (*Config, error) {
 
 	vErrs := utils.ValidateStruct(cfg)
 	if len(vErrs) > 0 {
-		errs := make([]string, 0, len(vErrs))
-		for _, vErr := range vErrs {
-			errs = append(errs, fmt.Sprintf("(%s) - %s", vErr.Field, vErr.Message))
-		}
-		return nil, fmt.Errorf("validation errors: %s", strings.Join(errs, ", "))
+		return nil, fmt.Errorf("validation errors: %s", vErrs.Strings())
 	}
 
 	return cfg, nil

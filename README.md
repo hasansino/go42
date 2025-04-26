@@ -13,7 +13,6 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + LLM code review for PRs
-+ semver for builds
 + deployment
   * helm chart + linter
   * kubernetes

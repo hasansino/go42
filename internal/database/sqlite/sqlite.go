@@ -6,11 +6,10 @@ import (
 	"log"
 	"log/slog"
 
+	"github.com/glebarez/sqlite"
 	slogGorm "github.com/orandin/slog-gorm"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	_ "modernc.org/sqlite"
+	sqlitelib "modernc.org/sqlite/lib"
 )
 
 type Wrapper struct {
@@ -44,6 +43,8 @@ func NewWrapper(dbPath string, opts ...Option) (*Wrapper, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sqlDB.SetMaxOpenConns(1)
 
 	return &Wrapper{gormDB: gormDB, sqlDB: sqlDB}, nil
 }
@@ -80,5 +81,9 @@ func IsNotFoundError(err error) bool {
 }
 
 func IsDuplicateKeyError(err error) bool {
+	sqliteErr, ok := err.(interface{ Code() int })
+	if ok {
+		return sqliteErr.Code() == sqlitelib.SQLITE_CONSTRAINT_UNIQUE
+	}
 	return false
 }

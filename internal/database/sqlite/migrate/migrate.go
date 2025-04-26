@@ -9,14 +9,16 @@ import (
 	"github.com/hasansino/goapp/internal/database/sqlite"
 )
 
-func Migrate(dbPath string, schemaPath string) error {
-	db, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath))
+func Migrate(dbPath string, schemaPath string, opts ...sqlite.Option) error {
+	sqlDB, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath, opts...))
 	if err != nil {
 		return err
 	}
+
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		return err
 	}
+
 	goose.SetLogger(
 		slog.NewLogLogger(
 			slog.Default().Handler().WithAttrs(
@@ -25,8 +27,12 @@ func Migrate(dbPath string, schemaPath string) error {
 			slog.LevelInfo,
 		),
 	)
-	if err := goose.Up(db, schemaPath); err != nil {
+
+	sqlDB.SetMaxOpenConns(1)
+
+	if err := goose.Up(sqlDB, schemaPath); err != nil {
 		return err
 	}
+
 	return nil
 }

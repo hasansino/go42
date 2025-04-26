@@ -13,6 +13,13 @@ import (
 	customMiddleware "github.com/hasansino/goapp/internal/api/middleware"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/accessors.go
+
+// providerAccessor for all handler providers.
+type providerAccessor interface {
+	Register(r *echo.Group)
+}
+
 const (
 	ShutdownTimeout = 10 * time.Second
 )

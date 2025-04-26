@@ -12,10 +12,10 @@
 <!-- github.com/hasansino/goapp/cmd/app -->
 <g id="node1" class="node">
 <title>github.com/hasansino/goapp/cmd/app</title>
-<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l342 / 10.1KB\l" target="_graphviz">
+<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l345 / 10.3KB\l" target="_graphviz">
 <polygon fill="none" stroke="#915007" stroke-width="2" stroke-opacity="0.698039" points="198,-297 18,-297 18,-261 198,-261 198,-297"/>
 <text text-anchor="start" x="26" y="-280.75" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/cmd/app</text>
-<text text-anchor="start" x="26" y="-269.5" font-family="Times,serif" font-size="10.00">342 / 10.1KB</text>
+<text text-anchor="start" x="26" y="-269.5" font-family="Times,serif" font-size="10.00">345 / 10.3KB</text>
 </a>
 </g>
 </g>
@@ -38,10 +38,10 @@
 <!-- github.com/hasansino/goapp/internal/config -->
 <g id="node6" class="node">
 <title>github.com/hasansino/goapp/internal/config</title>
-<g id="a_node6"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l157 / 5.3KB\l" target="_graphviz">
+<g id="a_node6"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l154 / 5.2KB\l" target="_graphviz">
 <polygon fill="none" stroke="#760791" stroke-width="2" stroke-opacity="0.698039" points="576,-550 360,-550 360,-514 576,-514 576,-550"/>
 <text text-anchor="start" x="368" y="-533.75" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/config</text>
-<text text-anchor="start" x="368" y="-522.5" font-family="Times,serif" font-size="10.00">157 / 5.3KB</text>
+<text text-anchor="start" x="368" y="-522.5" font-family="Times,serif" font-size="10.00">154 / 5.2KB</text>
 </a>
 </g>
 </g>
@@ -86,10 +86,10 @@
 <!-- github.com/hasansino/goapp/internal/database/sqlite -->
 <g id="node9" class="node">
 <title>github.com/hasansino/goapp/internal/database/sqlite</title>
-<g id="a_node9"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/database/sqlite" xlink:title="github.com/hasansino/goapp/internal/database/sqlite\l77 / 1.8KB\l" target="_graphviz">
+<g id="a_node9"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/database/sqlite" xlink:title="github.com/hasansino/goapp/internal/database/sqlite\l88 / 2.1KB\l" target="_graphviz">
 <polygon fill="none" stroke="#071591" stroke-width="2" stroke-opacity="0.698039" points="972,-40 720,-40 720,-4 972,-4 972,-40"/>
 <text text-anchor="start" x="728" y="-23.75" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/database/sqlite</text>
-<text text-anchor="start" x="728" y="-12.5" font-family="Times,serif" font-size="10.00">77 / 1.8KB</text>
+<text text-anchor="start" x="728" y="-12.5" font-family="Times,serif" font-size="10.00">88 / 2.1KB</text>
 </a>
 </g>
 </g>
@@ -102,10 +102,10 @@
 <!-- github.com/hasansino/goapp/internal/database/sqlite/migrate -->
 <g id="node10" class="node">
 <title>github.com/hasansino/goapp/internal/database/sqlite/migrate</title>
-<g id="a_node10"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/database/sqlite/migrate" xlink:title="github.com/hasansino/goapp/internal/database/sqlite/migrate\l28 / 613B\l" target="_graphviz">
+<g id="a_node10"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/database/sqlite/migrate" xlink:title="github.com/hasansino/goapp/internal/database/sqlite/migrate\l29 / 0.7KB\l" target="_graphviz">
 <polygon fill="none" stroke="#072391" stroke-width="2" stroke-opacity="0.698039" points="612,-36 324,-36 324,0 612,0 612,-36"/>
 <text text-anchor="start" x="332" y="-19.75" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/database/sqlite/migrate</text>
-<text text-anchor="start" x="332" y="-8.5" font-family="Times,serif" font-size="10.00">28 / 613B</text>
+<text text-anchor="start" x="332" y="-8.5" font-family="Times,serif" font-size="10.00">29 / 0.7KB</text>
 </a>
 </g>
 </g>
@@ -262,10 +262,10 @@
 <!-- github.com/hasansino/goapp/internal/utils -->
 <g id="node20" class="node">
 <title>github.com/hasansino/goapp/internal/utils</title>
-<g id="a_node20"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/utils" xlink:title="github.com/hasansino/goapp/internal/utils\l46 / 1.1KB\l" target="_graphviz">
+<g id="a_node20"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/utils" xlink:title="github.com/hasansino/goapp/internal/utils\l49 / 1.2KB\l" target="_graphviz">
 <polygon fill="none" stroke="#918b07" stroke-width="2" stroke-opacity="0.698039" points="954,-550 738,-550 738,-514 954,-514 954,-550"/>
 <text text-anchor="start" x="746" y="-533.75" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/utils</text>
-<text text-anchor="start" x="746" y="-522.5" font-family="Times,serif" font-size="10.00">46 / 1.1KB</text>
+<text text-anchor="start" x="746" y="-522.5" font-family="Times,serif" font-size="10.00">49 / 1.2KB</text>
 </a>
 </g>
 </g>

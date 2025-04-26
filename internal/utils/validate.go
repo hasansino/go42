@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -25,17 +26,21 @@ func init() {
 }
 
 type ValidationError struct {
-	Message string `json:"message"`
-	Code    string `json:"code,omitempty"`
-	Field   string `json:"field,omitempty"`
+	Field string `json:"message"`
+	Rule  string `json:"rule"`
 }
 
-const (
-	DefaultErrorDetailMessage = "invalid value"
-	DefaultErrorDetailCode    = "INVALID_VALUE"
-)
+type ValidationErrors []ValidationError
 
-func ValidateStruct(s interface{}) []ValidationError {
+func (vErrs ValidationErrors) Strings() []string {
+	s := make([]string, 0, len(vErrs))
+	for _, vErr := range vErrs {
+		s = append(s, fmt.Sprintf("(%s)[%s]", vErr.Field, vErr.Rule))
+	}
+	return s
+}
+
+func ValidateStruct(s interface{}) ValidationErrors {
 	var errs []ValidationError
 	err := validate.Struct(s)
 	if err != nil {
@@ -43,9 +48,8 @@ func ValidateStruct(s interface{}) []ValidationError {
 			errs = append(
 				errs,
 				ValidationError{
-					Message: DefaultErrorDetailMessage,
-					Code:    DefaultErrorDetailCode,
-					Field:   vErr.Field(),
+					Field: vErr.Namespace(),
+					Rule:  fmt.Sprintf("%s='%s'", vErr.ActualTag(), vErr.Param()),
 				},
 			)
 		}

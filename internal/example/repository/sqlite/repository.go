@@ -7,13 +7,20 @@ import (
 
 	"gorm.io/gorm"
 
-	sqliteCore "github.com/hasansino/goapp/internal/database/sqlite"
 	"github.com/hasansino/goapp/internal/example/domain"
 	"github.com/hasansino/goapp/internal/example/models"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/accessors.go
+
+type sqlCoreAccessor interface {
+	IsNotFoundError(err error) bool
+	IsDuplicateKeyError(err error) bool
+}
+
 type Repository struct {
-	db *gorm.DB
+	sqlCore sqlCoreAccessor
+	db      *gorm.DB
 }
 
 func New(db *gorm.DB) *Repository {
@@ -97,7 +104,7 @@ func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error)
 	result := db.First(&fruit, id)
 
 	if result.Error != nil {
-		if sqliteCore.IsNotFoundError(result.Error) {
+		if r.sqlCore.IsNotFoundError(result.Error) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("error fetching fruit by ID: %w", result.Error)
@@ -111,7 +118,7 @@ func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
 
 	err := db.Create(fruit).Error
 	if err != nil {
-		if sqliteCore.IsDuplicateKeyError(err) {
+		if r.sqlCore.IsDuplicateKeyError(err) {
 			return domain.ErrAlreadyExists
 		}
 		return fmt.Errorf("error creating fruit: %w", err)

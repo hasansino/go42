@@ -90,6 +90,8 @@ func main() {
 		err = sqliteMigrate.Migrate(
 			cfg.Database.Sqlite.SqliteFile,
 			cfg.Database.FullMigratePath(),
+			sqlite.WithMode(cfg.Database.Sqlite.Mode),
+			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
 		if err != nil {
 			log.Fatalf("Failed to execute migrations: %v\n", err)
@@ -100,6 +102,7 @@ func main() {
 		sqliteConn, sqliteConnErr := sqlite.NewWrapper(
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
+			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
 		if sqliteConnErr != nil {
 			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
