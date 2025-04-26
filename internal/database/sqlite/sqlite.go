@@ -10,8 +10,6 @@ import (
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type Wrapper struct {
@@ -19,17 +17,20 @@ type Wrapper struct {
 	sqlDB  *sql.DB
 }
 
-func NewWrapper(dbPath string) (*Wrapper, error) {
+func NewWrapper(dbPath string, opts ...Option) (*Wrapper, error) {
 	gormDB, err := gorm.Open(
-		sqlite.Open(dbPath),
+		sqlite.Open(addOptions(dbPath, opts...)),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger: slogGorm.New(
-				slogGorm.WithHandler(slog.Default().Handler()),
-				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelError),
-				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelInfo),
-				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelDebug),
-				slogGorm.WithContextValue("system", "gorm"),
+				// slogGorm.WithIgnoreTrace(),
+				slogGorm.WithHandler(slog.Default().Handler().WithAttrs(
+					[]slog.Attr{slog.String("system", "gorm")},
+				)),
+				// log level translations: when gorm sends X level -> slog handles it as Y level
+				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelDebug), // exposes query
+				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
+				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelInfo),
 			),
 		})
 
@@ -56,6 +57,21 @@ func (w *Wrapper) GormDB() *gorm.DB {
 
 func (w *Wrapper) SqlDB() *sql.DB {
 	return w.sqlDB
+}
+
+func addOptions(dbPath string, opts ...Option) string {
+	if len(opts) == 0 {
+		return dbPath
+	}
+	dbPath += "?"
+	for i, opt := range opts {
+		key, value := opt()
+		dbPath += key + "=" + value
+		if i < len(opts)-1 {
+			dbPath += "&"
+		}
+	}
+	return dbPath
 }
 
 func IsNotFoundError(err error) bool {

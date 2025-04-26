@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/hasansino/goapp/internal/metrics"
+	customMiddleware "github.com/hasansino/goapp/internal/api/middleware"
 )
 
 const (
@@ -41,28 +41,21 @@ func New(opts ...Option) *Server {
 	// goes to http.Server.ErrorLog
 	// logs low-level errors, like connection or tls errors
 	e.StdLogger = slog.NewLogLogger(
-		slog.Default().With(
+		slog.Default().Handler().WithAttrs([]slog.Attr{
 			slog.String("system", "api"),
 			slog.String("who", "echo.StdLogger"),
-		).Handler(),
+		}),
 		slog.LevelError,
 	)
 
 	// can be used my some middleware, but should be avoided
 	e.Logger.SetOutput(slog.NewLogLogger(
-		slog.Default().With(
+		slog.Default().Handler().WithAttrs([]slog.Attr{
 			slog.String("system", "api"),
 			slog.String("who", "echo.Logger"),
-		).Handler(),
+		}),
 		slog.LevelError,
 	).Writer())
-
-	// panics are handled and passed to the HTTPErrorHandler
-	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
-			return &PanicError{BaseErr: err, Stack: stack}
-		},
-	}))
 
 	// all panics and explicit errors are handled here
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -106,7 +99,17 @@ func New(opts ...Option) *Server {
 		}
 	}
 
-	// normal operation logging, http 100-499
+	// 1. panics are handled and passed to the HTTPErrorHandler
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+			return &PanicError{BaseErr: err, Stack: stack}
+		},
+	}))
+
+	// 2. metric collector
+	e.Use(customMiddleware.NewMetricsCollector())
+
+	// 3. normal operation logging (http 100-499)
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogError:  true,
 		LogStatus: true,
@@ -126,17 +129,6 @@ func New(opts ...Option) *Server {
 			return nil
 		},
 	}))
-
-	// metrics
-	e.Use(func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			metrics.Counter("application_requests_total",
-				map[string]interface{}{
-					"method": c.Request().Method,
-				}).Inc()
-			return handlerFunc(c)
-		}
-	})
 
 	for _, opt := range opts {
 		opt(e)

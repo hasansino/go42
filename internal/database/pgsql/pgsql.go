@@ -20,17 +20,18 @@ type Wrapper struct {
 
 func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
 	gormDB, err := gorm.Open(
-		postgres.New(
-			postgres.Config{DSN: dsn},
-		),
+		postgres.New(postgres.Config{DSN: dsn}),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger: slogGorm.New(
-				slogGorm.WithHandler(slog.Default().Handler()),
-				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelError),
-				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelInfo),
-				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelDebug),
-				slogGorm.WithContextValue("system", "gorm"),
+				// slogGorm.WithIgnoreTrace(),
+				slogGorm.WithHandler(slog.Default().Handler().WithAttrs(
+					[]slog.Attr{slog.String("system", "gorm")},
+				)),
+				// log level translations: when gorm sends X level -> slog handles it as Y level
+				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelDebug), // exposes query
+				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
+				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelInfo),
 			),
 		})
 	if err != nil {

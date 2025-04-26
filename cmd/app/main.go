@@ -88,7 +88,7 @@ func main() {
 		// run database migrations
 		slog.Info("Running database migrations...")
 		err = sqliteMigrate.Migrate(
-			cfg.Database.SqliteFile,
+			cfg.Database.Sqlite.SqliteFile,
 			cfg.Database.FullMigratePath(),
 		)
 		if err != nil {
@@ -97,7 +97,10 @@ func main() {
 
 		// connect to database
 		slog.Info("Connecting to sqlite...")
-		sqliteConn, sqliteConnErr := sqlite.NewWrapper(cfg.Database.SqliteFile)
+		sqliteConn, sqliteConnErr := sqlite.NewWrapper(
+			cfg.Database.Sqlite.SqliteFile,
+			sqlite.WithMode(cfg.Database.Sqlite.Mode),
+		)
 		if sqliteConnErr != nil {
 			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
 		}
@@ -114,7 +117,7 @@ func main() {
 		// run database migrations
 		slog.Info("Running database migrations...")
 		err = pgsqlMigrate.Migrate(
-			cfg.Database.PgsqlDSN(),
+			cfg.Database.Pgsql.DSN(),
 			cfg.Database.FullMigratePath(),
 		)
 		if err != nil {
@@ -124,12 +127,12 @@ func main() {
 		// connect to database
 		slog.Info("Connecting to PostgreSQL...")
 		pgsqlConn, pgsqlConnErr := pgsql.NewWrapper(
-			cfg.Database.PgsqlDSN(),
-			pgsql.WithConnMaxIdleTime(cfg.Database.ConnMaxIdleTime),
-			pgsql.WithConnMaxLifetime(cfg.Database.ConnMaxLifetime),
-			pgsql.WithMaxOpenConns(cfg.Database.MaxOpenConns),
-			pgsql.WithMaxIdleConns(cfg.Database.MaxIdleConns),
-			pgsql.WithQueryTimeout(cfg.Database.QueryTimeout),
+			cfg.Database.Pgsql.DSN(),
+			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
+			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
+			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
+			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
+			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
@@ -363,6 +366,7 @@ func initMetrics(cfg *config.Config) http.Handler {
 				Timeout:  cfg.Metrics.Timeout,
 			}).ServeHTTP(w, r)
 		// append metrics from `github.com/VictoriaMetrics/metrics`
+		// runtime metrics are collected by collectors.NewGoCollector() instead
 		vmetrics.WritePrometheus(w, false)
 	})
 }

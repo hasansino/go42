@@ -10,7 +10,7 @@ test:
 ## run | run application
 # Not invoked in CI/CD pipeline.
 run:
-	export $(shell cat .config.env | xargs) && \
+	export $(shell grep -v '^#' .config.env | xargs) && \
 	export SERVER_STATIC_ROOT=$(shell pwd)/static && \
 	export SERVER_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
@@ -19,7 +19,7 @@ run:
 ## debug | run application with delve debugger
 # Not invoked in CI/CD pipeline.
 debug:
-	export $(shell cat .config.env | xargs) && \
+	export $(shell grep -v '^#' .config.env | xargs) && \
 	export SERVER_STATIC_ROOT=$(shell pwd)/static && \
 	export SERVER_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \

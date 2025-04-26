@@ -37,6 +37,10 @@ func Gauge(name string, labels map[string]interface{}) *vmetrics.Gauge {
 	return vmetrics.GetOrCreateGauge(constructMetric(name, labels), nil)
 }
 
+func Histogram(name string, labels map[string]interface{}) *vmetrics.Histogram {
+	return vmetrics.GetOrCreateHistogram(constructMetric(name, labels))
+}
+
 // constructMetric takes metrics name and labels, and returns a string representation of the metric.
 // It also adds global labels to the metric if they are set.
 // It is a little bit more complicated than just appending labels to the name, because

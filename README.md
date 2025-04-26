@@ -30,7 +30,7 @@ Golang application template.
 + cli example
   * https://github.com/rivo/tview
   * https://github.com/mum4k/termdash
-  *  https://github.com/charmbracelet
+  * https://github.com/charmbracelet
 + caching
     * redis + https://github.com/alicebob/miniredis
     * memcached

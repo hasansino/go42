@@ -19,8 +19,9 @@ func Migrate(uri string, schemaPath string) error {
 	}
 	goose.SetLogger(
 		slog.NewLogLogger(
-			slog.Default().
-				With(slog.String("service", "migrate")).Handler(),
+			slog.Default().Handler().WithAttrs(
+				[]slog.Attr{slog.String("service", "migrate")},
+			),
 			slog.LevelInfo,
 		),
 	)

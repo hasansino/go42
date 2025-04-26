@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,19 +38,49 @@ type Logger struct {
 	LogFormat string `env:"LOG_FORMAT" default:"json"   v:"oneof=json text"`
 }
 
-func (sl *Logger) Level() slog.Level {
-	switch strings.ToLower(sl.LogLevel) {
-	case slog.LevelDebug.String():
-		return slog.LevelDebug
-	case slog.LevelInfo.String():
-		return slog.LevelInfo
-	case slog.LevelWarn.String():
-		return slog.LevelWarn
-	case slog.LevelError.String():
-		return slog.LevelError
+func (l *Logger) Level() slog.Level {
+	logLevel := strings.ToLower(l.LogLevel)
+
+	modifierIndex := -1
+	modifierSign := 0
+
+	if idx := strings.IndexByte(logLevel, '+'); idx != -1 {
+		modifierIndex = idx
+		modifierSign = 1
+	} else if idx := strings.IndexByte(logLevel, '-'); idx != -1 {
+		modifierIndex = idx
+		modifierSign = -1
+	}
+
+	var baseLevel slog.Level
+	var extraLevel int
+
+	if modifierIndex != -1 {
+		if val, err := strconv.Atoi(logLevel[modifierIndex+1:]); err == nil {
+			extraLevel = val
+		}
+		logLevel = logLevel[:modifierIndex]
+	}
+
+	// Get base log level
+	switch logLevel {
+	case "debug":
+		baseLevel = slog.LevelDebug
+	case "info":
+		baseLevel = slog.LevelInfo
+	case "warn":
+		baseLevel = slog.LevelWarn
+	case "error":
+		baseLevel = slog.LevelError
 	default:
 		return slog.LevelInfo
 	}
+
+	if modifierSign != 0 {
+		return baseLevel + slog.Level(modifierSign*extraLevel)
+	}
+
+	return baseLevel
 }
 
 type Sentry struct {
@@ -80,19 +111,10 @@ type Server struct {
 }
 
 type Database struct {
-	Engine          string        `env:"DATABASE_ENGINE"             default:"pgsql"         v:"oneof=sqlite pgsql"`
-	Host            string        `env:"DATABASE_HOST"               default:"localhost"`
-	Port            int           `env:"DATABASE_PORT"               default:"5432"`
-	User            string        `env:"DATABASE_USER"               default:"user"`
-	Password        string        `env:"DATABASE_PASSWORD"           default:"qwerty"`
-	Name            string        `env:"DATABASE_NAME"               default:"goapp"`
-	SqliteFile      string        `env:"DATABASE_SQLITE_FILE"        default:"/tmp/goapp.db"`
-	MigratePath     string        `env:"DATABASE_MIGRATE_PATH"       default:"/migrate"`
-	ConnMaxIdleTime time.Duration `env:"DATABASE_CONN_MAX_IDLE_TIME" default:"10m"`
-	ConnMaxLifetime time.Duration `env:"DATABASE_CONN_MAX_LIFETIME"  default:"30m"`
-	MaxIdleConns    int           `env:"DATABASE_MAX_IDLE_CONNS"     default:"10"`
-	MaxOpenConns    int           `env:"DATABASE_MAX_OPEN_CONNS"     default:"100"`
-	QueryTimeout    time.Duration `env:"DATABASE_QUERY_TIMEOUT"      default:"10s"`
+	Engine      string `env:"DATABASE_ENGINE"       default:"pgsql"    v:"oneof=sqlite pgsql"`
+	MigratePath string `env:"DATABASE_MIGRATE_PATH" default:"/migrate"`
+	Pgsql       Pgsql
+	Sqlite      Sqlite
 }
 
 func (db Database) FullMigratePath() string {
@@ -103,15 +125,29 @@ func (db Database) FullMigratePath() string {
 	)
 }
 
-func (db Database) PgsqlDSN() string {
+type Pgsql struct {
+	Host            string        `env:"DATABASE_PGSQL_HOST"               default:"localhost"`
+	Port            int           `env:"DATABASE_PGSQL_PORT"               default:"5432"`
+	User            string        `env:"DATABASE_PGSQL_USER"               default:"user"`
+	Password        string        `env:"DATABASE_PGSQL_PASSWORD"           default:"qwerty"`
+	Name            string        `env:"DATABASE_PGSQL_NAME"               default:"goapp"`
+	ConnMaxIdleTime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_IDLE_TIME" default:"10m"`
+	ConnMaxLifetime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_LIFETIME"  default:"30m"`
+	MaxIdleConns    int           `env:"DATABASE_PGSQL_MAX_IDLE_CONNS"     default:"10"`
+	MaxOpenConns    int           `env:"DATABASE_PGSQL_MAX_OPEN_CONNS"     default:"100"`
+	QueryTimeout    time.Duration `env:"DATABASE_PGSQL_QUERY_TIMEOUT"      default:"10s"`
+}
+
+func (db Pgsql) DSN() string {
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
-		db.User,
-		db.Password,
-		db.Host,
-		db.Port,
-		db.Name,
+		db.User, db.Password, db.Host, db.Port, db.Name,
 	)
+}
+
+type Sqlite struct {
+	SqliteFile string `env:"DATABASE_SQLITE_PATH" default:"/tmp/goapp.db"`
+	Mode       string `env:"DATABASE_SQLITE_MODE" default:"rwc"           v:"oneof=rwc ro rwc memory"`
 }
 
 const (
