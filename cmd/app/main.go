@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log"
@@ -18,12 +19,14 @@ import (
 	vmetrics "github.com/VictoriaMetrics/metrics"
 	"github.com/getsentry/sentry-go"
 	sentryslog "github.com/getsentry/sentry-go/slog"
+	"github.com/hasansino/etcd2cfg"
 	"github.com/hasansino/libvault"
 	"github.com/hasansino/vault2cfg"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	slogmulti "github.com/samber/slog-multi"
+	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/hasansino/goapp/internal/api"
@@ -66,9 +69,13 @@ func main() {
 		log.Fatalf("failed to initialize config: %v\n", err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// core systems
 	initLogging(cfg)
 	initVault(cfg)
+	etcdCloser := initEtcd(ctx, cfg)
 	initLimits(cfg)
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
@@ -178,8 +185,9 @@ func main() {
 	// listen for signals
 	sys := make(chan os.Signal, 1)
 	signal.Notify(sys, syscall.SIGINT, syscall.SIGTERM)
-	shutdown(<-sys,
-		pprofCloser, httpServer,
+	shutdown(
+		<-sys, cancel,
+		pprofCloser, etcdCloser, httpServer,
 	)
 }
 
@@ -260,6 +268,64 @@ func initVault(cfg *config.Config) {
 	}
 
 	vault2cfg.Bind(cfg, data)
+}
+
+func initEtcd(ctx context.Context, cfg *config.Config) io.Closer {
+	if !cfg.Etcd.Enabled {
+		slog.Warn("etcd is disabled")
+		return nil
+	}
+
+	// Connect to etcd
+	client, err := etcdClient.New(etcdClient.Config{
+		Endpoints:   cfg.Etcd.Hosts,
+		DialTimeout: cfg.Etcd.Timeout,
+		// forces to use log.Default()
+		Logger:    nil,
+		LogConfig: nil,
+	})
+	if err != nil {
+		log.Fatalf("Failed to connect to etcd: %v", err)
+	}
+
+	syncCtx, cancel := context.WithTimeout(ctx, cfg.Etcd.Timeout)
+	defer cancel()
+
+	err = client.Sync(syncCtx)
+	if err != nil {
+		log.Fatalf("Failed to connect to etcd: %v", err)
+	}
+
+	etcdLogger := slog.New(
+		slog.Default().Handler().WithAttrs(
+			[]slog.Attr{slog.String("system", "etcd")},
+		))
+
+	switch cfg.Etcd.Method {
+	case "bind":
+		err = etcd2cfg.Bind(
+			cfg, client,
+			etcd2cfg.WithLogger(etcdLogger),
+			etcd2cfg.WithClientTimeout(cfg.Etcd.Timeout),
+		)
+		if err != nil {
+			log.Fatalf("Failed to bind config: %v", err)
+		}
+	case "sync":
+		err = etcd2cfg.Sync(
+			ctx, cfg, client,
+			etcd2cfg.WithLogger(etcdLogger),
+			etcd2cfg.WithClientTimeout(cfg.Etcd.Timeout),
+			etcd2cfg.WithRunInterval(cfg.Etcd.SyncInterval),
+		)
+		if err != nil {
+			log.Fatalf("Failed to bind config: %v", err)
+		}
+	}
+
+	slog.Info("connected to etcd")
+
+	return client
 }
 
 func initLimits(cfg *config.Config) {
@@ -408,8 +474,9 @@ func initMetrics(cfg *config.Config) http.Handler {
 }
 
 // shutdown implements all graceful shutdown logic.
-func shutdown(_ os.Signal, closers ...io.Closer) {
+func shutdown(_ os.Signal, cancel context.CancelFunc, closers ...io.Closer) {
 	log.Println("Shutting down...")
+	cancel()
 	for _, c := range closers {
 		if c == nil {
 			continue

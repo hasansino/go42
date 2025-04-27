@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/caarlos0/env/v11"
@@ -14,6 +15,7 @@ import (
 )
 
 type Config struct {
+	sync.RWMutex
 	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
 	Environment string `env:"ENVIRONMENT"  default:""`
 	Limits      Limits
@@ -24,6 +26,7 @@ type Config struct {
 	Server      Server
 	Database    Database
 	Vault       Vault
+	Etcd        Etcd
 }
 
 type Limits struct {
@@ -158,6 +161,14 @@ type Vault struct {
 	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"`
 	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
 	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
+}
+
+type Etcd struct {
+	Enabled      bool          `env:"ETCD_ENABLED"       default:"false"`
+	Hosts        []string      `env:"ETCD_HOST"          default:"localhost:2379"`
+	Timeout      time.Duration `env:"ETCD_TIMEOUT"       default:"5s"`
+	Method       string        `env:"ETCD_METHOD"        default:"bind"`
+	SyncInterval time.Duration `env:"ETCD_SYNC_INTERVAL" default:"5m"`
 }
 
 const (

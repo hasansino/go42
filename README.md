@@ -22,8 +22,6 @@ Golang application template.
 + https://github.com/sony/gobreaker
 + https://github.com/FiloSottile/mkcert 
 + grafana dashboard
-+ config external integrations
-  * etcd
 + https://github.com/thomaspoignant/go-feature-flag
 + cli example
   * https://github.com/rivo/tview
@@ -38,3 +36,4 @@ Golang application template.
 + https://github.com/valyala/fastjson
 + sketch REAMDME.md and choose doc generator
 + research datadog
++ TLS and letsencrypt

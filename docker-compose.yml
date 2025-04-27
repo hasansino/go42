@@ -20,6 +20,15 @@ services:
     ports:
       - "8200:8200"
 
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      - ETCD_LOG_LEVEL=debug
+      - ALLOW_NONE_AUTHENTICATION=yes
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+
 networks:
   default:
     driver: bridge

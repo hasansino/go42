@@ -12,10 +12,10 @@
 <!-- github.com/hasansino/goapp/cmd/app -->
 <g id="node1" class="node">
 <title>github.com/hasansino/goapp/cmd/app</title>
-<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l345 / 10.3KB\l" target="_graphviz">
+<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l372 / 11.0KB\l" target="_graphviz">
 <polygon fill="none" stroke="#915007" stroke-width="2" stroke-opacity="0.698039" points="252,-325.33 72,-325.33 72,-289.33 252,-289.33 252,-325.33"/>
 <text text-anchor="start" x="80" y="-309.08" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/cmd/app</text>
-<text text-anchor="start" x="80" y="-297.83" font-family="Times,serif" font-size="10.00">345 / 10.3KB</text>
+<text text-anchor="start" x="80" y="-297.83" font-family="Times,serif" font-size="10.00">372 / 11.0KB</text>
 </a>
 </g>
 </g>
@@ -38,10 +38,10 @@
 <!-- github.com/hasansino/goapp/internal/config -->
 <g id="node6" class="node">
 <title>github.com/hasansino/goapp/internal/config</title>
-<g id="a_node6"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l154 / 5.2KB\l" target="_graphviz">
+<g id="a_node6"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l162 / 5.6KB\l" target="_graphviz">
 <polygon fill="none" stroke="#760791" stroke-width="2" stroke-opacity="0.698039" points="684,-602.33 468,-602.33 468,-566.33 684,-566.33 684,-602.33"/>
 <text text-anchor="start" x="476" y="-586.08" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/config</text>
-<text text-anchor="start" x="476" y="-574.83" font-family="Times,serif" font-size="10.00">154 / 5.2KB</text>
+<text text-anchor="start" x="476" y="-574.83" font-family="Times,serif" font-size="10.00">162 / 5.6KB</text>
 </a>
 </g>
 </g>
