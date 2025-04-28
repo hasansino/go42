@@ -1,4 +1,4 @@
-package sqlite
+package gorm
 
 import (
 	"context"
@@ -81,14 +81,12 @@ func (r *Repository) Rollback(ctx context.Context) error {
 }
 
 func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
-	db := r.getTx(ctx)
-
 	if limit <= 0 {
 		limit = 10
 	}
 
 	var fruits []*models.Fruit
-	result := db.Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
+	result := r.db.Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
 
 	if result.Error != nil {
 		return nil, fmt.Errorf("error listing fruits: %w", result.Error)
@@ -98,10 +96,8 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fru
 }
 
 func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error) {
-	db := r.getTx(ctx)
-
 	var fruit models.Fruit
-	result := db.First(&fruit, id)
+	result := r.db.First(&fruit, id)
 
 	if result.Error != nil {
 		if r.sqlCore.IsNotFoundError(result.Error) {
@@ -114,14 +110,47 @@ func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error)
 }
 
 func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
-	db := r.getTx(ctx)
-
-	err := db.Create(fruit).Error
+	err := r.db.Create(fruit).Error
 	if err != nil {
 		if r.sqlCore.IsDuplicateKeyError(err) {
 			return domain.ErrAlreadyExists
 		}
 		return fmt.Errorf("error creating fruit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) Delete(ctx context.Context, id int) error {
+	var fruit models.Fruit
+	if result := r.db.First(&fruit, id); result.Error != nil {
+		if r.sqlCore.IsNotFoundError(result.Error) {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("error fetching fruit by ID: %w", result.Error)
+	}
+
+	result := r.db.Delete(&fruit, id)
+	if result.Error != nil {
+		if result.RowsAffected == 0 {
+			return domain.ErrNotFound
+		}
+		return fmt.Errorf("error deleting fruit: %w", result.Error)
+	}
+
+	return nil
+}
+
+func (r *Repository) Update(ctx context.Context, fruit *models.Fruit) error {
+	var existingFruit models.Fruit
+	if result := r.db.First(&existingFruit, fruit.ID); result.Error != nil {
+		if r.sqlCore.IsDuplicateKeyError(result.Error) {
+			return domain.ErrAlreadyExists
+		}
+	}
+
+	if err := r.db.Save(fruit).Error; err != nil {
+		return fmt.Errorf("error updating fruit: %w", err)
 	}
 
 	return nil

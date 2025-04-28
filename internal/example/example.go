@@ -11,6 +11,11 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
+type Cache interface {
+	Get(key string) (string, error)
+	Set(key, value string) error
+}
+
 type Repository interface {
 	Begin(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
@@ -18,16 +23,19 @@ type Repository interface {
 	List(ctx context.Context, limit, offset int) ([]*models.Fruit, error)
 	GetByID(ctx context.Context, id int) (*models.Fruit, error)
 	Create(ctx context.Context, fruit *models.Fruit) error
+	Update(ctx context.Context, fruit *models.Fruit) error
+	Delete(ctx context.Context, id int) error
 }
 
 // Service layer of example domain
 type Service struct {
+	cache      Cache
 	repository Repository
 }
 
 // NewService creates service with given repository
-func NewService(repository Repository) *Service {
-	return &Service{repository: repository}
+func NewService(repository Repository, cache Cache) *Service {
+	return &Service{repository: repository, cache: cache}
 }
 
 // withTransaction abstracts the transaction management pattern
@@ -70,22 +78,29 @@ func (s *Service) FruitByID(ctx context.Context, id int) (*models.Fruit, error) 
 	return s.repository.GetByID(ctx, id)
 }
 
-func (s *Service) Create(
-	ctx context.Context, req *domain.CreateFruitRequest,
-) (*models.Fruit, error) {
+func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*models.Fruit, error) {
 	fruit := new(models.Fruit)
 	fruit.Name = req.Name
-
-	txErr := s.withTransaction(ctx, func(txCtx context.Context) error {
-		if err := s.repository.Create(txCtx, fruit); err != nil {
-			return fmt.Errorf("failed to create fruit: %w", err)
-		}
-		return nil
-	})
-
-	if txErr != nil {
-		return nil, txErr
+	err := s.repository.Create(ctx, fruit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fruit: %w", err)
 	}
+	return fruit, nil
+}
 
+func (s *Service) Delete(ctx context.Context, id int) error {
+	return s.repository.Delete(ctx, id)
+}
+
+func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitRequest) (*models.Fruit, error) {
+	fruit, err := s.repository.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fruit by id: %w", err)
+	}
+	fruit.Name = req.Name
+	err = s.repository.Update(ctx, fruit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update fruit: %w", err)
+	}
 	return fruit, nil
 }

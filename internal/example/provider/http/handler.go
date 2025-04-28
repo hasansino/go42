@@ -27,6 +27,7 @@ func (h *Handler) Register(e *echo.Group) {
 	e.GET("/fruits", h.fruits)
 	e.GET("/fruits/:id", h.fruitByID)
 	e.POST("/fruits", h.createFruit)
+	e.PUT("/fruits/:id", h.updateFruit)
 }
 
 func (h *Handler) fruits(ctx echo.Context) error {
@@ -72,6 +73,45 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 	}
 
 	r, err := h.service.Create(ctx.Request().Context(), req)
+	if err != nil {
+		return h.processError(ctx, err)
+	}
+
+	return api.SendJSON(ctx, r)
+}
+
+func (h *Handler) deleteFruit(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		return api.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
+		return h.processError(ctx, err)
+	}
+	return api.SendJSON(ctx, http.StatusOK)
+}
+
+func (h *Handler) updateFruit(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		return api.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	req := new(domain.UpdateFruitRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return api.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := utils.ValidateStruct(req)
+	if vErrs != nil {
+		return api.SendJSONValidationError(ctx, vErrs)
+	}
+
+	r, err := h.service.Update(ctx.Request().Context(), id, req)
 	if err != nil {
 		return h.processError(ctx, err)
 	}

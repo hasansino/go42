@@ -37,8 +37,7 @@ import (
 	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
 	"github.com/hasansino/goapp/internal/example"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
-	examplePgsqlRepository "github.com/hasansino/goapp/internal/example/repository/pgsql"
-	exampleSqliteRepository "github.com/hasansino/goapp/internal/example/repository/sqlite"
+	exampleGormRepository "github.com/hasansino/goapp/internal/example/repository/gorm"
 	"github.com/hasansino/goapp/internal/metrics"
 	metricsprovider "github.com/hasansino/goapp/internal/metrics/providers/http"
 )
@@ -125,7 +124,7 @@ func main() {
 		)
 
 		// initialize repositories
-		exampleRepository = exampleSqliteRepository.New(sqliteConn.GormDB())
+		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB())
 	case "pgsql":
 		// run database migrations
 		slog.Info("Running database migrations...")
@@ -158,7 +157,7 @@ func main() {
 		)
 
 		// initialize repositories
-		exampleRepository = examplePgsqlRepository.New(pgsqlConn.GormDB())
+		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB())
 	}
 
 	// ---
@@ -167,7 +166,7 @@ func main() {
 
 	{
 		// Example domain
-		exampleService := example.NewService(exampleRepository)
+		exampleService := example.NewService(exampleRepository, nil)
 		exampleHandler := exampleHttpProvider.New(exampleService)
 		httpServer.RegisterV1(exampleHandler)
 	}

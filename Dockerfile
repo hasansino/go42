@@ -18,6 +18,12 @@ COPY . .
 #   * install runtime dependancies for packaging stage
 ENV CGO_ENABLED=0
 
+# GOGC during compilation.
+# Default is GOGC=100.
+# Higher values reduce frequency of garbage collection, potentially reducing compilation time,
+# but increasing memory usage.
+ENV GOGC=100
+
 # Build.
 #
 # `docker buildx` automates cross-complation and handles GOOS and GOARCH automatically.

@@ -14,3 +14,7 @@ var (
 type CreateFruitRequest struct {
 	Name string `json:"name" v:"required,min=3,max=20"`
 }
+
+type UpdateFruitRequest struct {
+	Name string `json:"name" v:"required,min=3,max=20"`
+}
