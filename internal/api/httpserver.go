@@ -38,6 +38,9 @@ type Server struct {
 	e    *echo.Echo
 	root *echo.Group
 	v1   *echo.Group
+
+	staticRoot  string
+	swaggerRoot string
 }
 
 func New(opts ...Option) *Server {
@@ -145,10 +148,10 @@ func New(opts ...Option) *Server {
 	}
 
 	root := s.e.Group("")
-	root.Static("/", "/usr/share/www")
+	root.Static("/", s.staticRoot)
 
 	apiV1 := s.e.Group("/api/v1")
-	apiV1.Static("/", "/usr/share/www/api/v1")
+	apiV1.Static("", s.swaggerRoot+"/v1")
 	apiV1.GET("/health-check", func(c echo.Context) error {
 		return c.NoContent(http.StatusOK)
 	})

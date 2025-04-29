@@ -24,3 +24,15 @@ func WithLogger(logger *slog.Logger) Option {
 		s.l = logger
 	}
 }
+
+func WithStaticRoot(root string) Option {
+	return func(s *Server) {
+		s.staticRoot = root
+	}
+}
+
+func WithSwaggerRoot(root string) Option {
+	return func(s *Server) {
+		s.swaggerRoot = root
+	}
+}

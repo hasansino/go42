@@ -84,11 +84,11 @@ func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
 	return dbPath
 }
 
-func IsNotFoundError(err error) bool {
+func (w *Wrapper) IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-func IsDuplicateKeyError(err error) bool {
+func (w *Wrapper) IsDuplicateKeyError(err error) bool {
 	sqliteErr, ok := err.(interface{ Code() int })
 	if ok {
 		return sqliteErr.Code() == sqlitelib.SQLITE_CONSTRAINT_UNIQUE

@@ -68,11 +68,11 @@ func (w *Wrapper) SqlDB() *sql.DB {
 	return w.sqlDB
 }
 
-func IsNotFoundError(err error) bool {
+func (w *Wrapper) IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-func IsDuplicateKeyError(err error) bool {
+func (w *Wrapper) IsDuplicateKeyError(err error) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		return pgErr.Code == "23505"

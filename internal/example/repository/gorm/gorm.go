@@ -19,12 +19,12 @@ type sqlCoreAccessor interface {
 }
 
 type Repository struct {
-	sqlCore sqlCoreAccessor
 	db      *gorm.DB
+	sqlCore sqlCoreAccessor
 }
 
-func New(db *gorm.DB) *Repository {
-	return &Repository{db: db}
+func New(db *gorm.DB, sqlCore sqlCoreAccessor) *Repository {
+	return &Repository{db: db, sqlCore: sqlCore}
 }
 
 type txKey struct{}

@@ -85,6 +85,8 @@ func main() {
 		api.WithReadTimeout(cfg.Server.ReadTimeout),
 		api.WithWriteTimeout(cfg.Server.WriteTimeout),
 		api.WithLogger(slog.Default().With(slog.String("system", "api"))),
+		api.WithStaticRoot(cfg.Server.StaticRoot),
+		api.WithSwaggerRoot(cfg.Server.SwaggerRoot),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
@@ -126,7 +128,7 @@ func main() {
 		)
 
 		// initialize repositories
-		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB())
+		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
 	case "pgsql":
 		// run database migrations
 		slog.Info("Running database migrations...")
@@ -160,7 +162,7 @@ func main() {
 		)
 
 		// initialize repositories
-		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB())
+		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
 	}
 
 	// ---
