@@ -84,6 +84,7 @@ func main() {
 	httpServer := api.New(
 		api.WithReadTimeout(cfg.Server.ReadTimeout),
 		api.WithWriteTimeout(cfg.Server.WriteTimeout),
+		api.WithLogger(slog.Default().With(slog.String("system", "api"))),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
@@ -99,8 +100,8 @@ func main() {
 		err = sqliteMigrate.Migrate(
 			cfg.Database.Sqlite.SqliteFile,
 			cfg.Database.FullMigratePath(),
-			sqlite.WithMode(cfg.Database.Sqlite.Mode),
-			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
+			sqlite.ConnectionOption{Key: "mode", Value: cfg.Database.Sqlite.Mode},
+			sqlite.ConnectionOption{Key: "cache", Value: cfg.Database.Sqlite.CacheMode},
 		)
 		if err != nil {
 			log.Fatalf("Failed to execute migrations: %v\n", err)
@@ -112,6 +113,7 @@ func main() {
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
+			sqlite.WithLogger(slog.Default().With(slog.String("system", "gorm-sqlite"))),
 		)
 		if sqliteConnErr != nil {
 			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
@@ -145,6 +147,7 @@ func main() {
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
 			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
+			pgsql.WithLogger(slog.Default().With(slog.String("system", "gorm-pgsql"))),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
@@ -166,7 +169,9 @@ func main() {
 
 	{
 		// Example domain
-		exampleService := example.NewService(exampleRepository, nil)
+
+		exampleLogger := slog.Default().With(slog.String("system", "example"))
+		exampleService := example.NewService(exampleRepository, nil, example.WithLogger(exampleLogger))
 		exampleHandler := exampleHttpProvider.New(exampleService)
 		httpServer.RegisterV1(exampleHandler)
 	}
@@ -295,10 +300,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) io.Closer {
 		log.Fatalf("Failed to connect to etcd: %v", err)
 	}
 
-	etcdLogger := slog.New(
-		slog.Default().Handler().WithAttrs(
-			[]slog.Attr{slog.String("system", "etcd")},
-		))
+	etcdLogger := slog.Default().With(slog.String("system", "etcd"))
 
 	switch cfg.Etcd.Method {
 	case "bind":
@@ -339,7 +341,7 @@ func initLimits(cfg *config.Config) {
 	}
 	if cfg.Limits.AutoMemLimitEnabled {
 		_, err = memlimit.SetGoMemLimitWithOpts(
-			memlimit.WithLogger(slog.Default()),
+			memlimit.WithLogger(slog.Default().With(slog.String("system", "memlimit"))),
 			memlimit.WithRatio(cfg.Limits.MemLimitRatio),
 			memlimit.WithProvider(
 				memlimit.ApplyFallback(
@@ -423,7 +425,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 		Handler:      pprofMux,
 		ErrorLog: slog.NewLogLogger(
 			slog.Default().With(
-				slog.String("service", "pprof"),
+				slog.String("system", "pprof"),
 			).Handler(), slog.LevelError),
 	}
 

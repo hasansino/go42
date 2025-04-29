@@ -9,8 +9,8 @@ import (
 	"github.com/hasansino/goapp/internal/database/sqlite"
 )
 
-func Migrate(dbPath string, schemaPath string, opts ...sqlite.Option) error {
-	sqlDB, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath, opts...))
+func Migrate(dbPath string, schemaPath string, opts ...sqlite.ConnectionOption) error {
+	sqlDB, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath, opts))
 	if err != nil {
 		return err
 	}

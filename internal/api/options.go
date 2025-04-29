@@ -1,21 +1,26 @@
 package api
 
 import (
+	"log/slog"
 	"time"
-
-	"github.com/labstack/echo/v4"
 )
 
-type Option func(e *echo.Echo)
+type Option func(s *Server)
 
 func WithReadTimeout(d time.Duration) Option {
-	return func(e *echo.Echo) {
-		e.Server.ReadTimeout = d
+	return func(s *Server) {
+		s.e.Server.ReadTimeout = d
 	}
 }
 
 func WithWriteTimeout(d time.Duration) Option {
-	return func(e *echo.Echo) {
-		e.Server.WriteTimeout = d
+	return func(s *Server) {
+		s.e.Server.WriteTimeout = d
+	}
+}
+
+func WithLogger(logger *slog.Logger) Option {
+	return func(s *Server) {
+		s.l = logger
 	}
 }

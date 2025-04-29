@@ -34,38 +34,43 @@ func (e *PanicError) Error() string {
 }
 
 type Server struct {
+	l    *slog.Logger
 	e    *echo.Echo
 	root *echo.Group
 	v1   *echo.Group
 }
 
 func New(opts ...Option) *Server {
-	e := echo.New()
+	s := &Server{
+		e: echo.New(),
+	}
 
-	e.HideBanner = true
-	e.HidePort = true
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	s.e.HideBanner = true
+	s.e.HidePort = true
 
 	// goes to http.Server.ErrorLog
 	// logs low-level errors, like connection or tls errors
-	e.StdLogger = slog.NewLogLogger(
-		slog.Default().Handler().WithAttrs([]slog.Attr{
-			slog.String("system", "api"),
+	s.e.StdLogger = slog.NewLogLogger(
+		s.l.Handler().WithAttrs([]slog.Attr{
 			slog.String("who", "echo.StdLogger"),
 		}),
 		slog.LevelError,
 	)
 
 	// can be used my some middleware, but should be avoided
-	e.Logger.SetOutput(slog.NewLogLogger(
-		slog.Default().Handler().WithAttrs([]slog.Attr{
-			slog.String("system", "api"),
+	s.e.Logger.SetOutput(slog.NewLogLogger(
+		s.l.Handler().WithAttrs([]slog.Attr{
 			slog.String("who", "echo.Logger"),
 		}),
 		slog.LevelError,
 	).Writer())
 
 	// all panics and explicit errors are handled here
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
+	s.e.HTTPErrorHandler = func(err error, c echo.Context) {
 		var (
 			httpStatus  = http.StatusInternalServerError
 			httpMessage = "Internal Server Error"
@@ -84,7 +89,6 @@ func New(opts ...Option) *Server {
 		}
 
 		slogAttrs := []interface{}{
-			slog.String("system", "api"),
 			slog.String("error", err.Error()),
 			slog.Int("status", httpStatus),
 			slog.String("method", c.Request().Method),
@@ -94,7 +98,7 @@ func New(opts ...Option) *Server {
 		if len(panicStack) > 0 {
 			slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
 		}
-		slog.Error(logMessage, slogAttrs...)
+		s.l.Error(logMessage, slogAttrs...)
 
 		// during normal operation, for 4xx errors, response will be already written
 		if c.Response().Committed {
@@ -107,26 +111,25 @@ func New(opts ...Option) *Server {
 	}
 
 	// 1. panics are handled and passed to the HTTPErrorHandler
-	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+	s.e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
 			return &PanicError{BaseErr: err, Stack: stack}
 		},
 	}))
 
 	// 2. metric collector
-	e.Use(customMiddleware.NewMetricsCollector())
+	s.e.Use(customMiddleware.NewMetricsCollector())
 
 	// 3. normal operation logging (http 100-499)
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogError:  true,
 		LogStatus: true,
 		LogMethod: true,
 		LogURI:    true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 			if v.Error == nil {
-				slog.InfoContext(
+				s.l.InfoContext(
 					c.Request().Context(), "request",
-					slog.String("system", "api"),
 					slog.Int("status", v.Status),
 					slog.String("method", v.Method),
 					slog.String("uri", v.URI),
@@ -138,19 +141,22 @@ func New(opts ...Option) *Server {
 	}))
 
 	for _, opt := range opts {
-		opt(e)
+		opt(s)
 	}
 
-	root := e.Group("")
+	root := s.e.Group("")
 	root.Static("/", "/usr/share/www")
 
-	apiV1 := e.Group("/api/v1")
+	apiV1 := s.e.Group("/api/v1")
 	apiV1.Static("/", "/usr/share/www/api/v1")
 	apiV1.GET("/health-check", func(c echo.Context) error {
 		return c.NoContent(http.StatusOK)
 	})
 
-	return &Server{e: e, root: root, v1: apiV1}
+	s.root = root
+	s.v1 = apiV1
+
+	return s
 }
 
 func (s *Server) Start(addr string) error {

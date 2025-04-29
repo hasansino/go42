@@ -1,15 +1,25 @@
 package sqlite
 
-type Option func() (string, string)
+import (
+	"log/slog"
+)
+
+type Option func(w *Wrapper)
 
 func WithMode(mode string) Option {
-	return func() (string, string) {
-		return "mode", mode
+	return func(w *Wrapper) {
+		w.connOpts = append(w.connOpts, ConnectionOption{"mode", mode})
 	}
 }
 
 func WithCacheMod(mode string) Option {
-	return func() (string, string) {
-		return "cache", mode
+	return func(w *Wrapper) {
+		w.connOpts = append(w.connOpts, ConnectionOption{"cache", mode})
+	}
+}
+
+func WithLogger(logger *slog.Logger) Option {
+	return func(w *Wrapper) {
+		w.logger = logger
 	}
 }

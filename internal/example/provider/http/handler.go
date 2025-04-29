@@ -28,6 +28,7 @@ func (h *Handler) Register(e *echo.Group) {
 	e.GET("/fruits/:id", h.fruitByID)
 	e.POST("/fruits", h.createFruit)
 	e.PUT("/fruits/:id", h.updateFruit)
+	e.DELETE("/fruits/:id", h.deleteFruit)
 }
 
 func (h *Handler) fruits(ctx echo.Context) error {

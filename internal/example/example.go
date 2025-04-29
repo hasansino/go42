@@ -2,6 +2,7 @@ package example
 
 import (
 	"fmt"
+	"log/slog"
 
 	"golang.org/x/net/context"
 
@@ -29,13 +30,21 @@ type Repository interface {
 
 // Service layer of example domain
 type Service struct {
-	cache      Cache
+	logger     *slog.Logger
 	repository Repository
+	cache      Cache
 }
 
 // NewService creates service with given repository
-func NewService(repository Repository, cache Cache) *Service {
-	return &Service{repository: repository, cache: cache}
+func NewService(repository Repository, cache Cache, opts ...Option) *Service {
+	svc := &Service{
+		repository: repository,
+		cache:      cache,
+	}
+	for _, opt := range opts {
+		opt(svc)
+	}
+	return svc
 }
 
 // withTransaction abstracts the transaction management pattern
@@ -93,14 +102,22 @@ func (s *Service) Delete(ctx context.Context, id int) error {
 }
 
 func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitRequest) (*models.Fruit, error) {
-	fruit, err := s.repository.GetByID(ctx, id)
+	var fruit *models.Fruit
+	err := s.withTransaction(ctx, func(txCtx context.Context) error {
+		var err error
+		fruit, err = s.repository.GetByID(txCtx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get fruit by id: %w", err)
+		}
+		fruit.Name = req.Name
+		err = s.repository.Update(txCtx, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to update fruit: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get fruit by id: %w", err)
-	}
-	fruit.Name = req.Name
-	err = s.repository.Update(ctx, fruit)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update fruit: %w", err)
+		return nil, err
 	}
 	return fruit, nil
 }

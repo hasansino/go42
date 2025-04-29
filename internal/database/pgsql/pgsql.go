@@ -13,22 +13,29 @@ import (
 )
 
 type Wrapper struct {
-	gorm    *gorm.DB
-	sqlDB   *sql.DB
-	timeout time.Duration
+	logger          *slog.Logger
+	gormDB          *gorm.DB
+	sqlDB           *sql.DB
+	timeout         time.Duration
+	connMaxIdleTime time.Duration
+	connMaxLifetime time.Duration
+	maxOpenConns    int
+	maxIdleConns    int
 }
 
 func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
+	w := new(Wrapper)
+	for _, opt := range opts {
+		opt(w)
+	}
 	gormDB, err := gorm.Open(
 		postgres.New(postgres.Config{DSN: dsn}),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger: slogGorm.New(
 				// slogGorm.WithIgnoreTrace(),
-				slogGorm.WithHandler(slog.Default().Handler().WithAttrs(
-					[]slog.Attr{slog.String("system", "gorm")},
-				)),
-				// log level translations: when gorm sends X level -> slog handles it as Y level
+				slogGorm.WithHandler(w.logger.Handler()),
+				// log level translations: when gormDB sends X level -> slog handles it as Y level
 				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelDebug), // exposes query
 				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
 				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelInfo),
@@ -43,15 +50,10 @@ func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
 		return nil, err
 	}
 
-	wrapper := &Wrapper{}
-	for _, opt := range opts {
-		opt(wrapper, gormDB, sqlDB)
-	}
+	w.gormDB = gormDB
+	w.sqlDB = sqlDB
 
-	wrapper.gorm = gormDB
-	wrapper.sqlDB = sqlDB
-
-	return wrapper, nil
+	return w, nil
 }
 
 func (w *Wrapper) Close() error {
@@ -59,7 +61,7 @@ func (w *Wrapper) Close() error {
 }
 
 func (w *Wrapper) GormDB() *gorm.DB {
-	return w.gorm
+	return w.gormDB
 }
 
 func (w *Wrapper) SqlDB() *sql.DB {

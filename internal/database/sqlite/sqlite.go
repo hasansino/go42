@@ -13,20 +13,29 @@ import (
 )
 
 type Wrapper struct {
-	gormDB *gorm.DB
-	sqlDB  *sql.DB
+	logger   *slog.Logger
+	gormDB   *gorm.DB
+	sqlDB    *sql.DB
+	connOpts []ConnectionOption
+}
+
+type ConnectionOption struct {
+	Key   string
+	Value string
 }
 
 func NewWrapper(dbPath string, opts ...Option) (*Wrapper, error) {
+	w := new(Wrapper)
+	for _, opt := range opts {
+		opt(w)
+	}
 	gormDB, err := gorm.Open(
-		sqlite.Open(AddConnectionOptions(dbPath, opts...)),
+		sqlite.Open(AddConnectionOptions(dbPath, w.connOpts)),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger: slogGorm.New(
 				// slogGorm.WithIgnoreTrace(),
-				slogGorm.WithHandler(slog.Default().Handler().WithAttrs(
-					[]slog.Attr{slog.String("system", "gorm")},
-				)),
+				slogGorm.WithHandler(w.logger.Handler()),
 				// log level translations: when gorm sends X level -> slog handles it as Y level
 				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelDebug), // exposes query
 				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
@@ -61,15 +70,14 @@ func (w *Wrapper) SqlDB() *sql.DB {
 	return w.sqlDB
 }
 
-func AddConnectionOptions(dbPath string, opts ...Option) string {
-	if len(opts) == 0 {
+func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
+	if len(connOpts) == 0 {
 		return dbPath
 	}
 	dbPath += "?"
-	for i, opt := range opts {
-		key, value := opt()
-		dbPath += key + "=" + value
-		if i < len(opts)-1 {
+	for i := range connOpts {
+		dbPath += connOpts[i].Key + "=" + connOpts[i].Value
+		if i < len(connOpts)-1 {
 			dbPath += "&"
 		}
 	}
