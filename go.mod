@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/client/v3 v3.5.21
 	go.uber.org/automaxprocs v1.6.0
-	go.uber.org/mock v0.5.1
+	go.uber.org/mock v0.5.2
 	golang.org/x/net v0.39.0
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.26.0
