@@ -44,7 +44,7 @@ func (h *Handler) fruits(ctx echo.Context) error {
 	if err != nil {
 		return h.processError(ctx, err)
 	}
-	return api.SendJSON(ctx, r)
+	return ctx.JSON(http.StatusOK, r)
 }
 
 func (h *Handler) fruitByID(ctx echo.Context) error {
@@ -57,7 +57,7 @@ func (h *Handler) fruitByID(ctx echo.Context) error {
 	if err != nil {
 		return h.processError(ctx, err)
 	}
-	return api.SendJSON(ctx, r)
+	return ctx.JSON(http.StatusOK, r)
 }
 
 func (h *Handler) createFruit(ctx echo.Context) error {
@@ -70,7 +70,9 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 
 	vErrs := utils.ValidateStruct(req)
 	if vErrs != nil {
-		return api.SendJSONValidationError(ctx, vErrs)
+		return api.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
+		)
 	}
 
 	r, err := h.service.Create(ctx.Request().Context(), req)
@@ -78,7 +80,7 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 		return h.processError(ctx, err)
 	}
 
-	return api.SendJSON(ctx, r)
+	return ctx.JSON(http.StatusCreated, r)
 }
 
 func (h *Handler) deleteFruit(ctx echo.Context) error {
@@ -90,7 +92,7 @@ func (h *Handler) deleteFruit(ctx echo.Context) error {
 	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
 		return h.processError(ctx, err)
 	}
-	return api.SendJSON(ctx, http.StatusOK)
+	return ctx.NoContent(http.StatusOK)
 }
 
 func (h *Handler) updateFruit(ctx echo.Context) error {
@@ -109,7 +111,9 @@ func (h *Handler) updateFruit(ctx echo.Context) error {
 
 	vErrs := utils.ValidateStruct(req)
 	if vErrs != nil {
-		return api.SendJSONValidationError(ctx, vErrs)
+		return api.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
+		)
 	}
 
 	r, err := h.service.Update(ctx.Request().Context(), id, req)
@@ -117,5 +121,5 @@ func (h *Handler) updateFruit(ctx echo.Context) error {
 		return h.processError(ctx, err)
 	}
 
-	return api.SendJSON(ctx, r)
+	return ctx.JSON(http.StatusOK, r)
 }

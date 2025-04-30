@@ -12,7 +12,7 @@ require (
 	github.com/getsentry/sentry-go/slog v0.32.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/hasansino/cfg2env v1.1.0
+	github.com/hasansino/cfg2env v1.2.0
 	github.com/hasansino/etcd2cfg v1.4.0
 	github.com/hasansino/libvault v1.0.0
 	github.com/hasansino/vault2cfg v1.0.0

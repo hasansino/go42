@@ -1,5 +1,8 @@
 ---
 
+# Optional dependencies.
+# Application should work without them under default configuration.
+
 services:
   postgres:
     image: postgres:latest

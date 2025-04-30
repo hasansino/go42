@@ -18,7 +18,7 @@ Golang application template.
   * https://github.com/rivo/tview
   * https://github.com/mum4k/termdash
   * https://github.com/charmbracelet
-+ research datadog
++ https://docs.datadoghq.com/
 
 + domains, tls, letsencrypt
 
@@ -35,4 +35,4 @@ Golang application template.
 
 + sketch README.md and choose doc generator
 
-+ extract validation rules with cfg2env
++ sqlite update deadlock
