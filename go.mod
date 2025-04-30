@@ -26,7 +26,7 @@ require (
 	go.uber.org/mock v0.5.1
 	golang.org/x/net v0.39.0
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.26.0
 	modernc.org/sqlite v1.37.0
 )
 
