@@ -34,7 +34,3 @@ Golang application template.
 + queue processing (kafka / rabbitmq / nats / nsq)
 
 + sketch README.md and choose doc generator
-
-+ caching
-  * redis + https://github.com/alicebob/miniredis
-  * memcached

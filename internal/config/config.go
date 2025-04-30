@@ -24,9 +24,10 @@ type Config struct {
 	Metrics     Metrics
 	Pprof       Pprof
 	Server      Server
-	Database    Database
 	Vault       Vault
 	Etcd        Etcd
+	Database    Database
+	Cache       Cache
 }
 
 type Limits struct {
@@ -114,6 +115,22 @@ type Server struct {
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
 
+type Vault struct {
+	Enabled    bool   `env:"VAULT_ENABLED"     default:"false"`
+	Host       string `env:"VAULT_HOST"        default:"http://localhost:8200"`
+	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"`
+	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
+	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
+}
+
+type Etcd struct {
+	Enabled      bool          `env:"ETCD_ENABLED"       default:"false"`
+	Hosts        []string      `env:"ETCD_HOST"          default:"localhost:2379"`
+	Timeout      time.Duration `env:"ETCD_TIMEOUT"       default:"5s"`
+	Method       string        `env:"ETCD_METHOD"        default:"bind"`
+	SyncInterval time.Duration `env:"ETCD_SYNC_INTERVAL" default:"5m"`
+}
+
 type Database struct {
 	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql"`
 	MigratePath string `env:"DATABASE_MIGRATE_PATH" default:"/migrate"`
@@ -155,20 +172,30 @@ type Sqlite struct {
 	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
 }
 
-type Vault struct {
-	Enabled    bool   `env:"VAULT_ENABLED"     default:"false"`
-	Host       string `env:"VAULT_HOST"        default:"http://localhost:8200"`
-	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"`
-	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
-	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
+type Cache struct {
+	Engine string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcache"`
+	Redis  Redis
 }
 
-type Etcd struct {
-	Enabled      bool          `env:"ETCD_ENABLED"       default:"false"`
-	Hosts        []string      `env:"ETCD_HOST"          default:"localhost:2379"`
-	Timeout      time.Duration `env:"ETCD_TIMEOUT"       default:"5s"`
-	Method       string        `env:"ETCD_METHOD"        default:"bind"`
-	SyncInterval time.Duration `env:"ETCD_SYNC_INTERVAL" default:"5m"`
+type Redis struct {
+	Host                  string        `env:"CACHE_REDIS_HOST"                    default:""`
+	DB                    int           `env:"CACHE_REDIS_DB"                      default:"0"`
+	Username              string        `env:"CACHE_REDIS_USERNAME"                default:""`
+	Password              string        `env:"CACHE_REDIS_PASSWORD"                default:""`
+	MaxRetries            int           `env:"CACHE_REDIS_MAX_RETRIES"             default:"3"`
+	MinRetryBackoff       time.Duration `env:"CACHE_REDIS_MIN_RETRY_BACKOFF"       default:"8ms"`
+	MaxRetryBackoff       time.Duration `env:"CACHE_REDIS_MAX_RETRY_BACKOFF"       default:"512ms"`
+	DialTimeout           time.Duration `env:"CACHE_REDIS_DIAL_TIMEOUT"            default:"5s"`
+	ReadTimeout           time.Duration `env:"CACHE_REDIS_READ_TIMEOUT"            default:"3s"`
+	WriteTimeout          time.Duration `env:"CACHE_REDIS_WRITE_TIMEOUT"           default:"3s"`
+	ContextTimeoutEnabled bool          `env:"CACHE_REDIS_CONTEXT_TIMEOUT_ENABLED" default:"true"`
+	PoolSize              int           `env:"CACHE_REDIS_POOL_SIZE"               default:"10"`
+	PoolTimeout           time.Duration `env:"CACHE_REDIS_POOL_TIMEOUT"            default:"4s"`
+	MinIdleConns          int           `env:"CACHE_REDIS_MIN_IDLE_CONNS"          default:"0"`
+	MaxIdleConns          int           `env:"CACHE_REDIS_MAX_IDLE_CONNS"          default:"0"`
+	MaxActiveConns        int           `env:"CACHE_REDIS_MAX_ACTIVE_CONNS"        default:"0"`
+	ConnMaxIdleTime       time.Duration `env:"CACHE_REDIS_CONN_MAX_IDLE_TIME"      default:"0s"`
+	ConnMaxLifetime       time.Duration `env:"CACHE_REDIS_CONN_MAX_LIFETIME"       default:"0s"`
 }
 
 const (

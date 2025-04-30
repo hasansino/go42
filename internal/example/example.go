@@ -3,6 +3,7 @@ package example
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -13,8 +14,9 @@ import (
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type Cache interface {
-	Get(key string) (string, error)
-	Set(key, value string) error
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value string) error
+	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
 type Repository interface {
@@ -36,10 +38,9 @@ type Service struct {
 }
 
 // NewService creates service with given repository
-func NewService(repository Repository, cache Cache, opts ...Option) *Service {
+func NewService(repository Repository, opts ...Option) *Service {
 	svc := &Service{
 		repository: repository,
-		cache:      cache,
 	}
 	for _, opt := range opts {
 		opt(svc)

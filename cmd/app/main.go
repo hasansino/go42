@@ -30,6 +30,8 @@ import (
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/hasansino/goapp/internal/api"
+	"github.com/hasansino/goapp/internal/cache"
+	"github.com/hasansino/goapp/internal/cache/redis"
 	"github.com/hasansino/goapp/internal/config"
 	"github.com/hasansino/goapp/internal/database/pgsql"
 	pgsqlMigrate "github.com/hasansino/goapp/internal/database/pgsql/migrate"
@@ -82,16 +84,54 @@ func main() {
 
 	// http server
 	httpServer := api.New(
+		api.WithLogger(slog.Default().With(slog.String("system", "api"))),
 		api.WithReadTimeout(cfg.Server.ReadTimeout),
 		api.WithWriteTimeout(cfg.Server.WriteTimeout),
-		api.WithLogger(slog.Default().With(slog.String("system", "api"))),
 		api.WithStaticRoot(cfg.Server.StaticRoot),
 		api.WithSwaggerRoot(cfg.Server.SwaggerRoot),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
+	// cache engine
+	var (
+		cacheEngine cache.Cache
+	)
+	switch cfg.Cache.Engine {
+	case "redis":
+		var err error
+		cacheEngine, err = redis.New(
+			cfg.Cache.Redis.Host, cfg.Cache.Redis.DB,
+			redis.WithClientName(cfg.ServiceName),
+			redis.WithUserName(cfg.Cache.Redis.Username),
+			redis.WithPassword(cfg.Cache.Redis.Password),
+			redis.WithMaxRetries(cfg.Cache.Redis.MaxRetries),
+			redis.WithMinRetryBackoff(cfg.Cache.Redis.MinRetryBackoff),
+			redis.WithMaxRetryBackoff(cfg.Cache.Redis.MaxRetryBackoff),
+			redis.WithDialTimeout(cfg.Cache.Redis.DialTimeout),
+			redis.WithReadTimeout(cfg.Cache.Redis.ReadTimeout),
+			redis.WithWriteTimeout(cfg.Cache.Redis.WriteTimeout),
+			redis.WithContextTimeoutEnabled(cfg.Cache.Redis.ContextTimeoutEnabled),
+			redis.WithPoolSize(cfg.Cache.Redis.PoolSize),
+			redis.WithPoolTimeout(cfg.Cache.Redis.PoolTimeout),
+			redis.WithMinIdleConns(cfg.Cache.Redis.MinIdleConns),
+			redis.WithMaxIdleConns(cfg.Cache.Redis.MaxIdleConns),
+			redis.WithMaxActiveConns(cfg.Cache.Redis.MaxActiveConns),
+			redis.WithConnMaxIdleTime(cfg.Cache.Redis.ConnMaxIdleTime),
+			redis.WithConnMaxLifetime(cfg.Cache.Redis.ConnMaxLifetime),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize redis cache: %v\n", err)
+		}
+		log.Printf("redis cache initialized\n")
+	case "miniredis":
+	case "memcached":
+	default:
+		cacheEngine = cache.NewNoop()
+	}
+
 	// declare required repositories
 	var (
+		dbCloser          io.Closer
 		exampleRepository example.Repository
 	)
 
@@ -111,16 +151,18 @@ func main() {
 
 		// connect to database
 		slog.Info("Connecting to sqlite...")
-		sqliteConn, sqliteConnErr := sqlite.NewWrapper(
+		sqliteConn, sqliteConnErr := sqlite.New(
 			cfg.Database.Sqlite.SqliteFile,
+			sqlite.WithLogger(slog.Default().With(slog.String("system", "gorm-sqlite"))),
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
-			sqlite.WithLogger(slog.Default().With(slog.String("system", "gorm-sqlite"))),
 		)
 		if sqliteConnErr != nil {
 			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
 		}
 		slog.Info("Connected to sqlite")
+
+		dbCloser = sqliteConn
 
 		// register database metrics
 		prometheus.DefaultRegisterer.MustRegister(
@@ -142,7 +184,7 @@ func main() {
 
 		// connect to database
 		slog.Info("Connecting to PostgreSQL...")
-		pgsqlConn, pgsqlConnErr := pgsql.NewWrapper(
+		pgsqlConn, pgsqlConnErr := pgsql.New(
 			cfg.Database.Pgsql.DSN(),
 			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
 			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
@@ -155,6 +197,8 @@ func main() {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
 		}
 		slog.Info("Connected to PostgreSQL")
+
+		dbCloser = pgsqlConn
 
 		// register database metrics
 		prometheus.DefaultRegisterer.MustRegister(
@@ -171,9 +215,12 @@ func main() {
 
 	{
 		// Example domain
-
 		exampleLogger := slog.Default().With(slog.String("system", "example"))
-		exampleService := example.NewService(exampleRepository, nil, example.WithLogger(exampleLogger))
+		exampleService := example.NewService(
+			exampleRepository,
+			example.WithLogger(exampleLogger),
+			example.WithCache(cacheEngine),
+		)
 		exampleHandler := exampleHttpProvider.New(exampleService)
 		httpServer.RegisterV1(exampleHandler)
 	}
@@ -194,6 +241,7 @@ func main() {
 	shutdown(
 		<-sys, cancel,
 		pprofCloser, etcdCloser, httpServer,
+		cacheEngine, dbCloser,
 	)
 }
 

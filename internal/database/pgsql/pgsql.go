@@ -23,7 +23,7 @@ type Wrapper struct {
 	maxIdleConns    int
 }
 
-func NewWrapper(dsn string, opts ...Option) (*Wrapper, error) {
+func New(dsn string, opts ...Option) (*Wrapper, error) {
 	w := new(Wrapper)
 	for _, opt := range opts {
 		opt(w)

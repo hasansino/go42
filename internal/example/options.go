@@ -9,3 +9,9 @@ func WithLogger(logger *slog.Logger) Option {
 		s.logger = logger
 	}
 }
+
+func WithCache(cache Cache) Option {
+	return func(s *Service) {
+		s.cache = cache
+	}
+}

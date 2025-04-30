@@ -14,9 +14,11 @@ func Migrate(uri string, schemaPath string) error {
 	if err != nil {
 		return err
 	}
+
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}
+
 	goose.SetLogger(
 		slog.NewLogLogger(
 			slog.Default().Handler().WithAttrs(
@@ -25,8 +27,10 @@ func Migrate(uri string, schemaPath string) error {
 			slog.LevelInfo,
 		),
 	)
+
 	if err := goose.Up(db, schemaPath); err != nil {
 		return err
 	}
+
 	return nil
 }

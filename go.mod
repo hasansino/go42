@@ -19,6 +19,7 @@ require (
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/prometheus/client_golang v1.22.0
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/samber/slog-multi v1.4.0
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/client/v3 v3.5.21
@@ -37,6 +38,7 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/glebarez/go-sqlite v1.21.2 // indirect

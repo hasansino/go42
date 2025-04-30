@@ -24,7 +24,7 @@ type ConnectionOption struct {
 	Value string
 }
 
-func NewWrapper(dbPath string, opts ...Option) (*Wrapper, error) {
+func New(dbPath string, opts ...Option) (*Wrapper, error) {
 	w := new(Wrapper)
 	for _, opt := range opts {
 		opt(w)
