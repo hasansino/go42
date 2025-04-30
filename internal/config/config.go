@@ -173,12 +173,13 @@ type Sqlite struct {
 }
 
 type Cache struct {
-	Engine string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcache"`
-	Redis  Redis
+	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached"`
+	Redis     Redis
+	Memcached Memcached
 }
 
 type Redis struct {
-	Host                  string        `env:"CACHE_REDIS_HOST"                    default:""`
+	Host                  string        `env:"CACHE_REDIS_HOST"                    default:"localhost:6379"`
 	DB                    int           `env:"CACHE_REDIS_DB"                      default:"0"`
 	Username              string        `env:"CACHE_REDIS_USERNAME"                default:""`
 	Password              string        `env:"CACHE_REDIS_PASSWORD"                default:""`
@@ -196,6 +197,12 @@ type Redis struct {
 	MaxActiveConns        int           `env:"CACHE_REDIS_MAX_ACTIVE_CONNS"        default:"0"`
 	ConnMaxIdleTime       time.Duration `env:"CACHE_REDIS_CONN_MAX_IDLE_TIME"      default:"0s"`
 	ConnMaxLifetime       time.Duration `env:"CACHE_REDIS_CONN_MAX_LIFETIME"       default:"0s"`
+}
+
+type Memcached struct {
+	Hosts        []string      `env:"CACHE_MEMCACHED_HOSTS"          default:"localhost:11211"`
+	Timeout      time.Duration `env:"CACHE_MEMCACHED_TIMEOUT"        default:"1s"`
+	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
 }
 
 const (

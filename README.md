@@ -34,3 +34,5 @@ Golang application template.
 + queue processing (kafka / rabbitmq / nats / nsq)
 
 + sketch README.md and choose doc generator
+
++ extract validation rules with cfg2env

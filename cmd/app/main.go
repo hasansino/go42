@@ -31,6 +31,8 @@ import (
 
 	"github.com/hasansino/goapp/internal/api"
 	"github.com/hasansino/goapp/internal/cache"
+	"github.com/hasansino/goapp/internal/cache/memcached"
+	"github.com/hasansino/goapp/internal/cache/miniredis"
 	"github.com/hasansino/goapp/internal/cache/redis"
 	"github.com/hasansino/goapp/internal/config"
 	"github.com/hasansino/goapp/internal/database/pgsql"
@@ -124,9 +126,22 @@ func main() {
 		}
 		log.Printf("redis cache initialized\n")
 	case "miniredis":
+		cacheEngine = miniredis.New()
+		log.Printf("miniredis cache initialized\n")
 	case "memcached":
+		var err error
+		cacheEngine, err = memcached.New(
+			cfg.Cache.Memcached.Hosts,
+			memcached.WithTimeout(cfg.Cache.Memcached.Timeout),
+			memcached.WithMaxIdleConns(cfg.Cache.Memcached.MaxIdleConns),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize memcached cache: %v\n", err)
+		}
+		log.Printf("memcached cache initialized\n")
 	default:
 		cacheEngine = cache.NewNoop()
+		log.Printf("no cache engine initialized\n")
 	}
 
 	// declare required repositories

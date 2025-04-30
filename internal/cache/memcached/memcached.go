@@ -1,21 +1,40 @@
 package memcached
 
-import "context"
+import (
+	"context"
+	"time"
 
-type Wrapper struct{}
+	"github.com/bradfitz/gomemcache/memcache"
+)
 
-func New() (*Wrapper, error) {
-	return &Wrapper{}, nil
+type Wrapper struct {
+	client *memcache.Client
+}
+
+func New(hosts []string, opts ...Option) (*Wrapper, error) {
+	client := memcache.New(hosts...)
+	for _, opt := range opts {
+		opt(client)
+	}
+	return &Wrapper{client: client}, client.Ping()
 }
 
 func (w *Wrapper) Close() error {
-	return nil
+	return w.client.Close()
 }
 
-func (w *Wrapper) Get(ctx context.Context, key string, value interface{}) error {
-	return nil
+func (w *Wrapper) Get(_ context.Context, key string) (string, error) {
+	item, err := w.client.Get(key)
+	if err != nil {
+		return "", err
+	}
+	return string(item.Value), nil
 }
 
-func (w *Wrapper) Set(ctx context.Context, key string, value interface{}) error {
-	return nil
+func (w *Wrapper) Set(_ context.Context, key string, value string) error {
+	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value)})
+}
+
+func (w *Wrapper) SetTTL(_ context.Context, key string, value string, ttl time.Duration) error {
+	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value), Expiration: int32(ttl.Seconds())})
 }

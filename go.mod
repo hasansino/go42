@@ -5,6 +5,8 @@ go 1.24.2
 require (
 	github.com/KimMachineGun/automemlimit v0.7.1
 	github.com/VictoriaMetrics/metrics v1.35.2
+	github.com/alicebob/miniredis/v2 v2.34.0
+	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/getsentry/sentry-go v0.32.0
 	github.com/getsentry/sentry-go/slog v0.32.0
@@ -32,6 +34,7 @@ require (
 )
 
 require (
+	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -88,6 +91,7 @@ require (
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.21 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
