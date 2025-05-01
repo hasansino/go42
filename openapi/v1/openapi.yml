@@ -124,7 +124,7 @@ paths:
           schema:
             type: integer
       responses:
-        '204':
+        '200':
           description: Fruit deleted
         '404':
           description: Fruit not found

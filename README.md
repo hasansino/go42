@@ -34,5 +34,3 @@ Golang application template.
 + queue processing (kafka / rabbitmq / nats / nsq)
 
 + sketch README.md and choose doc generator
-
-+ sqlite update deadlock

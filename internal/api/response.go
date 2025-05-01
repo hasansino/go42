@@ -11,5 +11,9 @@ type Error struct {
 }
 
 func SendJSONError(ctx echo.Context, code int, msg string, errs ...interface{}) error {
-	return ctx.JSON(code, Error{code, msg, errs})
+	errorResponse := Error{Code: code, Message: msg}
+	if len(errs) > 0 {
+		errorResponse.Details = errs
+	}
+	return ctx.JSON(code, errorResponse)
 }

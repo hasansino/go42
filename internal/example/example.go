@@ -27,7 +27,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id int) (*models.Fruit, error)
 	Create(ctx context.Context, fruit *models.Fruit) error
 	Update(ctx context.Context, fruit *models.Fruit) error
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, fruit *models.Fruit) error
 }
 
 // Service layer of example domain
@@ -99,7 +99,18 @@ func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*
 }
 
 func (s *Service) Delete(ctx context.Context, id int) error {
-	return s.repository.Delete(ctx, id)
+	return s.withTransaction(ctx, func(txCtx context.Context) error {
+		var err error
+		fruit, err := s.repository.GetByID(txCtx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get fruit by id: %w", err)
+		}
+		err = s.repository.Delete(txCtx, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to delete fruit: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitRequest) (*models.Fruit, error) {

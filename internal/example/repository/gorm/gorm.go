@@ -33,6 +33,13 @@ func (r *Repository) getKey() txKey {
 	return txKey{}
 }
 
+func (r *Repository) getTx(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(r.getKey()).(*gorm.DB); ok {
+		return tx
+	}
+	return r.db.WithContext(ctx)
+}
+
 func (r *Repository) Begin(ctx context.Context) (context.Context, error) {
 	if _, ok := ctx.Value(r.getKey()).(*gorm.DB); ok {
 		return ctx, errors.New("transaction already exists in context")
@@ -71,7 +78,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fru
 		limit = 10
 	}
 	var fruits []*models.Fruit
-	result := r.db.Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
+	result := r.getTx(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
 	if result.Error != nil {
 		return nil, fmt.Errorf("error listing fruits: %w", result.Error)
 	}
@@ -80,7 +87,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fru
 
 func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error) {
 	var fruit models.Fruit
-	result := r.db.First(&fruit, id)
+	result := r.getTx(ctx).First(&fruit, id)
 	if result.Error != nil {
 		if r.sqlCore.IsNotFoundError(result.Error) {
 			return nil, domain.ErrNotFound
@@ -91,7 +98,7 @@ func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error)
 }
 
 func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
-	err := r.db.Create(fruit).Error
+	err := r.getTx(ctx).Create(fruit).Error
 	if err != nil {
 		if r.sqlCore.IsDuplicateKeyError(err) {
 			return domain.ErrAlreadyExists
@@ -101,15 +108,8 @@ func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
 	return nil
 }
 
-func (r *Repository) Delete(ctx context.Context, id int) error {
-	var fruit models.Fruit
-	if result := r.db.First(&fruit, id); result.Error != nil {
-		if r.sqlCore.IsNotFoundError(result.Error) {
-			return domain.ErrNotFound
-		}
-		return fmt.Errorf("error fetching fruit by ID: %w", result.Error)
-	}
-	result := r.db.Delete(&fruit, id)
+func (r *Repository) Delete(ctx context.Context, fruit *models.Fruit) error {
+	result := r.getTx(ctx).Delete(&fruit)
 	if result.Error != nil {
 		if result.RowsAffected == 0 {
 			return domain.ErrNotFound
@@ -120,14 +120,9 @@ func (r *Repository) Delete(ctx context.Context, id int) error {
 }
 
 func (r *Repository) Update(ctx context.Context, fruit *models.Fruit) error {
-	var existingFruit models.Fruit
-	if result := r.db.First(&existingFruit, fruit.ID); result.Error != nil {
-		if r.sqlCore.IsDuplicateKeyError(result.Error) {
-			return domain.ErrAlreadyExists
-		}
-	}
-	if err := r.db.Save(fruit).Error; err != nil {
-		return fmt.Errorf("error updating fruit: %w", err)
+	tx := r.getTx(ctx).Save(fruit)
+	if tx.Error != nil {
+		return fmt.Errorf("error updating fruit: %w", tx.Error)
 	}
 	return nil
 }
