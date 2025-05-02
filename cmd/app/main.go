@@ -99,6 +99,7 @@ func main() {
 
 	// grpc server
 	grpcServer := grpcAPI.New(
+		grpcAPI.WithLogger(slog.Default().With(slog.String("system", "grpc"))),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
 	)

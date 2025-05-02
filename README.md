@@ -35,3 +35,7 @@ Golang application template.
 + ratelimits
 + circuit breaker (https://github.com/sony/gobreaker)
 + retry
+
++ tracing
+
++ https://github.com/bufbuild/protovalidate

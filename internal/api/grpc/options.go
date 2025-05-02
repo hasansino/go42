@@ -1,8 +1,19 @@
 package grpc
 
-import "google.golang.org/grpc"
+import (
+	"log/slog"
+
+	"google.golang.org/grpc"
+)
 
 type Option func(*Server)
+
+// WithLogger sets the logger.
+func WithLogger(logger *slog.Logger) Option {
+	return func(s *Server) {
+		s.logger = logger
+	}
+}
 
 // WithMaxRecvMsgSize sets the maximum receive message size.
 func WithMaxRecvMsgSize(size int) Option {
