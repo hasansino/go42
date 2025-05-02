@@ -34,7 +34,7 @@ func (p *Provider) ListFruits(ctx context.Context, req *ListFruitsRequest) (*Lis
 	resp := &ListFruitsResponse{}
 	for _, f := range fruits {
 		resp.Fruits = append(resp.Fruits, &Fruit{
-			Id:   int32(f.ID),
+			Id:   uint32(f.ID),
 			Name: f.Name,
 		})
 	}
@@ -47,7 +47,7 @@ func (p *Provider) GetFruit(ctx context.Context, req *GetFruitRequest) (*Fruit, 
 		return nil, status.Errorf(codes.NotFound, "fruit not found: %v", err)
 	}
 	return &Fruit{
-		Id:   int32(fruit.ID),
+		Id:   uint32(fruit.ID),
 		Name: fruit.Name,
 	}, nil
 }
@@ -59,7 +59,7 @@ func (p *Provider) CreateFruit(ctx context.Context, req *CreateFruitRequest) (*C
 	}
 	return &CreateFruitResponse{
 		Fruit: &Fruit{
-			Id:   int32(created.ID),
+			Id:   uint32(created.ID),
 			Name: created.Name,
 		},
 	}, nil
@@ -72,7 +72,7 @@ func (p *Provider) UpdateFruit(ctx context.Context, req *UpdateFruitRequest) (*U
 	}
 	return &UpdateFruitResponse{
 		Fruit: &Fruit{
-			Id:   int32(updated.ID),
+			Id:   uint32(updated.ID),
 			Name: updated.Name,
 		},
 	}, nil
