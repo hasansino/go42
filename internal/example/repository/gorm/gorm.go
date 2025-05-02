@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -29,30 +30,34 @@ func New(db *gorm.DB, sqlCore sqlCoreAccessor) *Repository {
 
 type txKey struct{}
 
-func (r *Repository) getKey() txKey {
+func (r *Repository) getTxKey() txKey {
 	return txKey{}
 }
 
 func (r *Repository) getTx(ctx context.Context) *gorm.DB {
-	if tx, ok := ctx.Value(r.getKey()).(*gorm.DB); ok {
+	if tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return tx
 	}
 	return r.db.WithContext(ctx)
 }
 
-func (r *Repository) Begin(ctx context.Context) (context.Context, error) {
-	if _, ok := ctx.Value(r.getKey()).(*gorm.DB); ok {
+func (r *Repository) begin(ctx context.Context, isolationLevel sql.IsolationLevel) (context.Context, error) {
+	if _, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return ctx, errors.New("transaction already exists in context")
 	}
-	tx := r.db.WithContext(ctx).Begin()
+	tx := r.db.WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLevel})
 	if tx.Error != nil {
 		return ctx, fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
-	return context.WithValue(ctx, r.getKey(), tx), nil
+	return context.WithValue(ctx, r.getTxKey(), tx), nil
+}
+
+func (r *Repository) Begin(ctx context.Context) (context.Context, error) {
+	return r.begin(ctx, sql.LevelDefault)
 }
 
 func (r *Repository) Commit(ctx context.Context) error {
-	tx, ok := ctx.Value(r.getKey()).(*gorm.DB)
+	tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB)
 	if !ok {
 		return errors.New("no transaction found in context")
 	}
@@ -63,7 +68,7 @@ func (r *Repository) Commit(ctx context.Context) error {
 }
 
 func (r *Repository) Rollback(ctx context.Context) error {
-	tx, ok := ctx.Value(r.getKey()).(*gorm.DB)
+	tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB)
 	if !ok {
 		return errors.New("no transaction found in context")
 	}
