@@ -41,11 +41,6 @@ func generateRandomName(prefix string) string {
 }
 
 var _ = Describe("Fruits API Integration Tests", func() {
-
-	if os.Getenv("CI") == "yes" {
-		Skip("Skipping tests in CI/CD environment")
-	}
-
 	var client *http.Client
 
 	BeforeEach(func() {
@@ -270,6 +265,10 @@ var _ = Describe("Fruits API Integration Tests", func() {
 })
 
 func TestIntegration(t *testing.T) {
+	if os.Getenv("CI") == "yes" {
+		defer GinkgoRecover()
+		Skip("Skipping tests in CI/CD environment")
+	}
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Fruits API Integration Suite")
 }

@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: securego/gosec@master
         with:
-          args: ./...
+          args: -exclude-generated ./...
   # https://github.com/sonatype-nexus-community/nancy
   nancy:
     continue-on-error: ${{ inputs.continue_on_error }}

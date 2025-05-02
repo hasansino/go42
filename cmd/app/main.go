@@ -528,20 +528,11 @@ func initProfiling(cfg *config.Config) io.Closer {
 }
 
 func initMetrics(cfg *config.Config) http.Handler {
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(
-		collectors.NewGoCollector(),
-		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
-	)
-	prometheus.DefaultRegisterer = reg
-
 	hostname, _ := os.Hostname()
-
 	metrics.RegisterGlobalLabels(map[string]interface{}{
 		"hostname": hostname,
 		"service":  cfg.ServiceName,
 	})
-
 	metrics.Gauge("application_build", map[string]interface{}{
 		"build_date":   xBuildDate,
 		"build_tag":    xBuildTag,
@@ -550,15 +541,15 @@ func initMetrics(cfg *config.Config) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// write metrics from `github.com/prometheus/client_golang` collectors
+		// they are initialised in init() of prom package
 		promhttp.HandlerFor(
-			reg,
+			prometheus.DefaultGatherer,
 			promhttp.HandlerOpts{
-				Registry: reg,
+				Registry: prometheus.DefaultRegisterer,
 				ErrorLog: log.Default(),
 				Timeout:  cfg.Metrics.Timeout,
 			}).ServeHTTP(w, r)
 		// append metrics from `github.com/VictoriaMetrics/metrics`
-		// runtime metrics are collected by collectors.NewGoCollector() instead
 		vmetrics.WritePrometheus(w, false)
 	})
 }
