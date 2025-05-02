@@ -61,6 +61,8 @@ helm-lint:
 
 ## gen-dep-graph | generate dependency graph
 # Not invoked in CI/CD pipeline.
-# Requires `github.com/loov/goda` and `graphviz`.
+# Dependencies:
+#   * brew install graphviz
+#   * go install github.com/loov/goda@latest
 gen-dep-graph:
 	@goda graph "github.com/hasansino/goapp/..." | dot -Tsvg -o dep-graph.svg

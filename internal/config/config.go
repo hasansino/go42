@@ -23,11 +23,12 @@ type Config struct {
 	Sentry      Sentry
 	Metrics     Metrics
 	Pprof       Pprof
-	Server      Server
 	Vault       Vault
 	Etcd        Etcd
 	Database    Database
 	Cache       Cache
+	Server      Server
+	GRPC        GRPC
 }
 
 type Limits struct {
@@ -105,14 +106,6 @@ type Pprof struct {
 	Prefix       string        `env:"PPROF_PREFIX"        default:"/debug/pprof"`
 	ReadTimeout  time.Duration `env:"PPROF_READ_TIMEOUT"  default:"5s"`
 	WriteTimeout time.Duration `env:"PPROF_WRITE_TIMEOUT" default:"60s"`
-}
-
-type Server struct {
-	Listen       string        `env:"SERVER_LISTEN"        default:":8080"`
-	ReadTimeout  time.Duration `env:"SERVER_READ_TIMEOUT"  default:"5s"`
-	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
-	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
-	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
 
 type Vault struct {
@@ -203,6 +196,20 @@ type Memcached struct {
 	Hosts        []string      `env:"CACHE_MEMCACHED_HOSTS"          default:"localhost:11211"`
 	Timeout      time.Duration `env:"CACHE_MEMCACHED_TIMEOUT"        default:"1s"`
 	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
+}
+
+type Server struct {
+	Listen       string        `env:"SERVER_LISTEN"        default:":8080"`
+	ReadTimeout  time.Duration `env:"SERVER_READ_TIMEOUT"  default:"5s"`
+	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
+	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
+	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+}
+
+type GRPC struct {
+	Listen         string `env:"GRPC_LISTEN"            default:":50051"`
+	MaxRecvMsgSize int    `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
+	MaxSendMsgSize int    `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
 }
 
 const (

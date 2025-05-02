@@ -28,8 +28,10 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.uber.org/automaxprocs/maxprocs"
+	"google.golang.org/grpc"
 
-	"github.com/hasansino/goapp/internal/api"
+	grpcAPI "github.com/hasansino/goapp/internal/api/grpc"
+	httpAPI "github.com/hasansino/goapp/internal/api/http"
 	"github.com/hasansino/goapp/internal/cache"
 	"github.com/hasansino/goapp/internal/cache/memcached"
 	"github.com/hasansino/goapp/internal/cache/miniredis"
@@ -40,6 +42,7 @@ import (
 	"github.com/hasansino/goapp/internal/database/sqlite"
 	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
 	"github.com/hasansino/goapp/internal/example"
+	exampleGrpcProvider "github.com/hasansino/goapp/internal/example/provider/grpc"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
 	exampleGormRepository "github.com/hasansino/goapp/internal/example/repository/gorm"
 	"github.com/hasansino/goapp/internal/metrics"
@@ -85,14 +88,20 @@ func main() {
 	metricsHandler := initMetrics(cfg)
 
 	// http server
-	httpServer := api.New(
-		api.WithLogger(slog.Default().With(slog.String("system", "api"))),
-		api.WithReadTimeout(cfg.Server.ReadTimeout),
-		api.WithWriteTimeout(cfg.Server.WriteTimeout),
-		api.WithStaticRoot(cfg.Server.StaticRoot),
-		api.WithSwaggerRoot(cfg.Server.SwaggerRoot),
+	httpServer := httpAPI.New(
+		httpAPI.WithLogger(slog.Default().With(slog.String("system", "api"))),
+		httpAPI.WithReadTimeout(cfg.Server.ReadTimeout),
+		httpAPI.WithWriteTimeout(cfg.Server.WriteTimeout),
+		httpAPI.WithStaticRoot(cfg.Server.StaticRoot),
+		httpAPI.WithSwaggerRoot(cfg.Server.SwaggerRoot),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
+
+	// grpc server
+	grpcServer := grpcAPI.New(
+		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
+		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
+	)
 
 	// cache engine
 	var (
@@ -236,8 +245,12 @@ func main() {
 			example.WithLogger(exampleLogger),
 			example.WithCache(cacheEngine),
 		)
-		exampleHandler := exampleHttpProvider.New(exampleService)
-		httpServer.RegisterV1(exampleHandler)
+		// http
+		exampleHttp := exampleHttpProvider.New(exampleService)
+		httpServer.RegisterV1(exampleHttp)
+		// grpc
+		exampleGrpc := exampleGrpcProvider.New(exampleService)
+		grpcServer.Register(exampleGrpc)
 	}
 
 	// ---
@@ -246,7 +259,15 @@ func main() {
 		slog.Info("starting http server...", slog.String("port", cfg.Server.Listen))
 		if err := httpServer.Start(cfg.Server.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
-			slog.Error("failed to start HTTP server", slog.Any("error", err))
+			slog.Error("failed to start http server", slog.Any("error", err))
+		}
+	}()
+
+	go func() {
+		slog.Info("starting grpc server...", slog.String("port", cfg.GRPC.Listen))
+		if err := grpcServer.Serve(cfg.GRPC.Listen); err != nil &&
+			!errors.Is(err, grpc.ErrServerStopped) {
+			slog.Error("failed to start grpc server", slog.Any("error", err))
 		}
 	}()
 
@@ -255,7 +276,9 @@ func main() {
 	signal.Notify(sys, syscall.SIGINT, syscall.SIGTERM)
 	shutdown(
 		<-sys, cancel,
-		pprofCloser, etcdCloser, httpServer,
+		// same order will be used to call Close()
+		etcdCloser,
+		pprofCloser, httpServer, grpcServer,
 		cacheEngine, dbCloser,
 	)
 }

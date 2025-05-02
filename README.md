@@ -12,7 +12,6 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + https://github.com/google/perfetto
-+ https://github.com/sony/gobreaker
 + https://github.com/FiloSottile/mkcert
 + cli example
   * https://github.com/rivo/tview
@@ -29,8 +28,10 @@ Golang application template.
   * revert deployment
 + grafana dashboard
 
-+ grpc server / client
-
 + queue processing (kafka / rabbitmq / nats / nsq)
 
 + sketch README.md and choose doc generator
+
++ ratelimits
++ circuit breaker (https://github.com/sony/gobreaker)
++ retry

@@ -1,4 +1,4 @@
-package api
+package http
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	customMiddleware "github.com/hasansino/goapp/internal/api/middleware"
+	customMiddleware "github.com/hasansino/goapp/internal/api/http/middleware"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 // providerAccessor for all handler providers.
 type providerAccessor interface {
-	Register(r *echo.Group)
+	Register(*echo.Group)
 }
 
 const (

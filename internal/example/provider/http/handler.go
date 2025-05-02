@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/hasansino/goapp/internal/api"
+	httpAPI "github.com/hasansino/goapp/internal/api/http"
 	"github.com/hasansino/goapp/internal/example"
 	"github.com/hasansino/goapp/internal/example/domain"
 	"github.com/hasansino/goapp/internal/utils"
@@ -50,7 +50,7 @@ func (h *Handler) fruits(ctx echo.Context) error {
 func (h *Handler) fruitByID(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		return api.SendJSONError(ctx,
+		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 	r, err := h.service.FruitByID(ctx.Request().Context(), id)
@@ -64,13 +64,13 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 	req := new(domain.CreateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
-		return api.SendJSONError(ctx,
+		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 
 	vErrs := utils.ValidateStruct(req)
 	if vErrs != nil {
-		return api.SendJSONError(
+		return httpAPI.SendJSONError(
 			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
 		)
 	}
@@ -86,7 +86,7 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 func (h *Handler) deleteFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		return api.SendJSONError(ctx,
+		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
@@ -98,20 +98,20 @@ func (h *Handler) deleteFruit(ctx echo.Context) error {
 func (h *Handler) updateFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		return api.SendJSONError(ctx,
+		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 
 	req := new(domain.UpdateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
-		return api.SendJSONError(ctx,
+		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 
 	vErrs := utils.ValidateStruct(req)
 	if vErrs != nil {
-		return api.SendJSONError(
+		return httpAPI.SendJSONError(
 			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
 		)
 	}
