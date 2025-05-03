@@ -16,8 +16,9 @@ import (
 
 type Config struct {
 	sync.RWMutex
-	ServiceName string `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
-	Environment string `env:"ENVIRONMENT"  default:""`
+	ServiceName string        `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
+	Environment string        `env:"ENVIRONMENT"  default:""`
+	GracePeriod time.Duration `env:"GRACE_PERIOD" default:"10s"`
 	Limits      Limits
 	Logger      Logger
 	Sentry      Sentry
@@ -204,12 +205,14 @@ type Server struct {
 	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+	GracePeriod  time.Duration `env:"SERVER_GRACE_PERIOD"  default:"5s"`
 }
 
 type GRPC struct {
-	Listen         string `env:"GRPC_LISTEN"            default:":50051"`
-	MaxRecvMsgSize int    `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
-	MaxSendMsgSize int    `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
+	Listen         string        `env:"GRPC_LISTEN"            default:":50051"`
+	MaxRecvMsgSize int           `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
+	MaxSendMsgSize int           `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
+	GracePeriod    time.Duration `env:"GRPC_GRACE_PERIOD"      default:"5s"`
 }
 
 const (

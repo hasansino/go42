@@ -36,3 +36,9 @@ func WithSwaggerRoot(root string) Option {
 		s.swaggerRoot = root
 	}
 }
+
+func WithGracePeriod(d time.Duration) Option {
+	return func(s *Server) {
+		s.gracePeriod = d
+	}
+}

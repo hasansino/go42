@@ -69,14 +69,14 @@ func init() {
 }
 
 func main() {
+	// main context of the application
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// configuration
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("failed to initialize config: %v\n", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// core systems
 	initLogging(cfg)
@@ -90,6 +90,7 @@ func main() {
 	// http server
 	httpServer := httpAPI.New(
 		httpAPI.WithLogger(slog.Default().With(slog.String("system", "api"))),
+		httpAPI.WithGracePeriod(cfg.Server.GracePeriod),
 		httpAPI.WithReadTimeout(cfg.Server.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.Server.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.Server.StaticRoot),
@@ -100,6 +101,7 @@ func main() {
 	// grpc server
 	grpcServer := grpcAPI.New(
 		grpcAPI.WithLogger(slog.Default().With(slog.String("system", "grpc"))),
+		grpcAPI.WithGracePeriod(cfg.GRPC.GracePeriod),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
 	)
@@ -154,9 +156,9 @@ func main() {
 		log.Printf("no cache engine initialized\n")
 	}
 
-	// declare required repositories
 	var (
-		dbCloser          io.Closer
+		dbCloser io.Closer
+		// declare required repositories
 		exampleRepository example.Repository
 	)
 
@@ -272,12 +274,10 @@ func main() {
 		}
 	}()
 
-	// listen for signals
-	sys := make(chan os.Signal, 1)
-	signal.Notify(sys, syscall.SIGINT, syscall.SIGTERM)
+	// entities passed into shutdown are processed in the same order
 	shutdown(
-		<-sys, cancel,
-		// same order will be used to call Close()
+		cfg,
+		cancel,
 		etcdCloser,
 		pprofCloser, httpServer, grpcServer,
 		cacheEngine, dbCloser,
@@ -524,6 +524,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 		}
 	}()
 
+	// there is no value in graceful shutdown of pprof, hence we return just io.Closer()
 	return server
 }
 
@@ -554,21 +555,52 @@ func initMetrics(cfg *config.Config) http.Handler {
 	})
 }
 
-// shutdown implements all graceful shutdown logic.
-func shutdown(_ os.Signal, cancel context.CancelFunc, closers ...io.Closer) {
-	log.Println("Shutting down...")
-	cancel()
-	for _, c := range closers {
-		if c == nil {
-			continue
+func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...io.Closer) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	// wait for signal
+	sig := <-sigChan
+	log.Printf("Received %s, shutting down...\n", sig.String())
+
+	// allows second signal to bypass graceful shutdown and terminate application immediately
+	signal.Stop(sigChan)
+
+	// timeout for graceful shutdown
+	ctx, done := context.WithTimeout(context.Background(), cfg.GracePeriod)
+	defer done()
+
+	doneChan := make(chan struct{})
+	go func() {
+		// cancel is async action, and do not handle any termination logic
+		// a small delay is usually required to allow all goroutines to finish
+		mainCancel()
+		// @TODO disable readiness probe
+		time.Sleep(time.Second) // @TODO
+		for _, c := range closers {
+			if c == nil {
+				continue
+			}
+			// every closer can, and should have own shutdown timeout
+			// we assume that Close() is blocking and final operation
+			// that is, when Close() returns, all resources are released
+			if err := c.Close(); err != nil {
+				log.Printf(
+					"shutdown: error closing %s: %v",
+					reflect.TypeOf(c).String(), err,
+				)
+			}
 		}
-		if err := c.Close(); err != nil {
-			log.Printf(
-				"shutdown: error closing %s: %v",
-				reflect.TypeOf(c).String(), err,
-			)
-		}
+		sentry.Flush(time.Second) // @TODO
+		close(doneChan)
+	}()
+
+	select {
+	case <-doneChan:
+		log.Println("graceful shutdown completed")
+	case <-ctx.Done():
+		log.Println("graceful shutdown timed out")
 	}
-	sentry.Flush(2 * time.Second)
+
 	os.Exit(0)
 }

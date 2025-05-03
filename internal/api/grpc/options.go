@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"log/slog"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -26,5 +27,11 @@ func WithMaxRecvMsgSize(size int) Option {
 func WithMaxSendMsgSize(size int) Option {
 	return func(s *Server) {
 		s.serverOptions = append(s.serverOptions, grpc.MaxSendMsgSize(size))
+	}
+}
+
+func WithGracePeriod(d time.Duration) Option {
+	return func(s *Server) {
+		s.gracePeriod = d
 	}
 }

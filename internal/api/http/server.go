@@ -20,10 +20,6 @@ type providerAccessor interface {
 	Register(*echo.Group)
 }
 
-const (
-	ShutdownTimeout = 10 * time.Second
-)
-
 type PanicError struct {
 	BaseErr error
 	Stack   []byte
@@ -41,6 +37,8 @@ type Server struct {
 
 	staticRoot  string
 	swaggerRoot string
+
+	gracePeriod time.Duration
 }
 
 func New(opts ...Option) *Server {
@@ -167,7 +165,7 @@ func (s *Server) Start(addr string) error {
 }
 
 func (s *Server) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.gracePeriod)
 	defer cancel()
 	return s.e.Shutdown(ctx)
 }
