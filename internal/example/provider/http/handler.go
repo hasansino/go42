@@ -9,7 +9,7 @@ import (
 	httpAPI "github.com/hasansino/goapp/internal/api/http"
 	"github.com/hasansino/goapp/internal/example"
 	"github.com/hasansino/goapp/internal/example/domain"
-	"github.com/hasansino/goapp/internal/utils"
+	"github.com/hasansino/goapp/internal/tools"
 )
 
 // Handler provider for fiber framework
@@ -68,10 +68,11 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 
-	vErrs := utils.ValidateStruct(req)
+	vErrs := tools.ValidateStruct(req)
 	if vErrs != nil {
 		return httpAPI.SendJSONError(
-			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
 		)
 	}
 
@@ -109,10 +110,11 @@ func (h *Handler) updateFruit(ctx echo.Context) error {
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
 
-	vErrs := utils.ValidateStruct(req)
+	vErrs := tools.ValidateStruct(req)
 	if vErrs != nil {
 		return httpAPI.SendJSONError(
-			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest), vErrs,
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
 		)
 	}
 

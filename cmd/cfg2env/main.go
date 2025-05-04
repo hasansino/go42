@@ -6,7 +6,7 @@ import (
 	"github.com/hasansino/cfg2env"
 
 	"github.com/hasansino/goapp/internal/config"
-	"github.com/hasansino/goapp/internal/utils"
+	"github.com/hasansino/goapp/internal/tools"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 		cfg2env.WithDefaultValueTagName(config.TagNameDefaultValue),
 		cfg2env.WithExportedFileName(".env.example"),
 		cfg2env.WithExtraEntry("COMPOSE_PROJECT_NAME", cfg.ServiceName),
-		cfg2env.WithExtraTagExtraction(utils.ValidateRulesTagName),
+		cfg2env.WithExtraTagExtraction(tools.ValidateRulesTagName),
 	)
 	err = e.ToFile(cfg)
 	if err != nil {

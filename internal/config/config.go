@@ -11,7 +11,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 
-	"github.com/hasansino/goapp/internal/utils"
+	"github.com/hasansino/goapp/internal/tools"
 )
 
 type Config struct {
@@ -230,9 +230,14 @@ func New() (*Config, error) {
 		return nil, err
 	}
 
-	vErrs := utils.ValidateStruct(cfg)
+	vErrs := tools.ValidateStruct(cfg)
 	if len(vErrs) > 0 {
-		return nil, fmt.Errorf("validation errors: %s", vErrs.Strings())
+		var line string
+		for _, vErr := range vErrs {
+			line += vErr.Compact() + ","
+		}
+		line = strings.TrimSuffix(line, ",")
+		return nil, fmt.Errorf("validation errors: %s", line)
 	}
 
 	return cfg, nil
