@@ -69,6 +69,7 @@ func (e ValidationError) Detail() string {
 	if e.detail != "" {
 		return e.detail
 	}
+	// @todo translate rules to pretty sentences
 	return fmt.Sprintf("rule `%s` with value of %s", e.original.ActualTag(), e.original.Param())
 }
 
