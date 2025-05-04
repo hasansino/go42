@@ -18,24 +18,21 @@ Golang application template.
   * https://github.com/mum4k/termdash
   * https://github.com/charmbracelet
 + https://docs.datadoghq.com/
-
 + domains, tls, letsencrypt
-
 + deployment
   * helm chart + linter
   * kubernetes
   * cloud environment
   * revert deployment
 + grafana dashboard
-
 + queue processing (kafka / rabbitmq / nats / nsq)
-
 + sketch README.md and choose doc generator
-
-+ ratelimits
-+ circuit breaker (https://github.com/sony/gobreaker)
-+ retry
-
++ circuit breaker (https://github.com/sony/gobreaker) + retry
 + tracing
-
 + https://github.com/bufbuild/protovalidate
++ https://github.com/knadh/koanf
++ https://github.com/maypok86/otter - https://s3fifo.com/
++ https://github.com/ent/ent
++ https://github.com/stoplightio/prism
++ https://github.com/daveshanley/vacuum
++ stress testing

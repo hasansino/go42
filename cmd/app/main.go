@@ -555,7 +555,9 @@ func initMetrics(cfg *config.Config) http.Handler {
 	})
 }
 
-func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...io.Closer) {
+func shutdown(
+	cfg *config.Config, mainCancel context.CancelFunc, closers ...io.Closer,
+) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
