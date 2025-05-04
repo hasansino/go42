@@ -3,7 +3,7 @@
 .git/
 .github/
 infra/
-
+bin/
 .DS_Store
 .env
 .golangci.yml
