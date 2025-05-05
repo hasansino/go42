@@ -36,3 +36,5 @@ Golang application template.
 + https://github.com/stoplightio/prism
 + https://github.com/daveshanley/vacuum
 + stress testing
++ https://github.com/bytedance/sonic
++ replace Make with some other build tool

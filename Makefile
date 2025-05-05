@@ -19,6 +19,8 @@ run:
 
 ## debug | run application with delve debugger
 # Not invoked in CI/CD pipeline.
+# Dependencies:
+#   * go install github.com/go-delve/delve@latest
 debug:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
@@ -71,6 +73,6 @@ gen-dep-graph:
 # Not invoked in CI/CD pipeline.
 # Dependencies:
 #   * go install loov.dev/lensm@main
-# Run: FILTER={regex} make show-asm
+# Usage: FILTER={regex} make show-asm
 show-asm: build
 	@lensm -watch -text-size 22 -filter $(FILTER) bin/app

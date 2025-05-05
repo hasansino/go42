@@ -37,6 +37,7 @@ import (
 	"github.com/hasansino/goapp/internal/cache/miniredis"
 	"github.com/hasansino/goapp/internal/cache/redis"
 	"github.com/hasansino/goapp/internal/config"
+	"github.com/hasansino/goapp/internal/core"
 	"github.com/hasansino/goapp/internal/database/pgsql"
 	pgsqlMigrate "github.com/hasansino/goapp/internal/database/pgsql/migrate"
 	"github.com/hasansino/goapp/internal/database/sqlite"
@@ -89,7 +90,7 @@ func main() {
 
 	// http server
 	httpServer := httpAPI.New(
-		httpAPI.WithLogger(slog.Default().With(slog.String("system", "api"))),
+		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
 		httpAPI.WithGracePeriod(cfg.Server.GracePeriod),
 		httpAPI.WithReadTimeout(cfg.Server.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.Server.WriteTimeout),
@@ -100,7 +101,7 @@ func main() {
 
 	// grpc server
 	grpcServer := grpcAPI.New(
-		grpcAPI.WithLogger(slog.Default().With(slog.String("system", "grpc"))),
+		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
 		grpcAPI.WithGracePeriod(cfg.GRPC.GracePeriod),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
@@ -180,7 +181,7 @@ func main() {
 		slog.Info("Connecting to sqlite...")
 		sqliteConn, sqliteConnErr := sqlite.New(
 			cfg.Database.Sqlite.SqliteFile,
-			sqlite.WithLogger(slog.Default().With(slog.String("system", "gorm-sqlite"))),
+			sqlite.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "gorm-sqlite"))),
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
@@ -218,7 +219,7 @@ func main() {
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
 			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
-			pgsql.WithLogger(slog.Default().With(slog.String("system", "gorm-pgsql"))),
+			pgsql.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "gorm-pgsql"))),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
@@ -242,7 +243,7 @@ func main() {
 
 	{
 		// Example domain
-		exampleLogger := slog.Default().With(slog.String("system", "example"))
+		exampleLogger := slog.Default().With(slog.String(core.LogFieldComponent, "example"))
 		exampleService := example.NewService(
 			exampleRepository,
 			example.WithLogger(exampleLogger),
@@ -389,7 +390,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) io.Closer {
 		log.Fatalf("Failed to connect to etcd: %v", err)
 	}
 
-	etcdLogger := slog.Default().With(slog.String("system", "etcd"))
+	etcdLogger := slog.Default().With(slog.String(core.LogFieldComponent, "etcd"))
 
 	switch cfg.Etcd.Method {
 	case "bind":
@@ -430,7 +431,7 @@ func initLimits(cfg *config.Config) {
 	}
 	if cfg.Limits.AutoMemLimitEnabled {
 		_, err = memlimit.SetGoMemLimitWithOpts(
-			memlimit.WithLogger(slog.Default().With(slog.String("system", "memlimit"))),
+			memlimit.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "memlimit"))),
 			memlimit.WithRatio(cfg.Limits.MemLimitRatio),
 			memlimit.WithProvider(
 				memlimit.ApplyFallback(
@@ -514,7 +515,7 @@ func initProfiling(cfg *config.Config) io.Closer {
 		Handler:      pprofMux,
 		ErrorLog: slog.NewLogLogger(
 			slog.Default().With(
-				slog.String("system", "pprof"),
+				slog.String(core.LogFieldComponent, "pprof"),
 			).Handler(), slog.LevelError),
 	}
 
