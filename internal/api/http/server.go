@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -37,8 +36,6 @@ type Server struct {
 
 	staticRoot  string
 	swaggerRoot string
-
-	gracePeriod time.Duration
 }
 
 func New(opts ...Option) *Server {
@@ -164,9 +161,7 @@ func (s *Server) Start(addr string) error {
 	return s.e.Start(addr)
 }
 
-func (s *Server) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.gracePeriod)
-	defer cancel()
+func (s *Server) Shutdown(ctx context.Context) error {
 	return s.e.Shutdown(ctx)
 }
 

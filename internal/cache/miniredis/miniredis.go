@@ -17,7 +17,7 @@ func New() *Wrapper {
 	}
 }
 
-func (w *Wrapper) Close() error {
+func (w *Wrapper) Shutdown(_ context.Context) error {
 	w.client.Close()
 	return nil
 }

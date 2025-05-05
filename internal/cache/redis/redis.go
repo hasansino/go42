@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -29,8 +30,17 @@ func New(host string, db int, opts ...Option) (*Wrapper, error) {
 	return w, nil
 }
 
-func (w *Wrapper) Close() error {
-	return w.client.Close()
+func (w *Wrapper) Shutdown(ctx context.Context) error {
+	doneChan := make(chan error)
+	go func() {
+		doneChan <- w.client.Shutdown(ctx).Err()
+	}()
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout")
+	case err := <-doneChan:
+		return err
+	}
 }
 
 func (w *Wrapper) Get(ctx context.Context, key string) (string, error) {

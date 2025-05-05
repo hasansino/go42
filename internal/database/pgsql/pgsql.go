@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log/slog"
@@ -56,8 +57,17 @@ func New(dsn string, opts ...Option) (*Wrapper, error) {
 	return w, nil
 }
 
-func (w *Wrapper) Close() error {
-	return w.sqlDB.Close()
+func (w *Wrapper) Shutdown(ctx context.Context) error {
+	doneChan := make(chan error)
+	go func() {
+		doneChan <- w.sqlDB.Close()
+	}()
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout")
+	case err := <-doneChan:
+		return err
+	}
 }
 
 func (w *Wrapper) GormDB() *gorm.DB {

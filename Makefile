@@ -33,6 +33,7 @@ debug:
 # Not invoked in CI/CD pipeline.
 build:
 	@go build -o ./bin/app ./cmd/app/main.go
+	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app
 
 ## image | build docker image
 # Not invoked in CI/CD pipeline.

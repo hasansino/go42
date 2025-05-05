@@ -16,20 +16,25 @@ import (
 
 type Config struct {
 	sync.RWMutex
-	ServiceName string        `env:"SERVICE_NAME" default:"{{SERVICE_NAME}}"`
-	Environment string        `env:"ENVIRONMENT"  default:""`
-	GracePeriod time.Duration `env:"GRACE_PERIOD" default:"10s"`
-	Limits      Limits
-	Logger      Logger
-	Sentry      Sentry
-	Metrics     Metrics
-	Pprof       Pprof
-	Vault       Vault
-	Etcd        Etcd
-	Database    Database
-	Cache       Cache
-	Server      Server
-	GRPC        GRPC
+	Core     Core
+	Limits   Limits
+	Logger   Logger
+	Metrics  Metrics
+	Tracing  Tracing
+	Sentry   Sentry
+	Pprof    Pprof
+	Vault    Vault
+	Etcd     Etcd
+	Database Database
+	Cache    Cache
+	Server   Server
+	GRPC     GRPC
+}
+
+type Core struct {
+	ServiceName         string        `env:"SERVICE_NAME"          default:"{{SERVICE_NAME}}"`
+	Environment         string        `env:"ENVIRONMENT"           default:""`
+	ShutdownGracePeriod time.Duration `env:"SHUTDOWN_GRACE_PERIOD" default:"10s"`
 }
 
 type Limits struct {
@@ -99,6 +104,10 @@ type Sentry struct {
 
 type Metrics struct {
 	Timeout time.Duration `env:"METRICS_TIMEOUT" default:"10s"`
+}
+
+type Tracing struct {
+	DSN string `env:"TRACING_DSN" default:""`
 }
 
 type Pprof struct {
@@ -205,14 +214,12 @@ type Server struct {
 	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
-	GracePeriod  time.Duration `env:"SERVER_GRACE_PERIOD"  default:"5s"`
 }
 
 type GRPC struct {
-	Listen         string        `env:"GRPC_LISTEN"            default:":50051"`
-	MaxRecvMsgSize int           `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
-	MaxSendMsgSize int           `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
-	GracePeriod    time.Duration `env:"GRPC_GRACE_PERIOD"      default:"5s"`
+	Listen         string `env:"GRPC_LISTEN"            default:":50051"`
+	MaxRecvMsgSize int    `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
+	MaxSendMsgSize int    `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
 }
 
 const (

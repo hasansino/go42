@@ -10,7 +10,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"reflect"
 	"strings"
 	"syscall"
 	"time"
@@ -27,6 +26,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.uber.org/automaxprocs/maxprocs"
 	"google.golang.org/grpc"
 
@@ -69,6 +75,9 @@ func init() {
 	}
 }
 
+// ShutdownFn represents graceful shutdown for specific component.
+type ShutdownFn func(context.Context) error
+
 func main() {
 	// main context of the application
 	ctx, cancel := context.WithCancel(context.Background())
@@ -87,11 +96,11 @@ func main() {
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
 	metricsHandler := initMetrics(cfg)
+	tracingCloser := initTracing(ctx, cfg)
 
 	// http server
 	httpServer := httpAPI.New(
 		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
-		httpAPI.WithGracePeriod(cfg.Server.GracePeriod),
 		httpAPI.WithReadTimeout(cfg.Server.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.Server.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.Server.StaticRoot),
@@ -102,7 +111,6 @@ func main() {
 	// grpc server
 	grpcServer := grpcAPI.New(
 		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
-		grpcAPI.WithGracePeriod(cfg.GRPC.GracePeriod),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
 	)
@@ -116,7 +124,7 @@ func main() {
 		var err error
 		cacheEngine, err = redis.New(
 			cfg.Cache.Redis.Host, cfg.Cache.Redis.DB,
-			redis.WithClientName(cfg.ServiceName),
+			redis.WithClientName(cfg.Core.ServiceName),
 			redis.WithUserName(cfg.Cache.Redis.Username),
 			redis.WithPassword(cfg.Cache.Redis.Password),
 			redis.WithMaxRetries(cfg.Cache.Redis.MaxRetries),
@@ -158,7 +166,7 @@ func main() {
 	}
 
 	var (
-		dbCloser io.Closer
+		dbCloser ShutdownFn
 		// declare required repositories
 		exampleRepository example.Repository
 	)
@@ -190,7 +198,7 @@ func main() {
 		}
 		slog.Info("Connected to sqlite")
 
-		dbCloser = sqliteConn
+		dbCloser = sqliteConn.Shutdown
 
 		// register database metrics
 		prometheus.DefaultRegisterer.MustRegister(
@@ -226,7 +234,7 @@ func main() {
 		}
 		slog.Info("Connected to PostgreSQL")
 
-		dbCloser = pgsqlConn
+		dbCloser = pgsqlConn.Shutdown
 
 		// register database metrics
 		prometheus.DefaultRegisterer.MustRegister(
@@ -280,8 +288,8 @@ func main() {
 		cfg,
 		cancel,
 		etcdCloser,
-		pprofCloser, httpServer, grpcServer,
-		cacheEngine, dbCloser,
+		pprofCloser, httpServer.Shutdown, grpcServer.Shutdown,
+		cacheEngine.Shutdown, dbCloser, tracingCloser,
 	)
 }
 
@@ -320,11 +328,12 @@ func initLogging(cfg *config.Config) {
 
 	logger := slog.New(slogHandler)
 	enrichedLogger := logger.With(
-		slog.String("service", cfg.ServiceName),
+		slog.String("service", cfg.Core.ServiceName),
+		slog.String("environment", cfg.Core.Environment),
+		slog.String("hostname", hostname),
 		slog.String("build_date", xBuildDate),
 		slog.String("build_tag", xBuildTag),
 		slog.String("build_commit", xBuildCommit),
-		slog.String("hostname", hostname),
 	)
 
 	// for both 'log' and 'slog'
@@ -364,7 +373,7 @@ func initVault(cfg *config.Config) {
 	vault2cfg.Bind(cfg, data)
 }
 
-func initEtcd(ctx context.Context, cfg *config.Config) io.Closer {
+func initEtcd(ctx context.Context, cfg *config.Config) ShutdownFn {
 	if !cfg.Etcd.Enabled {
 		slog.Warn("etcd is disabled")
 		return nil
@@ -416,7 +425,9 @@ func initEtcd(ctx context.Context, cfg *config.Config) io.Closer {
 
 	slog.Info("connected to etcd")
 
-	return client
+	return func(context.Context) error {
+		return client.Close()
+	}
 }
 
 func initLimits(cfg *config.Config) {
@@ -459,13 +470,13 @@ func initSentry(cfg *config.Config) {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              cfg.Sentry.DSN,
 		ServerName:       hostname,
-		Environment:      cfg.Environment,
+		Environment:      cfg.Core.Environment,
 		Release:          xBuildTag,
 		SampleRate:       cfg.Sentry.SampleRate,
 		Debug:            cfg.Sentry.Debug,
 		AttachStacktrace: cfg.Sentry.Stacktrace,
 		Tags: map[string]string{
-			"service":      cfg.ServiceName,
+			"service":      cfg.Core.ServiceName,
 			"build_date":   xBuildDate,
 			"build_tag":    xBuildTag,
 			"build_commit": xBuildCommit,
@@ -491,7 +502,7 @@ func initSentry(cfg *config.Config) {
 	slog.Info("sentry initialized")
 }
 
-func initProfiling(cfg *config.Config) io.Closer {
+func initProfiling(cfg *config.Config) ShutdownFn {
 	if !cfg.Pprof.Enabled {
 		slog.Warn("pprof is disabled")
 		return nil
@@ -525,15 +536,15 @@ func initProfiling(cfg *config.Config) io.Closer {
 		}
 	}()
 
-	// there is no value in graceful shutdown of pprof, hence we return just io.Closer()
-	return server
+	return server.Shutdown
 }
 
 func initMetrics(cfg *config.Config) http.Handler {
 	hostname, _ := os.Hostname()
 	metrics.RegisterGlobalLabels(map[string]interface{}{
-		"hostname": hostname,
-		"service":  cfg.ServiceName,
+		"service":     cfg.Core.ServiceName,
+		"environment": cfg.Core.Environment,
+		"hostname":    hostname,
 	})
 	metrics.Gauge("application_build", map[string]interface{}{
 		"build_date":   xBuildDate,
@@ -556,9 +567,59 @@ func initMetrics(cfg *config.Config) http.Handler {
 	})
 }
 
-func shutdown(
-	cfg *config.Config, mainCancel context.CancelFunc, closers ...io.Closer,
-) {
+func initTracing(ctx context.Context, cfg *config.Config) ShutdownFn {
+	if cfg.Tracing.DSN == "" {
+		slog.Warn("tracing is disabled")
+		return nil
+	}
+
+	// exporter sends trace data to collector
+	exporter, err := otlptrace.New(
+		ctx,
+		otlptracehttp.NewClient(
+			otlptracehttp.WithInsecure(),
+			otlptracehttp.WithEndpoint(cfg.Tracing.DSN),
+		),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create exporter: %v", err)
+	}
+
+	// resource is collection of default labels
+	hostname, _ := os.Hostname()
+	res, err := resource.New(
+		context.Background(),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String(cfg.Core.ServiceName),
+			semconv.ServiceVersionKey.String(xBuildTag),
+			semconv.DeploymentEnvironmentKey.String(cfg.Core.Environment),
+			semconv.HostNameKey.String(hostname),
+		),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create resource: %v", err)
+	}
+
+	// provider creates new spans
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	// allow to propagate trace context through http requests
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	))
+
+	slog.Info("tracing initialized")
+
+	return tp.Shutdown
+}
+
+func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...ShutdownFn) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
@@ -569,12 +630,12 @@ func shutdown(
 	// allows second signal to bypass graceful shutdown and terminate application immediately
 	signal.Stop(sigChan)
 
-	// timeout for graceful shutdown
-	ctx, done := context.WithTimeout(context.Background(), cfg.GracePeriod)
+	// total timeout for graceful shutdown
+	ctx, done := context.WithTimeout(context.Background(), cfg.Core.ShutdownGracePeriod)
 	defer done()
 
 	doneChan := make(chan struct{})
-	go func() {
+	go func(ctx context.Context) {
 		// cancel is async action, and do not handle any termination logic
 		// a small delay is usually required to allow all goroutines to finish
 		mainCancel()
@@ -584,19 +645,15 @@ func shutdown(
 			if c == nil {
 				continue
 			}
-			// every closer can, and should have own shutdown timeout
-			// we assume that Close() is blocking and final operation
-			// that is, when Close() returns, all resources are released
-			if err := c.Close(); err != nil {
-				log.Printf(
-					"shutdown: error closing %s: %v",
-					reflect.TypeOf(c).String(), err,
-				)
+			// we assume that ShutdownFn is blocking and final operation -
+			// that is, when ShutdownFn returns, all resources are released
+			if err := c(ctx); err != nil {
+				slog.Error("shutdown error", slog.Any("error", err))
 			}
 		}
 		sentry.Flush(time.Second) // @TODO
 		close(doneChan)
-	}()
+	}(ctx)
 
 	select {
 	case <-doneChan:

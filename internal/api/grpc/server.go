@@ -2,11 +2,9 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net"
 	"runtime/debug"
-	"time"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
@@ -29,7 +27,6 @@ type Server struct {
 	logger        *slog.Logger
 	grpcServer    *grpc.Server
 	serverOptions []grpc.ServerOption
-	gracePeriod   time.Duration
 }
 
 func New(opts ...Option) *Server {
@@ -85,23 +82,9 @@ func (s *Server) Serve(listen string) error {
 	return s.grpcServer.Serve(lis)
 }
 
-func (s *Server) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), s.gracePeriod)
-	defer cancel()
-
-	done := make(chan struct{})
-
-	go func() {
-		s.grpcServer.GracefulStop()
-		close(done)
-	}()
-
-	select {
-	case <-ctx.Done():
-		return errors.New("timeout")
-	case <-done:
-		return nil
-	}
+func (s *Server) Shutdown(_ context.Context) error {
+	s.grpcServer.GracefulStop()
+	return nil
 }
 
 func (s *Server) Register(providers ...providerAccessor) {

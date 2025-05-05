@@ -2,6 +2,7 @@ package memcached
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
@@ -19,8 +20,17 @@ func New(hosts []string, opts ...Option) (*Wrapper, error) {
 	return &Wrapper{client: client}, client.Ping()
 }
 
-func (w *Wrapper) Close() error {
-	return w.client.Close()
+func (w *Wrapper) Shutdown(ctx context.Context) error {
+	doneChan := make(chan error)
+	go func() {
+		doneChan <- w.client.Close()
+	}()
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout")
+	case err := <-doneChan:
+		return err
+	}
 }
 
 func (w *Wrapper) Get(_ context.Context, key string) (string, error) {
