@@ -28,7 +28,6 @@ Golang application template.
 + queue processing (kafka / rabbitmq / nats / nsq)
 + sketch README.md and choose doc generator
 + circuit breaker (https://github.com/sony/gobreaker) + retry
-+ tracing
 + https://github.com/bufbuild/protovalidate
 + https://github.com/knadh/koanf
 + https://github.com/maypok86/otter - https://s3fifo.com/

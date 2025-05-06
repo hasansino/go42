@@ -37,6 +37,8 @@ type Server struct {
 
 	staticRoot  string
 	swaggerRoot string
+
+	tracingEnabled bool
 }
 
 func New(opts ...Option) *Server {
@@ -140,7 +142,9 @@ func New(opts ...Option) *Server {
 	}))
 
 	// 4. tracing
-	s.e.Use(otelecho.Middleware("http-server"))
+	if s.tracingEnabled {
+		s.e.Use(otelecho.Middleware("http-server"))
+	}
 
 	for _, opt := range opts {
 		opt(s)

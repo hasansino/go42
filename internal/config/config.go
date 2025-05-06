@@ -120,10 +120,9 @@ type Metrics struct {
 // ╰──────────────────────────────╯
 
 type Tracing struct {
-	Enable   bool          `env:"TRACING_ENABLED"  default:"false"`
-	DSN      string        `env:"TRACING_DSN"      default:""`
-	Timeout  time.Duration `env:"TRACING_TIMEOUT"  default:"5s"`
-	Compress bool          `env:"TRACING_COMPRESS" default:"false"`
+	Enable  bool          `env:"TRACING_ENABLED" default:"false"`
+	DSN     string        `env:"TRACING_DSN"     default:""`
+	Timeout time.Duration `env:"TRACING_TIMEOUT" default:"5s"`
 }
 
 // ╭──────────────────────────────╮

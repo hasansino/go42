@@ -27,8 +27,7 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -96,11 +95,12 @@ func main() {
 	initSentry(cfg)
 	pprofCloser := initProfiling(cfg)
 	metricsHandler := initMetrics(cfg)
-	tracingCloser := initTracing(ctx, cfg)
+	tracingCloser := initTracing(cfg)
 
 	// http server
 	httpServer := httpAPI.New(
 		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
+		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.HTTPServer.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.HTTPServer.StaticRoot),
@@ -111,6 +111,7 @@ func main() {
 	// grpc server
 	grpcServer := grpcAPI.New(
 		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
+		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),
 	)
@@ -567,30 +568,20 @@ func initMetrics(cfg *config.Config) http.Handler {
 	})
 }
 
-func initTracing(ctx context.Context, cfg *config.Config) ShutdownFn {
+func initTracing(cfg *config.Config) ShutdownFn {
 	if !cfg.Tracing.Enable {
 		slog.Warn("tracing is disabled")
 		return nil
 	}
 
-	var compression otlptracehttp.Compression
-	if cfg.Tracing.Compress {
-		compression = otlptracehttp.GzipCompression
-	} else {
-		compression = otlptracehttp.NoCompression
-	}
-
-	// exporter sends trace data to collector
-	exporter, err := otlptrace.New(
-		ctx,
-		otlptracehttp.NewClient(
-			otlptracehttp.WithEndpointURL(cfg.Tracing.DSN),
-			otlptracehttp.WithTimeout(cfg.Tracing.Timeout),
-			otlptracehttp.WithCompression(compression),
-		),
+	exporter, err := zipkin.New(
+		cfg.Tracing.DSN,
+		zipkin.WithClient(&http.Client{
+			Timeout: cfg.Tracing.Timeout,
+		}),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create exporter: %v", err)
+		log.Fatalf("failed to create exporter: %v", err)
 	}
 
 	// resource is collection of default labels

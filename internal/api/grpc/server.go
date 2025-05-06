@@ -25,9 +25,10 @@ type providerAccessor interface {
 }
 
 type Server struct {
-	logger        *slog.Logger
-	grpcServer    *grpc.Server
-	serverOptions []grpc.ServerOption
+	logger         *slog.Logger
+	grpcServer     *grpc.Server
+	serverOptions  []grpc.ServerOption
+	tracingEnabled bool
 }
 
 func New(opts ...Option) *Server {
@@ -58,20 +59,27 @@ func New(opts ...Option) *Server {
 		return status.Errorf(codes.Internal, "%s", p)
 	}
 
-	unaryInterceptors := grpc.ChainUnaryInterceptor(
-		otelgrpc.UnaryServerInterceptor(),
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
 		srvMetrics.UnaryServerInterceptor(),
 		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
-	)
-	streamInterceptors := grpc.ChainStreamInterceptor(
-		otelgrpc.StreamServerInterceptor(),
+	}
+	streamInterceptors := []grpc.StreamServerInterceptor{
 		srvMetrics.StreamServerInterceptor(),
 		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+	}
+
+	s.serverOptions = append(
+		s.serverOptions,
+		grpc.ChainUnaryInterceptor(unaryInterceptors...),
+		grpc.ChainStreamInterceptor(streamInterceptors...),
 	)
 
-	s.serverOptions = append(s.serverOptions, unaryInterceptors, streamInterceptors)
+	if s.tracingEnabled {
+		s.serverOptions = append(s.serverOptions, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	}
+
 	s.grpcServer = grpc.NewServer(s.serverOptions...)
 
 	return s

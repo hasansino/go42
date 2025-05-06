@@ -15,6 +15,12 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
+func WithTracing(enabled bool) Option {
+	return func(s *Server) {
+		s.tracingEnabled = enabled
+	}
+}
+
 // WithMaxRecvMsgSize sets the maximum receive message size.
 func WithMaxRecvMsgSize(size int) Option {
 	return func(s *Server) {
