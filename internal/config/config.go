@@ -36,9 +36,10 @@ type Config struct {
 // ╰──────────────────────────────╯
 
 type Core struct {
-	ServiceName         string        `env:"SERVICE_NAME"          default:"{{SERVICE_NAME}}"`
-	Environment         string        `env:"ENVIRONMENT"           default:""`
-	ShutdownGracePeriod time.Duration `env:"SHUTDOWN_GRACE_PERIOD" default:"10s"`
+	ServiceName          string        `env:"SERVICE_NAME"            default:"{{SERVICE_NAME}}"`
+	Environment          string        `env:"ENVIRONMENT"             default:""`
+	ShutdownGracePeriod  time.Duration `env:"SHUTDOWN_GRACE_PERIOD"   default:"10s"`
+	ShutdownWaitForProbe time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE" default:"2s"`
 }
 
 // ╭──────────────────────────────╮

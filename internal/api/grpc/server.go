@@ -25,9 +25,13 @@ type providerAccessor interface {
 }
 
 type Server struct {
-	logger         *slog.Logger
-	grpcServer     *grpc.Server
-	serverOptions  []grpc.ServerOption
+	ctx context.Context
+
+	logger     *slog.Logger
+	grpcServer *grpc.Server
+
+	maxRecvMsgSize int
+	maxSendMsgSize int
 	tracingEnabled bool
 }
 
@@ -70,17 +74,22 @@ func New(opts ...Option) *Server {
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
 
-	s.serverOptions = append(
-		s.serverOptions,
+	serverOptions := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(unaryInterceptors...),
 		grpc.ChainStreamInterceptor(streamInterceptors...),
-	)
-
-	if s.tracingEnabled {
-		s.serverOptions = append(s.serverOptions, grpc.StatsHandler(otelgrpc.NewServerHandler()))
 	}
 
-	s.grpcServer = grpc.NewServer(s.serverOptions...)
+	if s.maxRecvMsgSize > 0 {
+		serverOptions = append(serverOptions, grpc.MaxRecvMsgSize(s.maxRecvMsgSize))
+	}
+	if s.maxSendMsgSize > 0 {
+		serverOptions = append(serverOptions, grpc.MaxSendMsgSize(s.maxSendMsgSize))
+	}
+	if s.tracingEnabled {
+		serverOptions = append(serverOptions, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	}
+
+	s.grpcServer = grpc.NewServer(serverOptions...)
 
 	return s
 }

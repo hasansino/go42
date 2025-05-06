@@ -99,6 +99,7 @@ func main() {
 
 	// http server
 	httpServer := httpAPI.New(
+		httpAPI.WithContext(ctx),
 		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
@@ -110,6 +111,7 @@ func main() {
 
 	// grpc server
 	grpcServer := grpcAPI.New(
+		grpcAPI.WithContext(ctx),
 		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
@@ -635,11 +637,11 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 
 	doneChan := make(chan struct{})
 	go func(ctx context.Context) {
-		// cancel is async action, and do not handle any termination logic
-		// a small delay is usually required to allow all goroutines to finish
+		// calling cancel() on main context disables health-checks for http and grpc servers
+		// when readiness probe will fail, load balancer will stop sending requests to this instance
+		// by default this process takes 30 seconds, but can be tweaked if needed
 		mainCancel()
-		// @TODO disable readiness probe
-		time.Sleep(time.Second) // @TODO
+		time.Sleep(cfg.Core.ShutdownWaitForProbe)
 		for _, c := range closers {
 			if c == nil {
 				continue
@@ -650,7 +652,8 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 				slog.Error("shutdown error", slog.Any("error", err))
 			}
 		}
-		sentry.Flush(time.Second) // @TODO
+		left, _ := ctx.Deadline()
+		sentry.Flush(time.Until(left))
 		close(doneChan)
 	}(ctx)
 

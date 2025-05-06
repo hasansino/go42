@@ -1,9 +1,8 @@
 package grpc
 
 import (
+	"context"
 	"log/slog"
-
-	"google.golang.org/grpc"
 )
 
 type Option func(*Server)
@@ -15,6 +14,7 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
+// WithTracing enables/disables tracing.
 func WithTracing(enabled bool) Option {
 	return func(s *Server) {
 		s.tracingEnabled = enabled
@@ -24,13 +24,21 @@ func WithTracing(enabled bool) Option {
 // WithMaxRecvMsgSize sets the maximum receive message size.
 func WithMaxRecvMsgSize(size int) Option {
 	return func(s *Server) {
-		s.serverOptions = append(s.serverOptions, grpc.MaxRecvMsgSize(size))
+		s.maxRecvMsgSize = size
 	}
 }
 
 // WithMaxSendMsgSize sets the maximum send message size.
 func WithMaxSendMsgSize(size int) Option {
 	return func(s *Server) {
-		s.serverOptions = append(s.serverOptions, grpc.MaxSendMsgSize(size))
+		s.maxSendMsgSize = size
+	}
+}
+
+// WithContext sets the context, which controls health-check.
+// Once context is canceled, health-check will return error.
+func WithContext(ctx context.Context) Option {
+	return func(s *Server) {
+		s.ctx = ctx
 	}
 }

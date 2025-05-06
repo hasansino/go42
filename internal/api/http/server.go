@@ -30,6 +30,8 @@ func (e *PanicError) Error() string {
 }
 
 type Server struct {
+	ctx context.Context
+
 	l    *slog.Logger
 	e    *echo.Echo
 	root *echo.Group
@@ -146,18 +148,12 @@ func New(opts ...Option) *Server {
 		s.e.Use(otelecho.Middleware("http-server"))
 	}
 
-	for _, opt := range opts {
-		opt(s)
-	}
-
 	root := s.e.Group("")
 	root.Static("/", s.staticRoot)
+	root.GET("/health-check", s.health)
 
 	apiV1 := s.e.Group("/api/v1")
 	apiV1.Static("", s.swaggerRoot+"/v1")
-	apiV1.GET("/health-check", func(c echo.Context) error {
-		return c.NoContent(http.StatusOK)
-	})
 
 	s.root = root
 	s.v1 = apiV1
@@ -185,4 +181,8 @@ func (s *Server) RegisterV1(providers ...providerAccessor) {
 	for _, p := range providers {
 		p.Register(s.v1)
 	}
+}
+
+func (s *Server) health(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusOK)
 }
