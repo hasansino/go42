@@ -3,7 +3,7 @@ module github.com/hasansino/goapp
 go 1.24.2
 
 require (
-	github.com/KimMachineGun/automemlimit v0.7.1
+	github.com/KimMachineGun/automemlimit v0.7.2
 	github.com/VictoriaMetrics/metrics v1.35.4
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
