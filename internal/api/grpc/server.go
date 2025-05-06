@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -58,11 +59,13 @@ func New(opts ...Option) *Server {
 	}
 
 	unaryInterceptors := grpc.ChainUnaryInterceptor(
+		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(),
 		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	)
 	streamInterceptors := grpc.ChainStreamInterceptor(
+		otelgrpc.StreamServerInterceptor(),
 		srvMetrics.StreamServerInterceptor(),
 		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),

@@ -16,20 +16,24 @@ import (
 
 type Config struct {
 	sync.RWMutex
-	Core     Core
-	Limits   Limits
-	Logger   Logger
-	Metrics  Metrics
-	Tracing  Tracing
-	Sentry   Sentry
-	Pprof    Pprof
-	Vault    Vault
-	Etcd     Etcd
-	Database Database
-	Cache    Cache
-	Server   Server
-	GRPC     GRPC
+	Core       Core
+	Limits     Limits
+	Logger     Logger
+	Metrics    Metrics
+	Tracing    Tracing
+	Sentry     Sentry
+	Vault      Vault
+	Etcd       Etcd
+	Database   Database
+	Cache      Cache
+	Pprof      Pprof
+	HTTPServer Server
+	GRPCServer GRPC
 }
+
+// ╭──────────────────────────────╮
+// │             CORE             │
+// ╰──────────────────────────────╯
 
 type Core struct {
 	ServiceName         string        `env:"SERVICE_NAME"          default:"{{SERVICE_NAME}}"`
@@ -37,12 +41,20 @@ type Core struct {
 	ShutdownGracePeriod time.Duration `env:"SHUTDOWN_GRACE_PERIOD" default:"10s"`
 }
 
+// ╭──────────────────────────────╮
+// │            LIMITS            │
+// ╰──────────────────────────────╯
+
 type Limits struct {
 	AutoMaxProcsEnabled bool    `env:"AUTOMAXPROCS_ENABLED" default:"false"`
 	MinMaxProcs         int     `env:"MIN_MAXPROCS"         default:"1"`
 	AutoMemLimitEnabled bool    `env:"AUTOMEMLIMIT_ENABLED" default:"false"`
 	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"   v:"gte=0.2,lte=1.0"`
 }
+
+// ╭──────────────────────────────╮
+// │            LOGGER            │
+// ╰──────────────────────────────╯
 
 type Logger struct {
 	LogLevel  string `env:"LOG_LEVEL"  default:"info"   v:"oneof=debug info warn error"`
@@ -95,28 +107,40 @@ func (l *Logger) Level() slog.Level {
 	return baseLevel
 }
 
+// ╭──────────────────────────────╮
+// │           METRICS            │
+// ╰──────────────────────────────╯
+
+type Metrics struct {
+	Timeout time.Duration `env:"METRICS_HANDLER_TIMEOUT" default:"10s"`
+}
+
+// ╭──────────────────────────────╮
+// │           TRACING            │
+// ╰──────────────────────────────╯
+
+type Tracing struct {
+	Enable   bool          `env:"TRACING_ENABLED"  default:"false"`
+	DSN      string        `env:"TRACING_DSN"      default:""`
+	Timeout  time.Duration `env:"TRACING_TIMEOUT"  default:"5s"`
+	Compress bool          `env:"TRACING_COMPRESS" default:"false"`
+}
+
+// ╭──────────────────────────────╮
+// │            SENTRY            │
+// ╰──────────────────────────────╯
+
 type Sentry struct {
+	Enabled    bool    `env:"SENTRY_ENABLED"     default:"false"`
 	DSN        string  `env:"SENTRY_DSN"         default:""`
 	Debug      bool    `env:"SENTRY_DEBUG"       default:"false"`
 	Stacktrace bool    `env:"SENTRY_STACKTRACE"  default:"false"`
 	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"   v:"gte=0.0,lte=1.0"`
 }
 
-type Metrics struct {
-	Timeout time.Duration `env:"METRICS_TIMEOUT" default:"10s"`
-}
-
-type Tracing struct {
-	DSN string `env:"TRACING_DSN" default:""`
-}
-
-type Pprof struct {
-	Enabled      bool          `env:"PPROF_ENABLED"       default:"false"`
-	Listen       string        `env:"PPROF_LISTEN"        default:":6060"`
-	Prefix       string        `env:"PPROF_PREFIX"        default:"/debug/pprof"`
-	ReadTimeout  time.Duration `env:"PPROF_READ_TIMEOUT"  default:"5s"`
-	WriteTimeout time.Duration `env:"PPROF_WRITE_TIMEOUT" default:"60s"`
-}
+// ╭──────────────────────────────╮
+// │             VAULT            │
+// ╰──────────────────────────────╯
 
 type Vault struct {
 	Enabled    bool   `env:"VAULT_ENABLED"     default:"false"`
@@ -126,6 +150,10 @@ type Vault struct {
 	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
 }
 
+// ╭──────────────────────────────╮
+// │             ETCD             │
+// ╰──────────────────────────────╯
+
 type Etcd struct {
 	Enabled      bool          `env:"ETCD_ENABLED"       default:"false"`
 	Hosts        []string      `env:"ETCD_HOST"          default:"localhost:2379"`
@@ -133,6 +161,10 @@ type Etcd struct {
 	Method       string        `env:"ETCD_METHOD"        default:"bind"`
 	SyncInterval time.Duration `env:"ETCD_SYNC_INTERVAL" default:"5m"`
 }
+
+// ╭──────────────────────────────╮
+// │           DATABASE           │
+// ╰──────────────────────────────╯
 
 type Database struct {
 	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql"`
@@ -175,6 +207,10 @@ type Sqlite struct {
 	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
 }
 
+// ╭──────────────────────────────╮
+// │            CACHE             │
+// ╰──────────────────────────────╯
+
 type Cache struct {
 	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached"`
 	Redis     Redis
@@ -208,6 +244,22 @@ type Memcached struct {
 	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
 }
 
+// ╭──────────────────────────────╮
+// │            PPROF             │
+// ╰──────────────────────────────╯
+
+type Pprof struct {
+	Enabled      bool          `env:"PPROF_ENABLED"       default:"false"`
+	Listen       string        `env:"PPROF_LISTEN"        default:":6060"`
+	Prefix       string        `env:"PPROF_PREFIX"        default:"/debug/pprof"`
+	ReadTimeout  time.Duration `env:"PPROF_READ_TIMEOUT"  default:"5s"`
+	WriteTimeout time.Duration `env:"PPROF_WRITE_TIMEOUT" default:"60s"`
+}
+
+// ╭──────────────────────────────╮
+// │            SERVER            │
+// ╰──────────────────────────────╯
+
 type Server struct {
 	Listen       string        `env:"SERVER_LISTEN"        default:":8080"`
 	ReadTimeout  time.Duration `env:"SERVER_READ_TIMEOUT"  default:"5s"`
@@ -215,6 +267,10 @@ type Server struct {
 	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
 }
+
+// ╭──────────────────────────────╮
+// │             GRPCServer             │
+// ╰──────────────────────────────╯
 
 type GRPC struct {
 	Listen         string `env:"GRPC_LISTEN"            default:":50051"`

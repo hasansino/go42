@@ -101,18 +101,18 @@ func main() {
 	// http server
 	httpServer := httpAPI.New(
 		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
-		httpAPI.WithReadTimeout(cfg.Server.ReadTimeout),
-		httpAPI.WithWriteTimeout(cfg.Server.WriteTimeout),
-		httpAPI.WithStaticRoot(cfg.Server.StaticRoot),
-		httpAPI.WithSwaggerRoot(cfg.Server.SwaggerRoot),
+		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
+		httpAPI.WithWriteTimeout(cfg.HTTPServer.WriteTimeout),
+		httpAPI.WithStaticRoot(cfg.HTTPServer.StaticRoot),
+		httpAPI.WithSwaggerRoot(cfg.HTTPServer.SwaggerRoot),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
 	// grpc server
 	grpcServer := grpcAPI.New(
 		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
-		grpcAPI.WithMaxRecvMsgSize(cfg.GRPC.MaxRecvMsgSize),
-		grpcAPI.WithMaxSendMsgSize(cfg.GRPC.MaxSendMsgSize),
+		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
+		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),
 	)
 
 	// cache engine
@@ -268,16 +268,16 @@ func main() {
 	// ---
 
 	go func() {
-		slog.Info("starting http server...", slog.String("port", cfg.Server.Listen))
-		if err := httpServer.Start(cfg.Server.Listen); err != nil &&
+		slog.Info("starting http server...", slog.String("port", cfg.HTTPServer.Listen))
+		if err := httpServer.Start(cfg.HTTPServer.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
 			slog.Error("failed to start http server", slog.Any("error", err))
 		}
 	}()
 
 	go func() {
-		slog.Info("starting grpc server...", slog.String("port", cfg.GRPC.Listen))
-		if err := grpcServer.Serve(cfg.GRPC.Listen); err != nil &&
+		slog.Info("starting grpc server...", slog.String("port", cfg.GRPCServer.Listen))
+		if err := grpcServer.Serve(cfg.GRPCServer.Listen); err != nil &&
 			!errors.Is(err, grpc.ErrServerStopped) {
 			slog.Error("failed to start grpc server", slog.Any("error", err))
 		}
@@ -460,7 +460,7 @@ func initLimits(cfg *config.Config) {
 }
 
 func initSentry(cfg *config.Config) {
-	if cfg.Sentry.DSN == "" {
+	if !cfg.Sentry.Enabled {
 		slog.Warn("sentry is disabled")
 		return
 	}
@@ -477,10 +477,10 @@ func initSentry(cfg *config.Config) {
 		AttachStacktrace: cfg.Sentry.Stacktrace,
 		Tags: map[string]string{
 			"service":      cfg.Core.ServiceName,
+			"hostname":     hostname,
 			"build_date":   xBuildDate,
 			"build_tag":    xBuildTag,
 			"build_commit": xBuildCommit,
-			"hostname":     hostname,
 		},
 	})
 	if err != nil {
@@ -559,7 +559,7 @@ func initMetrics(cfg *config.Config) http.Handler {
 			prometheus.DefaultGatherer,
 			promhttp.HandlerOpts{
 				Registry: prometheus.DefaultRegisterer,
-				ErrorLog: log.Default(),
+				ErrorLog: log.Default(), // @todo: use named logger
 				Timeout:  cfg.Metrics.Timeout,
 			}).ServeHTTP(w, r)
 		// append metrics from `github.com/VictoriaMetrics/metrics`
@@ -568,17 +568,25 @@ func initMetrics(cfg *config.Config) http.Handler {
 }
 
 func initTracing(ctx context.Context, cfg *config.Config) ShutdownFn {
-	if cfg.Tracing.DSN == "" {
+	if !cfg.Tracing.Enable {
 		slog.Warn("tracing is disabled")
 		return nil
+	}
+
+	var compression otlptracehttp.Compression
+	if cfg.Tracing.Compress {
+		compression = otlptracehttp.GzipCompression
+	} else {
+		compression = otlptracehttp.NoCompression
 	}
 
 	// exporter sends trace data to collector
 	exporter, err := otlptrace.New(
 		ctx,
 		otlptracehttp.NewClient(
-			otlptracehttp.WithInsecure(),
-			otlptracehttp.WithEndpoint(cfg.Tracing.DSN),
+			otlptracehttp.WithEndpointURL(cfg.Tracing.DSN),
+			otlptracehttp.WithTimeout(cfg.Tracing.Timeout),
+			otlptracehttp.WithCompression(compression),
 		),
 	)
 	if err != nil {

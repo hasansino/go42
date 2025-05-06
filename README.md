@@ -38,3 +38,4 @@ Golang application template.
 + stress testing
 + https://github.com/bytedance/sonic
 + replace Make with some other build tool
++ https://github.com/Masterminds/squirrel

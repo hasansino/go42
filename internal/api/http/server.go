@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 
 	customMiddleware "github.com/hasansino/goapp/internal/api/http/middleware"
 )
@@ -50,7 +51,7 @@ func New(opts ...Option) *Server {
 	s.e.HideBanner = true
 	s.e.HidePort = true
 
-	// goes to http.Server.ErrorLog
+	// goes to http.HTTPServer.ErrorLog
 	// logs low-level errors, like connection or tls errors
 	s.e.StdLogger = slog.NewLogLogger(
 		s.l.Handler().WithAttrs([]slog.Attr{
@@ -71,7 +72,7 @@ func New(opts ...Option) *Server {
 	s.e.HTTPErrorHandler = func(err error, c echo.Context) {
 		var (
 			httpStatus  = http.StatusInternalServerError
-			httpMessage = "Internal Server Error"
+			httpMessage = "Internal HTTPServer Error"
 		)
 		var (
 			logMessage = "api error"
@@ -137,6 +138,9 @@ func New(opts ...Option) *Server {
 			return nil
 		},
 	}))
+
+	// 4. tracing
+	s.e.Use(otelecho.Middleware("http-server"))
 
 	for _, opt := range opts {
 		opt(s)
