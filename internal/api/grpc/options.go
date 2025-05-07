@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 	"log/slog"
+
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type Option func(*Server)
@@ -35,10 +37,13 @@ func WithMaxSendMsgSize(size int) Option {
 	}
 }
 
-// WithContext sets the context, which controls health-check.
+// WitHealthCheck enables health-check endpoint.
 // Once context is canceled, health-check will return error.
-func WithContext(ctx context.Context) Option {
+func WitHealthCheck(ctx context.Context) Option {
 	return func(s *Server) {
-		s.ctx = ctx
+		go func() {
+			<-ctx.Done()
+			s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+		}()
 	}
 }

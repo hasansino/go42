@@ -4,19 +4,9 @@ Golang application template.
 
 ## Backlog
 
-+ reproducible builds
-  * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
-  * https://go.dev/blog/rebuild
-+ GOPROXY & GOPRIVATE
-  * https://goproxy.githubapp.com
-  * https://proxy.golang.org
-  * https://github.com/gomods/athens
-+ https://github.com/google/perfetto
-+ https://github.com/FiloSottile/mkcert
-+ cli example
-  * https://github.com/rivo/tview
-  * https://github.com/mum4k/termdash
-  * https://github.com/charmbracelet
+### >>>
+
++ queue processing (kafka / rabbitmq / nats / nsq)
 + https://docs.datadoghq.com/
 + domains, tls, letsencrypt
 + deployment
@@ -24,9 +14,12 @@ Golang application template.
   * kubernetes
   * cloud environment
   * revert deployment
-+ grafana dashboard
-+ queue processing (kafka / rabbitmq / nats / nsq)
-+ sketch README.md and choose doc generator
++ stress testing + grafana dashboard
+
+### >>
+
++ https://github.com/google/perfetto
++ https://github.com/FiloSottile/mkcert
 + circuit breaker (https://github.com/sony/gobreaker) + retry
 + https://github.com/bufbuild/protovalidate
 + https://github.com/knadh/koanf
@@ -34,7 +27,31 @@ Golang application template.
 + https://github.com/ent/ent
 + https://github.com/stoplightio/prism
 + https://github.com/daveshanley/vacuum
-+ stress testing
 + https://github.com/bytedance/sonic
-+ replace Make with some other build tool
 + https://github.com/Masterminds/squirrel
++ https://github.com/agiledragon/gomonkey
+
+### >
+
++ cli example
+  * https://github.com/rivo/tview
+  * https://github.com/mum4k/termdash
+  * https://github.com/charmbracelet
+
+### <
+
++ reproducible builds
+  * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
+  * https://go.dev/blog/rebuild
++ GOPROXY & GOPRIVATE
+  * https://goproxy.githubapp.com
+  * https://proxy.golang.org
+  * https://github.com/gomods/athens
+
+### <<
+
++ sketch README.md and choose doc generator
+
+### <<<
+
++ replace Make with some other build tool

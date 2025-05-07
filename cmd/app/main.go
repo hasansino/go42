@@ -99,8 +99,8 @@ func main() {
 
 	// http server
 	httpServer := httpAPI.New(
-		httpAPI.WithContext(ctx),
-		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "api"))),
+		httpAPI.WitHealthCheck(ctx),
+		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "http-server"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.HTTPServer.WriteTimeout),
@@ -111,8 +111,8 @@ func main() {
 
 	// grpc server
 	grpcServer := grpcAPI.New(
-		grpcAPI.WithContext(ctx),
-		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc"))),
+		grpcAPI.WitHealthCheck(ctx),
+		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc-server"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),

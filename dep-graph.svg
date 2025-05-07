@@ -12,20 +12,20 @@
 <!-- github.com/hasansino/goapp/cmd/app -->
 <g id="node1" class="node">
 <title>github.com/hasansino/goapp/cmd/app</title>
-<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l587 / 18.7KB\l" target="_graphviz">
+<g id="a_node1"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/cmd/app" xlink:title="github.com/hasansino/goapp/cmd/app\l589 / 18.9KB\l" target="_graphviz">
 <polygon fill="none" stroke="#915007" stroke-width="2" stroke-opacity="0.698039" points="216,-494.48 36,-494.48 36,-458.48 216,-458.48 216,-494.48"/>
 <text text-anchor="start" x="44" y="-478.23" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/cmd/app</text>
-<text text-anchor="start" x="44" y="-466.98" font-family="Times,serif" font-size="10.00">587 / 18.7KB</text>
+<text text-anchor="start" x="44" y="-466.98" font-family="Times,serif" font-size="10.00">589 / 18.9KB</text>
 </a>
 </g>
 </g>
 <!-- github.com/hasansino/goapp/internal/api/grpc -->
 <g id="node3" class="node">
 <title>github.com/hasansino/goapp/internal/api/grpc</title>
-<g id="a_node3"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/api/grpc" xlink:title="github.com/hasansino/goapp/internal/api/grpc\l107 / 3.2KB\l" target="_graphviz">
+<g id="a_node3"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/api/grpc" xlink:title="github.com/hasansino/goapp/internal/api/grpc\l145 / 4.4KB\l" target="_graphviz">
 <polygon fill="none" stroke="#729107" stroke-width="2" stroke-opacity="0.698039" points="1404,-785.48 1188,-785.48 1188,-749.48 1404,-749.48 1404,-785.48"/>
 <text text-anchor="start" x="1196" y="-769.23" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/api/grpc</text>
-<text text-anchor="start" x="1196" y="-757.98" font-family="Times,serif" font-size="10.00">107 / 3.2KB</text>
+<text text-anchor="start" x="1196" y="-757.98" font-family="Times,serif" font-size="10.00">145 / 4.4KB</text>
 </a>
 </g>
 </g>
@@ -38,10 +38,10 @@
 <!-- github.com/hasansino/goapp/internal/api/http -->
 <g id="node5" class="node">
 <title>github.com/hasansino/goapp/internal/api/http</title>
-<g id="a_node5"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/api/http" xlink:title="github.com/hasansino/goapp/internal/api/http\l248 / 6.6KB\l" target="_graphviz">
+<g id="a_node5"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/api/http" xlink:title="github.com/hasansino/goapp/internal/api/http\l281 / 7.7KB\l" target="_graphviz">
 <polygon fill="none" stroke="#076b91" stroke-width="2" stroke-opacity="0.698039" points="1008,-747.48 792,-747.48 792,-711.48 1008,-711.48 1008,-747.48"/>
 <text text-anchor="start" x="800" y="-731.23" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/api/http</text>
-<text text-anchor="start" x="800" y="-719.98" font-family="Times,serif" font-size="10.00">248 / 6.6KB</text>
+<text text-anchor="start" x="800" y="-719.98" font-family="Times,serif" font-size="10.00">281 / 7.7KB</text>
 </a>
 </g>
 </g>
@@ -118,10 +118,10 @@
 <!-- github.com/hasansino/goapp/internal/config -->
 <g id="node12" class="node">
 <title>github.com/hasansino/goapp/internal/config</title>
-<g id="a_node12"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l222 / 8.7KB\l" target="_graphviz">
+<g id="a_node12"><a xlink:href="https://pkg.go.dev/github.com/hasansino/goapp/internal/config" xlink:title="github.com/hasansino/goapp/internal/config\l265 / 12.1KB\l" target="_graphviz">
 <polygon fill="none" stroke="#760791" stroke-width="2" stroke-opacity="0.698039" points="612,-877.48 396,-877.48 396,-841.48 612,-841.48 612,-877.48"/>
 <text text-anchor="start" x="404" y="-861.23" font-family="Times,serif" font-size="10.00">github.com/hasansino/goapp/internal/config</text>
-<text text-anchor="start" x="404" y="-849.98" font-family="Times,serif" font-size="10.00">222 / 8.7KB</text>
+<text text-anchor="start" x="404" y="-849.98" font-family="Times,serif" font-size="10.00">265 / 12.1KB</text>
 </a>
 </g>
 </g>

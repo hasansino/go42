@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
 	"github.com/hasansino/goapp/internal/metrics"
@@ -25,14 +27,13 @@ type providerAccessor interface {
 }
 
 type Server struct {
-	ctx context.Context
-
 	logger     *slog.Logger
 	grpcServer *grpc.Server
 
 	maxRecvMsgSize int
 	maxSendMsgSize int
 	tracingEnabled bool
+	healthServer   *health.Server
 }
 
 func New(opts ...Option) *Server {
@@ -90,6 +91,10 @@ func New(opts ...Option) *Server {
 	}
 
 	s.grpcServer = grpc.NewServer(serverOptions...)
+
+	s.healthServer = health.NewServer()
+	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+	healthpb.RegisterHealthServer(s.grpcServer, s.healthServer)
 
 	return s
 }

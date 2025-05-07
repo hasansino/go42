@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -30,8 +31,6 @@ func (e *PanicError) Error() string {
 }
 
 type Server struct {
-	ctx context.Context
-
 	l    *slog.Logger
 	e    *echo.Echo
 	root *echo.Group
@@ -41,6 +40,7 @@ type Server struct {
 	swaggerRoot string
 
 	tracingEnabled bool
+	healthStatus   atomic.Bool
 }
 
 func New(opts ...Option) *Server {
@@ -150,7 +150,9 @@ func New(opts ...Option) *Server {
 
 	root := s.e.Group("")
 	root.Static("/", s.staticRoot)
+
 	root.GET("/health-check", s.health)
+	s.healthStatus.Store(true)
 
 	apiV1 := s.e.Group("/api/v1")
 	apiV1.Static("", s.swaggerRoot+"/v1")
@@ -184,5 +186,8 @@ func (s *Server) RegisterV1(providers ...providerAccessor) {
 }
 
 func (s *Server) health(ctx echo.Context) error {
+	if !s.healthStatus.Load() {
+		return ctx.NoContent(http.StatusServiceUnavailable)
+	}
 	return ctx.NoContent(http.StatusOK)
 }
