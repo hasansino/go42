@@ -7,7 +7,7 @@ Golang application template.
 ### >>>
 
 + queue processing (kafka / rabbitmq / nats / nsq)
-+ https://docs.datadoghq.com/
++ [research] https://docs.datadoghq.com/
 + domains, tls, letsencrypt
 + deployment
   * helm chart + linter
@@ -47,6 +47,7 @@ Golang application template.
   * https://goproxy.githubapp.com
   * https://proxy.golang.org
   * https://github.com/gomods/athens
++ [research] go tools as modules
 
 ### <<
 

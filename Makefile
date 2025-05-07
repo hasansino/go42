@@ -77,3 +77,15 @@ gen-dep-graph:
 # Usage: FILTER={regex} make show-asm
 show-asm: build
 	@lensm -watch -text-size 22 -filter $(FILTER) bin/app
+
+## health-grpc | check grpc health
+# Not invoked in CI/CD pipeline.
+# Dependencies:
+#   * go install github.com/grpc-ecosystem/grpc-health-probe@latest
+health-grpc:
+	grpc-health-probe -addr localhost:50051
+
+## health-http | check http health
+# Not invoked in CI/CD pipeline.
+health-http:
+	curl localhost:8080/health-check
