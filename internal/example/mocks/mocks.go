@@ -11,11 +11,64 @@ package mocks
 
 import (
 	reflect "reflect"
+	time "time"
 
 	models "github.com/hasansino/goapp/internal/example/models"
 	gomock "go.uber.org/mock/gomock"
 	context "golang.org/x/net/context"
 )
+
+// MockEventer is a mock of Eventer interface.
+type MockEventer struct {
+	ctrl     *gomock.Controller
+	recorder *MockEventerMockRecorder
+	isgomock struct{}
+}
+
+// MockEventerMockRecorder is the mock recorder for MockEventer.
+type MockEventerMockRecorder struct {
+	mock *MockEventer
+}
+
+// NewMockEventer creates a new mock instance.
+func NewMockEventer(ctrl *gomock.Controller) *MockEventer {
+	mock := &MockEventer{ctrl: ctrl}
+	mock.recorder = &MockEventerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEventer) EXPECT() *MockEventerMockRecorder {
+	return m.recorder
+}
+
+// Publish mocks base method.
+func (m *MockEventer) Publish(topic string, event []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Publish", topic, event)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Publish indicates an expected call of Publish.
+func (mr *MockEventerMockRecorder) Publish(topic, event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventer)(nil).Publish), topic, event)
+}
+
+// Subscribe mocks base method.
+func (m *MockEventer) Subscribe(ctx context.Context, topic string, handler func(context.Context, []byte) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, topic, handler)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockEventerMockRecorder) Subscribe(ctx, topic, handler any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockEventer)(nil).Subscribe), ctx, topic, handler)
+}
 
 // MockCache is a mock of Cache interface.
 type MockCache struct {
@@ -42,10 +95,10 @@ func (m *MockCache) EXPECT() *MockCacheMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockCache) Get(ctx context.Context, key string) (any, error) {
+func (m *MockCache) Get(ctx context.Context, key string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, key)
-	ret0, _ := ret[0].(any)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -57,7 +110,7 @@ func (mr *MockCacheMockRecorder) Get(ctx, key any) *gomock.Call {
 }
 
 // Set mocks base method.
-func (m *MockCache) Set(ctx context.Context, key string, value any) error {
+func (m *MockCache) Set(ctx context.Context, key, value string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Set", ctx, key, value)
 	ret0, _ := ret[0].(error)
@@ -68,6 +121,20 @@ func (m *MockCache) Set(ctx context.Context, key string, value any) error {
 func (mr *MockCacheMockRecorder) Set(ctx, key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), ctx, key, value)
+}
+
+// SetTTL mocks base method.
+func (m *MockCache) SetTTL(ctx context.Context, key, value string, ttl time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTTL", ctx, key, value, ttl)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTTL indicates an expected call of SetTTL.
+func (mr *MockCacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*MockCache)(nil).SetTTL), ctx, key, value, ttl)
 }
 
 // MockRepository is a mock of Repository interface.
@@ -138,17 +205,17 @@ func (mr *MockRepositoryMockRecorder) Create(ctx, fruit any) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockRepository) Delete(ctx context.Context, id int) error {
+func (m *MockRepository) Delete(ctx context.Context, fruit *models.Fruit) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret := m.ctrl.Call(m, "Delete", ctx, fruit)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Delete(ctx, fruit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRepository)(nil).Delete), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockRepository)(nil).Delete), ctx, fruit)
 }
 
 // GetByID mocks base method.

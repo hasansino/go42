@@ -13,6 +13,14 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
+type Eventer interface {
+	Publish(topic string, event []byte) error
+	Subscribe(
+		ctx context.Context, topic string,
+		handler func(ctx context.Context, event []byte) error,
+	) error
+}
+
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value string) error
@@ -35,6 +43,7 @@ type Service struct {
 	logger     *slog.Logger
 	repository Repository
 	cache      Cache
+	events     Eventer
 }
 
 // NewService creates service with given repository
@@ -46,6 +55,10 @@ func NewService(repository Repository, opts ...Option) *Service {
 		opt(svc)
 	}
 	return svc
+}
+
+func (s *Service) Subscribe(ctx context.Context) error {
+	return s.events.Subscribe(ctx, "example-topic", s.eventHandler)
 }
 
 // withTransaction abstracts the transaction management pattern
@@ -90,10 +103,20 @@ func (s *Service) FruitByID(ctx context.Context, id int) (*models.Fruit, error) 
 
 func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*models.Fruit, error) {
 	fruit := new(models.Fruit)
-	fruit.Name = req.Name
-	err := s.repository.Create(ctx, fruit)
+	err := s.withTransaction(ctx, func(txCtx context.Context) error {
+		fruit.Name = req.Name
+		err := s.repository.Create(txCtx, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to create fruit: %w", err)
+		}
+		err = s.sendEvent(domain.EventTypeCreated, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create fruit: %w", err)
+		return nil, err
 	}
 	return fruit, nil
 }
@@ -108,6 +131,10 @@ func (s *Service) Delete(ctx context.Context, id int) error {
 		err = s.repository.Delete(txCtx, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to delete fruit: %w", err)
+		}
+		err = s.sendEvent(domain.EventTypeDeleted, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
 		}
 		return nil
 	})
@@ -126,10 +153,33 @@ func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitReq
 		if err != nil {
 			return fmt.Errorf("failed to update fruit: %w", err)
 		}
+		err = s.sendEvent(domain.EventTypeUpdated, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	return fruit, nil
+}
+
+func (s *Service) sendEvent(eventType string, payload any) error {
+	event := &domain.ExampleEvent{Type: eventType, Payload: payload}
+	payloadJson, err := event.Marshal()
+	if err != nil {
+		return fmt.Errorf("failed to marshal event: %w", err)
+	}
+	return s.events.Publish("example-topic", payloadJson)
+}
+
+func (s *Service) eventHandler(_ context.Context, eventData []byte) error {
+	event := new(domain.ExampleEvent)
+	err := event.Unmarshal(eventData)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal event: %w", err)
+	}
+	s.logger.Info("received event", slog.Any("event", event.Type))
+	return nil
 }

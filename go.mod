@@ -4,6 +4,7 @@ go 1.24.2
 
 require (
 	github.com/KimMachineGun/automemlimit v0.7.2
+	github.com/ThreeDotsLabs/watermill v1.4.6
 	github.com/VictoriaMetrics/metrics v1.35.4
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
@@ -86,6 +87,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
@@ -93,6 +95,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

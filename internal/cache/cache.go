@@ -12,7 +12,9 @@ type Cache interface {
 	Shutdown(ctx context.Context) error
 }
 
-// NoopCache is a cache that does nothing.
+// ---
+
+// NoopCache is a no-op implementation of Cache.
 type NoopCache struct{}
 
 func NewNoop() *NoopCache {

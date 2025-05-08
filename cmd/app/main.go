@@ -42,11 +42,12 @@ import (
 	"github.com/hasansino/goapp/internal/cache/miniredis"
 	"github.com/hasansino/goapp/internal/cache/redis"
 	"github.com/hasansino/goapp/internal/config"
-	"github.com/hasansino/goapp/internal/core"
 	"github.com/hasansino/goapp/internal/database/pgsql"
 	pgsqlMigrate "github.com/hasansino/goapp/internal/database/pgsql/migrate"
 	"github.com/hasansino/goapp/internal/database/sqlite"
 	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
+	"github.com/hasansino/goapp/internal/events"
+	"github.com/hasansino/goapp/internal/events/gochan"
 	"github.com/hasansino/goapp/internal/example"
 	exampleGrpcProvider "github.com/hasansino/goapp/internal/example/provider/grpc"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
@@ -100,7 +101,7 @@ func main() {
 	// http server
 	httpServer := httpAPI.New(
 		httpAPI.WitHealthCheck(ctx),
-		httpAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "http-server"))),
+		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.HTTPServer.WriteTimeout),
@@ -112,7 +113,7 @@ func main() {
 	// grpc server
 	grpcServer := grpcAPI.New(
 		grpcAPI.WitHealthCheck(ctx),
-		grpcAPI.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "grpc-server"))),
+		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),
@@ -168,6 +169,7 @@ func main() {
 		log.Printf("no cache engine initialized\n")
 	}
 
+	// database engine
 	var (
 		dbCloser ShutdownFn
 		// declare required repositories
@@ -192,7 +194,7 @@ func main() {
 		slog.Info("Connecting to sqlite...")
 		sqliteConn, sqliteConnErr := sqlite.New(
 			cfg.Database.Sqlite.SqliteFile,
-			sqlite.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "gorm-sqlite"))),
+			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
@@ -230,7 +232,7 @@ func main() {
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
 			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
-			pgsql.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "gorm-pgsql"))),
+			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
@@ -248,24 +250,44 @@ func main() {
 		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
 	}
 
+	// event engine
+	var (
+		eventsEngine events.Eventer
+	)
+
+	switch cfg.Events.Engine {
+	case "gochan":
+		eventsEngine = gochan.New()
+		log.Printf("gochan event engine initialized\n")
+	default:
+		eventsEngine = events.NewNoop()
+		log.Printf("no event engine initialized\n")
+	}
+
 	// ---
 
 	// service layer
 
 	{
 		// Example domain
-		exampleLogger := slog.Default().With(slog.String(core.LogFieldComponent, "example"))
+		exampleLogger := slog.Default().With(slog.String("component", "example"))
 		exampleService := example.NewService(
 			exampleRepository,
 			example.WithLogger(exampleLogger),
 			example.WithCache(cacheEngine),
+			example.WithEventer(eventsEngine),
 		)
-		// http
+		// http server
 		exampleHttp := exampleHttpProvider.New(exampleService)
 		httpServer.RegisterV1(exampleHttp)
-		// grpc
+		// grpc server
 		exampleGrpc := exampleGrpcProvider.New(exampleService)
 		grpcServer.Register(exampleGrpc)
+		// event consumer
+		err := exampleService.Subscribe(ctx)
+		if err != nil {
+			log.Fatalf("example-service failed to subscribe to events: %v\n", err)
+		}
 	}
 
 	// ---
@@ -402,7 +424,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) ShutdownFn {
 		log.Fatalf("Failed to connect to etcd: %v", err)
 	}
 
-	etcdLogger := slog.Default().With(slog.String(core.LogFieldComponent, "etcd"))
+	etcdLogger := slog.Default().With(slog.String("component", "etcd"))
 
 	switch cfg.Etcd.Method {
 	case "bind":
@@ -445,7 +467,7 @@ func initLimits(cfg *config.Config) {
 	}
 	if cfg.Limits.AutoMemLimitEnabled {
 		_, err = memlimit.SetGoMemLimitWithOpts(
-			memlimit.WithLogger(slog.Default().With(slog.String(core.LogFieldComponent, "memlimit"))),
+			memlimit.WithLogger(slog.Default().With(slog.String("component", "memlimit"))),
 			memlimit.WithRatio(cfg.Limits.MemLimitRatio),
 			memlimit.WithProvider(
 				memlimit.ApplyFallback(
@@ -529,7 +551,7 @@ func initProfiling(cfg *config.Config) ShutdownFn {
 		Handler:      pprofMux,
 		ErrorLog: slog.NewLogLogger(
 			slog.Default().With(
-				slog.String(core.LogFieldComponent, "pprof"),
+				slog.String("component", "pprof"),
 			).Handler(), slog.LevelError),
 	}
 
@@ -638,8 +660,6 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 	doneChan := make(chan struct{})
 	go func(ctx context.Context) {
 		// calling cancel() on main context disables health-checks for http and grpc servers
-		// when readiness probe will fail, load balancer will stop sending requests to this instance
-		// by default this process takes 30 seconds, but can be tweaked if needed
 		mainCancel()
 		time.Sleep(cfg.Core.ShutdownWaitForProbe)
 		for _, c := range closers {

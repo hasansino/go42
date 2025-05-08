@@ -26,6 +26,7 @@ type Config struct {
 	Etcd       Etcd
 	Database   Database
 	Cache      Cache
+	Events     Events
 	Pprof      Pprof
 	HTTPServer Server
 	GRPCServer GRPC
@@ -242,6 +243,14 @@ type Memcached struct {
 	Hosts        []string      `env:"CACHE_MEMCACHED_HOSTS"          default:"localhost:11211"`
 	Timeout      time.Duration `env:"CACHE_MEMCACHED_TIMEOUT"        default:"1s"`
 	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
+}
+
+// ╭──────────────────────────────╮
+// │           EVENTS             │
+// ╰──────────────────────────────╯
+
+type Events struct {
+	Engine string `env:"EVENTS_ENGINE" default:"none" v:"oneof=none gochan"`
 }
 
 // ╭──────────────────────────────╮
