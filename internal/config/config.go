@@ -37,10 +37,11 @@ type Config struct {
 // ╰──────────────────────────────╯
 
 type Core struct {
-	ServiceName          string        `env:"SERVICE_NAME"            default:"{{SERVICE_NAME}}"`
-	Environment          string        `env:"ENVIRONMENT"             default:""`
-	ShutdownGracePeriod  time.Duration `env:"SHUTDOWN_GRACE_PERIOD"   default:"10s"`
-	ShutdownWaitForProbe time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE" default:"2s"`
+	ServiceName              string        `env:"SERVICE_NAME"               default:"{{SERVICE_NAME}}"`
+	Environment              string        `env:"ENVIRONMENT"                default:""`
+	ShutdownGracePeriod      time.Duration `env:"SHUTDOWN_GRACE_PERIOD"      default:"10s"`
+	ShutdownWaitForProbe     time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"    default:"2s"`
+	ShutdownComponentTimeout time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT" default:"3s"`
 }
 
 // ╭──────────────────────────────╮
@@ -276,9 +277,12 @@ type NATSSubscriber struct {
 }
 
 type RabbitMQ struct {
+	DSN string `env:"RABBITMQ_DSN" default:"amqp://guest:guest@localhost:5672/ "`
 }
 
 type Kafka struct {
+	Brokers       []string `env:"KAFKA_BROKERS"        default:"localhost:9092"`
+	ConsumerGroup string   `env:"KAFKA_CONSUMER_GROUP" default:"example"`
 }
 
 // ╭──────────────────────────────╮

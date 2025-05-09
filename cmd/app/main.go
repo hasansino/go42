@@ -48,7 +48,9 @@ import (
 	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
 	"github.com/hasansino/goapp/internal/events"
 	"github.com/hasansino/goapp/internal/events/gochan"
+	"github.com/hasansino/goapp/internal/events/kafka"
 	"github.com/hasansino/goapp/internal/events/nats"
+	"github.com/hasansino/goapp/internal/events/rabbitmq"
 	"github.com/hasansino/goapp/internal/example"
 	exampleGrpcProvider "github.com/hasansino/goapp/internal/example/provider/grpc"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
@@ -75,9 +77,6 @@ func init() {
 		xBuildCommit = "dev"
 	}
 }
-
-// ShutdownFn represents graceful shutdown for specific component.
-type ShutdownFn func(context.Context) error
 
 func main() {
 	// main context of the application
@@ -119,6 +118,87 @@ func main() {
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),
 	)
+
+	// database engine
+	var (
+		dbCloser ShutMeDown
+		// declare required repositories
+		exampleRepository example.Repository
+	)
+
+	switch cfg.Database.Engine {
+	case "sqlite":
+		// run database migrations
+		slog.Info("Running database migrations...")
+		err = sqliteMigrate.Migrate(
+			cfg.Database.Sqlite.SqliteFile,
+			cfg.Database.FullMigratePath(),
+			sqlite.ConnectionOption{Key: "mode", Value: cfg.Database.Sqlite.Mode},
+			sqlite.ConnectionOption{Key: "cache", Value: cfg.Database.Sqlite.CacheMode},
+		)
+		if err != nil {
+			log.Fatalf("Failed to execute migrations: %v\n", err)
+		}
+
+		// connect to database
+		slog.Info("Connecting to sqlite...")
+		sqliteConn, sqliteConnErr := sqlite.New(
+			cfg.Database.Sqlite.SqliteFile,
+			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
+			sqlite.WithMode(cfg.Database.Sqlite.Mode),
+			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
+		)
+		if sqliteConnErr != nil {
+			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
+		}
+		slog.Info("Connected to sqlite")
+
+		dbCloser = sqliteConn
+
+		// register database metrics
+		prometheus.DefaultRegisterer.MustRegister(
+			collectors.NewDBStatsCollector(sqliteConn.SqlDB(), "gorm"),
+		)
+
+		// initialize repositories
+		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
+	case "pgsql":
+		// run database migrations
+		slog.Info("Running database migrations...")
+		err = pgsqlMigrate.Migrate(
+			cfg.Database.Pgsql.DSN(),
+			cfg.Database.FullMigratePath(),
+		)
+		if err != nil {
+			log.Fatalf("Failed to execute migrations: %v\n", err)
+		}
+
+		// connect to database
+		slog.Info("Connecting to PostgreSQL...")
+		pgsqlConn, pgsqlConnErr := pgsql.New(
+			cfg.Database.Pgsql.DSN(),
+			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
+			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
+			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
+			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
+			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
+			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
+		)
+		if pgsqlConnErr != nil {
+			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
+		}
+		slog.Info("Connected to PostgreSQL")
+
+		dbCloser = pgsqlConn
+
+		// register database metrics
+		prometheus.DefaultRegisterer.MustRegister(
+			collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
+		)
+
+		// initialize repositories
+		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
+	}
 
 	// cache engine
 	var (
@@ -170,87 +250,6 @@ func main() {
 		log.Printf("no cache engine initialized\n")
 	}
 
-	// database engine
-	var (
-		dbCloser ShutdownFn
-		// declare required repositories
-		exampleRepository example.Repository
-	)
-
-	switch cfg.Database.Engine {
-	case "sqlite":
-		// run database migrations
-		slog.Info("Running database migrations...")
-		err = sqliteMigrate.Migrate(
-			cfg.Database.Sqlite.SqliteFile,
-			cfg.Database.FullMigratePath(),
-			sqlite.ConnectionOption{Key: "mode", Value: cfg.Database.Sqlite.Mode},
-			sqlite.ConnectionOption{Key: "cache", Value: cfg.Database.Sqlite.CacheMode},
-		)
-		if err != nil {
-			log.Fatalf("Failed to execute migrations: %v\n", err)
-		}
-
-		// connect to database
-		slog.Info("Connecting to sqlite...")
-		sqliteConn, sqliteConnErr := sqlite.New(
-			cfg.Database.Sqlite.SqliteFile,
-			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
-			sqlite.WithMode(cfg.Database.Sqlite.Mode),
-			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
-		)
-		if sqliteConnErr != nil {
-			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
-		}
-		slog.Info("Connected to sqlite")
-
-		dbCloser = sqliteConn.Shutdown
-
-		// register database metrics
-		prometheus.DefaultRegisterer.MustRegister(
-			collectors.NewDBStatsCollector(sqliteConn.SqlDB(), "gorm"),
-		)
-
-		// initialize repositories
-		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
-	case "pgsql":
-		// run database migrations
-		slog.Info("Running database migrations...")
-		err = pgsqlMigrate.Migrate(
-			cfg.Database.Pgsql.DSN(),
-			cfg.Database.FullMigratePath(),
-		)
-		if err != nil {
-			log.Fatalf("Failed to execute migrations: %v\n", err)
-		}
-
-		// connect to database
-		slog.Info("Connecting to PostgreSQL...")
-		pgsqlConn, pgsqlConnErr := pgsql.New(
-			cfg.Database.Pgsql.DSN(),
-			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
-			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
-			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
-			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
-			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
-			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
-		)
-		if pgsqlConnErr != nil {
-			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
-		}
-		slog.Info("Connected to PostgreSQL")
-
-		dbCloser = pgsqlConn.Shutdown
-
-		// register database metrics
-		prometheus.DefaultRegisterer.MustRegister(
-			collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
-		)
-
-		// initialize repositories
-		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
-	}
-
 	// event engine
 	var (
 		eventsEngine events.Eventer
@@ -282,6 +281,25 @@ func main() {
 			log.Fatalf("failed to initialize nats event engine: %v\n", err)
 		}
 		log.Printf("nats event engine initialized\n")
+	case "rabbitmq":
+		eventsEngine, err = rabbitmq.New(
+			cfg.Events.RabbitMQ.DSN,
+			rabbitmq.WithLogger(slog.Default().With(slog.String("component", "events-rabbitmq"))),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize rabbitmq event engine: %v\n", err)
+		}
+		log.Printf("rabbitmq event engine initialized\n")
+	case "kafka":
+		eventsEngine, err = kafka.New(
+			cfg.Events.Kafka.Brokers,
+			cfg.Events.Kafka.ConsumerGroup,
+			kafka.WithLogger(slog.Default().With(slog.String("component", "events-kafka"))),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize kafka event engine: %v\n", err)
+		}
+		log.Printf("kafka event engine initialized\n")
 	default:
 		eventsEngine = events.NewNoop()
 		log.Printf("no event engine initialized\n")
@@ -336,8 +354,8 @@ func main() {
 		cfg,
 		cancel,
 		etcdCloser, pprofCloser,
-		httpServer.Shutdown, grpcServer.Shutdown, eventsEngine.Shutdown,
-		cacheEngine.Shutdown, dbCloser, tracingCloser,
+		httpServer, grpcServer, eventsEngine,
+		cacheEngine, dbCloser, tracingCloser,
 	)
 }
 
@@ -421,7 +439,7 @@ func initVault(cfg *config.Config) {
 	vault2cfg.Bind(cfg, data)
 }
 
-func initEtcd(ctx context.Context, cfg *config.Config) ShutdownFn {
+func initEtcd(ctx context.Context, cfg *config.Config) ShutMeDown {
 	if !cfg.Etcd.Enabled {
 		slog.Warn("etcd is disabled")
 		return nil
@@ -473,9 +491,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) ShutdownFn {
 
 	slog.Info("connected to etcd")
 
-	return func(context.Context) error {
-		return client.Close()
-	}
+	return &ShutMeDownWrap{closer: client}
 }
 
 func initLimits(cfg *config.Config) {
@@ -507,15 +523,15 @@ func initLimits(cfg *config.Config) {
 	}
 }
 
-func initSentry(cfg *config.Config) {
+func initSentry(cfg *config.Config) ShutMeDown {
 	if !cfg.Sentry.Enabled {
 		slog.Warn("sentry is disabled")
-		return
+		return nil
 	}
 
 	hostname, _ := os.Hostname()
 
-	err := sentry.Init(sentry.ClientOptions{
+	client, err := sentry.NewClient(sentry.ClientOptions{
 		Dsn:              cfg.Sentry.DSN,
 		ServerName:       hostname,
 		Environment:      cfg.Core.Environment,
@@ -531,6 +547,8 @@ func initSentry(cfg *config.Config) {
 			"build_commit": xBuildCommit,
 		},
 	})
+	sentry.CurrentHub().BindClient(client)
+
 	if err != nil {
 		log.Fatalf("failed to initialize sentry: %s", err)
 	}
@@ -548,9 +566,22 @@ func initSentry(cfg *config.Config) {
 
 	slog.SetDefault(multiLogger)
 	slog.Info("sentry initialized")
+
+	return &ShutMeDownWrap{
+		fn: func(ctx context.Context) error {
+			left, ok := ctx.Deadline()
+			if ok {
+				client.Flush(time.Until(left))
+			} else {
+				client.Flush(time.Second)
+			}
+			client.Close()
+			return nil
+		},
+	}
 }
 
-func initProfiling(cfg *config.Config) ShutdownFn {
+func initProfiling(cfg *config.Config) ShutMeDown {
 	if !cfg.Pprof.Enabled {
 		slog.Warn("pprof is disabled")
 		return nil
@@ -584,7 +615,7 @@ func initProfiling(cfg *config.Config) ShutdownFn {
 		}
 	}()
 
-	return server.Shutdown
+	return server
 }
 
 func initMetrics(cfg *config.Config) http.Handler {
@@ -607,15 +638,18 @@ func initMetrics(cfg *config.Config) http.Handler {
 			prometheus.DefaultGatherer,
 			promhttp.HandlerOpts{
 				Registry: prometheus.DefaultRegisterer,
-				ErrorLog: log.Default(), // @todo: use named logger
-				Timeout:  cfg.Metrics.Timeout,
+				ErrorLog: slog.NewLogLogger(
+					slog.Default().With(slog.String("component", "promhttp")).Handler(),
+					slog.LevelError,
+				),
+				Timeout: cfg.Metrics.Timeout,
 			}).ServeHTTP(w, r)
 		// append metrics from `github.com/VictoriaMetrics/metrics`
 		vmetrics.WritePrometheus(w, false)
 	})
 }
 
-func initTracing(cfg *config.Config) ShutdownFn {
+func initTracing(cfg *config.Config) ShutMeDown {
 	if !cfg.Tracing.Enable {
 		slog.Warn("tracing is disabled")
 		return nil
@@ -662,10 +696,10 @@ func initTracing(cfg *config.Config) ShutdownFn {
 
 	slog.Info("tracing initialized")
 
-	return tp.Shutdown
+	return tp
 }
 
-func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...ShutdownFn) {
+func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...ShutMeDown) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
@@ -682,21 +716,22 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 
 	doneChan := make(chan struct{})
 	go func(ctx context.Context) {
-		// calling cancel() on main context disables health-checks for http and grpc servers
+		// Calling cancel() on main context disables health-checks for http and grpc servers.
 		mainCancel()
 		time.Sleep(cfg.Core.ShutdownWaitForProbe)
 		for _, c := range closers {
 			if c == nil {
 				continue
 			}
-			// we assume that ShutdownFn is blocking and final operation -
-			// that is, when ShutdownFn returns, all resources are released
-			if err := c(ctx); err != nil {
+			cmpCtx, cmpCancel := context.WithTimeout(ctx, cfg.Core.ShutdownComponentTimeout)
+			// We assume that Shutdown() is blocking and final operation -
+			// that is, when Shutdown() returns, all resources are released
+			// or operation timed out, and we should not wait for it anymore.
+			if err := c.Shutdown(cmpCtx); err != nil {
 				slog.Error("shutdown error", slog.Any("error", err))
 			}
+			cmpCancel()
 		}
-		left, _ := ctx.Deadline()
-		sentry.Flush(time.Until(left))
 		close(doneChan)
 	}(ctx)
 
@@ -708,4 +743,38 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 	}
 
 	os.Exit(0)
+}
+
+// ShutMeDown implements graceful shutdown for specific component.
+type ShutMeDown interface {
+	Shutdown(context.Context) error
+}
+
+// ShutMeDownWrap wraps io.Closer or plan function and implements ShutMeDown interface.
+// Only one of the fields is used: closer or fn.
+// If both are nil, Shutdown() returns nil.
+type ShutMeDownWrap struct {
+	closer io.Closer
+	fn     func(ctx context.Context) error
+}
+
+// Shutdown implements graceful shutdown for specific component.
+// It should be blocking and final.
+func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
+	doneChan := make(chan error)
+	go func() {
+		if s.closer != nil {
+			doneChan <- s.fn(ctx)
+		} else if s.fn != nil {
+			doneChan <- s.closer.Close()
+		} else {
+			doneChan <- nil
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout")
+	case err := <-doneChan:
+		return err
+	}
 }

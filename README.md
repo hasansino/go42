@@ -6,9 +6,6 @@ Golang application template.
 
 ### >>>
 
-+ Shutdown(ctx) vs Close()
-+ queue processing (kafka / rabbitmq )
-+ [research] https://docs.datadoghq.com/
 + domains, tls, letsencrypt
 + deployment
   * helm chart + linter

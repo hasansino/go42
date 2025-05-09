@@ -1,5 +1,11 @@
 package nats
 
+// @bug with WithConnectionRetry(true) option passed, driver will initialise successfully
+// without error and will try to reconnect (according to reconnection options). If all
+// attempts will fail, driver will call ClosedHandler(), but not fail in any way.
+
+// @todo jetstream support
+
 import (
 	"context"
 	"errors"
@@ -60,24 +66,6 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	return engine, nil
 }
 
-func (n *NATS) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
-	go func() {
-		if err := n.publisher.Close(); err != nil {
-			doneChan <- err
-		}
-		if err := n.subscriber.Close(); err != nil {
-			doneChan <- err
-		}
-	}()
-	select {
-	case <-ctx.Done():
-		return errors.New("timeout")
-	case err := <-doneChan:
-		return err
-	}
-}
-
 func (n *NATS) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return n.publisher.Publish(topic, msg)
@@ -102,6 +90,24 @@ func (n *NATS) Subscribe(
 		}
 	}()
 	return nil
+}
+
+func (n *NATS) Shutdown(ctx context.Context) error {
+	doneChan := make(chan error)
+	go func() {
+		if err := n.publisher.Close(); err != nil {
+			doneChan <- err
+		}
+		if err := n.subscriber.Close(); err != nil {
+			doneChan <- err
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		return errors.New("timeout")
+	case err := <-doneChan:
+		return err
+	}
 }
 
 func handlers(l *slog.Logger) []natsgo.Option {
