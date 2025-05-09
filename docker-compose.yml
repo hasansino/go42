@@ -47,6 +47,13 @@ services:
     ports:
       - "9411:9411"
 
+  nats:
+    image: nats:2
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
 networks:
   default:
     driver: bridge

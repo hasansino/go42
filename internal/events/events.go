@@ -12,6 +12,7 @@ type Eventer interface {
 		ctx context.Context, topic string,
 		handler func(ctx context.Context, event []byte) error,
 	) error
+	Shutdown(ctx context.Context) error
 }
 
 // ---
@@ -31,5 +32,9 @@ func (e *NoopEngine) Subscribe(
 	_ context.Context, _ string,
 	_ func(_ context.Context, _ []byte) error,
 ) error {
+	return nil
+}
+
+func (e *NoopEngine) Shutdown(_ context.Context) error {
 	return nil
 }

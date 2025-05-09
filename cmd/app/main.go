@@ -48,6 +48,7 @@ import (
 	sqliteMigrate "github.com/hasansino/goapp/internal/database/sqlite/migrate"
 	"github.com/hasansino/goapp/internal/events"
 	"github.com/hasansino/goapp/internal/events/gochan"
+	"github.com/hasansino/goapp/internal/events/nats"
 	"github.com/hasansino/goapp/internal/example"
 	exampleGrpcProvider "github.com/hasansino/goapp/internal/example/provider/grpc"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
@@ -100,7 +101,7 @@ func main() {
 
 	// http server
 	httpServer := httpAPI.New(
-		httpAPI.WitHealthCheck(ctx),
+		httpAPI.WitHealthCheckCtx(ctx),
 		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
@@ -112,7 +113,7 @@ func main() {
 
 	// grpc server
 	grpcServer := grpcAPI.New(
-		grpcAPI.WitHealthCheck(ctx),
+		grpcAPI.WitHealthCheckCtx(ctx),
 		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
@@ -257,8 +258,30 @@ func main() {
 
 	switch cfg.Events.Engine {
 	case "gochan":
-		eventsEngine = gochan.New()
+		eventsEngine = gochan.New(
+			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
+		)
 		log.Printf("gochan event engine initialized\n")
+	case "nats":
+		eventsEngine, err = nats.New(
+			cfg.Events.NATS.DSN,
+			nats.WithLogger(slog.Default().With(slog.String("component", "events-nats"))),
+			nats.WithClientName(cfg.Events.NATS.ClientName),
+			nats.WithClientToken(cfg.Events.NATS.Token),
+			nats.WithConnectTimeout(cfg.Events.NATS.ConnTimeout),
+			nats.WithConnectionRetry(cfg.Events.NATS.ConnRetry),
+			nats.WithMaxReconnects(cfg.Events.NATS.MaxRetry),
+			nats.WithReconnectDelay(cfg.Events.NATS.RetryDelay),
+			nats.WithSubGroupPrefix(cfg.Events.NATS.Subscriber.GroupPrefix),
+			nats.WithSubWorkerCount(cfg.Events.NATS.Subscriber.WorkerCount),
+			nats.WithSubTimeout(cfg.Events.NATS.Subscriber.Timeout),
+			nats.WithSubAckTimeout(cfg.Events.NATS.Subscriber.Timeout),
+			nats.WithSubCloseTimeout(cfg.Events.NATS.Subscriber.Timeout),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize nats event engine: %v\n", err)
+		}
+		log.Printf("nats event engine initialized\n")
 	default:
 		eventsEngine = events.NewNoop()
 		log.Printf("no event engine initialized\n")

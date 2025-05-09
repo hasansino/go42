@@ -10,32 +10,44 @@ import (
 )
 
 type GoChan struct {
-	engine *gochannel.GoChannel
+	logger  *slog.Logger
+	channel *gochannel.GoChannel
 }
 
-func New() *GoChan {
-	engine := gochannel.NewGoChannel(
+func New(opts ...Option) *GoChan {
+	var (
+		engine = new(GoChan)
+	)
+
+	for _, opt := range opts {
+		opt(engine)
+	}
+
+	if engine.logger == nil {
+		engine.logger = slog.New(slog.DiscardHandler)
+	}
+
+	goch := gochannel.NewGoChannel(
 		gochannel.Config{
 			OutputChannelBuffer: 999,
 			Persistent:          true,
 		},
-		watermill.NewSlogLogger(
-			slog.Default().With(slog.String("component", "events-gochan")),
-		),
+		watermill.NewSlogLogger(engine.logger),
 	)
-	return &GoChan{engine: engine}
+
+	return &GoChan{channel: goch}
 }
 
 func (g *GoChan) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
-	return g.engine.Publish(topic, msg)
+	return g.channel.Publish(topic, msg)
 }
 
 func (g *GoChan) Subscribe(
 	ctx context.Context, topic string,
 	handler func(ctx context.Context, event []byte) error,
 ) error {
-	messages, err := g.engine.Subscribe(ctx, topic)
+	messages, err := g.channel.Subscribe(ctx, topic)
 	if err != nil {
 		return err
 	}
@@ -50,4 +62,8 @@ func (g *GoChan) Subscribe(
 		}
 	}()
 	return nil
+}
+
+func (g *GoChan) Shutdown(_ context.Context) error {
+	return g.channel.Close()
 }

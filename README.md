@@ -6,7 +6,8 @@ Golang application template.
 
 ### >>>
 
-+ queue processing (kafka / rabbitmq / nats / nsq)
++ Shutdown(ctx) vs Close()
++ queue processing (kafka / rabbitmq )
 + [research] https://docs.datadoghq.com/
 + domains, tls, letsencrypt
 + deployment
@@ -48,6 +49,7 @@ Golang application template.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 + [research] go tools as modules
++ dockerfile -> SHELL | HEALTHCHECK (explore documentation)
 
 ### <<
 

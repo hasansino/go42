@@ -250,7 +250,35 @@ type Memcached struct {
 // ╰──────────────────────────────╯
 
 type Events struct {
-	Engine string `env:"EVENTS_ENGINE" default:"none" v:"oneof=none gochan"`
+	Engine   string `env:"EVENTS_ENGINE" default:"none" v:"oneof=none gochan nats rabbitmq kafka"`
+	NATS     NATS
+	RabbitMQ RabbitMQ
+	Kafka    Kafka
+}
+
+type NATS struct {
+	DSN         string        `env:"NATS_DSN"          default:"nats://localhost:4222"`
+	ClientName  string        `env:"NATS_CLIENT_NAME"  default:""`
+	Token       string        `env:"NATS_TOKEN"        default:""`
+	ConnTimeout time.Duration `env:"NATS_CONN_TIMEOUT" default:"5s"`
+	ConnRetry   bool          `env:"NATS_CONN_RETRY"   default:"false"`
+	MaxRetry    int           `env:"NATS_MAX_RETRY"    default:"10"`
+	RetryDelay  time.Duration `env:"NATS_RETRY_DELAY"  default:"1s"`
+	Subscriber  NATSSubscriber
+}
+
+type NATSSubscriber struct {
+	GroupPrefix  string        `env:"NATS_SUB_QUEUE_GROUP_PREFIX" default:""`
+	WorkerCount  int           `env:"NATS_SUB_WORKER_COUNT"       default:"1"`
+	Timeout      time.Duration `env:"NATS_SUB_TIMEOUT"            default:"30s"`
+	AckTimeout   time.Duration `env:"NATS_SUB_ACK_TIMEOUT"        default:"30s"`
+	CloseTimeout time.Duration `env:"NATS_SUB_CLOSE_TIMEOUT"      default:"30s"`
+}
+
+type RabbitMQ struct {
+}
+
+type Kafka struct {
 }
 
 // ╭──────────────────────────────╮

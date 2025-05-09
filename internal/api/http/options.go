@@ -51,9 +51,9 @@ func WithSwaggerRoot(root string) Option {
 	}
 }
 
-// WitHealthCheck enables health-check endpoint.
+// WitHealthCheckCtx sets the health-check context.
 // Once context is canceled, health-check will return error.
-func WitHealthCheck(ctx context.Context) Option {
+func WitHealthCheckCtx(ctx context.Context) Option {
 	return func(s *Server) {
 		go func() {
 			<-ctx.Done()
