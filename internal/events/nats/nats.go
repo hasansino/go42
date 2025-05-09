@@ -66,6 +66,14 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	return engine, nil
 }
 
+func (n *NATS) Publisher() message.Publisher {
+	return n.publisher
+}
+
+func (n *NATS) Subscriber() message.Subscriber {
+	return n.subscriber
+}
+
 func (n *NATS) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return n.publisher.Publish(topic, msg)
@@ -93,19 +101,19 @@ func (n *NATS) Subscribe(
 }
 
 func (n *NATS) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	done := make(chan error)
 	go func() {
 		if err := n.publisher.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 		if err := n.subscriber.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 	}()
 	select {
 	case <-ctx.Done():
 		return errors.New("timeout")
-	case err := <-doneChan:
+	case err := <-done:
 		return err
 	}
 }

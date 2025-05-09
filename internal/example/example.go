@@ -1,11 +1,10 @@
 package example
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/hasansino/goapp/internal/example/domain"
 	"github.com/hasansino/goapp/internal/example/models"
@@ -55,10 +54,6 @@ func NewService(repository Repository, opts ...Option) *Service {
 		opt(svc)
 	}
 	return svc
-}
-
-func (s *Service) Subscribe(ctx context.Context) error {
-	return s.events.Subscribe(ctx, "example-topic", s.eventHandler)
 }
 
 // withTransaction abstracts the transaction management pattern
@@ -174,7 +169,11 @@ func (s *Service) sendEvent(eventType string, payload any) error {
 	return s.events.Publish("example-topic", payloadJson)
 }
 
-func (s *Service) eventHandler(_ context.Context, eventData []byte) error {
+func (s *Service) Subscribe(ctx context.Context) error {
+	return s.events.Subscribe(ctx, "example-topic", s.ProcessEvent)
+}
+
+func (s *Service) ProcessEvent(_ context.Context, eventData []byte) error {
 	event := new(domain.ExampleEvent)
 	err := event.Unmarshal(eventData)
 	if err != nil {

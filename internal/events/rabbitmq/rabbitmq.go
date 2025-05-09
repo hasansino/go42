@@ -51,6 +51,14 @@ func New(dsn string, opts ...Option) (*AMQP, error) {
 	return engine, nil
 }
 
+func (rmq *AMQP) Publisher() message.Publisher {
+	return rmq.publisher
+}
+
+func (rmq *AMQP) Subscriber() message.Subscriber {
+	return rmq.subscriber
+}
+
 func (rmq *AMQP) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return rmq.publisher.Publish(topic, msg)
@@ -78,19 +86,19 @@ func (rmq *AMQP) Subscribe(
 }
 
 func (rmq *AMQP) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	done := make(chan error)
 	go func() {
 		if err := rmq.publisher.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 		if err := rmq.subscriber.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 	}()
 	select {
 	case <-ctx.Done():
 		return errors.New("timeout")
-	case err := <-doneChan:
+	case err := <-done:
 		return err
 	}
 }

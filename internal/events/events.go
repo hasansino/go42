@@ -1,8 +1,18 @@
 package events
 
-import "context"
+import (
+	"context"
+
+	"github.com/ThreeDotsLabs/watermill/message"
+)
+
+type Watermill interface {
+	Publisher() message.Publisher
+	Subscriber() message.Subscriber
+}
 
 type Eventer interface {
+	Watermill
 	// Publish publishes event to the topic. It should be non-blocking.
 	Publish(topic string, event []byte) error
 	// Subscribe starts goroutine to listen to the topic.
@@ -22,6 +32,14 @@ type NoopEngine struct{}
 
 func NewNoop() *NoopEngine {
 	return &NoopEngine{}
+}
+
+func (e *NoopEngine) Publisher() message.Publisher {
+	return nil
+}
+
+func (e *NoopEngine) Subscriber() message.Subscriber {
+	return nil
 }
 
 func (e *NoopEngine) Publish(_ string, _ []byte) error {

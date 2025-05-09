@@ -65,6 +65,14 @@ func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
 	return engine, nil
 }
 
+func (k *Kafka) Publisher() message.Publisher {
+	return k.publisher
+}
+
+func (k *Kafka) Subscriber() message.Subscriber {
+	return k.subscriber
+}
+
 func (k *Kafka) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return k.publisher.Publish(topic, msg)
@@ -92,19 +100,19 @@ func (k *Kafka) Subscribe(
 }
 
 func (k *Kafka) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	done := make(chan error)
 	go func() {
 		if err := k.publisher.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 		if err := k.subscriber.Close(); err != nil {
-			doneChan <- err
+			done <- err
 		}
 	}()
 	select {
 	case <-ctx.Done():
 		return errors.New("timeout")
-	case err := <-doneChan:
+	case err := <-done:
 		return err
 	}
 }

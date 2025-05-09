@@ -21,14 +21,14 @@ func New(hosts []string, opts ...Option) (*Wrapper, error) {
 }
 
 func (w *Wrapper) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	done := make(chan error)
 	go func() {
-		doneChan <- w.client.Close()
+		done <- w.client.Close()
 	}()
 	select {
 	case <-ctx.Done():
 		return errors.New("timeout")
-	case err := <-doneChan:
+	case err := <-done:
 		return err
 	}
 }

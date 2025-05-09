@@ -13,9 +13,9 @@ import (
 	reflect "reflect"
 	time "time"
 
+	context "context"
 	models "github.com/hasansino/goapp/internal/example/models"
 	gomock "go.uber.org/mock/gomock"
-	context "golang.org/x/net/context"
 )
 
 // MockEventer is a mock of Eventer interface.
