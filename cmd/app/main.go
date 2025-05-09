@@ -335,8 +335,8 @@ func main() {
 	shutdown(
 		cfg,
 		cancel,
-		etcdCloser,
-		pprofCloser, httpServer.Shutdown, grpcServer.Shutdown,
+		etcdCloser, pprofCloser,
+		httpServer.Shutdown, grpcServer.Shutdown, eventsEngine.Shutdown,
 		cacheEngine.Shutdown, dbCloser, tracingCloser,
 	)
 }
