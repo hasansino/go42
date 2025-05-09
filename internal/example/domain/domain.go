@@ -18,6 +18,8 @@ var (
 	ErrAlreadyExists = errors.New("entity already exists")
 )
 
+// ---
+
 type CreateFruitRequest struct {
 	Name string `json:"name" v:"required,min=3,max=20"`
 }

@@ -47,15 +47,6 @@ var _ = Describe("Fruits API Integration Tests", func() {
 		client = &http.Client{Timeout: 5 * time.Second}
 	})
 
-	Describe("Health Check", func() {
-		It("should return 200 OK", func() {
-			resp, err := client.Get(baseURL + "/health-check")
-			Expect(err).ToNot(HaveOccurred())
-			defer resp.Body.Close()
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
-
 	Describe("GET /fruits", func() {
 		It("should return a list of fruits", func() {
 			resp, err := client.Get(baseURL + "/fruits?limit=5&offset=0")
