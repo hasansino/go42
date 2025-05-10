@@ -2,9 +2,9 @@ name: unified-workflow
 
 on:
   workflow_dispatch:
-#  push:
+  push:
 #    branches: [ master ]
-#    tags: [ 'v*' ]
+    tags: [ 'v*' ]
 #  pull_request:
 #    branches: [ master ]
 
