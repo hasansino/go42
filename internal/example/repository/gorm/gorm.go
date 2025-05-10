@@ -78,7 +78,7 @@ func (r *Repository) Rollback(ctx context.Context) error {
 	return nil
 }
 
-func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
+func (r *Repository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -90,7 +90,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*models.Fru
 	return fruits, nil
 }
 
-func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error) {
+func (r *Repository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, error) {
 	var fruit models.Fruit
 	result := r.getTx(ctx).First(&fruit, id)
 	if result.Error != nil {
@@ -102,7 +102,7 @@ func (r *Repository) GetByID(ctx context.Context, id int) (*models.Fruit, error)
 	return &fruit, nil
 }
 
-func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
+func (r *Repository) CreateFruit(ctx context.Context, fruit *models.Fruit) error {
 	err := r.getTx(ctx).Create(fruit).Error
 	if err != nil {
 		if r.sqlCore.IsDuplicateKeyError(err) {
@@ -113,7 +113,7 @@ func (r *Repository) Create(ctx context.Context, fruit *models.Fruit) error {
 	return nil
 }
 
-func (r *Repository) Delete(ctx context.Context, fruit *models.Fruit) error {
+func (r *Repository) DeleteFruit(ctx context.Context, fruit *models.Fruit) error {
 	result := r.getTx(ctx).Delete(&fruit)
 	if result.Error != nil {
 		if result.RowsAffected == 0 {
@@ -124,10 +124,18 @@ func (r *Repository) Delete(ctx context.Context, fruit *models.Fruit) error {
 	return nil
 }
 
-func (r *Repository) Update(ctx context.Context, fruit *models.Fruit) error {
+func (r *Repository) UpdateFruit(ctx context.Context, fruit *models.Fruit) error {
 	tx := r.getTx(ctx).Save(fruit)
 	if tx.Error != nil {
 		return fmt.Errorf("error updating fruit: %w", tx.Error)
+	}
+	return nil
+}
+
+func (r *Repository) SaveEvent(ctx context.Context, event *models.Event) error {
+	err := r.getTx(ctx).Create(event).Error
+	if err != nil {
+		return fmt.Errorf("error saving event: %w", err)
 	}
 	return nil
 }

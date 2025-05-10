@@ -12,18 +12,18 @@ import (
 	"github.com/hasansino/goapp/internal/tools"
 )
 
-// Handler provider for fiber framework
-type Handler struct {
+// Provider Provider for fiber framework
+type Provider struct {
 	service *example.Service
 }
 
 // New provides handlers for its http endpoints
-func New(s *example.Service) *Handler {
-	return &Handler{service: s}
+func New(s *example.Service) *Provider {
+	return &Provider{service: s}
 }
 
 // Register endpoints in fiber framework
-func (h *Handler) Register(e *echo.Group) {
+func (h *Provider) Register(e *echo.Group) {
 	e.GET("/fruits", h.fruits)
 	e.GET("/fruits/:id", h.fruitByID)
 	e.POST("/fruits", h.createFruit)
@@ -31,7 +31,7 @@ func (h *Handler) Register(e *echo.Group) {
 	e.DELETE("/fruits/:id", h.deleteFruit)
 }
 
-func (h *Handler) fruits(ctx echo.Context) error {
+func (h *Provider) fruits(ctx echo.Context) error {
 	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
 	if err != nil {
 		limit = domain.DefaultFetchLimit
@@ -47,7 +47,7 @@ func (h *Handler) fruits(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (h *Handler) fruitByID(ctx echo.Context) error {
+func (h *Provider) fruitByID(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -60,7 +60,7 @@ func (h *Handler) fruitByID(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (h *Handler) createFruit(ctx echo.Context) error {
+func (h *Provider) createFruit(ctx echo.Context) error {
 	req := new(domain.CreateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -84,7 +84,7 @@ func (h *Handler) createFruit(ctx echo.Context) error {
 	return ctx.JSON(http.StatusCreated, r)
 }
 
-func (h *Handler) deleteFruit(ctx echo.Context) error {
+func (h *Provider) deleteFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -96,7 +96,7 @@ func (h *Handler) deleteFruit(ctx echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (h *Handler) updateFruit(ctx echo.Context) error {
+func (h *Provider) updateFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,

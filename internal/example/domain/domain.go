@@ -5,18 +5,26 @@ import (
 	"errors"
 )
 
-const (
-	DefaultFetchLimit = 10
-
-	EventTypeCreated = "fruit.created"
-	EventTypeUpdated = "fruit.updated"
-	EventTypeDeleted = "fruit.deleted"
-)
+const DefaultFetchLimit = 10
 
 var (
 	ErrNotFound      = errors.New("entity not found")
 	ErrAlreadyExists = errors.New("entity already exists")
 )
+
+// ---
+
+const (
+	EventTypeCreated = iota
+	EventTypeUpdated
+	EventTypeDeleted
+)
+
+var EventTypes = map[int]string{
+	EventTypeCreated: "fruit.created",
+	EventTypeUpdated: "fruit.updated",
+	EventTypeDeleted: "fruit.deleted",
+}
 
 // ---
 
@@ -31,8 +39,8 @@ type UpdateFruitRequest struct {
 // ---
 
 type ExampleEvent struct {
-	Type    string `json:"type"`
-	Payload any    `json:"payload"`
+	Type    int `json:"type"`
+	Payload any `json:"payload"`
 }
 
 func (e *ExampleEvent) Marshal() ([]byte, error) {

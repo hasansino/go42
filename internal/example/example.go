@@ -12,8 +12,11 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
-type Eventer interface {
+type Publisher interface {
 	Publish(topic string, event []byte) error
+}
+
+type Subscriber interface {
 	Subscribe(
 		ctx context.Context, topic string,
 		handler func(ctx context.Context, event []byte) error,
@@ -30,25 +33,27 @@ type Repository interface {
 	Begin(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
-	List(ctx context.Context, limit, offset int) ([]*models.Fruit, error)
-	GetByID(ctx context.Context, id int) (*models.Fruit, error)
-	Create(ctx context.Context, fruit *models.Fruit) error
-	Update(ctx context.Context, fruit *models.Fruit) error
-	Delete(ctx context.Context, fruit *models.Fruit) error
+	ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error)
+	GetFruitByID(ctx context.Context, id int) (*models.Fruit, error)
+	CreateFruit(ctx context.Context, fruit *models.Fruit) error
+	UpdateFruit(ctx context.Context, fruit *models.Fruit) error
+	DeleteFruit(ctx context.Context, fruit *models.Fruit) error
+	SaveEvent(ctx context.Context, event *models.Event) error
 }
 
 // Service layer of example domain
 type Service struct {
 	logger     *slog.Logger
 	repository Repository
+	publisher  Publisher
 	cache      Cache
-	events     Eventer
 }
 
 // NewService creates service with given repository
-func NewService(repository Repository, opts ...Option) *Service {
+func NewService(repository Repository, publisher Publisher, opts ...Option) *Service {
 	svc := &Service{
 		repository: repository,
+		publisher:  publisher,
 	}
 	for _, opt := range opts {
 		opt(svc)
@@ -89,18 +94,18 @@ func (s *Service) withTransaction(
 }
 
 func (s *Service) Fruits(ctx context.Context, limit int, offset int) ([]*models.Fruit, error) {
-	return s.repository.List(ctx, limit, offset)
+	return s.repository.ListFruits(ctx, limit, offset)
 }
 
 func (s *Service) FruitByID(ctx context.Context, id int) (*models.Fruit, error) {
-	return s.repository.GetByID(ctx, id)
+	return s.repository.GetFruitByID(ctx, id)
 }
 
 func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*models.Fruit, error) {
 	fruit := new(models.Fruit)
 	err := s.withTransaction(ctx, func(txCtx context.Context) error {
 		fruit.Name = req.Name
-		err := s.repository.Create(txCtx, fruit)
+		err := s.repository.CreateFruit(txCtx, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to create fruit: %w", err)
 		}
@@ -119,11 +124,11 @@ func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*
 func (s *Service) Delete(ctx context.Context, id int) error {
 	return s.withTransaction(ctx, func(txCtx context.Context) error {
 		var err error
-		fruit, err := s.repository.GetByID(txCtx, id)
+		fruit, err := s.repository.GetFruitByID(txCtx, id)
 		if err != nil {
 			return fmt.Errorf("failed to get fruit by id: %w", err)
 		}
-		err = s.repository.Delete(txCtx, fruit)
+		err = s.repository.DeleteFruit(txCtx, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to delete fruit: %w", err)
 		}
@@ -139,12 +144,12 @@ func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitReq
 	var fruit *models.Fruit
 	err := s.withTransaction(ctx, func(txCtx context.Context) error {
 		var err error
-		fruit, err = s.repository.GetByID(txCtx, id)
+		fruit, err = s.repository.GetFruitByID(txCtx, id)
 		if err != nil {
 			return fmt.Errorf("failed to get fruit by id: %w", err)
 		}
 		fruit.Name = req.Name
-		err = s.repository.Update(txCtx, fruit)
+		err = s.repository.UpdateFruit(txCtx, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to update fruit: %w", err)
 		}
@@ -160,25 +165,41 @@ func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitReq
 	return fruit, nil
 }
 
-func (s *Service) sendEvent(eventType string, payload any) error {
+func (s *Service) sendEvent(eventType int, payload any) error {
 	event := &domain.ExampleEvent{Type: eventType, Payload: payload}
 	payloadJson, err := event.Marshal()
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
-	return s.events.Publish("example-topic", payloadJson)
+	return s.publisher.Publish("example-topic", payloadJson)
 }
 
-func (s *Service) Subscribe(ctx context.Context) error {
-	return s.events.Subscribe(ctx, "example-topic", s.ProcessEvent)
+func (s *Service) Subscribe(ctx context.Context, subscriber Subscriber) error {
+	return subscriber.Subscribe(ctx, "example-topic", s.handleEvent)
 }
 
-func (s *Service) ProcessEvent(_ context.Context, eventData []byte) error {
+func (s *Service) handleEvent(ctx context.Context, eventData []byte) error {
 	event := new(domain.ExampleEvent)
 	err := event.Unmarshal(eventData)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal event: %w", err)
 	}
+
 	s.logger.Info("received event", slog.Any("event", event.Type))
-	return nil
+
+	// validate event type exist
+	if _, ok := domain.EventTypes[event.Type]; !ok {
+		return fmt.Errorf("invalid event type: %d", event.Type)
+	}
+
+	// save event to database
+	dbEvent := new(models.Event)
+	return s.withTransaction(ctx, func(txCtx context.Context) error {
+		dbEvent.Data = string(eventData)
+		err := s.repository.SaveEvent(txCtx, dbEvent)
+		if err != nil {
+			return fmt.Errorf("failed to create fruit: %w", err)
+		}
+		return nil
+	})
 }

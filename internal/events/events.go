@@ -2,26 +2,26 @@ package events
 
 import (
 	"context"
-
-	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-type Watermill interface {
-	Publisher() message.Publisher
-	Subscriber() message.Subscriber
+// Publisher publishes event to the topic in async fashion.
+type Publisher interface {
+	Publish(topic string, event []byte) error
 }
 
-type Eventer interface {
-	Watermill
-	// Publish publishes event to the topic. It should be non-blocking.
-	Publish(topic string, event []byte) error
-	// Subscribe starts goroutine to listen to the topic.
-	// Context cancel should be used to cancel the subscription.
-	// Handler should return error to avoid Ack of the message.
+// Subscriber subscribes a handler for given topic in async fashion.
+// Passed context control underlying goroutine and terminates in upon canceling.
+// Handler should return error for Nack or nil to Ack.
+type Subscriber interface {
 	Subscribe(
 		ctx context.Context, topic string,
 		handler func(ctx context.Context, event []byte) error,
 	) error
+}
+
+type Eventer interface {
+	Publisher
+	Subscriber
 	Shutdown(ctx context.Context) error
 }
 
@@ -32,14 +32,6 @@ type NoopEngine struct{}
 
 func NewNoop() *NoopEngine {
 	return &NoopEngine{}
-}
-
-func (e *NoopEngine) Publisher() message.Publisher {
-	return nil
-}
-
-func (e *NoopEngine) Subscriber() message.Subscriber {
-	return nil
 }
 
 func (e *NoopEngine) Publish(_ string, _ []byte) error {

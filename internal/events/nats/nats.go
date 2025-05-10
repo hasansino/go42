@@ -66,14 +66,6 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	return engine, nil
 }
 
-func (n *NATS) Publisher() message.Publisher {
-	return n.publisher
-}
-
-func (n *NATS) Subscriber() message.Subscriber {
-	return n.subscriber
-}
-
 func (n *NATS) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return n.publisher.Publish(topic, msg)

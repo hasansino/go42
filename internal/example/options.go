@@ -17,9 +17,3 @@ func WithCache(cache Cache) Option {
 		s.cache = cache
 	}
 }
-
-func WithEventer(engine Eventer) Option {
-	return func(s *Service) {
-		s.events = engine
-	}
-}

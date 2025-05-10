@@ -6,6 +6,7 @@ Golang application template.
 
 ### >>>
 
++ grpc Register is invalid
 + domains, tls, letsencrypt
 + deployment
   * helm chart + linter
@@ -47,6 +48,7 @@ Golang application template.
   * https://github.com/gomods/athens
 + [research] go tools as modules
 + dockerfile -> SHELL | HEALTHCHECK (explore documentation)
++ [research] embedding static files in go binary
 
 ### <<
 

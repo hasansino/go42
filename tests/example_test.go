@@ -94,7 +94,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 	Describe("GET /fruits/{id}", func() {
 		It("should create, get by ID and cleanup", func() {
 			name := generateRandomName("apple")
-			// Create fruit
+			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
@@ -140,7 +140,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 	Describe("PUT /fruits/{id}", func() {
 		It("should create, update and cleanup a fruit", func() {
 			name := generateRandomName("banana")
-			// Create fruit
+			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
@@ -154,7 +154,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			err = json.NewDecoder(resp.Body).Decode(&fruit)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Update fruit
+			// UpdateFruit fruit
 			updatedName := generateRandomName("kek")
 			updateReq := UpdateFruitRequest{Name: updatedName}
 			updateBytes, err := json.Marshal(updateReq)
@@ -212,7 +212,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 	Describe("DELETE /fruits/{id}", func() {
 		It("should create and delete a fruit", func() {
 			name := generateRandomName("peach")
-			// Create fruit
+			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
@@ -226,7 +226,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			err = json.NewDecoder(resp.Body).Decode(&fruit)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Delete fruit
+			// DeleteFruit fruit
 			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID), nil)
 			Expect(err).ToNot(HaveOccurred())
 

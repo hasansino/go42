@@ -38,14 +38,6 @@ func New(opts ...Option) *GoChan {
 	return &GoChan{channel: goch}
 }
 
-func (g *GoChan) Publisher() message.Publisher {
-	return nil
-}
-
-func (g *GoChan) Subscriber() message.Subscriber {
-	return nil
-}
-
 func (g *GoChan) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return g.channel.Publish(topic, msg)

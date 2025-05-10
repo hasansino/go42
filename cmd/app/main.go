@@ -52,7 +52,6 @@ import (
 	"github.com/hasansino/goapp/internal/events/nats"
 	"github.com/hasansino/goapp/internal/events/rabbitmq"
 	"github.com/hasansino/goapp/internal/example"
-	exampleEventsProvider "github.com/hasansino/goapp/internal/example/provider/events"
 	exampleGrpcProvider "github.com/hasansino/goapp/internal/example/provider/grpc"
 	exampleHttpProvider "github.com/hasansino/goapp/internal/example/provider/http"
 	exampleGormRepository "github.com/hasansino/goapp/internal/example/repository/gorm"
@@ -310,18 +309,14 @@ func main() {
 
 	// service layer
 
-	var (
-		exampleEventsCloser ShutMeDown
-	)
-
 	{
 		// example service
 		exampleLogger := slog.Default().With(slog.String("component", "example"))
 		exampleService := example.NewService(
 			exampleRepository,
+			eventsEngine,
 			example.WithLogger(exampleLogger),
 			example.WithCache(cacheEngine),
-			example.WithEventer(eventsEngine),
 		)
 
 		// http server
@@ -333,27 +328,9 @@ func main() {
 		grpcServer.Register(exampleGrpc)
 
 		// event consumer
-		err := exampleService.Subscribe(ctx)
+		err := exampleService.Subscribe(ctx, eventsEngine)
 		if err != nil {
 			log.Fatalf("example-service failed to subscribe to events: %v\n", err)
-		}
-
-		// alternative approach - event consumer as provider
-		switch cfg.Events.Engine {
-		case "nats", "rabbitmq", "kafka":
-			exampleEvents, err := exampleEventsProvider.New(
-				exampleService, eventsEngine,
-				exampleEventsProvider.WithLogger(exampleLogger),
-			)
-			if err != nil {
-				log.Fatalf("failed to start example events provider: %v\n", err)
-			}
-			go func() {
-				if err := exampleEvents.Run(ctx); err != nil {
-					log.Fatalf("example events provider run error: %v\n", err)
-				}
-			}()
-			exampleEventsCloser = exampleEvents
 		}
 	}
 
@@ -381,7 +358,6 @@ func main() {
 		cancel,
 		etcdCloser, pprofCloser,
 		httpServer, grpcServer, eventsEngine,
-		exampleEventsCloser,
 		cacheEngine, dbCloser, tracingCloser,
 	)
 }

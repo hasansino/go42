@@ -65,14 +65,6 @@ func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
 	return engine, nil
 }
 
-func (k *Kafka) Publisher() message.Publisher {
-	return k.publisher
-}
-
-func (k *Kafka) Subscriber() message.Subscriber {
-	return k.subscriber
-}
-
 func (k *Kafka) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
 	return k.publisher.Publish(topic, msg)
