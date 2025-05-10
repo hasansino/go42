@@ -16,20 +16,19 @@ import (
 
 type Config struct {
 	sync.RWMutex
-	Core       Core
-	Limits     Limits
-	Logger     Logger
-	Metrics    Metrics
-	Tracing    Tracing
-	Sentry     Sentry
-	Vault      Vault
-	Etcd       Etcd
-	Database   Database
-	Cache      Cache
-	Events     Events
-	Pprof      Pprof
-	HTTPServer Server
-	GRPCServer GRPC
+	Core     Core
+	Limits   Limits
+	Logger   Logger
+	Metrics  Metrics
+	Tracing  Tracing
+	Sentry   Sentry
+	Vault    Vault
+	Etcd     Etcd
+	Database Database
+	Cache    Cache
+	Events   Events
+	Pprof    Pprof
+	Server   Server
 }
 
 // ╭──────────────────────────────╮
@@ -303,21 +302,22 @@ type Pprof struct {
 // ╰──────────────────────────────╯
 
 type Server struct {
-	Listen       string        `env:"SERVER_LISTEN"        default:":8080"`
-	ReadTimeout  time.Duration `env:"SERVER_READ_TIMEOUT"  default:"5s"`
-	WriteTimeout time.Duration `env:"SERVER_WRITE_TIMEOUT" default:"5s"`
-	StaticRoot   string        `env:"SERVER_STATIC_ROOT"   default:"/usr/share/www"`
-	SwaggerRoot  string        `env:"SERVER_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+	HTTP HTTP
+	GRPC GRPC
 }
 
-// ╭──────────────────────────────╮
-// │             GRPCServer             │
-// ╰──────────────────────────────╯
+type HTTP struct {
+	Listen       string        `env:"SERVER_HTTP_LISTEN"        default:":8080"`
+	ReadTimeout  time.Duration `env:"SERVER_HTTP_READ_TIMEOUT"  default:"5s"`
+	WriteTimeout time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT" default:"5s"`
+	StaticRoot   string        `env:"SERVER_HTTP_STATIC_ROOT"   default:"/usr/share/www"`
+	SwaggerRoot  string        `env:"SERVER_HTTP_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+}
 
 type GRPC struct {
-	Listen         string `env:"GRPC_LISTEN"            default:":50051"`
-	MaxRecvMsgSize int    `env:"GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
-	MaxSendMsgSize int    `env:"GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
+	Listen         string `env:"SERVER_GRPC_LISTEN"            default:":50051"`
+	MaxRecvMsgSize int    `env:"SERVER_GRPC_MAX_RECV_MSG_SIZE" default:"1024"`
+	MaxSendMsgSize int    `env:"SERVER_GRPC_MAX_SEND_MSG_SIZE" default:"1024"`
 }
 
 const (

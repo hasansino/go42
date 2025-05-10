@@ -103,10 +103,10 @@ func main() {
 		httpAPI.WitHealthCheckCtx(ctx),
 		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
-		httpAPI.WithReadTimeout(cfg.HTTPServer.ReadTimeout),
-		httpAPI.WithWriteTimeout(cfg.HTTPServer.WriteTimeout),
-		httpAPI.WithStaticRoot(cfg.HTTPServer.StaticRoot),
-		httpAPI.WithSwaggerRoot(cfg.HTTPServer.SwaggerRoot),
+		httpAPI.WithReadTimeout(cfg.Server.HTTP.ReadTimeout),
+		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
+		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
+		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
 	)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
@@ -115,8 +115,8 @@ func main() {
 		grpcAPI.WitHealthCheckCtx(ctx),
 		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
-		grpcAPI.WithMaxRecvMsgSize(cfg.GRPCServer.MaxRecvMsgSize),
-		grpcAPI.WithMaxSendMsgSize(cfg.GRPCServer.MaxSendMsgSize),
+		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
+		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),
 	)
 
 	// database engine
@@ -338,16 +338,16 @@ func main() {
 	// ---
 
 	go func() {
-		slog.Info("starting http server...", slog.String("port", cfg.HTTPServer.Listen))
-		if err := httpServer.Start(cfg.HTTPServer.Listen); err != nil &&
+		slog.Info("starting http server...", slog.String("port", cfg.Server.HTTP.Listen))
+		if err := httpServer.Start(cfg.Server.HTTP.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
 			slog.Error("failed to start http server", slog.Any("error", err))
 		}
 	}()
 
 	go func() {
-		slog.Info("starting grpc server...", slog.String("port", cfg.GRPCServer.Listen))
-		if err := grpcServer.Serve(cfg.GRPCServer.Listen); err != nil &&
+		slog.Info("starting grpc server...", slog.String("port", cfg.Server.GRPC.Listen))
+		if err := grpcServer.Serve(cfg.Server.GRPC.Listen); err != nil &&
 			!errors.Is(err, grpc.ErrServerStopped) {
 			slog.Error("failed to start grpc server", slog.Any("error", err))
 		}

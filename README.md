@@ -6,7 +6,6 @@ Golang application template.
 
 ### >>>
 
-+ domains, tls, letsencrypt
 + deployment
   * helm chart + linter
   * kubernetes
@@ -45,9 +44,6 @@ Golang application template.
   * https://goproxy.githubapp.com
   * https://proxy.golang.org
   * https://github.com/gomods/athens
-+ [research] go tools as modules
-+ dockerfile -> SHELL | HEALTHCHECK (explore documentation)
-+ [research] embedding static files in go binary
 
 ### <<
 
