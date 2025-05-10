@@ -14,10 +14,13 @@ import (
 )
 
 type Wrapper struct {
-	logger   *slog.Logger
-	gormDB   *gorm.DB
-	sqlDB    *sql.DB
+	logger *slog.Logger
+	gormDB *gorm.DB
+	sqlDB  *sql.DB
+
 	connOpts []ConnectionOption
+
+	queryLogging bool
 }
 
 type ConnectionOption struct {
@@ -27,21 +30,34 @@ type ConnectionOption struct {
 
 func New(dbPath string, opts ...Option) (*Wrapper, error) {
 	w := new(Wrapper)
+
 	for _, opt := range opts {
 		opt(w)
 	}
+
+	if w.logger == nil {
+		w.logger = slog.New(slog.DiscardHandler)
+	}
+
+	slogGormOpts := []slogGorm.Option{
+		slogGorm.WithHandler(w.logger.Handler()),
+		// log level translations: when gormDB sends X level -> slog handles it as Y level
+		slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelError),
+		slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
+		slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelInfo),
+	}
+
+	if w.queryLogging {
+		slogGormOpts = append(slogGormOpts, slogGorm.WithTraceAll())
+	} else {
+		slogGormOpts = append(slogGormOpts, slogGorm.WithIgnoreTrace())
+	}
+
 	gormDB, err := gorm.Open(
 		sqlite.Open(AddConnectionOptions(dbPath, w.connOpts)),
 		&gorm.Config{
 			PrepareStmt: true,
-			Logger: slogGorm.New(
-				// slogGorm.WithIgnoreTrace(),
-				slogGorm.WithHandler(w.logger.Handler()),
-				// log level translations: when gorm sends X level -> slog handles it as Y level
-				slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelDebug), // exposes query
-				slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
-				slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelInfo),
-			),
+			Logger:      slogGorm.New(slogGormOpts...),
 		})
 
 	if err != nil {

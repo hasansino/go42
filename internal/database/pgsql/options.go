@@ -7,6 +7,18 @@ import (
 
 type Option func(w *Wrapper)
 
+func WithLogger(logger *slog.Logger) Option {
+	return func(w *Wrapper) {
+		w.logger = logger
+	}
+}
+
+func WithQueryLogging(do bool) Option {
+	return func(w *Wrapper) {
+		w.queryLogging = do
+	}
+}
+
 func WithConnMaxIdleTime(d time.Duration) Option {
 	return func(w *Wrapper) {
 		w.connMaxIdleTime = d
@@ -28,17 +40,5 @@ func WithMaxIdleConns(n int) Option {
 func WithMaxOpenConns(n int) Option {
 	return func(w *Wrapper) {
 		w.maxOpenConns = n
-	}
-}
-
-func WithQueryTimeout(d time.Duration) Option {
-	return func(w *Wrapper) {
-		w.timeout = d
-	}
-}
-
-func WithLogger(logger *slog.Logger) Option {
-	return func(w *Wrapper) {
-		w.logger = logger
 	}
 }

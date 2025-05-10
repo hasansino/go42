@@ -145,6 +145,7 @@ func main() {
 		sqliteConn, sqliteConnErr := sqlite.New(
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
+			sqlite.WithQueryLogging(cfg.Database.LogQueries),
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
@@ -177,12 +178,12 @@ func main() {
 		slog.Info("Connecting to PostgreSQL...")
 		pgsqlConn, pgsqlConnErr := pgsql.New(
 			cfg.Database.Pgsql.DSN(),
+			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
+			pgsql.WithQueryLogging(cfg.Database.LogQueries),
 			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
 			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
-			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
-			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
@@ -205,6 +206,9 @@ func main() {
 		cacheEngine cache.Cache
 	)
 	switch cfg.Cache.Engine {
+	case "none":
+		cacheEngine = cache.NewNoop()
+		log.Printf("no cache engine initialized\n")
 	case "redis":
 		var err error
 		cacheEngine, err = redis.New(
@@ -245,9 +249,6 @@ func main() {
 			log.Fatalf("failed to initialize memcached cache: %v\n", err)
 		}
 		log.Printf("memcached cache initialized\n")
-	default:
-		cacheEngine = cache.NewNoop()
-		log.Printf("no cache engine initialized\n")
 	}
 
 	// event engine
@@ -256,6 +257,9 @@ func main() {
 	)
 
 	switch cfg.Events.Engine {
+	case "none":
+		eventsEngine = events.NewNoop()
+		log.Printf("no event engine initialized\n")
 	case "gochan":
 		eventsEngine = gochan.New(
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
@@ -300,9 +304,6 @@ func main() {
 			log.Fatalf("failed to initialize kafka event engine: %v\n", err)
 		}
 		log.Printf("kafka event engine initialized\n")
-	default:
-		eventsEngine = events.NewNoop()
-		log.Printf("no event engine initialized\n")
 	}
 
 	// ---
@@ -365,6 +366,8 @@ func main() {
 func initLogging(cfg *config.Config) {
 	var slogOutput io.Writer
 	switch cfg.Logger.LogOutput {
+	case "none":
+		slogOutput = io.Discard
 	case "stdout":
 		slogOutput = os.Stdout
 	case "stderr":

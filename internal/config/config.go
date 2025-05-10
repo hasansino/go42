@@ -61,7 +61,7 @@ type Limits struct {
 
 type Logger struct {
 	LogLevel  string `env:"LOG_LEVEL"  default:"info"   v:"oneof=debug info warn error"`
-	LogOutput string `env:"LOG_OUTPUT" default:"stdout" v:"oneof=stdout stderr file"`
+	LogOutput string `env:"LOG_OUTPUT" default:"stdout" v:"oneof=none stdout stderr file"`
 	LogFormat string `env:"LOG_FORMAT" default:"json"   v:"oneof=json text"`
 }
 
@@ -171,6 +171,7 @@ type Etcd struct {
 type Database struct {
 	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql"`
 	MigratePath string `env:"DATABASE_MIGRATE_PATH" default:"/migrate"`
+	LogQueries  bool   `env:"DATABASE_LOG_QUERIES"  default:"false"`
 	Pgsql       Pgsql
 	Sqlite      Sqlite
 }

@@ -6,7 +6,6 @@ Golang application template.
 
 ### >>>
 
-+ grpc Register is invalid
 + domains, tls, letsencrypt
 + deployment
   * helm chart + linter
