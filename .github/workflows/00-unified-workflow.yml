@@ -82,7 +82,7 @@ jobs:
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/60-cleanup.yml
-    needs: [ integration-tests, stress-tests, zap-scan ]
+    needs: [ integration-tests, load-tests, zap-scan ]
     with:
       service_name: "goapp"
       image_tag: ${{ github.ref_name }}-${{ github.run_id }}
