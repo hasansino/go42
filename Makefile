@@ -4,15 +4,22 @@ help: Makefile
 
 ## test-unit | run unit tests
 # Invoked by CI/CD pipeline.
-# -count=1 is required to prevent caching of test results.
+# -count=1 is needed to prevent caching of test results.
 test-unit:
 	@CI_TESTS_TYPE=unit go test -count=1 -v -race $(shell go list ./... | grep -v './tests')
 
 ## test-integration | run integration tests
 # Invoked by CI/CD pipeline.
-# -count=1 is required to prevent caching of test results.
+# -count=1 is needed to prevent caching of test results.
 test-integration:
-	@CI_TESTS_TYPE=integration go test -count=1 -v -race ./tests
+	@CI_TESTS_TYPE=integration go test -count=1 -v -race ./tests/integration
+
+## test-load | run load tests
+# Not invoked by CI/CD pipeline.
+# Dependencies:
+#   * brew install k6
+test-load:
+	@CI_TESTS_TYPE=load k6 run tests/load/example_test.js
 
 ## run | run application
 # Not invoked in CI/CD pipeline.

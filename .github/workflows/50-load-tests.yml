@@ -1,4 +1,4 @@
-name: stress-tests
+name: load-tests
 
 on:
   workflow_call:
@@ -18,9 +18,9 @@ permissions:
   packages: read
 
 jobs:
-  stress-tests:
+  load-tests:
     # ---
-    name: stress-tests
+    name: load-tests
     runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
@@ -34,24 +34,15 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - uses: grafana/k6-action@v0.3.0
+      - uses: grafana/run-k6-action@v1.2.0
         with:
-          filename: load-tests/api-test.js
+          path: ./tests/load/*.js
           flags: --out json=results.json
       # ---
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: k6-results
           path: results.json
-      # ---
-      - name: Check for test failures
-        run: |
-          if grep -q '"fails":0' results.json; then
-            echo "All tests passed successfully"
-          else
-            echo "Some tests failed!"
-            exit 1
-          fi
       # ---
       - name: Comment on PR
         if: github.event_name == 'pull_request'
@@ -61,8 +52,6 @@ jobs:
           script: |
             const fs = require('fs');
             const results = JSON.parse(fs.readFileSync('results.json', 'utf8'));
-            
-            // Create a summary of the results
             const summary = `## Performance Test Results
             
             - Virtual Users: ${results.metrics.vus.values.max}

@@ -65,8 +65,8 @@ jobs:
       continue_on_error: true
       service_name: "goapp"
       image_tag: ${{ github.ref_name }}-${{ github.run_id }}
-  stress-tests:
-    uses: ./.github/workflows/50-stress-tests.yml
+  load-tests:
+    uses: ./.github/workflows/50-load-tests.yml
     needs: [ docker-build ]
     with:
       continue_on_error: true

@@ -1,5 +1,5 @@
 // nolint
-package tests
+package integration
 
 import (
 	"bytes"
