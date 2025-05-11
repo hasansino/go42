@@ -14,7 +14,8 @@ permissions:
   packages: read
 
 jobs:
-  docker-vuln-check:
+  docker-security:
+    name: docker-security
     runs-on: ubuntu-latest
     steps:
       - uses: aquasecurity/trivy-action@0.30.0

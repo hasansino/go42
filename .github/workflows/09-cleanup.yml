@@ -19,9 +19,58 @@ jobs:
     name: cleanup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/delete-package-versions@v5
-        with:
-          package-name: ${{ inputs.service_name }}
-          package-type: container
-          package-version-ids: ${{ inputs.image_tag }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE_NAME: ${{ inputs.service_name }}
+          TARGET_TAG: ${{ inputs.image_tag }}
+        run: |
+          echo "Starting cleanup for $PACKAGE_NAME with tag: $TARGET_TAG"
+          
+          echo "Fetching package versions..."
+          response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/$OWNER/packages/container/$PACKAGE_NAME/versions")
+          
+          http_code=$(echo "$response" | tail -n1)
+          versions=$(echo "$response" | sed '$ d')
+          
+          if [ "$http_code" != "200" ]; then
+            echo "Error fetching versions: HTTP status $http_code"
+            echo "Response: $versions"
+            exit 1
+          fi
+          
+          if ! echo "$versions" | jq . > /dev/null 2>&1; then
+            echo "Error: Invalid JSON response"
+            echo "Response: $versions"
+            exit 1
+          fi
+          
+          echo "Searching for version with tag: $TARGET_TAG"
+          version_id=$(echo "$versions" | jq -r ".[] | select(.metadata.container.tags[]? == \"$TARGET_TAG\") | .id")
+          
+          if [ -z "$version_id" ]; then
+            echo "No version found with tag $TARGET_TAG"
+            exit 0
+          fi
+          
+          echo "Found version with ID: $version_id, preparing to delete..."
+          
+          # Delete the version
+          delete_response=$(curl -s -w "%{http_code}" -X DELETE \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/$OWNER/packages/container/$PACKAGE_NAME/versions/$version_id")
+          
+          delete_http_code=$(echo "$delete_response" | tail -n1)
+          delete_body=$(echo "$delete_response" | sed '$ d')
+          
+          # Check deletion result
+          if [ "$delete_http_code" = "204" ]; then
+            echo "Successfully deleted version with tag $TARGET_TAG (ID: $version_id)"
+          else
+            echo "Error deleting version: HTTP status $delete_http_code"
+            echo "Response: $delete_body"
+            exit 1
+          fi
