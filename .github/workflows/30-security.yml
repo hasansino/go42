@@ -9,6 +9,10 @@ name: go-vuln-check
 on:
   workflow_call:
     inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
@@ -17,7 +21,7 @@ on:
 jobs:
   gitleaks:
     name: gitleaks
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     steps:

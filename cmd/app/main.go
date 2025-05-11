@@ -774,7 +774,7 @@ func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
 		} else if s.fn != nil {
 			done <- s.closer.Close()
 		} else {
-			done <- nil
+			done <- nil // 777
 		}
 	}()
 	select {

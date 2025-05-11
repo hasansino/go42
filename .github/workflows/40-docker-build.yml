@@ -8,6 +8,10 @@ name: docker-build
 on:
   workflow_call:
     inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
@@ -28,7 +32,7 @@ permissions:
 jobs:
   docker-build:
     name: docker-build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     steps:

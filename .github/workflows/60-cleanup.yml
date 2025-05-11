@@ -6,6 +6,10 @@ name: cleanup
 on:
   workflow_call:
     inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
       service_name:
         required: true
         type: string
@@ -20,7 +24,7 @@ permissions:
 jobs:
   cleanup:
     name: cleanup
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
