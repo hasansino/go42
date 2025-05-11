@@ -4,6 +4,18 @@ name: golangci-lint
 # @see https://golangci-lint.run/
 
 on:
+  workflow_dispatch:
+    inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+        description: "runs_on"
   workflow_call:
     inputs:
       continue_on_error:
