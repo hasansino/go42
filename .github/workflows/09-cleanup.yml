@@ -25,4 +25,3 @@ jobs:
           package-type: container
           package-version-ids: ${{ inputs.image_tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
-

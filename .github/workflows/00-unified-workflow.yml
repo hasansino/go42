@@ -1,8 +1,7 @@
 name: unified-workflow
 
-env:
-  SERVICE_NAME: "goapp"
-  SERVICE_VERSION: ${{ github.ref_name }}
+# @todo service_name & image_tag are repeated because `with` does not support context
+# @see https://github.com/orgs/community/discussions/25246
 
 on:
   workflow_dispatch:
@@ -45,31 +44,31 @@ jobs:
     uses: ./.github/workflows/05-docker-build.yml
     needs: [  security ]
     with:
-      service_name: ${{ env.SERVICE_NAME }}
-      image_tag: ${{ env.SERVICE_VERSION }}
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}
   docker-security:
     uses: ./.github/workflows/06-docker-security.yml
     needs: [  docker-build ]
     with:
-      service_name: ${{ env.SERVICE_NAME }}
-      image_tag: ${{ env.SERVICE_VERSION }}
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}
   # Stage 5: Actions with running application
   integration-tests:
     uses: ./.github/workflows/08-integration-tests.yml
     needs: [  docker-build ]
     with:
-      service_name: ${{ env.SERVICE_NAME }}
-      image_tag: ${{ env.SERVICE_VERSION }}
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}
   zap-scan:
     uses: ./.github/workflows/07-zapscan.yml
     needs: [  docker-build ]
     with:
-      service_name: ${{ env.SERVICE_NAME }}
-      image_tag: ${{ env.SERVICE_VERSION }}
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/09-cleanup.yml
     needs: [  integration-tests, zap-scan ]
     with:
-      service_name: ${{ env.SERVICE_NAME }}
-      image_tag: ${{ env.SERVICE_VERSION }}
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}
