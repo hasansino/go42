@@ -1,5 +1,8 @@
 name: integration-tests
 
+# Integrations tests.
+# Runs application, dependencies if necessary, and executes tests marked as integration tests.
+
 on:
   workflow_call:
     inputs:

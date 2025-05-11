@@ -1,5 +1,9 @@
 name: zap-scan
 
+# API vulnerability scan.
+# Runs application and performs attacks against it.
+# @see https://www.zaproxy.org/
+
 on:
   workflow_call:
     inputs:

@@ -6,6 +6,7 @@ Golang application template.
 
 ### >>>
 
++ https://github.com/knadh/koanf
 + deployment
   * helm chart + linter
   * kubernetes
@@ -19,7 +20,6 @@ Golang application template.
 + https://github.com/FiloSottile/mkcert
 + circuit breaker (https://github.com/sony/gobreaker) + retry
 + https://github.com/bufbuild/protovalidate
-+ https://github.com/knadh/koanf
 + https://github.com/maypok86/otter - https://s3fifo.com/
 + https://github.com/ent/ent
 + https://github.com/stoplightio/prism

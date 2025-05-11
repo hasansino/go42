@@ -1,5 +1,10 @@
 name: docker-build
 
+# Service packaging.
+# Builds Dockerfile, which in turn builds golang binary.
+# buildx allows building multi-arch images.
+# Pushes image to ghcr.io.
+
 on:
   workflow_call:
     inputs:
@@ -10,16 +15,17 @@ on:
         required: true
         type: string
 
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
 jobs:
   docker-build:
     name: docker-build
     continue-on-error: false
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-      attestations: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 

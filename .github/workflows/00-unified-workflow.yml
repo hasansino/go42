@@ -1,5 +1,9 @@
 name: unified-workflow
 
+# Unified workflow - linting, testing, and security scanning.
+# This workflow is designed for development and testing stages.
+# It starts on creation or push to pull request, and as 'extra' when master branch is updated.
+#
 # @todo service_name & image_tag are repeated because `with` does not support context
 # @see https://github.com/orgs/community/discussions/25246
 
@@ -7,9 +11,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ master ]
-#    tags: [ 'v*' ]
-#  pull_request:
-#    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 permissions:
   contents: read
@@ -45,30 +48,30 @@ jobs:
     needs: [ security ]
     with:
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
   docker-security:
     uses: ./.github/workflows/06-docker-security.yml
     needs: [ docker-build ]
     with:
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
     uses: ./.github/workflows/08-integration-tests.yml
     needs: [ docker-build ]
     with:
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
   zap-scan:
     uses: ./.github/workflows/07-zapscan.yml
     needs: [ docker-build ]
     with:
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/09-cleanup.yml
     needs: [ integration-tests, zap-scan ]
     with:
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ github.ref_name }}-${{ github.run_id }}

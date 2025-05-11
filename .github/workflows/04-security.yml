@@ -1,5 +1,11 @@
 name: go-vuln-check
 
+# Vulnerability / data leak detection.
+# @see https://github.com/gitleaks/gitleaks
+# @see https://github.com/securego/gosec
+# @see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+# @see https://github.com/sonatype-nexus-community/nancy
+
 on:
   workflow_call:
     inputs:
@@ -20,7 +26,6 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # https://github.com/securego/gosec
   gosec:
     name: gosec
     continue-on-error: ${{ inputs.continue_on_error }}
@@ -32,7 +37,6 @@ jobs:
       - uses: securego/gosec@master
         with:
           args: -exclude-generated ./...
-  # https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
   govulncheck:
     name: govulncheck
     continue-on-error: ${{ inputs.continue_on_error }}
@@ -44,7 +48,6 @@ jobs:
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
-  # https://github.com/sonatype-nexus-community/nancy
   nancy:
     name: nancy
     continue-on-error: ${{ inputs.continue_on_error }}

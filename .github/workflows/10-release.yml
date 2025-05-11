@@ -1,0 +1,21 @@
+name: unified-workflow
+
+# Release.
+# Triggered by semver tag push.
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  docker-build:
+    uses: ./.github/workflows/05-docker-build.yml
+    with:
+      service_name: "goapp"
+      image_tag: ${{ github.ref_name }}

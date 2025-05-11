@@ -1,5 +1,8 @@
 name: cleanup
 
+# Cleanup script.
+# Deletes docker image used in unified workflow.
+
 on:
   workflow_call:
     inputs:

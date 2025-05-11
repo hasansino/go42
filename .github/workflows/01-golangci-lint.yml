@@ -1,5 +1,8 @@
 name: golangci-lint
 
+# Golang linter.
+# @see https://golangci-lint.run/
+
 on:
   workflow_call:
     inputs:

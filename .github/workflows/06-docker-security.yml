@@ -1,5 +1,8 @@
 name: docker-security
 
+# Vulnerability scan of final artifact. (docker image)
+# @see https://trivy.dev/latest/
+
 on:
   workflow_call:
     inputs:

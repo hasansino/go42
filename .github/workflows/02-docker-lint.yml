@@ -1,5 +1,8 @@
 name: docker-lint
 
+# Linter for Dockerfile.
+# @see https://github.com/hadolint/hadolint
+
 on:
   workflow_call:
     inputs:
