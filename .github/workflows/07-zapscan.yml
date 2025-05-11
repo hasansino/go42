@@ -13,17 +13,12 @@ on:
       image_tag:
         required: true
         type: string
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 jobs:
   zap-scan:
-    continue-on-error: ${{ inputs.continue_on_error }}
     name: zap-scan
     runs-on: ubuntu-latest
     steps:
