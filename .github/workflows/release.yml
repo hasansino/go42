@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   docker-build:
-    uses: ./.github/workflows/05-docker-build.yml
+    uses: ./.github/workflows/40-docker-build.yml
     with:
       service_name: "goapp"
       image_tag: ${{ github.ref_name }}

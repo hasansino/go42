@@ -7,6 +7,10 @@ name: zap-scan
 on:
   workflow_call:
     inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
       service_name:
         required: true
         type: string
@@ -21,11 +25,14 @@ jobs:
   zap-scan:
     name: zap-scan
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
       - run: |
           docker run -d -p 8080:8080 ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           sleep 10
+      # ---
       - uses: zaproxy/action-api-scan@v0.9.0
         with:
           target: 'http://localhost:8080/api/v1/openapi.yml'

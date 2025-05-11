@@ -16,11 +16,12 @@ permissions:
 jobs:
   unit-tests:
     name: unit-tests
-    continue-on-error: ${{ inputs.continue_on_error }}
     strategy:
       matrix:
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

@@ -1,0 +1,82 @@
+name: stress-tests
+
+on:
+  workflow_call:
+    inputs:
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+      service_name:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+
+permissions:
+  packages: read
+
+jobs:
+  stress-tests:
+    # ---
+    name: stress-tests
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    services:
+      app:
+        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+        ports:
+          - 8080:8080
+        env:
+          ENVIRONMENT: ci-stress-tests
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/k6-action@v0.3.0
+        with:
+          filename: load-tests/api-test.js
+          flags: --out json=results.json
+      # ---
+      - uses: actions/upload-artifact@v3
+        with:
+          name: k6-results
+          path: results.json
+      # ---
+      - name: Check for test failures
+        run: |
+          if grep -q '"fails":0' results.json; then
+            echo "All tests passed successfully"
+          else
+            echo "Some tests failed!"
+            exit 1
+          fi
+      # ---
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('results.json', 'utf8'));
+            
+            // Create a summary of the results
+            const summary = `## Performance Test Results
+            
+            - Virtual Users: ${results.metrics.vus.values.max}
+            - Request Rate: ${results.metrics.http_reqs.values.rate.toFixed(2)}/sec
+            - Avg Response Time: ${results.metrics.http_req_duration.values.avg.toFixed(2)}ms
+            - P95 Response Time: ${results.metrics.http_req_duration.values.p(95).toFixed(2)}ms
+            - Failed Requests: ${results.metrics.http_req_failed.values.count}
+            
+            [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

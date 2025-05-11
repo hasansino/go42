@@ -17,8 +17,9 @@ permissions:
 jobs:
   docker-lint:
     name: docker-lint
+    runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.continue_on_error }}
-    runs-on:  ubuntu-latest
+    # ---
     steps:
       - uses: actions/checkout@v4
       - run: make docker-lint

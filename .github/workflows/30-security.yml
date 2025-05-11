@@ -17,8 +17,9 @@ on:
 jobs:
   gitleaks:
     name: gitleaks
-    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,21 +27,25 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   gosec:
     name: gosec
-    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
     env:
       GO111MODULE: on
+    # ---
     steps:
       - uses: actions/checkout@v4
       - uses: securego/gosec@master
         with:
           args: -exclude-generated ./...
+
   govulncheck:
     name: govulncheck
-    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
       - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
@@ -48,10 +53,12 @@ jobs:
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
+
   nancy:
     name: nancy
-    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

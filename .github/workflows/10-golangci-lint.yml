@@ -17,8 +17,9 @@ permissions:
 jobs:
   golangci-lint:
     name: golangci-lint
-    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
