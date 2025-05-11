@@ -25,12 +25,12 @@ jobs:
   golangci-lint:
     uses: ./.github/workflows/10-golangci-lint.yml
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   docker-lint:
     uses: ./.github/workflows/10-docker-lint.yml
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   # Stage 2: Unit tests
   unit-tests:

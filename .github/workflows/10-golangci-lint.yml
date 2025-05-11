@@ -37,5 +37,15 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     steps:
+      - run: |
+          pwd
+          ls -la
+          find . -name ".golangci.yml"
+          cat .golangci.yml || echo "Cannot read file"
       - uses: actions/checkout@v4
+      - run: |
+          pwd
+          ls -la
+          find . -name ".golangci.yml"
+          cat .golangci.yml || echo "Cannot read file"
       - run: make golangci-lint
