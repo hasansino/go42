@@ -1,0 +1,28 @@
+name: cleanup
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  cleanup:
+    name: cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ inputs.service_name }}
+          package-type: container
+          package-version-ids: ${{ github.event.inputs.image_tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+

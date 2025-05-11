@@ -3,6 +3,9 @@ name: integration-tests
 on:
   workflow_call:
     inputs:
+      service_name:
+        required: true
+        type: string
       image_tag:
         required: true
         type: string
@@ -17,6 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run -d -p 8080:8080 ghcr.io/${{ github.repository_owner }}/goapp:${{ inputs.image_tag }}
+          docker run -d -p 8080:8080 ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           sleep 10
       - run: make test-integration

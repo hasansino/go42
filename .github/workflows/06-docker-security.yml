@@ -3,6 +3,9 @@ name: docker-security
 on:
   workflow_call:
     inputs:
+      service_name:
+        required: true
+        type: string
       image_tag:
         required: true
         type: string
@@ -16,7 +19,7 @@ jobs:
     steps:
       - uses: aquasecurity/trivy-action@0.30.0
         with:
-          image-ref: ghcr.io/${{ github.repository_owner }}/goapp:${{ inputs.image_tag }}
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
