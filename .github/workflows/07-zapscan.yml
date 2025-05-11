@@ -1,0 +1,37 @@
+name: zap-scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'tag'
+        required: true
+        type: string
+        default: ''
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  zap-scan:
+    continue-on-error: ${{ inputs.continue_on_error }}
+    name: zap-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run -d -p 8080:8080 ghcr.io/${{ github.repository_owner }}/goapp:${{ inputs.image_tag }}
+          sleep 10
+      - uses: zaproxy/action-api-scan@v0.9.0
+        with:
+          target: 'http://localhost:8080/api/v1/openapi.yml'
+          format: openapi

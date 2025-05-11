@@ -12,8 +12,8 @@ test:
 run:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
-	export SERVER_STATIC_ROOT=$(shell pwd)/static && \
-	export SERVER_SWAGGER_ROOT=$(shell pwd)/openapi && \
+	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
+	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
 	go run -gcflags="all=-N -l" ./cmd/app/main.go
 
@@ -24,8 +24,8 @@ run:
 debug:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
-	export SERVER_STATIC_ROOT=$(shell pwd)/static && \
-	export SERVER_SWAGGER_ROOT=$(shell pwd)/openapi && \
+	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
+	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
 	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2 -- ${@:2}
 

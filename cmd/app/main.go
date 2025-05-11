@@ -717,10 +717,10 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 	signal.Stop(sigChan)
 
 	// total timeout for graceful shutdown
-	ctx, done := context.WithTimeout(context.Background(), cfg.Core.ShutdownGracePeriod)
-	defer done()
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Core.ShutdownGracePeriod)
+	defer cancel()
 
-	doneChan := make(chan struct{})
+	done := make(chan struct{})
 	go func(ctx context.Context) {
 		// Calling cancel() on main context disables health-checks for http and grpc servers.
 		mainCancel()
@@ -738,14 +738,14 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 			}
 			cmpCancel()
 		}
-		close(doneChan)
+		close(done)
 	}(ctx)
 
 	select {
-	case <-doneChan:
-		log.Println("graceful shutdown completed")
+	case <-done:
+		log.Println("shutdown completed")
 	case <-ctx.Done():
-		log.Println("graceful shutdown timed out")
+		log.Println("shutdown timed out")
 	}
 
 	os.Exit(0)
@@ -767,20 +767,20 @@ type ShutMeDownWrap struct {
 // Shutdown implements graceful shutdown for specific component.
 // It should be blocking and final.
 func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	done := make(chan error)
 	go func() {
 		if s.closer != nil {
-			doneChan <- s.fn(ctx)
+			done <- s.fn(ctx)
 		} else if s.fn != nil {
-			doneChan <- s.closer.Close()
+			done <- s.closer.Close()
 		} else {
-			doneChan <- nil
+			done <- nil
 		}
 	}()
 	select {
 	case <-ctx.Done():
 		return errors.New("timeout")
-	case err := <-doneChan:
+	case err := <-done:
 		return err
 	}
 }

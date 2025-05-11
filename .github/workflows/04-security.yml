@@ -9,22 +9,21 @@ on:
         default: false
 
 jobs:
-  # https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-  govulncheck:
+  gitleaks:
+    name: gitleaks
     continue-on-error: ${{ inputs.continue_on_error }}
-    name: govulncheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
-      - uses: golang/govulncheck-action@v1
         with:
-          repo-checkout: false
-          go-version-input: ${{ env.go_version }}
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # https://github.com/securego/gosec
   gosec:
-    continue-on-error: ${{ inputs.continue_on_error }}
     name: gosec
+    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
@@ -33,10 +32,22 @@ jobs:
       - uses: securego/gosec@master
         with:
           args: -exclude-generated ./...
+  # https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
+  govulncheck:
+    name: govulncheck
+    continue-on-error: ${{ inputs.continue_on_error }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
+      - uses: golang/govulncheck-action@v1
+        with:
+          repo-checkout: false
+          go-version-input: ${{ env.go_version }}
   # https://github.com/sonatype-nexus-community/nancy
   nancy:
-    continue-on-error: ${{ inputs.continue_on_error }}
     name: nancy
+    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

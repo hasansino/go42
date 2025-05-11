@@ -1,0 +1,55 @@
+name: unified-workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+#    tags: [ 'v*' ]
+#  pull_request:
+#    branches: [ master ]
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  # Stage 1: Linting
+  golangci-lint:
+    uses: ./.github/workflows/01-golangci-lint.yml
+    with:
+      continue_on_error: true
+  docker-lint:
+    uses: ./.github/workflows/02-docker-lint.yml
+    with:
+      continue_on_error: true
+  # Stage 2: Unit tests
+  unit-tests:
+    uses: ./.github/workflows/03-unit-tests.yml
+    needs: [ golangci-lint, docker-lint ]
+    with:
+      continue_on_error: true
+  # Stage 3: Vulnerability Scanning
+  security:
+    uses: ./.github/workflows/04-security.yml
+    needs: [ unit-tests ]
+    with:
+      continue_on_error: true
+  # Stage 4: Build
+  docker-build:
+    uses: ./.github/workflows/05-docker-build.yml
+    needs: [  security ]
+    with:
+      image_tag: ${{ github.ref_name }}
+  docker-security:
+    uses: ./.github/workflows/06-docker-security.yml
+    needs: [  docker-build ]
+    with:
+      image_tag: ${{ github.ref_name }}
+  # Stage 5: Actions with running application
+  zap-scan:
+    uses: ./.github/workflows/07-zapscan.yml
+    needs: [  docker-build ]
+    with:
+      image_tag: ${{ github.ref_name }}

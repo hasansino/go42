@@ -1,4 +1,4 @@
-name: gitleaks
+name: docker-lint
 
 on:
   workflow_call:
@@ -8,15 +8,14 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: read
+
 jobs:
-  gitleaks:
+  docker-lint:
+    name: docker-lint
     continue-on-error: ${{ inputs.continue_on_error }}
-    name: gitleaks
-    runs-on: ubuntu-latest
+    runs-on:  ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: make docker-lint

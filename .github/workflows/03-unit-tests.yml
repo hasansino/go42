@@ -1,4 +1,4 @@
-name: golangci-lint
+name: unit-tests
 
 on:
   workflow_call:
@@ -12,9 +12,9 @@ permissions:
   contents: read
 
 jobs:
-  langci-lint:
+  unit-tests:
+    name: unit-tests
     continue-on-error: ${{ inputs.continue_on_error }}
-    name: golangci-lint
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -25,4 +25,4 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: make golangci-lint
+      - run: CI=yes make test
