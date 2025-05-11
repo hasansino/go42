@@ -48,6 +48,11 @@ jobs:
     with:
       image_tag: ${{ github.ref_name }}
   # Stage 5: Actions with running application
+  integration-tests:
+    uses: ./.github/workflows/08-integration-tests.yml
+    needs: [  docker-build ]
+    with:
+      image_tag: ${{ github.ref_name }}
   zap-scan:
     uses: ./.github/workflows/07-zapscan.yml
     needs: [  docker-build ]

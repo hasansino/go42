@@ -256,7 +256,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 })
 
 func TestIntegration(t *testing.T) {
-	if os.Getenv("CI") == "yes" {
+	if os.Getenv("CI_TESTS_TYPE") != "integration" {
 		defer GinkgoRecover()
 		Skip("Skipping tests in CI/CD environment")
 	}

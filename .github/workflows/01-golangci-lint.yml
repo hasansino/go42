@@ -15,10 +15,7 @@ jobs:
   golangci-lint:
     name: golangci-lint
     continue-on-error: ${{ inputs.continue_on_error }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

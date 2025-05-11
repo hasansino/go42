@@ -2,10 +2,17 @@
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-## test | run unit tests
+## test-unit | run unit tests
 # Invoked by CI/CD pipeline.
-test:
-	@go test -v -race ./...
+# -count=1 is required to prevent caching of test results.
+test-unit:
+	@CI_TESTS_TYPE=unit go test -count=1 -v -race $(shell go list ./... | grep -v './tests')
+
+## test-integration | run integration tests
+# Invoked by CI/CD pipeline.
+# -count=1 is required to prevent caching of test results.
+test-integration:
+	@CI_TESTS_TYPE=integration go test -count=1 -v -race ./tests
 
 ## run | run application
 # Not invoked in CI/CD pipeline.
