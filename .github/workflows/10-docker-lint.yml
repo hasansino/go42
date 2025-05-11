@@ -26,4 +26,6 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - run: make docker-lint
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
