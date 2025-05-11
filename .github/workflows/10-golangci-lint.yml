@@ -10,6 +10,10 @@ on:
         required: true
         type: boolean
         default: false
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
 
 permissions:
   contents: read
@@ -17,7 +21,7 @@ permissions:
 jobs:
   golangci-lint:
     name: golangci-lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     steps:

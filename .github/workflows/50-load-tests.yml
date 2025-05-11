@@ -34,7 +34,8 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - uses: grafana/run-k6-action@v1.2.0
+      - uses: grafana/setup-k6-action@v1
+      - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/*.js
           flags: --out json=results.json

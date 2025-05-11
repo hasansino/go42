@@ -16,10 +16,7 @@ permissions:
 jobs:
   unit-tests:
     name: unit-tests
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     steps:

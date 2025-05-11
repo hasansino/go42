@@ -26,6 +26,7 @@ jobs:
     uses: ./.github/workflows/10-golangci-lint.yml
     with:
       continue_on_error: true
+      runs_on: self-hosted
   docker-lint:
     uses: ./.github/workflows/10-docker-lint.yml
     with:

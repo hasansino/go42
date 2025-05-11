@@ -60,7 +60,6 @@ jobs:
           
           echo "Found version with ID: $version_id, preparing to delete..."
           
-          # Delete the version
           delete_response=$(curl -s -w "%{http_code}" -X DELETE \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
@@ -69,7 +68,6 @@ jobs:
           delete_http_code=$(echo "$delete_response" | tail -n1)
           delete_body=$(echo "$delete_response" | sed '$ d')
           
-          # Check deletion result
           if [ "$delete_http_code" = "204" ]; then
             echo "Successfully deleted version with tag $TARGET_TAG (ID: $version_id)"
           else
