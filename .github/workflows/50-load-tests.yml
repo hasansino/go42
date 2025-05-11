@@ -42,12 +42,12 @@ jobs:
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/*.js
-          flags: --out json=results.json
+          flags: --out json=k6-results.json
       # ---
       - uses: actions/upload-artifact@v4
         with:
           name: k6-results
-          path: results.json
+          path: k6-results.json
       # ---
       - name: Comment on PR
         if: github.event_name == 'pull_request'
