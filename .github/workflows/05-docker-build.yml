@@ -1,15 +1,11 @@
 name: docker-build
 
 on:
-  workflow_dispatch:
-    inputs:
-      image_tag:
-        description: 'tag'
-        required: true
-        type: string
-        default: ''
   workflow_call:
     inputs:
+      service_name:
+        required: true
+        type: string
       image_tag:
         required: true
         type: string
@@ -47,7 +43,7 @@ jobs:
           platforms: linux/amd64
           no-cache: true
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/goapp:${{ inputs.image_tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           build-args: |
             GO_VERSION=${{ env.go_version }}
             COMMIT_HASH=${{ env.commit_hash }}

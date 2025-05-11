@@ -23,6 +23,6 @@ jobs:
         with:
           package-name: ${{ inputs.service_name }}
           package-type: container
-          package-version-ids: ${{ github.event.inputs.image_tag }}
+          package-version-ids: ${{ inputs.image_tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
