@@ -4,6 +4,18 @@ name: docker-lint
 # @see https://github.com/hadolint/hadolint
 
 on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
   workflow_call:
     inputs:
       runs_on:

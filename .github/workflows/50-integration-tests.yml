@@ -4,6 +4,28 @@ name: integration-tests
 # Runs application, dependencies if necessary, and executes tests marked as integration tests.
 
 on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+      service_name:
+        required: true
+        type: string
+        default: "goapp-sf-test"
+        description: "service_name"
+      image_tag:
+        required: true
+        type: string
+        default: "tmp"
+        description: "image_tag"
   workflow_call:
     inputs:
       runs_on:
