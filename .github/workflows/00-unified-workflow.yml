@@ -11,7 +11,7 @@ name: unified-workflow
 #
 # @note MacOS runners are 10x more expensive than Linux runners.
 #
-# @todo service_name & image_tag are repeated because `with` does not support context
+# @todo `with` arguments are repeated because `with` does not support context
 # @see https://github.com/orgs/community/discussions/25246
 
 on:
@@ -61,7 +61,11 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: false
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
   docker-security:
     uses: ./.github/workflows/40-docker-security.yml
     needs: [ docker-build ]
@@ -69,7 +73,11 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
     uses: ./.github/workflows/50-integration-tests.yml
@@ -78,7 +86,11 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/50-load-tests.yml
     needs: [ docker-build ]
@@ -86,7 +98,11 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
   zap-scan:
     uses: ./.github/workflows/50-zapscan.yml
     needs: [ docker-build ]
@@ -94,7 +110,11 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/60-cleanup.yml
@@ -102,4 +122,8 @@ jobs:
     with:
       runs_on: ubuntu-latest
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || 
+          github.ref == 'refs/heads/master' && 'master'
+        }}-${{ github.run_id }}
