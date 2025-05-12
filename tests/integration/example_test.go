@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -256,10 +255,6 @@ var _ = Describe("Fruits API Integration Tests", func() {
 })
 
 func TestIntegration(t *testing.T) {
-	if os.Getenv("CI_TESTS_TYPE") != "integration" {
-		defer GinkgoRecover()
-		Skip("Skipping tests in CI/CD environment")
-	}
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Fruits API Integration Suite")
 }

@@ -5,6 +5,7 @@ name: go-vuln-check
 # @see https://github.com/securego/gosec
 # @see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 # @see https://github.com/sonatype-nexus-community/nancy
+# @see https://codeql.github.com/
 
 on:
   workflow_call:

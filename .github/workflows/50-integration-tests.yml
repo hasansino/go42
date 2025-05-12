@@ -50,4 +50,4 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: make test-integration
+      - run: go test -count=1 -v -race ./tests/integration

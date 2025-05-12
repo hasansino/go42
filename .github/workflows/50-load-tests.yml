@@ -2,6 +2,7 @@ name: load-tests
 
 # Load tests.
 # Simulates load on application and records statistics.
+# When this workflow is triggered in pull request, it will post statistics to pull request.
 
 on:
   workflow_call:
