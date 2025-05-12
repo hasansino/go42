@@ -1,5 +1,8 @@
 name: load-tests
 
+# Load tests.
+# Simulates load on application and records statistics.
+
 on:
   workflow_call:
     inputs:
@@ -20,6 +23,8 @@ on:
 
 permissions:
   packages: read
+  pull-requests: write
+  issues: write
 
 jobs:
   load-tests:
@@ -34,7 +39,13 @@ jobs:
         ports:
           - 8080:8080
         env:
-          ENVIRONMENT: ci-stress-tests
+          ENVIRONMENT: ci-load-tests
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
+          --health-start-period 1s
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -42,31 +53,32 @@ jobs:
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/*.js
-          flags: --out json=k6-results.json
+          flags: --summary-export=k6-summary.json
       # ---
       - uses: actions/upload-artifact@v4
         with:
-          name: k6-results
-          path: k6-results.json
+          name: k6-summary
+          path: k6-summary.json
       # ---
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
+      - if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('results.json', 'utf8'));
-            const summary = `## Performance Test Results
+            const results = JSON.parse(fs.readFileSync('k6-summary.json', 'utf8'));
             
-            - Virtual Users: ${results.metrics.vus.values.max}
-            - Request Rate: ${results.metrics.http_reqs.values.rate.toFixed(2)}/sec
-            - Avg Response Time: ${results.metrics.http_req_duration.values.avg.toFixed(2)}ms
-            - P95 Response Time: ${results.metrics.http_req_duration.values.p(95).toFixed(2)}ms
-            - Failed Requests: ${results.metrics.http_req_failed.values.count}
+            const summary = `## Load Test Results
             
-            [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
-            `;
+            | Metric | Value |
+            |--------|-------|
+            | Virtual Users | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |
+            | Total Requests | ${results.metrics.http_reqs.count} @ ${results.metrics.http_reqs.rate.toFixed(2)}/sec |
+            | Response Time | Avg: ${results.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${results.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+            | Failed Requests | ${results.metrics.http_req_failed.passes} (${(results.metrics.http_req_failed.value * 100).toFixed(2)}%) |
+            | Success Rate | ${(results.metrics.checks.passes / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}% |
+            
+            [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,

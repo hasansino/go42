@@ -2,20 +2,23 @@ name: unified-workflow
 
 # Unified workflow - linting, testing, and security scanning.
 # This workflow is designed for development and testing stages.
-# It starts on creation or push to pull request, and as 'extra' when master branch is updated.
 #
 # Running this workflow too often can ramp-up actions costs significantly.
 # One way to mitigate this is to use a self-hosted runners.
 # @see https://docs.github.com/en/actions/hosting-your-own-runners
 # @see https://github.com/jonico/awesome-runners
 #
-# @todo service_name & image_tag are repeated because `with` does not support context
+# @note MacOS runners are 10x more expensive than Linux runners.
+#
+# @todo `with` arguments are repeated because `with` does not support context
 # @see https://github.com/orgs/community/discussions/25246
 
 on:
   workflow_dispatch:
+  # push or merge to master
   push:
     branches: [ master ]
+  # pull request targeting master branch created or updated
   pull_request:
     branches: [ master ]
 
@@ -24,6 +27,9 @@ permissions:
   packages: write
   attestations: write
   id-token: write
+  security-events: write
+  pull-requests: write
+  issues: write
 
 jobs:
   # Stage 1: Linting
@@ -59,7 +65,10 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: false
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}
   docker-security:
     uses: ./.github/workflows/40-docker-security.yml
     needs: [ docker-build ]
@@ -67,7 +76,10 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
     uses: ./.github/workflows/50-integration-tests.yml
@@ -76,7 +88,10 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/50-load-tests.yml
     needs: [ docker-build ]
@@ -84,20 +99,29 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
-  zap-scan:
-    uses: ./.github/workflows/50-zapscan.yml
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}
+  zap-api-scan:
+    uses: ./.github/workflows/50-zap-api-scan.yml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/60-cleanup.yml
-    needs: [ integration-tests, load-tests, zap-scan ]
+    needs: [ integration-tests, load-tests, zap-api-scan ]
     with:
       runs_on: ubuntu-latest
       service_name: "goapp"
-      image_tag: ${{ github.ref_name }}-${{ github.run_id }}
+      image_tag: >-
+        ${{
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+        }}-${{ github.run_id }}

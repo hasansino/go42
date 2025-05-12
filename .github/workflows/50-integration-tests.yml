@@ -30,9 +30,24 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
+    services:
+      app:
+        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+        ports:
+          - 8080:8080
+        env:
+          ENVIRONMENT: ci-integration-tests
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
+          --health-start-period 1s
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    # ---
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          docker run -d -p 8080:8080 ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
-          sleep 10
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - run: go mod download
       - run: make test-integration
