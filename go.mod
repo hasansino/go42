@@ -9,7 +9,7 @@ require (
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
-	github.com/VictoriaMetrics/metrics v1.35.4
+	github.com/VictoriaMetrics/metrics v1.37.0
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/caarlos0/env/v11 v11.3.1
