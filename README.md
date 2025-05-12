@@ -6,8 +6,6 @@ Golang application template.
 
 ### >>>
 
-+
-+ codeQL
 + https://github.com/knadh/koanf
   * fix nancy errors
 + deployment
@@ -17,7 +15,6 @@ Golang application template.
   * revert deployment
 + grafana dashboard
 + self-hosted github runners
-+ test k6 PR comments
 
 ### >>
 

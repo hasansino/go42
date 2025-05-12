@@ -40,10 +40,10 @@ jobs:
           ENVIRONMENT: ci-load-tests
         options: >-
           --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
-          --health-start-period 30s
-          --health-interval 10s
+          --health-start-period 1s
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -51,12 +51,12 @@ jobs:
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/*.js
-          flags: --out json=k6-results.json
+          flags: --summary-export=k6-summary.json
       # ---
       - uses: actions/upload-artifact@v4
         with:
-          name: k6-results
-          path: k6-results.json
+          name: k6-summary
+          path: k6-summary.json
       # ---
       - name: Comment on PR
         if: github.event_name == 'pull_request'
@@ -65,7 +65,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('k6-results.json', 'utf8'));
+            const results = JSON.parse(fs.readFileSync('k6-summary.json', 'utf8'));
             const summary = `## Performance Test Results
             
             - Virtual Users: ${results.metrics.vus.values.max}

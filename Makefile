@@ -60,19 +60,19 @@ image:
 	.
 
 ## golangci-lint | lint golang files
-# Invoked by CI/CD pipeline.
+# Not invoked in CI/CD pipeline.
 golangci-lint:
 	@docker run --rm -v $(shell pwd):/app -w /app \
 	golangci/golangci-lint:v2.1-alpine \
 	golangci-lint run --config .golangci.yml
 
 ## docker-lint | lint dockerfile
-# Invoked by CI/CD pipeline.
+# Not invoked in CI/CD pipeline.
 docker-lint:
 	@docker run --rm -i ghcr.io/hadolint/hadolint < Dockerfile
 
 ## helm-lint | lint helm files
-# Invoked by CI/CD pipeline.
+# Not invoked in CI/CD pipeline.
 helm-lint:
 	@echo "__TODO__"
 
