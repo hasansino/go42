@@ -6,6 +6,7 @@ Golang application template.
 
 ### >>>
 
++ test hadolint
 + https://github.com/knadh/koanf
   * fix nancy errors
 + deployment

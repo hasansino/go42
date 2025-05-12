@@ -1,4 +1,4 @@
-name: zap-scan
+name: zap-api-scan
 
 # API vulnerability scan.
 # Runs application and performs attacks against it.
@@ -26,8 +26,8 @@ permissions:
   contents: read
 
 jobs:
-  zap-scan:
-    name: zap-scan
+  zap-api-scan:
+    name: zap-api-scan
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
