@@ -7,12 +7,15 @@ Golang application template.
 ### >>>
 
 + https://github.com/knadh/koanf
+  * fix nancy errors
 + deployment
   * helm chart + linter
   * kubernetes
   * cloud environment
   * revert deployment
-+ stress testing + grafana dashboard
++ grafana dashboard
++ self-hosted github runners
++ test k6 PR comments
 
 ### >>
 
