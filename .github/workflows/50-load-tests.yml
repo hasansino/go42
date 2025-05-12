@@ -1,5 +1,8 @@
 name: load-tests
 
+# Load tests.
+# Simulates load on application and records statistics.
+
 on:
   workflow_call:
     inputs:
