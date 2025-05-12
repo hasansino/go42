@@ -6,6 +6,7 @@ Golang application template.
 
 ### >>>
 
++
 + codeQL
 + https://github.com/knadh/koanf
   * fix nancy errors
