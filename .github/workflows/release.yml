@@ -17,5 +17,7 @@ jobs:
   docker-build:
     uses: ./.github/workflows/40-docker-build.yml
     with:
+      runs_on: ubuntu-latest
+      continue_on_error: false
       service_name: "goapp"
       image_tag: ${{ github.ref_name }}
