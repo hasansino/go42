@@ -58,21 +58,36 @@ jobs:
           name: k6-summary
           path: k6-summary.json
       # ---
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
+      - if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const results = JSON.parse(fs.readFileSync('k6-summary.json', 'utf8'));
+            
             const summary = `## Performance Test Results
             
-            - Virtual Users: ${results.metrics.vus.values.max}
-            - Request Rate: ${results.metrics.http_reqs.values.rate.toFixed(2)}/sec
-            - Avg Response Time: ${results.metrics.http_req_duration.values.avg.toFixed(2)}ms
-            - P95 Response Time: ${results.metrics.http_req_duration.values.p(95).toFixed(2)}ms
-            - Failed Requests: ${results.metrics.http_req_failed.values.count}
+            ### Load Configuration
+            - Virtual Users: ${results.metrics.vus_max.value} max (scaled from ${results.metrics.vus.min} to ${results.metrics.vus.max})
+            
+            ### Request Statistics
+            - Total Requests: ${results.metrics.http_reqs.count}
+            - Request Rate: ${results.metrics.http_reqs.rate.toFixed(2)} requests/sec
+            - Data Received: ${(results.metrics.data_received.count / 1024).toFixed(2)} KB (${results.metrics.data_received.rate.toFixed(2)} KB/s)
+            - Data Sent: ${(results.metrics.data_sent.count / 1024).toFixed(2)} KB (${results.metrics.data_sent.rate.toFixed(2)} KB/s)
+            
+            ### Response Times
+            - Avg Response Time: ${results.metrics.http_req_duration.avg.toFixed(2)} ms
+            - Median Response Time: ${results.metrics.http_req_duration.med.toFixed(2)} ms
+            - Min Response Time: ${results.metrics.http_req_duration.min.toFixed(2)} ms
+            - Max Response Time: ${results.metrics.http_req_duration.max.toFixed(2)} ms
+            - P90 Response Time: ${results.metrics.http_req_duration["p(90)"].toFixed(2)} ms
+            - P95 Response Time: ${results.metrics.http_req_duration["p(95)"].toFixed(2)} ms
+            
+            ### Health
+            - Failed Requests: ${results.metrics.http_req_failed.fails}
+            - Success Rate: ${(results.metrics.checks.passes / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}%
             
             [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
             `;
