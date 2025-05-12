@@ -26,6 +26,7 @@ permissions:
   packages: write
   attestations: write
   id-token: write
+  security-events: write
 
 jobs:
   # Stage 1: Linting
