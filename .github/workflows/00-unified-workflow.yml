@@ -37,33 +37,33 @@ jobs:
   golangci-lint:
     uses: ./.github/workflows/10-golangci-lint.yml
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   docker-lint:
     uses: ./.github/workflows/10-docker-lint.yml
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   # Stage 2: Unit tests
   unit-tests:
     uses: ./.github/workflows/20-unit-tests.yml
     needs: [ golangci-lint, docker-lint ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   # Stage 3: Vulnerability Scanning
   security:
     uses: ./.github/workflows/30-security.yml
     needs: [ unit-tests ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
   # Stage 4: Build
   docker-build:
     uses: ./.github/workflows/40-docker-build.yml
     needs: [ security ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: false
       service_name: "goapp"
       image_tag: >-
@@ -74,7 +74,7 @@ jobs:
     uses: ./.github/workflows/40-docker-security.yml
     needs: [ docker-build ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
       service_name: "goapp"
       image_tag: >-
@@ -86,7 +86,7 @@ jobs:
     uses: ./.github/workflows/50-integration-tests.yml
     needs: [ docker-build ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
       service_name: "goapp"
       image_tag: >-
@@ -97,7 +97,7 @@ jobs:
     uses: ./.github/workflows/50-load-tests.yml
     needs: [ docker-build ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
       service_name: "goapp"
       image_tag: >-
@@ -108,7 +108,7 @@ jobs:
     uses: ./.github/workflows/50-zap-api-scan.yml
     needs: [ docker-build ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       continue_on_error: true
       service_name: "goapp"
       image_tag: >-
@@ -120,7 +120,7 @@ jobs:
     uses: ./.github/workflows/60-cleanup.yml
     needs: [ integration-tests, load-tests, zap-api-scan ]
     with:
-      runs_on: ubuntu-latest
+      runs_on: self-hosted
       service_name: "goapp"
       image_tag: >-
         ${{
