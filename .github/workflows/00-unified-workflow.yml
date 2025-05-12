@@ -2,7 +2,6 @@ name: unified-workflow
 
 # Unified workflow - linting, testing, and security scanning.
 # This workflow is designed for development and testing stages.
-# It starts on creation or push to pull request, and as 'extra' when master branch is updated.
 #
 # Running this workflow too often can ramp-up actions costs significantly.
 # One way to mitigate this is to use a self-hosted runners.
@@ -16,8 +15,10 @@ name: unified-workflow
 
 on:
   workflow_dispatch:
+  # push or merge to master
   push:
     branches: [ master ]
+  # pull request targeting master branch created or updated
   pull_request:
     branches: [ master ]
 
@@ -64,8 +65,7 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   docker-security:
     uses: ./.github/workflows/40-docker-security.yml
@@ -76,8 +76,7 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
@@ -89,8 +88,7 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/50-load-tests.yml
@@ -101,8 +99,7 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   zap-scan:
     uses: ./.github/workflows/50-zapscan.yml
@@ -113,8 +110,7 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
@@ -125,6 +121,5 @@ jobs:
       service_name: "goapp"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || 
-          github.ref == 'refs/heads/master' && 'master'
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
