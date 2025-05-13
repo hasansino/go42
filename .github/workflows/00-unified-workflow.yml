@@ -35,11 +35,15 @@ permissions:
 jobs:
   # Stage 1: Linting
   golangci-lint:
+    # Prevent dependabot from starting this workflow.
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
     uses: ./.github/workflows/10-golangci-lint.yml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   docker-lint:
+    # Prevent dependabot from starting this workflow.
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
     uses: ./.github/workflows/10-docker-lint.yml
     with:
       runs_on: ubuntu-latest
