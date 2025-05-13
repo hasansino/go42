@@ -3,7 +3,7 @@ module github.com/hasansino/goapp
 go 1.24.2
 
 require (
-	github.com/IBM/sarama v1.43.3
+	github.com/IBM/sarama v1.45.1
 	github.com/KimMachineGun/automemlimit v0.7.2
 	github.com/ThreeDotsLabs/watermill v1.4.6
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
