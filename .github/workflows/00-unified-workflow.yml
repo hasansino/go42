@@ -68,8 +68,7 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   docker-security:
     uses: ./.github/workflows/40-docker-security.yml
@@ -80,8 +79,7 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
@@ -93,8 +91,7 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/50-load-tests.yml
@@ -105,8 +102,7 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   zap-api-scan:
     uses: ./.github/workflows/50-zap-api-scan.yml
@@ -117,8 +113,7 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
@@ -129,6 +124,5 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | lower | replace('/', '-') | replace('_', '-') | replace('.', '-')
+          github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
