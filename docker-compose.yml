@@ -2,10 +2,12 @@
 
 # Optional dependencies.
 # Application should work without them under default configuration.
+#
+# @todo host.docker.internal is not enabled on linux by default.
 
 services:
 
-  # ---
+  # --- databases ---
 
   postgres:
     image: postgres:latest
@@ -26,7 +28,7 @@ services:
     ports:
       - "11211:11211"
 
-  # ---
+  # --- event buses ---
 
   nats:
     image: nats:2
@@ -60,7 +62,7 @@ services:
     ports:
       - "9092:9092"
 
-  # ---
+  # --- configuration managements ---
 
   vault:
     image: vault:1.13.3
@@ -81,12 +83,45 @@ services:
       - "2379:2379"
       - "2380:2380"
 
-  # ---
+  # --- observability ---
+
+  prometheus:
+    image: prom/prometheus:latest
+    configs:
+      - source: prometheus_cfg
+        target: /etc/prometheus/prometheus.yml
+        mode: 0644
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=user
+      - GF_SECURITY_ADMIN_PASSWORD=qwerty
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000" # ui
 
   zipkin:
     image: openzipkin/zipkin:latest
     ports:
       - "9411:9411" # ui
+
+# ---
+
+configs:
+  prometheus_cfg:
+    content: |
+      global:
+        scrape_interval: 3s
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+        - job_name: 'service'
+          static_configs:
+            - targets: ['host.docker.internal:8080']
 
 networks:
   default:

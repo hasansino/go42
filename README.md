@@ -1,4 +1,4 @@
-# GoApp
+# Codename: go42 | 124go41+
 
 Golang application template.
 
@@ -13,8 +13,7 @@ Golang application template.
   * kubernetes
   * cloud environment
   * revert deployment
-+ grafana dashboard
-+ self-hosted github runners
++ full load test + grafana dashboard
 
 ### >>
 
@@ -29,13 +28,6 @@ Golang application template.
 + https://github.com/bytedance/sonic
 + https://github.com/Masterminds/squirrel
 + https://github.com/agiledragon/gomonkey
-
-### >
-
-+ cli example
-  * https://github.com/rivo/tview
-  * https://github.com/mum4k/termdash
-  * https://github.com/charmbracelet
 
 ### <
 
