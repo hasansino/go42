@@ -1,4 +1,4 @@
-# Codename: go42 | 124go41+
+# go42
 
 Golang application template.
 
@@ -14,7 +14,7 @@ Golang application template.
   * cloud environment
   * revert deployment
 + full load test + grafana dashboard
-
+ 
 ### >>
 
 + https://github.com/google/perfetto

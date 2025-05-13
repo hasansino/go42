@@ -6,8 +6,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	httpAPI "github.com/hasansino/goapp/internal/api/http"
-	"github.com/hasansino/goapp/internal/example/domain"
+	httpAPI "github.com/hasansino/go42/internal/api/http"
+	"github.com/hasansino/go42/internal/example/domain"
 )
 
 func (h *Provider) processError(ctx echo.Context, err error) error {

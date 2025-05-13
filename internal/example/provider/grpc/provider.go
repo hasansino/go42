@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/hasansino/goapp/internal/example"
-	"github.com/hasansino/goapp/internal/example/domain"
+	"github.com/hasansino/go42/internal/example"
+	"github.com/hasansino/go42/internal/example/domain"
 )
 
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative example.proto

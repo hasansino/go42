@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	models "github.com/hasansino/goapp/internal/example/models"
+	models "github.com/hasansino/go42/internal/example/models"
 	gomock "go.uber.org/mock/gomock"
 )
 

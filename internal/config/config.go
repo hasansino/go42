@@ -11,7 +11,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 
-	"github.com/hasansino/goapp/internal/tools"
+	"github.com/hasansino/go42/internal/tools"
 )
 
 type Config struct {
@@ -148,7 +148,7 @@ type Vault struct {
 	Host       string `env:"VAULT_HOST"        default:"http://localhost:8200"`
 	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"`
 	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
-	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/goapp"`
+	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/go42"`
 }
 
 // ╭──────────────────────────────╮
@@ -188,7 +188,7 @@ type Pgsql struct {
 	Port            int           `env:"DATABASE_PGSQL_PORT"               default:"5432"`
 	User            string        `env:"DATABASE_PGSQL_USER"               default:"user"`
 	Password        string        `env:"DATABASE_PGSQL_PASSWORD"           default:"qwerty"`
-	Name            string        `env:"DATABASE_PGSQL_NAME"               default:"goapp"`
+	Name            string        `env:"DATABASE_PGSQL_NAME"               default:"go42"`
 	ConnMaxIdleTime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_LIFETIME"  default:"30m"`
 	MaxIdleConns    int           `env:"DATABASE_PGSQL_MAX_IDLE_CONNS"     default:"10"`

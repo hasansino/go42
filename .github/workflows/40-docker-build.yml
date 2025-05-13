@@ -21,7 +21,7 @@ on:
       service_name:
         required: true
         type: string
-        default: "goapp-sf-test"
+        default: "go42"
         description: "service_name"
       image_tag:
         required: true

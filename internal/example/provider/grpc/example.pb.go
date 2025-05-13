@@ -519,7 +519,7 @@ const file_example_proto_rawDesc = "" +
 	"\bGetFruit\x12\x15.grpc.GetFruitRequest\x1a\v.grpc.Fruit\x12B\n" +
 	"\vCreateFruit\x12\x18.grpc.CreateFruitRequest\x1a\x19.grpc.CreateFruitResponse\x12B\n" +
 	"\vUpdateFruit\x12\x18.grpc.UpdateFruitRequest\x1a\x19.grpc.UpdateFruitResponse\x12B\n" +
-	"\vDeleteFruit\x12\x18.grpc.DeleteFruitRequest\x1a\x19.grpc.DeleteFruitResponseB;Z9github.com/hasansino/goapp/internal/example/provider/grpcb\x06proto3"
+	"\vDeleteFruit\x12\x18.grpc.DeleteFruitRequest\x1a\x19.grpc.DeleteFruitResponseB:Z8github.com/hasansino/go42/internal/example/provider/grpcb\x06proto3"
 
 var (
 	file_example_proto_rawDescOnce sync.Once

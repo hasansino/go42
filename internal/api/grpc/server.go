@@ -17,7 +17,7 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
-	"github.com/hasansino/goapp/internal/metrics"
+	"github.com/hasansino/go42/internal/metrics"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

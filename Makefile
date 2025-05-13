@@ -49,7 +49,7 @@ image:
     --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
     --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
     --build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
-	-t ghcr.io/hasansino/goapp:dev \
+	-t ghcr.io/hasansino/go42:dev \
 	.
 
 ## lint-go | lint golang files
@@ -71,7 +71,7 @@ lint-helm:
 #   * brew install graphviz
 #   * go install github.com/loov/goda@latest
 gen-dep-graph:
-	@goda graph "github.com/hasansino/goapp/..." | dot -Tsvg -o dep-graph.svg
+	@goda graph "github.com/hasansino/go42/..." | dot -Tsvg -o dep-graph.svg
 
 ## show-asm | visualise assembly
 # Dependencies:

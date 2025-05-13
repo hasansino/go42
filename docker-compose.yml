@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: qwerty
-      POSTGRES_DB: goapp
+      POSTGRES_DB: go42
     ports:
       - "5432:5432"
 
@@ -126,4 +126,4 @@ configs:
 networks:
   default:
     driver: bridge
-    name: "goapp_network"
+    name: "go42_network"

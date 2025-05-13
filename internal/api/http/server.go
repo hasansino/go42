@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 
-	customMiddleware "github.com/hasansino/goapp/internal/api/http/middleware"
+	customMiddleware "github.com/hasansino/go42/internal/api/http/middleware"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

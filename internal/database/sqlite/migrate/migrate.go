@@ -6,7 +6,7 @@ import (
 
 	"github.com/pressly/goose/v3"
 
-	"github.com/hasansino/goapp/internal/database/sqlite"
+	"github.com/hasansino/go42/internal/database/sqlite"
 )
 
 func Migrate(dbPath string, schemaPath string, opts ...sqlite.ConnectionOption) error {

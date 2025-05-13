@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package grpc;
 
-option go_package = "github.com/hasansino/goapp/internal/example/provider/grpc";
+option go_package = "github.com/hasansino/go42/internal/example/provider/grpc";
 
 message Fruit {
   uint32 id = 1;

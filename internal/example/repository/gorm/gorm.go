@@ -8,8 +8,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/hasansino/goapp/internal/example/domain"
-	"github.com/hasansino/goapp/internal/example/models"
+	"github.com/hasansino/go42/internal/example/domain"
+	"github.com/hasansino/go42/internal/example/models"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

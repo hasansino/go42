@@ -19,5 +19,5 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
-      service_name: "goapp"
+      service_name: "go42"
       image_tag: ${{ github.ref_name }}
