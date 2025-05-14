@@ -144,11 +144,13 @@ type Sentry struct {
 // ╰──────────────────────────────╯
 
 type Vault struct {
-	Enabled    bool   `env:"VAULT_ENABLED"     default:"false"`
-	Host       string `env:"VAULT_HOST"        default:"http://localhost:8200"`
-	AuthType   string `env:"VAULT_AUTH_TYPE"   default:"token"`
-	Token      string `env:"VAULT_TOKEN"       default:"qwerty"`
-	SecretPath string `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/go42"`
+	Enabled    bool          `env:"VAULT_ENABLED"     default:"false"`
+	Host       string        `env:"VAULT_HOST"        default:"http://localhost:8200"`
+	Timeout    time.Duration `env:"VAULT_TIMEOUT"     default:"5s"`
+	AuthType   string        `env:"VAULT_AUTH_TYPE"   default:"token"`
+	Token      string        `env:"VAULT_TOKEN"       default:"qwerty"`
+	SecretPath string        `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/go42"`
+	MountPath  string        `env:"VAULT_MOUNT_PATH"  default:"secret"`
 }
 
 // ╭──────────────────────────────╮

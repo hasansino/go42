@@ -22,7 +22,7 @@ require (
 	github.com/hasansino/cfg2env v1.3.1
 	github.com/hasansino/etcd2cfg v1.4.0
 	github.com/hasansino/libvault v1.0.0
-	github.com/hasansino/vault2cfg v1.0.0
+	github.com/hasansino/vault2cfg v1.1.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/nats-io/nats.go v1.42.0
@@ -88,6 +88,7 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/vault-client-go v0.4.3 // indirect
 	github.com/hashicorp/vault/api v1.16.0 // indirect
 	github.com/hashicorp/vault/api/auth/approle v0.9.0 // indirect
 	github.com/hashicorp/vault/api/auth/kubernetes v0.9.0 // indirect

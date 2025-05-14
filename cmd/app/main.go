@@ -19,8 +19,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	sentryslog "github.com/getsentry/sentry-go/slog"
 	"github.com/hasansino/etcd2cfg"
-	"github.com/hasansino/libvault"
 	"github.com/hasansino/vault2cfg"
+	"github.com/hashicorp/vault-client-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -90,7 +90,7 @@ func main() {
 
 	// core systems
 	initLogging(cfg)
-	initVault(cfg)
+	initVault(ctx, cfg)
 	etcdCloser := initEtcd(ctx, cfg)
 	initLimits(cfg)
 	initSentry(cfg)
@@ -415,19 +415,22 @@ func initLogging(cfg *config.Config) {
 	slog.Info("logging initialized", slog.String("log_level", cfg.Logger.Level().String()))
 }
 
-func initVault(cfg *config.Config) {
+func initVault(ctx context.Context, cfg *config.Config) {
 	if !cfg.Vault.Enabled {
 		return
 	}
 
-	vaultClient, err := libvault.New(cfg.Vault.Host)
+	client, err := vault.New(
+		vault.WithAddress(cfg.Vault.Host),
+		vault.WithRequestTimeout(cfg.Vault.Timeout),
+	)
 	if err != nil {
-		log.Fatalf("failed to initialise vault: %v", err)
+		log.Fatalf("failed to initialise vault client: %v", err)
 	}
 
 	switch cfg.Vault.AuthType {
 	case "token":
-		err = vaultClient.TokenAuth(cfg.Vault.Token)
+		err = client.SetToken(cfg.Vault.Token)
 		if err != nil {
 			log.Fatalf("failed to authenticate in vault: %v", err)
 		}
@@ -435,14 +438,21 @@ func initVault(cfg *config.Config) {
 		log.Fatalf("unknown vault auth type: %s", cfg.Vault.AuthType)
 	}
 
-	slog.Info("connected to vault")
+	slog.Info("connected and authenticated @ vault")
 
-	data, err := vaultClient.Retrieve(cfg.Vault.SecretPath)
+	reqCtx, cancel := context.WithTimeout(ctx, cfg.Vault.Timeout)
+	defer cancel()
+
+	data, err := client.Secrets.KvV2Read(
+		reqCtx, cfg.Vault.SecretPath, vault.WithMountPath(cfg.Vault.MountPath),
+	)
 	if err != nil {
-		log.Fatalf("failed to retrieve vault data: %v", err)
+		log.Fatalf("failed to read vault secrets: %v", err)
 	}
 
-	vault2cfg.Bind(cfg, data)
+	if err := vault2cfg.Bind(cfg, data.Data.Data); err != nil {
+		log.Fatalf("failed to bind vault secrets: %v", err)
+	}
 }
 
 func initEtcd(ctx context.Context, cfg *config.Config) ShutMeDown {
