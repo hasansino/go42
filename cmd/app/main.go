@@ -770,9 +770,9 @@ func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
 	done := make(chan error)
 	go func() {
 		if s.closer != nil {
-			done <- s.fn(ctx)
-		} else if s.fn != nil {
 			done <- s.closer.Close()
+		} else if s.fn != nil {
+			done <- s.fn(ctx)
 		} else {
 			done <- nil // 777
 		}

@@ -6,15 +6,13 @@ Golang application template.
 
 ### >>>
 
-+ https://github.com/knadh/koanf
-  * fix nancy errors
 + deployment
   * helm chart + linter
   * kubernetes
   * cloud environment
   * revert deployment
 + full load test + grafana dashboard
- 
+
 ### >>
 
 + https://github.com/google/perfetto
@@ -42,6 +40,8 @@ Golang application template.
 ### <<
 
 + sketch README.md and choose doc generator
+  * https://docusaurus.io/
++ draw logo sketches
 
 ### <<<
 

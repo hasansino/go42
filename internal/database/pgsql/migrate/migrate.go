@@ -32,5 +32,5 @@ func Migrate(uri string, schemaPath string) error {
 		return err
 	}
 
-	return nil
+	return db.Close()
 }

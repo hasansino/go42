@@ -10,7 +10,7 @@ import (
 )
 
 func Migrate(dbPath string, schemaPath string, opts ...sqlite.ConnectionOption) error {
-	sqlDB, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath, opts))
+	db, err := sql.Open("sqlite", sqlite.AddConnectionOptions(dbPath, opts))
 	if err != nil {
 		return err
 	}
@@ -28,11 +28,16 @@ func Migrate(dbPath string, schemaPath string, opts ...sqlite.ConnectionOption) 
 		),
 	)
 
-	sqlDB.SetMaxOpenConns(1)
+	db.SetMaxOpenConns(1)
 
-	if err := goose.Up(sqlDB, schemaPath); err != nil {
+	if err := goose.Up(db, schemaPath); err != nil {
 		return err
 	}
 
+	if dbPath != "file::memory:" {
+		return db.Close()
+	}
+
+	// Closing in-memory db will destroy all data.
 	return nil
 }

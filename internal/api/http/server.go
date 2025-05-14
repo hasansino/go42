@@ -88,7 +88,7 @@ func New(opts ...Option) *Server {
 			panicStack = panicErr.Stack
 		} else if echoErr := new(echo.HTTPError); errors.As(err, &echoErr) {
 			httpStatus = echoErr.Code
-			httpMessage = echoErr.Message.(string)
+			httpMessage = http.StatusText(httpStatus)
 		}
 
 		slogAttrs := []interface{}{

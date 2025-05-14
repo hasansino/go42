@@ -41,6 +41,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: go test -count=1 -v -race $(go list ./... | grep -v './tests')
+      - run: go test -count=1 -v -race $(go list ./... | grep -v '/tests/')
         env:
-          CGO_ENABLED: 1
+          CGO_ENABLED: 1  # needed for -race

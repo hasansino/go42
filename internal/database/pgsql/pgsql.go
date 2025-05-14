@@ -66,6 +66,11 @@ func New(dsn string, opts ...Option) (*Wrapper, error) {
 		return nil, err
 	}
 
+	sqlDB.SetMaxOpenConns(w.maxOpenConns)
+	sqlDB.SetMaxIdleConns(w.maxIdleConns)
+	sqlDB.SetConnMaxLifetime(w.connMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(w.connMaxIdleTime)
+
 	w.gormDB = gormDB
 	w.sqlDB = sqlDB
 

@@ -277,7 +277,7 @@ type NATSSubscriber struct {
 }
 
 type RabbitMQ struct {
-	DSN string `env:"RABBITMQ_DSN" default:"amqp://guest:guest@localhost:5672/ "`
+	DSN string `env:"RABBITMQ_DSN" default:"amqp://guest:guest@localhost:5672/"`
 }
 
 type Kafka struct {
