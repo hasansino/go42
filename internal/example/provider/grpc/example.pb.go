@@ -23,7 +23,7 @@ const (
 
 type Fruit struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -59,7 +59,7 @@ func (*Fruit) Descriptor() ([]byte, []int) {
 	return file_example_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Fruit) GetId() uint32 {
+func (x *Fruit) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -171,7 +171,7 @@ func (x *ListFruitsResponse) GetFruits() []*Fruit {
 
 type GetFruitRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -206,7 +206,7 @@ func (*GetFruitRequest) Descriptor() ([]byte, []int) {
 	return file_example_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetFruitRequest) GetId() uint32 {
+func (x *GetFruitRequest) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -303,7 +303,7 @@ func (x *CreateFruitResponse) GetFruit() *Fruit {
 
 type UpdateFruitRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -339,7 +339,7 @@ func (*UpdateFruitRequest) Descriptor() ([]byte, []int) {
 	return file_example_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *UpdateFruitRequest) GetId() uint32 {
+func (x *UpdateFruitRequest) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -399,7 +399,7 @@ func (x *UpdateFruitResponse) GetFruit() *Fruit {
 
 type DeleteFruitRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint32                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -434,7 +434,7 @@ func (*DeleteFruitRequest) Descriptor() ([]byte, []int) {
 	return file_example_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *DeleteFruitRequest) GetId() uint32 {
+func (x *DeleteFruitRequest) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -491,7 +491,7 @@ const file_example_proto_rawDesc = "" +
 	"\n" +
 	"\rexample.proto\x12\x04grpc\"+\n" +
 	"\x05Fruit\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"A\n" +
 	"\x11ListFruitsRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
@@ -499,18 +499,18 @@ const file_example_proto_rawDesc = "" +
 	"\x12ListFruitsResponse\x12#\n" +
 	"\x06fruits\x18\x01 \x03(\v2\v.grpc.FruitR\x06fruits\"!\n" +
 	"\x0fGetFruitRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\"(\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"(\n" +
 	"\x12CreateFruitRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"8\n" +
 	"\x13CreateFruitResponse\x12!\n" +
 	"\x05fruit\x18\x01 \x01(\v2\v.grpc.FruitR\x05fruit\"8\n" +
 	"\x12UpdateFruitRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"8\n" +
 	"\x13UpdateFruitResponse\x12!\n" +
 	"\x05fruit\x18\x01 \x01(\v2\v.grpc.FruitR\x05fruit\"$\n" +
 	"\x12DeleteFruitRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\rR\x02id\"/\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"/\n" +
 	"\x13DeleteFruitResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xcd\x02\n" +
 	"\x0eExampleService\x12?\n" +

@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"time"
@@ -30,7 +31,7 @@ type Cache interface {
 }
 
 type Repository interface {
-	Begin(ctx context.Context) (context.Context, error)
+	Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error)
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
 	ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error)
@@ -66,7 +67,7 @@ func (s *Service) withTransaction(
 	ctx context.Context,
 	fn func(txCtx context.Context) error,
 ) error {
-	txCtx, err := s.repository.Begin(ctx)
+	txCtx, err := s.repository.Begin(ctx, sql.LevelDefault)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -187,12 +188,10 @@ func (s *Service) handleEvent(ctx context.Context, eventData []byte) error {
 
 	s.logger.Info("received event", slog.Any("event", event.Type))
 
-	// validate event type exist
 	if _, ok := domain.EventTypes[event.Type]; !ok {
 		return fmt.Errorf("invalid event type: %d", event.Type)
 	}
 
-	// save event to database
 	dbEvent := new(models.Event)
 	return s.withTransaction(ctx, func(txCtx context.Context) error {
 		dbEvent.Data = string(eventData)

@@ -7,7 +7,7 @@ import (
 )
 
 type Fruit struct {
-	ID        uint32         `json:"id"   gorm:"primarykey"`
+	ID        int            `json:"id"   gorm:"primarykey"`
 	CreatedAt time.Time      `json:"-"`
 	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `json:"-"    gorm:"index"`

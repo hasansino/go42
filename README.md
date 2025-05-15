@@ -46,3 +46,5 @@ Golang application template.
 ### <<<
 
 + replace Make with some other build tool
++ multi-repository example
++ abstract withTransaction()

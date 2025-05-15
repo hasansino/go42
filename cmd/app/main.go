@@ -129,7 +129,7 @@ func main() {
 	switch cfg.Database.Engine {
 	case "sqlite":
 		// run database migrations
-		slog.Info("Running database migrations...")
+		slog.Info("running database migrations...")
 		err = sqliteMigrate.Migrate(
 			cfg.Database.Sqlite.SqliteFile,
 			cfg.Database.FullMigratePath(),
@@ -137,7 +137,7 @@ func main() {
 			sqlite.ConnectionOption{Key: "cache", Value: cfg.Database.Sqlite.CacheMode},
 		)
 		if err != nil {
-			log.Fatalf("Failed to execute migrations: %v\n", err)
+			log.Fatalf("failed to execute migrations: %v\n", err)
 		}
 
 		// connect to database
@@ -150,9 +150,10 @@ func main() {
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
 		if sqliteConnErr != nil {
-			log.Fatalf("Failed to connect to sqlite: %v\n", sqliteConnErr)
+			log.Fatalf("failed to connect to sqlite: %v\n", sqliteConnErr)
 		}
-		slog.Info("Connected to sqlite")
+
+		slog.Info("connected to sqlite")
 
 		dbCloser = sqliteConn
 
@@ -165,17 +166,17 @@ func main() {
 		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
 	case "pgsql":
 		// run database migrations
-		slog.Info("Running database migrations...")
+		slog.Info("running database migrations...")
 		err = pgsqlMigrate.Migrate(
 			cfg.Database.Pgsql.DSN(),
 			cfg.Database.FullMigratePath(),
 		)
 		if err != nil {
-			log.Fatalf("Failed to execute migrations: %v\n", err)
+			log.Fatalf("failed to execute migrations: %v\n", err)
 		}
 
 		// connect to database
-		slog.Info("Connecting to PostgreSQL...")
+		slog.Info("connecting to PostgreSQL...")
 		pgsqlConn, pgsqlConnErr := pgsql.New(
 			cfg.Database.Pgsql.DSN(),
 			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
@@ -186,9 +187,10 @@ func main() {
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
 		)
 		if pgsqlConnErr != nil {
-			log.Fatalf("Failed to connect to PostgreSQL: %v\n", pgsqlConnErr)
+			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)
 		}
-		slog.Info("Connected to PostgreSQL")
+
+		slog.Info("connected to pgsql")
 
 		dbCloser = pgsqlConn
 
@@ -647,18 +649,23 @@ func initMetrics(cfg *config.Config) http.Handler {
 		"build_commit": xBuildCommit,
 	}).Set(1)
 
+	// `github.com/prometheus/client_golang` exposes metadata (HELP/TYPE) by default
+	// enable same behaviour for `github.com/VictoriaMetrics/metrics` for consistency
+	vmetrics.ExposeMetadata(true)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// write metrics from `github.com/prometheus/client_golang` collectors
-		// they are initialised in init() of prom package
+		// they are initialised in init() of `prometheus` package
 		promhttp.HandlerFor(
-			prometheus.DefaultGatherer,
+			prometheus.DefaultGatherer, // <- init magic here
 			promhttp.HandlerOpts{
 				Registry: prometheus.DefaultRegisterer,
 				ErrorLog: slog.NewLogLogger(
 					slog.Default().With(slog.String("component", "promhttp")).Handler(),
 					slog.LevelError,
 				),
-				Timeout: cfg.Metrics.Timeout,
+				Timeout:            cfg.Metrics.Timeout,
+				DisableCompression: true, // <- so we can write data after from vmetrics
 			}).ServeHTTP(w, r)
 		// append metrics from `github.com/VictoriaMetrics/metrics`
 		vmetrics.WritePrometheus(w, false)

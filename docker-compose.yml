@@ -93,6 +93,8 @@ services:
         mode: 0644
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090" # ui
 
   grafana:
     image: grafana/grafana:latest
@@ -114,7 +116,7 @@ configs:
   prometheus_cfg:
     content: |
       global:
-        scrape_interval: 3s
+        scrape_interval: 2s
       scrape_configs:
         - job_name: 'prometheus'
           static_configs:

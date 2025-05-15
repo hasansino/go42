@@ -41,19 +41,15 @@ func (r *Repository) getTx(ctx context.Context) *gorm.DB {
 	return r.db.WithContext(ctx)
 }
 
-func (r *Repository) begin(ctx context.Context, isolationLevel sql.IsolationLevel) (context.Context, error) {
+func (r *Repository) Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error) {
 	if _, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return ctx, errors.New("transaction already exists in context")
 	}
-	tx := r.db.WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLevel})
+	tx := r.db.WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLvl})
 	if tx.Error != nil {
 		return ctx, fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
 	return context.WithValue(ctx, r.getTxKey(), tx), nil
-}
-
-func (r *Repository) Begin(ctx context.Context) (context.Context, error) {
-	return r.begin(ctx, sql.LevelDefault)
 }
 
 func (r *Repository) Commit(ctx context.Context) error {

@@ -5,7 +5,7 @@ import (
 )
 
 type Event struct {
-	ID        uint32    `json:"id"   gorm:"primarykey"`
+	ID        int       `json:"id"   gorm:"primarykey"`
 	CreatedAt time.Time `json:"-"`
 	Data      string    `json:"data"`
 }
