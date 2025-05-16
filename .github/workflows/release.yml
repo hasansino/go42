@@ -1,4 +1,4 @@
-name: unified-workflow
+name: release
 
 # Release.
 # Triggered by semver tag push.
@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   docker-build:
+    name: docker-build
     uses: ./.github/workflows/40-docker-build.yml
     with:
       runs_on: ubuntu-latest
