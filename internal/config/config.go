@@ -19,7 +19,6 @@ type Config struct {
 	Core     Core
 	Limits   Limits
 	Logger   Logger
-	Metrics  Metrics
 	Tracing  Tracing
 	Sentry   Sentry
 	Vault    Vault
@@ -107,14 +106,6 @@ func (l *Logger) Level() slog.Level {
 	}
 
 	return baseLevel
-}
-
-// ╭──────────────────────────────╮
-// │           METRICS            │
-// ╰──────────────────────────────╯
-
-type Metrics struct {
-	Timeout time.Duration `env:"METRICS_HANDLER_TIMEOUT" default:"10s"`
 }
 
 // ╭──────────────────────────────╮

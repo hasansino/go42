@@ -27,6 +27,26 @@ run:
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
 	go run -gcflags="all=-N -l" ./cmd/app/main.go
 
+## run-docker | run application in docker container
+run-docker:
+	@export $(shell grep -v '^#' .env.example | xargs) && \
+    export $(shell grep -v '^#' .env | xargs) && \
+	docker run --rm -it --init \
+	--env-file .env.example \
+	--env-file .env \
+	--env SERVER_HTTP_STATIC_ROOT=/app/static \
+	--env SERVER_HTTP_SWAGGER_ROOT=/app/openapi \
+	--env DATABASE_MIGRATE_PATH=/app/migrate \
+	-p "$${PPROF_LISTEN#:}:$${PPROF_LISTEN#:}" \
+    -p "$${SERVER_HTTP_LISTEN#:}:$${SERVER_HTTP_LISTEN#:}" \
+    -p "$${SERVER_GRPC_LISTEN#:}:$${SERVER_GRPC_LISTEN#:}" \
+	-v go-cache:/root/.cache/go-build \
+	-v go-mod-cache:/go/pkg/mod \
+	-v $(shell pwd):/app \
+	-w /app \
+	golang:$(shell grep '^go ' go.mod | awk '{print $$2}') \
+	go run -gcflags="all=-N -l" ./cmd/app/main.go
+
 ## debug | run application with delve debugger
 # Dependencies:
 #   * go install github.com/go-delve/delve@latest

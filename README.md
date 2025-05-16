@@ -6,6 +6,7 @@ Golang application template.
 
 ### >>>
 
++ diagnose non zero exit code on shutdown
 + deployment
   * helm chart + linter
   * kubernetes

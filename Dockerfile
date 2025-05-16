@@ -66,14 +66,11 @@ RUN apk add --no-cache ca-certificates=20241121-r1 tzdata=2025b-r0 tini=0.19.0-r
 RUN addgroup -g 1000 appuser && \
     adduser -u 1000 -G appuser -s /bin/sh -D appuser
 
-COPY --from=builder /tmp/build/app /usr/local/bin/
-RUN chown appuser:appuser /usr/local/bin/app
-COPY .env.example /usr/local/bin/
-RUN chown appuser:appuser /usr/local/bin/.env.example
-
+COPY --from=builder --chown=appuser:appuser /tmp/build/app /usr/local/bin/
 COPY --chown=appuser:appuser openapi/* /usr/share/www
 COPY --chown=appuser:appuser static/* /usr/share/www
 COPY --chown=appuser:appuser migrate /migrate
+COPY --chown=appuser:appuser .env.example /
 
 # Entry point for container:
 #   * tini is a small init system that helps with proper signal handling and reaping zombie processes.

@@ -37,19 +37,10 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 
 			latency := time.Since(start).Seconds()
 
-			statusCode := resRecorder.status
-			if err != nil {
-				metrics.Counter("application_errors_total", map[string]interface{}{
-					"method": labels["method"],
-					"path":   labels["path"],
-					"status": strconv.Itoa(statusCode),
-				}).Inc()
-			}
-
 			responseLabels := map[string]interface{}{
 				"method":   labels["method"],
 				"path":     labels["path"],
-				"status":   strconv.Itoa(statusCode),
+				"status":   strconv.Itoa(resRecorder.status),
 				"is_error": toStringBool(err != nil),
 			}
 

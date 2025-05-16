@@ -21,9 +21,6 @@ import (
 	"github.com/hasansino/etcd2cfg"
 	"github.com/hasansino/vault2cfg"
 	"github.com/hashicorp/vault-client-go"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel"
@@ -56,6 +53,7 @@ import (
 	exampleHttpProvider "github.com/hasansino/go42/internal/example/provider/http"
 	exampleGormRepository "github.com/hasansino/go42/internal/example/repository/gorm"
 	"github.com/hasansino/go42/internal/metrics"
+	"github.com/hasansino/go42/internal/metrics/observers"
 	metricsprovider "github.com/hasansino/go42/internal/metrics/providers/http"
 )
 
@@ -157,10 +155,15 @@ func main() {
 
 		dbCloser = sqliteConn
 
-		// register database metrics
-		prometheus.DefaultRegisterer.MustRegister(
-			collectors.NewDBStatsCollector(sqliteConn.SqlDB(), "gorm"),
+		// database metrics
+		dbObserver, err := observers.NewDatabaseObserver(
+			sqliteConn.SqlDB(),
+			observers.WithName("gorm"),
 		)
+		if err != nil {
+			log.Fatalf("failed to initialize database metrics: %v\n", err)
+		}
+		go dbObserver.Observe(ctx)
 
 		// initialize repositories
 		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
@@ -194,10 +197,15 @@ func main() {
 
 		dbCloser = pgsqlConn
 
-		// register database metrics
-		prometheus.DefaultRegisterer.MustRegister(
-			collectors.NewDBStatsCollector(pgsqlConn.SqlDB(), "gorm"),
+		// database metrics
+		dbObserver, err := observers.NewDatabaseObserver(
+			pgsqlConn.SqlDB(),
+			observers.WithName("gorm"),
 		)
+		if err != nil {
+			log.Fatalf("failed to initialize database metrics: %v\n", err)
+		}
+		go dbObserver.Observe(ctx)
 
 		// initialize repositories
 		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
@@ -648,27 +656,9 @@ func initMetrics(cfg *config.Config) http.Handler {
 		"build_tag":    xBuildTag,
 		"build_commit": xBuildCommit,
 	}).Set(1)
-
-	// `github.com/prometheus/client_golang` exposes metadata (HELP/TYPE) by default
-	// enable same behaviour for `github.com/VictoriaMetrics/metrics` for consistency
-	vmetrics.ExposeMetadata(true)
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// write metrics from `github.com/prometheus/client_golang` collectors
-		// they are initialised in init() of `prometheus` package
-		promhttp.HandlerFor(
-			prometheus.DefaultGatherer, // <- init magic here
-			promhttp.HandlerOpts{
-				Registry: prometheus.DefaultRegisterer,
-				ErrorLog: slog.NewLogLogger(
-					slog.Default().With(slog.String("component", "promhttp")).Handler(),
-					slog.LevelError,
-				),
-				Timeout:            cfg.Metrics.Timeout,
-				DisableCompression: true, // <- so we can write data after from vmetrics
-			}).ServeHTTP(w, r)
-		// append metrics from `github.com/VictoriaMetrics/metrics`
-		vmetrics.WritePrometheus(w, false)
+		vmetrics.WritePrometheus(w, true)
+		vmetrics.WriteFDMetrics(w)
 	})
 }
 
