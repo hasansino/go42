@@ -54,7 +54,7 @@ func New(opts ...Option) *Server {
 	prometheus.MustRegister(srvMetrics)
 
 	grpcPanicRecoveryHandler := func(p any) error {
-		metrics.Counter("errors", map[string]interface{}{
+		metrics.Counter("application_errors", map[string]interface{}{
 			"type": "grpc_panic",
 		}).Inc()
 		s.logger.Error("grpc panic",

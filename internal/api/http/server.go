@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 
 	customMiddleware "github.com/hasansino/go42/internal/api/http/middleware"
+	"github.com/hasansino/go42/internal/metrics"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
@@ -78,18 +79,25 @@ func New(opts ...Option) *Server {
 			httpStatus  = http.StatusInternalServerError
 			httpMessage = "Internal HTTPServer Error"
 		)
+
 		var (
-			logMessage = "api error"
-			panicStack []byte
+			logMessage      = "http api error"
+			metricErrorType = "http_api_error"
+			panicStack      []byte
 		)
 
 		if panicErr := new(PanicError); errors.As(err, &panicErr) {
-			logMessage = "api panic"
+			logMessage = "http api panic"
+			metricErrorType = "http_api_panic"
 			panicStack = panicErr.Stack
 		} else if echoErr := new(echo.HTTPError); errors.As(err, &echoErr) {
 			httpStatus = echoErr.Code
 			httpMessage = http.StatusText(httpStatus)
 		}
+
+		metrics.Counter("errors", map[string]interface{}{
+			"type": metricErrorType,
+		}).Inc()
 
 		slogAttrs := []interface{}{
 			slog.String("error", err.Error()),

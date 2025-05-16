@@ -1,18 +1,16 @@
 # go42
 
-Golang application template.
+Golang application blueprint.
 
 ## Backlog
 
 ### >>>
 
-+ diagnose non zero exit code on shutdown
 + deployment
   * helm chart + linter
   * kubernetes
   * cloud environment
   * revert deployment
-+ full load test + grafana dashboard
 
 ### >>
 

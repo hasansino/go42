@@ -722,6 +722,7 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 
 	// allows second signal to bypass graceful shutdown and terminate application immediately
 	signal.Stop(sigChan)
+	close(sigChan)
 
 	// total timeout for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Core.ShutdownGracePeriod)
@@ -755,7 +756,13 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 		log.Println("shutdown timed out")
 	}
 
-	os.Exit(0)
+	// When an application receives a signal (such as SIGINT for interrupt or SIGTERM for termination request)
+	// and catches it using a signal handler, the typical and expected behavior is that the termination was
+	// not part of the program's planned successful workflow. Therefore, exiting with a non-zero status
+	// is the established way to indicate that the program's execution was interrupted or terminated
+	// abnormally due to an external signal.
+	//
+	// Go runtime will enforce exit code 1 even if os.Exit() is called with a different code.
 }
 
 // ShutMeDown implements graceful shutdown for specific component.
@@ -781,7 +788,7 @@ func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
 		} else if s.fn != nil {
 			done <- s.fn(ctx)
 		} else {
-			done <- nil // 777
+			done <- nil
 		}
 	}()
 	select {
