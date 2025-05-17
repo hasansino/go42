@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"log/slog"
 
 	"github.com/glebarez/sqlite"
@@ -59,9 +58,7 @@ func New(dbPath string, opts ...Option) (*Wrapper, error) {
 			PrepareStmt: true,
 			Logger:      slogGorm.New(slogGormOpts...),
 		})
-
 	if err != nil {
-		log.Fatalf("failed to connect to SQLite database: %v", err)
 		return nil, err
 	}
 

@@ -9,11 +9,9 @@ const deleteFruitErrors = new Counter('delete_fruit_errors');
 const getFruitErrors = new Counter('get_fruit_errors');
 const getFruitsErrors = new Counter('get_fruits_errors');
 
-const requestDuration = new Trend('request_duration');
 const successRate = new Rate('success_rate');
 
-const BASE_URL = 'http://localhost:8080/api/v1';
-const createdFruitIds = [];
+const ADDR = __ENV.HTTP_SERVER_ADDRESS || `http://localhost:8080/api/v1`;
 
 export const options = {
     scenarios: {
@@ -51,11 +49,11 @@ export default function() {
     runGetOperations();
 }
 
+const createdFruitIds = [];
+
 function runCrudOperations() {
     group('Fruit CRUD operations', () => {
-
         let fruitId = createFruit();
-
         if (fruitId) {
             createdFruitIds.push(fruitId);
             updateFruit(fruitId);
@@ -86,65 +84,50 @@ function runGetOperations() {
 }
 
 function createFruit() {
-    const url = `${BASE_URL}/fruits`;
+    const url = `${ADDR}/fruits`;
     const payload = JSON.stringify({
         name: `Fruit-${randomString(5)}`
     });
-
     const params = {
         headers: {
             'Content-Type': 'application/json',
         },
         tags: { name: 'create_fruit' },
     };
-
-    const startTime = new Date().getTime();
-    const res = http.post(url, payload, params);
-    const duration = new Date().getTime() - startTime;
-
-    requestDuration.add(duration);
-
+    const res = http.post(url, payload, params, {
+        tags: { rpc: 'create_fruit' }
+    });
     const success = check(res, {
         'create fruit status is 201': (r) => r.status === 201,
         'create fruit response has id': (r) => r.json('id') !== undefined,
     });
-
     successRate.add(success);
-
     if (!success) {
         createFruitErrors.add(1);
         console.log(`Failed to create fruit: ${res.status} ${res.body}`);
         return null;
     }
-
     return res.json('id');
 }
 
 function updateFruit(id) {
-    const url = `${BASE_URL}/fruits/${id}`;
+    const url = `${ADDR}/fruits/${id}`;
     const payload = JSON.stringify({
         name: `Updated-${randomString(5)}`
     });
-
     const params = {
         headers: {
             'Content-Type': 'application/json',
         },
         tags: { name: 'update_fruit' },
     };
-
-    const startTime = new Date().getTime();
-    const res = http.put(url, payload, params);
-    const duration = new Date().getTime() - startTime;
-
-    requestDuration.add(duration);
-
+    const res = http.put(url, payload, params, {
+        tags: { rpc: 'update_fruit' }
+    });
     const success = check(res, {
         'update fruit status is 200': (r) => r.status === 200,
     });
-
     successRate.add(success);
-
     if (!success) {
         updateFruitErrors.add(1);
         console.log(`Failed to update fruit ${id}: ${res.status} ${res.body}`);
@@ -152,23 +135,17 @@ function updateFruit(id) {
 }
 
 function deleteFruit(id) {
-    const url = `${BASE_URL}/fruits/${id}`;
+    const url = `${ADDR}/fruits/${id}`;
     const params = {
         tags: { name: 'delete_fruit' },
     };
-
-    const startTime = new Date().getTime();
-    const res = http.del(url, null, params);
-    const duration = new Date().getTime() - startTime;
-
-    requestDuration.add(duration);
-
+    const res = http.del(url, null, params, {
+        tags: { rpc: 'delete_fruit' }
+    });
     const success = check(res, {
         'delete fruit status is 200': (r) => r.status === 200,
     });
-
     successRate.add(success);
-
     if (!success) {
         deleteFruitErrors.add(1);
         console.log(`Failed to delete fruit ${id}: ${res.status} ${res.body}`);
@@ -176,24 +153,18 @@ function deleteFruit(id) {
 }
 
 function getFruitById(id) {
-    const url = `${BASE_URL}/fruits/${id}`;
+    const url = `${ADDR}/fruits/${id}`;
     const params = {
         tags: { name: 'get_fruit_by_id' },
     };
-
-    const startTime = new Date().getTime();
-    const res = http.get(url, params);
-    const duration = new Date().getTime() - startTime;
-
-    requestDuration.add(duration);
-
+    const res = http.get(url, params, {
+        tags: { rpc: 'get_fruit_by_id' }
+    });
     const success = check(res, {
         'get fruit by id status is 200': (r) => r.status === 200 || r.status === 404,
         'get fruit by id has name': (r) => r.status === 404 || r.json('name') !== undefined,
     });
-
     successRate.add(success);
-
     if (!success) {
         getFruitErrors.add(1);
         console.log(`Failed to get fruit ${id}: ${res.status} ${res.body}`);
@@ -201,30 +172,22 @@ function getFruitById(id) {
 }
 
 function getFruits(limit = 10, offset = 0) {
-    const url = `${BASE_URL}/fruits?limit=${limit}&offset=${offset}`;
+    const url = `${ADDR}/fruits?limit=${limit}&offset=${offset}`;
     const params = {
         tags: { name: 'get_fruits' },
     };
-
-    const startTime = new Date().getTime();
-    const res = http.get(url, params);
-    const duration = new Date().getTime() - startTime;
-
-    requestDuration.add(duration);
-
+    const res = http.get(url, params, {
+        tags: { rpc: 'get_fruits' }
+    });
     const success = check(res, {
         'get fruits status is 200': (r) => r.status === 200,
         'get fruits returns array': (r) => Array.isArray(r.json()),
     });
-
     successRate.add(success);
-
     if (!success) {
         getFruitsErrors.add(1);
         console.log(`Failed to get fruits: ${res.status} ${res.body}`);
     }
-
-    // Store fruit IDs for later use
     if (success && res.json().length > 0) {
         res.json().forEach(fruit => {
             if (!createdFruitIds.includes(fruit.id)) {

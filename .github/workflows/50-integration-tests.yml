@@ -56,8 +56,8 @@ jobs:
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
-          - 8080:8080
-          - 50051:50051
+          - 44442:8080  # should be unique to avoid conflicts on self-hosted runners
+          - 55552:50051 # should be unique to avoid conflicts on self-hosted runners
         env:
           LOG_LEVEL: warn
           ENVIRONMENT: ci-integration-tests
@@ -79,3 +79,5 @@ jobs:
       - run: go test -count=1 -v -race ./tests/integration/...
         env:
           CGO_ENABLED: 1 # needed for -race
+          HTTP_SERVER_ADDRESS: http://localhost:44442/api/v1
+          GRPC_SERVER_ADDRESS: localhost:55552

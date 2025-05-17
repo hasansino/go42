@@ -19,13 +19,13 @@ test-integration:
 # Dependencies:
 #   * brew install k6
 test-load-http:
-	@k6 run tests/load/example_http_test.js
+	@k6 run tests/load/http/example_test.js
 
 ## test-load-grpc | run load test for grpc server
 # Dependencies:
 #   * brew install k6
 test-load-grpc:
-	@k6 run tests/load/example_grpc_test.js
+	@k6 run tests/load/grpc/example_test.js
 
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.

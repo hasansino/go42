@@ -9,13 +9,12 @@ const deleteFruitErrors = new Counter('delete_fruit_errors');
 const getFruitErrors = new Counter('get_fruit_errors');
 const getFruitsErrors = new Counter('get_fruits_errors');
 
-const requestDuration = new Trend('request_duration');
 const successRate = new Rate('success_rate');
 
-const GRPC_ADDR = 'localhost:50051';
+const ADDR = __ENV.GRPC_SERVER_ADDRESS || `localhost:50051`;
 
 const client = new grpc.Client();
-client.load(['../..'], './internal/example/provider/grpc/example.proto');
+client.load(['../../..'], './internal/example/provider/grpc/example.proto');
 
 export const options = {
     scenarios: {
@@ -49,7 +48,7 @@ export const options = {
 };
 
 export default function() {
-    client.connect(GRPC_ADDR, {plaintext: true});
+    client.connect(ADDR, {plaintext: true});
     runCrudOperations();
     runGetOperations();
     client.close();
@@ -93,25 +92,20 @@ function createFruit(client) {
     const data = {
         name: `Fruit-${randomString(5)}`
     };
-
     const response = client.invoke('grpc.ExampleService/CreateFruit', data, {
         tags: { rpc: 'CreateFruit' }
     });
-
     const success = check(response, {
         'create fruit status is OK': (r) => r.status === grpc.StatusOK,
         'create fruit response has fruit': (r) => r && r.message && r.message.fruit,
         'create fruit response has id': (r) => r && r.message && r.message.fruit && r.message.fruit.id,
     });
-
     successRate.add(success);
-
     if (!success) {
         createFruitErrors.add(1);
         console.log(`Failed to create fruit: ${response.status} ${JSON.stringify(response.error)}`);
         return null;
     }
-
     return response.message.fruit.id;
 }
 
@@ -120,18 +114,14 @@ function updateFruit(client, id) {
         id: id,
         name: `Updated-${randomString(5)}`
     };
-
     const response = client.invoke('grpc.ExampleService/UpdateFruit', data, {
         tags: { rpc: 'UpdateFruit' }
     });
-
     const success = check(response, {
         'update fruit status is OK': (r) => r.status === grpc.StatusOK,
         'update fruit response has fruit': (r) => r && r.message && r.message.fruit,
     });
-
     successRate.add(success);
-
     if (!success) {
         updateFruitErrors.add(1);
         console.log(`Failed to update fruit ${id}: ${response.status} ${JSON.stringify(response.error)}`);
@@ -142,18 +132,14 @@ function deleteFruit(client, id) {
     const data = {
         id: id
     };
-
     const response = client.invoke('grpc.ExampleService/DeleteFruit', data, {
         tags: { rpc: 'DeleteFruit' }
     });
-
     const success = check(response, {
         'delete fruit status is OK': (r) => r.status === grpc.StatusOK,
         'delete fruit response has success': (r) => r && r.message && r.message.success === true,
     });
-
     successRate.add(success);
-
     if (!success) {
         deleteFruitErrors.add(1);
         console.log(`Failed to delete fruit ${id}: ${response.status} ${JSON.stringify(response.error)}`);
@@ -164,19 +150,14 @@ function getFruitById(client, id) {
     const data = {
         id: id
     };
-
     const response = client.invoke('grpc.ExampleService/GetFruit', data, {
         tags: { rpc: 'GetFruit' }
     });
-
-    // Accept either success or not found status (404 equivalent in gRPC)
     const success = check(response, {
         'get fruit status is valid': (r) => r.status === grpc.StatusOK || r.status === grpc.StatusNotFound,
         'get fruit response has name': (r) => r.status === grpc.StatusNotFound || (r && r.message && r.message.name),
     });
-
     successRate.add(success);
-
     if (!success) {
         getFruitErrors.add(1);
         console.log(`Failed to get fruit ${id}: ${response.status} ${JSON.stringify(response.error)}`);
@@ -188,24 +169,18 @@ function getFruits(client, limit = 10, offset = 0) {
         limit: limit,
         offset: offset
     };
-
     const response = client.invoke('grpc.ExampleService/ListFruits', data, {
         tags: { rpc: 'ListFruits' }
     });
-
     const success = check(response, {
         'list fruits status is OK': (r) => r.status === grpc.StatusOK,
         'list fruits response has fruits': (r) => r && r.message && Array.isArray(r.message.fruits),
     });
-
     successRate.add(success);
-
     if (!success) {
         getFruitsErrors.add(1);
         console.log(`Failed to get fruits: ${response.status} ${JSON.stringify(response.error)}`);
     }
-
-    // Store fruit IDs for later use
     if (success && response.message && response.message.fruits && response.message.fruits.length > 0) {
         response.message.fruits.forEach(fruit => {
             if (!createdFruitIds.includes(fruit.id)) {

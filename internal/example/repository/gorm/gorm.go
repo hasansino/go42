@@ -75,9 +75,6 @@ func (r *Repository) Rollback(ctx context.Context) error {
 }
 
 func (r *Repository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
-	if limit <= 0 {
-		limit = 10
-	}
 	var fruits []*models.Fruit
 	result := r.getTx(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
 	if result.Error != nil {
@@ -111,10 +108,10 @@ func (r *Repository) CreateFruit(ctx context.Context, fruit *models.Fruit) error
 
 func (r *Repository) DeleteFruit(ctx context.Context, fruit *models.Fruit) error {
 	result := r.getTx(ctx).Delete(&fruit)
+	if result.RowsAffected == 0 {
+		return domain.ErrNotFound
+	}
 	if result.Error != nil {
-		if result.RowsAffected == 0 {
-			return domain.ErrNotFound
-		}
 		return fmt.Errorf("error deleting fruit: %w", result.Error)
 	}
 	return nil

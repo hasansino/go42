@@ -25,6 +25,12 @@ func (p *Provider) Register(grpcServer *grpc.Server) {
 }
 
 func (p *Provider) ListFruits(ctx context.Context, req *ListFruitsRequest) (*ListFruitsResponse, error) {
+	if req.Limit < 0 {
+		req.Limit = domain.DefaultFetchLimit
+	}
+	if req.Offset < 0 {
+		req.Offset = 0
+	}
 	fruits, err := p.service.Fruits(ctx, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, p.processError(err)
