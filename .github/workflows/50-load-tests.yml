@@ -108,23 +108,23 @@ jobs:
             
             ### HTTP
             
-            | Metric | Value |
-            |--------|-------|
-            | Virtual Users | ${resultsHttp.metrics.vus_max.value} max (${resultsHttp.metrics.vus.min}-${resultsHttp.metrics.vus.max}) |
-            | Total Requests | ${resultsHttp.metrics.http_reqs.count} @ ${resultsHttp.metrics.http_reqs.rate.toFixed(2)}/sec |
-            | Response Time | Avg: ${resultsHttp.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttp.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+            | Metric          | Value  |
+            |-----------------|--------|
+            | Virtual Users   | ${resultsHttp.metrics.vus_max.value} max (${resultsHttp.metrics.vus.min}-${resultsHttp.metrics.vus.max}) |
+            | Total Requests  | ${resultsHttp.metrics.http_reqs.count} @ ${resultsHttp.metrics.http_reqs.rate.toFixed(2)}/sec |
+            | Response Time   | Avg: ${resultsHttp.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttp.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
             | Failed Requests | ${resultsHttp.metrics.http_req_failed.passes} (${(resultsHttp.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-            | Success Rate | ${(resultsHttp.metrics.checks.passes / (resultsHttp.metrics.checks.passes + resultsHttp.metrics.checks.fails) * 100).toFixed(2)}% |
+            | Success Rate    | ${(resultsHttp.metrics.checks.passes / (resultsHttp.metrics.checks.passes + resultsHttp.metrics.checks.fails) * 100).toFixed(2)}% |
             
             ### GRPC
             
-            | Metric | Value |
-            |--------|-------|
-            | Virtual Users | ${resultsGrpc.metrics.vus_max.value} max (${resultsGrpc.metrics.vus.min}-${resultsGrpc.metrics.vus.max}) |
-            | Total Requests | ${resultsGrpc.metrics.http_reqs.count} @ ${resultsGrpc.metrics.http_reqs.rate.toFixed(2)}/sec |
-            | Response Time | Avg: ${resultsGrpc.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsGrpc.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
-            | Failed Requests | ${resultsGrpc.metrics.http_req_failed.passes} (${(resultsGrpc.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-            | Success Rate | ${(resultsGrpc.metrics.checks.passes / (resultsGrpc.metrics.checks.passes + resultsGrpc.metrics.checks.fails) * 100).toFixed(2)}% |
+            | Metric          | Value |
+            |-----------------|-------|
+            | Virtual Users   | ${resultsGrpc.metrics.vus_max.value} max (${resultsGrpc.metrics.vus.min}-${resultsGrpc.metrics.vus.max}) |
+            | Total Requests  | ${resultsGrpc.metrics.iterations.count} @ ${resultsGrpc.metrics.iterations.rate.toFixed(2)}/sec |
+            | Response Time   | Avg: ${(resultsGrpc.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(resultsGrpc.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |
+            | Failed Requests | ${resultsGrpc.metrics.checks.fails} (${(resultsGrpc.metrics.checks.value !== undefined ? (1 - resultsGrpc.metrics.checks.value) * 100 : 0).toFixed(2)}%) |
+            | Success Rate    | ${(resultsGrpc.metrics.checks.passes / (resultsGrpc.metrics.checks.passes + resultsGrpc.metrics.checks.fails) * 100).toFixed(2)}% |
             
             [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
             
