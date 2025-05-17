@@ -101,7 +101,7 @@ jobs:
     uses: ./.github/workflows/50-load-tests.yml
     needs: [ docker-build ]
     with:
-      runs_on: self-hosted
+      runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "go42"
       image_tag: >-

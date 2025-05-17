@@ -2,8 +2,6 @@
 
 # Optional dependencies.
 # Application should work without them under default configuration.
-#
-# @todo host.docker.internal is not enabled on linux by default.
 
 services:
 
@@ -112,6 +110,9 @@ services:
 
 # ---
 
+# @note host.docker.internal is available only with docker desktop on macos and windows.
+# @note 172.17.0.1 is default bridge to host machine on linux.
+
 configs:
   prometheus_cfg:
     content: |
@@ -123,7 +124,7 @@ configs:
             - targets: ['localhost:9090']
         - job_name: 'service'
           static_configs:
-            - targets: ['host.docker.internal:8080']
+            - targets: ['host.docker.internal:8080', '172.17.0.1:8080']
 
 networks:
   default:

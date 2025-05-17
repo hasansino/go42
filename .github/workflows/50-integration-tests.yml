@@ -57,8 +57,11 @@ jobs:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
           - 8080:8080
+          - 50051:50051
         env:
           ENVIRONMENT: ci-integration-tests
+          SERVER_HTTP_LISTEN: :8080
+          SERVER_GRPC_LISTEN: :50051
         options: >-
           --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
           --health-start-period 1s

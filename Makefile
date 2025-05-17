@@ -1,3 +1,6 @@
+# @note -race flag causes 'malformed LC_DYSYMTAB' warning, and is expected on darwin systems.
+# @see https://github.com/golang/go/issues/61229
+
 .PHONY: help
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -19,15 +22,20 @@ test-load:
 	@k6 run tests/load/example_test.js
 
 ## run | run application
+# `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
+# `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
 run:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
 	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
 	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
-	go run -gcflags="all=-N -l" ./cmd/app/main.go
+	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
 ## run-docker | run application in docker container
+# `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
+# Using golang image version from go.mod file.
+# `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
 run-docker:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
     export $(shell grep -v '^#' .env | xargs) && \
@@ -45,7 +53,7 @@ run-docker:
 	-v $(shell pwd):/app \
 	-w /app \
 	golang:$(shell grep '^go ' go.mod | awk '{print $$2}') \
-	go run -gcflags="all=-N -l" ./cmd/app/main.go
+	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
 ## debug | run application with delve debugger
 # Dependencies:
@@ -60,7 +68,7 @@ debug:
 
 ## build | build development version of binary
 build:
-	@go build -o ./bin/app ./cmd/app/main.go
+	@go build -gcflags="all=-N -l" -race -v -o ./bin/app ./cmd/app/main.go
 	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app
 
 ## image | build docker image

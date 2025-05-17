@@ -38,7 +38,7 @@ ENV GOGC=100
 #
 # xBuild... are variables accessable in main.go
 #
-RUN go build -trimpath \
+RUN go build -v -trimpath \
 -ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
 -o app cmd/app/main.go
 
