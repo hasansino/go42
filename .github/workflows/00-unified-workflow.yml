@@ -20,8 +20,8 @@ on:
 #  push:
 #    branches: [ master ]
   # pull request targeting master branch created or updated
-#  pull_request:
-#    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 permissions:
   contents: read
