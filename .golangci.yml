@@ -20,12 +20,13 @@ formatters:
       max-len: 120
 
     gci:
+      custom-order: true
       sections:
         - standard                       # Captures all standard packages.
         - default                        # Contains all imports that could not be matched to another section type.
+        - localmodule                    # Contains all local packages.
         - blank                          # Contains all blank imports.
         - dot                            # Contains all dot imports.
-        - localmodule                    # Contains all local packages.
 
 linters:
   # Default set of linters.

@@ -55,6 +55,12 @@ import (
 	"github.com/hasansino/go42/internal/metrics"
 	"github.com/hasansino/go42/internal/metrics/observers"
 	metricsprovider "github.com/hasansino/go42/internal/metrics/providers/http"
+
+	// indirectly imported by `google.golang.org/grpc` @ version v4.0.4
+	// which is reported by nancy having CVE-2025-27144
+	// to avoid `go mod tidy` removing newer version, we are making blank import
+	// @try `go mod graph | grep github.com/go-jose/go-jose/v4`
+	_ "github.com/go-jose/go-jose/v4"
 )
 
 // These variables are passed as arguments to compiler.
