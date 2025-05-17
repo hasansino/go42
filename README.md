@@ -59,3 +59,5 @@ Golang application blueprint.
 + listFruits() | http/grpc | limit / offset - should validation be also in repository?
 + domain models should not depend on gorm or json(?)
 + experiment with claude code memory files
++ external rate limit (api gateway) + internal rate limit
++ grpc server metrics

@@ -1,3 +1,5 @@
+// #nosec
+
 package integration
 
 import (
