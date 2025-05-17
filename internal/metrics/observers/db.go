@@ -73,7 +73,7 @@ func (o *DatabaseObserver) Observe(ctx context.Context) {
 	}
 }
 
-//nolint:gosec | Negative values are not expected.
+// #nosec | Negative values are not expected.
 func (o *DatabaseObserver) updateDBMetrics(labels map[string]interface{}) {
 	sqlStats := o.db.Stats()
 	metrics.
