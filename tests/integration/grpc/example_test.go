@@ -3,8 +3,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	grpclib "google.golang.org/grpc"
@@ -13,21 +11,11 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "github.com/hasansino/go42/internal/example/provider/grpc"
+	"github.com/hasansino/go42/tests/integration"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-const grpcServerAddress = "localhost:50051"
-
-func generateRandomName(prefix string) string {
-	const letters = "abcdefghijklmnopqrstuvwxyz"
-	b := make([]byte, 8)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return fmt.Sprintf("%s-%s", prefix, string(b))
-}
 
 var _ = Describe("Fruits gRPC Integration Tests", func() {
 	var (
@@ -38,7 +26,10 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 
 	BeforeEach(func() {
 		var err error
-		conn, err = grpclib.Dial(grpcServerAddress, grpclib.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpclib.NewClient(
+			integration.GRPCServerAddress(),
+			grpclib.WithTransportCredentials(insecure.NewCredentials()),
+		)
 		Expect(err).NotTo(HaveOccurred())
 		client = pb.NewExampleServiceClient(conn)
 		ctx = context.Background()
@@ -66,7 +57,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 
 	Describe("CreateFruit", func() {
 		It("should create a new fruit and cleanup after itself", func() {
-			name := generateRandomName("mango")
+			name := integration.GenerateRandomName("mango")
 			req := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -93,7 +84,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("GetFruit", func() {
 		It("should create, get by ID and cleanup", func() {
 			// Create fruit first
-			name := generateRandomName("apple")
+			name := integration.GenerateRandomName("apple")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -141,7 +132,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("UpdateFruit", func() {
 		It("should create, update and cleanup a fruit", func() {
 			// Create fruit first
-			name := generateRandomName("banana")
+			name := integration.GenerateRandomName("banana")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -152,7 +143,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 			fruitID := createResp.Fruit.Id
 
 			// Update fruit
-			updatedName := generateRandomName("updated-banana")
+			updatedName := integration.GenerateRandomName("updated-banana")
 			updateReq := &pb.UpdateFruitRequest{
 				Id:   fruitID,
 				Name: updatedName,
@@ -178,7 +169,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 		It("should return NotFound when updating non-existing fruit", func() {
 			updateReq := &pb.UpdateFruitRequest{
 				Id:   999999,
-				Name: generateRandomName("nonexistent"),
+				Name: integration.GenerateRandomName("nonexistent"),
 			}
 
 			_, err := client.UpdateFruit(ctx, updateReq)
@@ -193,7 +184,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("DeleteFruit", func() {
 		It("should create and delete a fruit", func() {
 			// Create fruit first
-			name := generateRandomName("peach")
+			name := integration.GenerateRandomName("peach")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}

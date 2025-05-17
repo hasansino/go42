@@ -56,3 +56,6 @@ Golang application blueprint.
 + replace Make with some other build tool
 + multi-repository example
 + abstract withTransaction()
++ listFruits() | http/grpc | limit / offset - should validation be also in repository?
++ domain models should not depend on gorm or json(?)
++ experiment with claude code memory files

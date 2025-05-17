@@ -62,8 +62,8 @@ jobs:
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
-          - 8080:8080
-          - 50051:50051
+          - 44443:8080  # should be unique to avoid conflicts on self-hosted runners
+          - 55553:50051 # should be unique to avoid conflicts on self-hosted runners
         env:
           LOG_LEVEL: warn
           ENVIRONMENT: ci-load-tests
@@ -79,14 +79,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
+      # http tests
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/http/example_test.js
           flags: --summary-export=k6-summary-http.json
+        env:
+          HTTP_SERVER_ADDRESS: http://localhost:44443/api/v1
+          GRPC_SERVER_ADDRESS: localhost:55553
+      # grpc tests
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/grpc/example_test.js
           flags: --summary-export=k6-summary-grpc.json
+        env:
+          HTTP_SERVER_ADDRESS: http://localhost:44443/api/v1
+          GRPC_SERVER_ADDRESS: localhost:55553
       # ---
       - uses: actions/upload-artifact@v4
         with:

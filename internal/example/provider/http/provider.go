@@ -33,11 +33,11 @@ func (p *Provider) Register(e *echo.Group) {
 
 func (p *Provider) fruits(ctx echo.Context) error {
 	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
-	if err != nil {
+	if err != nil || limit < 0 {
 		limit = domain.DefaultFetchLimit
 	}
 	offSet, err := strconv.Atoi(ctx.QueryParam("offset"))
-	if err != nil {
+	if err != nil || offSet < 0 {
 		offSet = 0
 	}
 	r, err := p.service.Fruits(ctx.Request().Context(), limit, offSet)
