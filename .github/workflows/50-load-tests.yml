@@ -3,6 +3,8 @@ name: load-tests
 # Load tests.
 # Simulates load on application and records statistics.
 # When this workflow is triggered in pull request, it will post statistics to pull request.
+#
+# @todo theory: grpc tests are slower due to previous http test artifacts.
 
 on:
   workflow_dispatch:
@@ -63,6 +65,7 @@ jobs:
           - 8080:8080
           - 50051:50051
         env:
+          LOG_LEVEL: warn
           ENVIRONMENT: ci-load-tests
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
@@ -78,11 +81,11 @@ jobs:
       - uses: grafana/setup-k6-action@v1
       - uses: grafana/run-k6-action@v1
         with:
-          path: ./tests/load/example_http_test.js
+          path: ./tests/load/http/example_test.js
           flags: --summary-export=k6-summary-http.json
       - uses: grafana/run-k6-action@v1
         with:
-          path: ./tests/load/example_grpc_test.js
+          path: ./tests/load/grpc/example_test.js
           flags: --summary-export=k6-summary-grpc.json
       # ---
       - uses: actions/upload-artifact@v4

@@ -10,7 +10,7 @@ import (
 	"github.com/hasansino/go42/internal/example/domain"
 )
 
-func (h *Provider) processError(ctx echo.Context, err error) error {
+func (p *Provider) processError(ctx echo.Context, err error) error {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return httpAPI.SendJSONError(ctx, http.StatusNotFound, err.Error())

@@ -23,15 +23,15 @@ func New(s *example.Service) *Provider {
 }
 
 // Register endpoints in fiber framework
-func (h *Provider) Register(e *echo.Group) {
-	e.GET("/fruits", h.fruits)
-	e.GET("/fruits/:id", h.fruitByID)
-	e.POST("/fruits", h.createFruit)
-	e.PUT("/fruits/:id", h.updateFruit)
-	e.DELETE("/fruits/:id", h.deleteFruit)
+func (p *Provider) Register(e *echo.Group) {
+	e.GET("/fruits", p.fruits)
+	e.GET("/fruits/:id", p.fruitByID)
+	e.POST("/fruits", p.createFruit)
+	e.PUT("/fruits/:id", p.updateFruit)
+	e.DELETE("/fruits/:id", p.deleteFruit)
 }
 
-func (h *Provider) fruits(ctx echo.Context) error {
+func (p *Provider) fruits(ctx echo.Context) error {
 	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
 	if err != nil {
 		limit = domain.DefaultFetchLimit
@@ -40,27 +40,27 @@ func (h *Provider) fruits(ctx echo.Context) error {
 	if err != nil {
 		offSet = 0
 	}
-	r, err := h.service.Fruits(ctx.Request().Context(), limit, offSet)
+	r, err := p.service.Fruits(ctx.Request().Context(), limit, offSet)
 	if err != nil {
-		return h.processError(ctx, err)
+		return p.processError(ctx, err)
 	}
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (h *Provider) fruitByID(ctx echo.Context) error {
+func (p *Provider) fruitByID(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	r, err := h.service.FruitByID(ctx.Request().Context(), id)
+	r, err := p.service.FruitByID(ctx.Request().Context(), id)
 	if err != nil {
-		return h.processError(ctx, err)
+		return p.processError(ctx, err)
 	}
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (h *Provider) createFruit(ctx echo.Context) error {
+func (p *Provider) createFruit(ctx echo.Context) error {
 	req := new(domain.CreateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -76,27 +76,27 @@ func (h *Provider) createFruit(ctx echo.Context) error {
 		)
 	}
 
-	r, err := h.service.Create(ctx.Request().Context(), req)
+	r, err := p.service.Create(ctx.Request().Context(), req)
 	if err != nil {
-		return h.processError(ctx, err)
+		return p.processError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusCreated, r)
 }
 
-func (h *Provider) deleteFruit(ctx echo.Context) error {
+func (p *Provider) deleteFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	if err := h.service.Delete(ctx.Request().Context(), id); err != nil {
-		return h.processError(ctx, err)
+	if err := p.service.Delete(ctx.Request().Context(), id); err != nil {
+		return p.processError(ctx, err)
 	}
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (h *Provider) updateFruit(ctx echo.Context) error {
+func (p *Provider) updateFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -118,9 +118,9 @@ func (h *Provider) updateFruit(ctx echo.Context) error {
 		)
 	}
 
-	r, err := h.service.Update(ctx.Request().Context(), id, req)
+	r, err := p.service.Update(ctx.Request().Context(), id, req)
 	if err != nil {
-		return h.processError(ctx, err)
+		return p.processError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, r)

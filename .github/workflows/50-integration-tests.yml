@@ -59,6 +59,7 @@ jobs:
           - 8080:8080
           - 50051:50051
         env:
+          LOG_LEVEL: warn
           ENVIRONMENT: ci-integration-tests
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
@@ -75,6 +76,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: go test -count=1 -v -race ./tests/integration
+      - run: go test -count=1 -v -race ./tests/integration/...
         env:
           CGO_ENABLED: 1 # needed for -race
