@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/hasansino/go42/internal/example"
 	"github.com/hasansino/go42/internal/example/domain"
@@ -29,7 +27,7 @@ func (p *Provider) Register(grpcServer *grpc.Server) {
 func (p *Provider) ListFruits(ctx context.Context, req *ListFruitsRequest) (*ListFruitsResponse, error) {
 	fruits, err := p.service.Fruits(ctx, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to list fruits: %v", err)
+		return nil, p.processError(err)
 	}
 	resp := &ListFruitsResponse{}
 	for _, f := range fruits {
@@ -44,7 +42,7 @@ func (p *Provider) ListFruits(ctx context.Context, req *ListFruitsRequest) (*Lis
 func (p *Provider) GetFruit(ctx context.Context, req *GetFruitRequest) (*Fruit, error) {
 	fruit, err := p.service.FruitByID(ctx, int(req.Id))
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "fruit not found: %v", err)
+		return nil, p.processError(err)
 	}
 	return &Fruit{
 		Id:   int64(fruit.ID),
@@ -55,7 +53,7 @@ func (p *Provider) GetFruit(ctx context.Context, req *GetFruitRequest) (*Fruit, 
 func (p *Provider) CreateFruit(ctx context.Context, req *CreateFruitRequest) (*CreateFruitResponse, error) {
 	created, err := p.service.Create(ctx, &domain.CreateFruitRequest{Name: req.Name})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create fruit: %v", err)
+		return nil, p.processError(err)
 	}
 	return &CreateFruitResponse{
 		Fruit: &Fruit{
@@ -68,7 +66,7 @@ func (p *Provider) CreateFruit(ctx context.Context, req *CreateFruitRequest) (*C
 func (p *Provider) UpdateFruit(ctx context.Context, req *UpdateFruitRequest) (*UpdateFruitResponse, error) {
 	updated, err := p.service.Update(ctx, int(req.Id), &domain.UpdateFruitRequest{Name: req.Name})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update fruit: %v", err)
+		return nil, p.processError(err)
 	}
 	return &UpdateFruitResponse{
 		Fruit: &Fruit{
@@ -81,7 +79,7 @@ func (p *Provider) UpdateFruit(ctx context.Context, req *UpdateFruitRequest) (*U
 func (p *Provider) DeleteFruit(ctx context.Context, req *DeleteFruitRequest) (*DeleteFruitResponse, error) {
 	err := p.service.Delete(ctx, int(req.Id))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete fruit: %v", err)
+		return nil, p.processError(err)
 	}
 	return &DeleteFruitResponse{Success: true}, nil
 }

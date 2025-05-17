@@ -59,6 +59,7 @@ jobs:
         ports:
           - 8080:8080
         env:
+          LOG_LEVEL: warn
           ENVIRONMENT: ci-security-tests
           SERVER_HTTP_LISTEN: :8080
         options: >-

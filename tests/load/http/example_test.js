@@ -36,10 +36,13 @@ export const options = {
         },
     },
     thresholds: {
-        http_req_duration: ['p(95)<1000'],
-        'http_req_duration{name:get_fruits}': ['p(95)<500'],
-        'http_req_duration{name:get_fruit_by_id}': ['p(95)<300'],
-        'success_rate': ['rate>0.95'],
+        http_req_duration: ['p(95)<50'],
+        'http_req_duration{name:get_fruits}': ['p(95)<50'],
+        'http_req_duration{name:get_fruit_by_id}': ['p(95)<50'],
+        'http_req_duration{name:create_fruit}': ['p(95)<50'],
+        'http_req_duration{name:update_fruit}': ['p(95)<50'],
+        'http_req_duration{name:delete_fruit}': ['p(95)<50'],
+        'success_rate': ['rate>=1.0'],
     },
 };
 

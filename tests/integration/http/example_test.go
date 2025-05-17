@@ -1,5 +1,5 @@
 // nolint
-package integration
+package http
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const baseURL = "http://localhost:8080/api/v1"
+const httpServerAddress = "http://localhost:8080/api/v1"
 
 type Fruit struct {
 	ID   int    `json:"id"`
@@ -48,7 +48,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 	Describe("GET /fruits", func() {
 		It("should return a list of fruits", func() {
-			resp, err := client.Get(baseURL + "/fruits?limit=5&offset=0")
+			resp, err := client.Get(httpServerAddress + "/fruits?limit=5&offset=0")
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 
@@ -68,7 +68,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
 
-			resp, err := client.Post(baseURL+"/fruits", "application/json", bytes.NewReader(bodyBytes))
+			resp, err := client.Post(httpServerAddress+"/fruits", "application/json", bytes.NewReader(bodyBytes))
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 
@@ -81,7 +81,11 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(createdFruit.ID).To(BeNumerically(">", 0))
 
 			// Cleanup
-			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, createdFruit.ID), nil)
+			req, err := http.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, createdFruit.ID),
+				nil,
+			)
 			Expect(err).ToNot(HaveOccurred())
 			delResp, err := client.Do(req)
 			Expect(err).ToNot(HaveOccurred())
@@ -98,7 +102,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
 
-			resp, err := client.Post(baseURL+"/fruits", "application/json", bytes.NewReader(bodyBytes))
+			resp, err := client.Post(httpServerAddress+"/fruits", "application/json", bytes.NewReader(bodyBytes))
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
@@ -108,7 +112,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Get by ID
-			getResp, err := client.Get(fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID))
+			getResp, err := client.Get(fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID))
 			Expect(err).ToNot(HaveOccurred())
 			defer getResp.Body.Close()
 			Expect(getResp.StatusCode).To(Equal(http.StatusOK))
@@ -120,7 +124,11 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(fetchedFruit.Name).To(Equal(fruit.Name))
 
 			// Cleanup
-			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID), nil)
+			req, err := http.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID),
+				nil,
+			)
 			Expect(err).ToNot(HaveOccurred())
 			delResp, err := client.Do(req)
 			Expect(err).ToNot(HaveOccurred())
@@ -129,7 +137,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 		})
 
 		It("should return 404 for non-existing fruit", func() {
-			resp, err := client.Get(fmt.Sprintf("%s/fruits/%d", baseURL, 999999))
+			resp, err := client.Get(fmt.Sprintf("%s/fruits/%d", httpServerAddress, 999999))
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
@@ -144,7 +152,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
 
-			resp, err := client.Post(baseURL+"/fruits", "application/json", bytes.NewReader(bodyBytes))
+			resp, err := client.Post(httpServerAddress+"/fruits", "application/json", bytes.NewReader(bodyBytes))
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
@@ -161,7 +169,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 			req, err := http.NewRequest(
 				http.MethodPut,
-				fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID),
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID),
 				bytes.NewReader(updateBytes),
 			)
 			Expect(err).ToNot(HaveOccurred())
@@ -179,7 +187,11 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(updatedFruit.ID).To(Equal(fruit.ID))
 
 			// Cleanup
-			delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID), nil)
+			delReq, err := http.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID),
+				nil,
+			)
 			Expect(err).ToNot(HaveOccurred())
 			delResp, err := client.Do(delReq)
 			Expect(err).ToNot(HaveOccurred())
@@ -194,7 +206,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 			req, err := http.NewRequest(
 				http.MethodPut,
-				fmt.Sprintf("%s/fruits/%d", baseURL, 999999),
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, 999999),
 				bytes.NewReader(bodyBytes),
 			)
 			Expect(err).ToNot(HaveOccurred())
@@ -216,7 +228,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
 
-			resp, err := client.Post(baseURL+"/fruits", "application/json", bytes.NewReader(bodyBytes))
+			resp, err := client.Post(httpServerAddress+"/fruits", "application/json", bytes.NewReader(bodyBytes))
 			Expect(err).ToNot(HaveOccurred())
 			defer resp.Body.Close()
 			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
@@ -226,7 +238,11 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// DeleteFruit fruit
-			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID), nil)
+			req, err := http.NewRequest(
+				http.MethodDelete,
+				fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID),
+				nil,
+			)
 			Expect(err).ToNot(HaveOccurred())
 
 			delResp, err := client.Do(req)
@@ -235,14 +251,14 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(delResp.StatusCode).To(Equal(http.StatusOK))
 
 			// Verify deletion
-			getResp, err := client.Get(fmt.Sprintf("%s/fruits/%d", baseURL, fruit.ID))
+			getResp, err := client.Get(fmt.Sprintf("%s/fruits/%d", httpServerAddress, fruit.ID))
 			Expect(err).ToNot(HaveOccurred())
 			defer getResp.Body.Close()
 			Expect(getResp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 
 		It("should return 404 when deleting non-existing fruit", func() {
-			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", baseURL, 999999), nil)
+			req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/fruits/%d", httpServerAddress, 999999), nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			resp, err := client.Do(req)

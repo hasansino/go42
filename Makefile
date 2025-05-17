@@ -10,10 +10,10 @@ help: Makefile
 test-unit:
 	@go test -count=1 -v -race $(shell go list ./... | grep -v './tests')
 
-## test-integration-http | run integration tests for http server
+## test-integration | run integration tests (http and grpc)
 # -count=1 is needed to prevent caching of test results.
-test-integration-http:
-	@go test -count=1 -v -race ./tests/integration
+test-integration:
+	@go test -count=1 -v -race ./tests/integration/...
 
 ## test-load-http | run load test for http server
 # Dependencies:
