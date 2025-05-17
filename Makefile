@@ -10,16 +10,22 @@ help: Makefile
 test-unit:
 	@go test -count=1 -v -race $(shell go list ./... | grep -v './tests')
 
-## test-integration | run integration tests
+## test-integration-http | run integration tests for http server
 # -count=1 is needed to prevent caching of test results.
-test-integration:
+test-integration-http:
 	@go test -count=1 -v -race ./tests/integration
 
-## test-load | run load tests
+## test-load-http | run load test for http server
 # Dependencies:
 #   * brew install k6
-test-load:
-	@k6 run tests/load/example_test.js
+test-load-http:
+	@k6 run tests/load/example_http_test.js
+
+## test-load-grpc | run load test for grpc server
+# Dependencies:
+#   * brew install k6
+test-load-grpc:
+	@k6 run tests/load/example_grpc_test.js
 
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
@@ -108,12 +114,12 @@ gen-dep-graph:
 show-asm: build
 	@lensm -watch -text-size 22 -filter $(FILTER) bin/app
 
+## health-http | check http health
+health-http:
+	@curl localhost:8080/health-check
+
 ## health-grpc | check grpc health
 # Dependencies:
 #   * go install github.com/grpc-ecosystem/grpc-health-probe@latest
 health-grpc:
 	@grpc-health-probe -addr localhost:50051
-
-## health-http | check http health
-health-http:
-	@curl localhost:8080/health-check

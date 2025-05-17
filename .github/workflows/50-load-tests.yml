@@ -78,13 +78,21 @@ jobs:
       - uses: grafana/setup-k6-action@v1
       - uses: grafana/run-k6-action@v1
         with:
-          path: ./tests/load/*.js
-          flags: --summary-export=k6-summary.json
+          path: ./tests/load/example_http_test.js
+          flags: --summary-export=k6-summary-http.json
+      - uses: grafana/run-k6-action@v1
+        with:
+          path: ./tests/load/example_grpc_test.js
+          flags: --summary-export=k6-summary-grpc.json
       # ---
       - uses: actions/upload-artifact@v4
         with:
-          name: k6-summary
-          path: k6-summary.json
+          name: k6-summary-http
+          path: k6-summary-http.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary-grpc
+          path: k6-summary-grpc.json
       # ---
       - if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -92,17 +100,31 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('k6-summary.json', 'utf8'));
+            
+            const resultsHttp = JSON.parse(fs.readFileSync('k6-summary-http.json', 'utf8'));
+            const resultsGrpc = JSON.parse(fs.readFileSync('k6-summary-grpc.json', 'utf8'));
             
             const summary = `## Load Test Results
             
+            ### HTTP
+            
             | Metric | Value |
             |--------|-------|
-            | Virtual Users | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |
-            | Total Requests | ${results.metrics.http_reqs.count} @ ${results.metrics.http_reqs.rate.toFixed(2)}/sec |
-            | Response Time | Avg: ${results.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${results.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
-            | Failed Requests | ${results.metrics.http_req_failed.passes} (${(results.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-            | Success Rate | ${(results.metrics.checks.passes / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}% |
+            | Virtual Users | ${resultsHttp.metrics.vus_max.value} max (${resultsHttp.metrics.vus.min}-${resultsHttp.metrics.vus.max}) |
+            | Total Requests | ${resultsHttp.metrics.http_reqs.count} @ ${resultsHttp.metrics.http_reqs.rate.toFixed(2)}/sec |
+            | Response Time | Avg: ${resultsHttp.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttp.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+            | Failed Requests | ${resultsHttp.metrics.http_req_failed.passes} (${(resultsHttp.metrics.http_req_failed.value * 100).toFixed(2)}%) |
+            | Success Rate | ${(resultsHttp.metrics.checks.passes / (resultsHttp.metrics.checks.passes + resultsHttp.metrics.checks.fails) * 100).toFixed(2)}% |
+            
+            ### GRPC
+            
+            | Metric | Value |
+            |--------|-------|
+            | Virtual Users | ${resultsGrpc.metrics.vus_max.value} max (${resultsGrpc.metrics.vus.min}-${resultsGrpc.metrics.vus.max}) |
+            | Total Requests | ${resultsGrpc.metrics.http_reqs.count} @ ${resultsGrpc.metrics.http_reqs.rate.toFixed(2)}/sec |
+            | Response Time | Avg: ${resultsGrpc.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsGrpc.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+            | Failed Requests | ${resultsGrpc.metrics.http_req_failed.passes} (${(resultsGrpc.metrics.http_req_failed.value * 100).toFixed(2)}%) |
+            | Success Rate | ${(resultsGrpc.metrics.checks.passes / (resultsGrpc.metrics.checks.passes + resultsGrpc.metrics.checks.fails) * 100).toFixed(2)}% |
             
             [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
             

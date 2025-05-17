@@ -12,6 +12,9 @@ const getFruitsErrors = new Counter('get_fruits_errors');
 const requestDuration = new Trend('request_duration');
 const successRate = new Rate('success_rate');
 
+const BASE_URL = 'http://localhost:8080/api/v1';
+const createdFruitIds = [];
+
 export const options = {
     scenarios: {
         crud_operations: {
@@ -40,17 +43,9 @@ export const options = {
     },
 };
 
-const BASE_URL = 'http://localhost:8080/api/v1';
-const createdFruitIds = [];
-
 export default function() {
-    const scenario = __ENV.SCENARIO;
-
-    if (scenario === 'crud_operations' || !scenario) {
-        runCrudOperations();
-    } else if (scenario === 'get_operations' || !scenario) {
-        runGetOperations();
-    }
+    runCrudOperations();
+    runGetOperations();
 }
 
 function runCrudOperations() {
