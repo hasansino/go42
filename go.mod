@@ -16,6 +16,7 @@ require (
 	github.com/getsentry/sentry-go v0.32.0
 	github.com/getsentry/sentry-go/slog v0.32.0
 	github.com/glebarez/sqlite v1.11.0
+	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
