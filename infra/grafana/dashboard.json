@@ -3071,10 +3071,23 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(application_requests_total{job=\"service\"}[1m]))",
-          "legendFormat": "RPS",
+          "expr": "sum(rate(application_http_requests_count{job=\"service\"}[1m]))",
+          "legendFormat": "http",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "celxe9zgzr400e"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(application_grpc_requests_count{job=\"service\"}[1m]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "grpc",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Requests Per Second",
@@ -3164,10 +3177,22 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(application_request_latency_sec_sum{job=\"service\"}[1m])) / sum(rate(application_request_latency_sec_count{job=\"service\"}[1m]))",
-          "legendFormat": "Latency",
+          "expr": "sum(rate(application_http_latency_sec_sum{job=\"service\"}[1m])) / sum(rate(application_http_latency_sec_count{job=\"service\"}[1m]))",
+          "legendFormat": "http",
           "range": true,
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(application_grpc_latency_sec_sum{job=\"service\"}[1m])) / sum(rate(application_grpc_latency_sec_count{job=\"service\"}[1m]))",
+          "hide": false,
+          "legendFormat": "grpc",
+          "range": true,
+          "refId": "A"
         }
       ],
       "title": "Request Latency",
@@ -3257,10 +3282,22 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(application_responses_total{job=\"service\"}[1m])) by(method, status)",
+          "expr": "sum(rate(application_http_responses_count{job=\"service\"}[1m])) by(method, status)",
           "legendFormat": "{{method}} {{status}}",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(application_grpc_responses_count{job=\"service\"}[1m])) by(method, code, status)",
+          "hide": false,
+          "legendFormat": "{{method}} {{code}} {{status}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Response Codes",
@@ -3375,5 +3412,5 @@
   "timezone": "",
   "title": "go42",
   "uid": "6f62d019-3847-4509-9685-458c132cc306",
-  "version": 23
+  "version": 24
 }

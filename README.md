@@ -68,4 +68,3 @@ Golang application blueprint.
 + domain models should not depend on gorm or json(?)
 + experiment with claude code memory files
 + external rate limit (api gateway) + internal rate limit
-+ grpc server metrics

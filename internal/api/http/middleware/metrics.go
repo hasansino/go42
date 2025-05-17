@@ -21,7 +21,7 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 				"path":   c.Path(),
 			}
 
-			metrics.Counter("application_requests_total", labels).Inc()
+			metrics.Counter("application_http_requests_count", labels).Inc()
 
 			resRecorder := &responseRecorder{
 				ResponseWriter: c.Response().Writer,
@@ -35,20 +35,13 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 
 			// --- AFTER
 
-			latency := time.Since(start).Seconds()
+			duration := time.Since(start).Seconds()
 
-			responseLabels := map[string]interface{}{
-				"method":   labels["method"],
-				"path":     labels["path"],
-				"status":   strconv.Itoa(resRecorder.status),
-				"is_error": toStringBool(err != nil),
-			}
+			labels["status"] = strconv.Itoa(resRecorder.status)
+			labels["is_error"] = toStringBool(err != nil)
 
-			size := float64(resRecorder.size)
-
-			metrics.Counter("application_responses_total", responseLabels).Inc()
-			metrics.Histogram("application_request_latency_sec", responseLabels).Update(latency)
-			metrics.Histogram("application_response_size_bytes", responseLabels).Update(size)
+			metrics.Counter("application_http_responses_count", labels).Inc()
+			metrics.Histogram("application_http_latency_sec", labels).Update(duration)
 
 			return err
 		}

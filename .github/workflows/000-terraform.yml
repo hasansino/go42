@@ -1,0 +1,13 @@
+name: terraform
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+  paths:
+    - 'infra/terraform/**'
+
+permissions:
+  contents: read
+
+jobs:

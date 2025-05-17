@@ -16,7 +16,7 @@ permissions:
 jobs:
   docker-build:
     name: docker-build
-    uses: ./.github/workflows/40-docker-build.yml
+    uses: 03-docker-build.yml
     with:
       runs_on: ubuntu-latest
       continue_on_error: false

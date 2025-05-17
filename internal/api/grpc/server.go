@@ -15,6 +15,7 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 
+	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	"github.com/hasansino/go42/internal/metrics"
 )
 
@@ -55,10 +56,12 @@ func New(opts ...Option) *Server {
 	}
 
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		interceptors.UnaryMetricsInterceptor(),
 		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
 	streamInterceptors := []grpc.StreamServerInterceptor{
+		interceptors.StreamMetricsInterceptor(),
 		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
 	}
