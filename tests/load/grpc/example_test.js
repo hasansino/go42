@@ -1,17 +1,18 @@
-import grpc from 'k6/net/grpc';
-import { check, group, sleep } from 'k6';
-import { Counter, Rate, Trend } from 'k6/metrics';
-import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+// noinspection JSUnusedGlobalSymbols
 
+import grpc from 'k6/net/grpc';
+import { check, group } from 'k6';
+import { Counter, Rate } from 'k6/metrics';
+import * as helpers from '../helpers.js';
+
+const successRate = new Rate('success_rate');
+const getFruitsErrors = new Counter('get_fruits_errors');
+const getFruitErrors = new Counter('get_fruit_errors');
 const createFruitErrors = new Counter('create_fruit_errors');
 const updateFruitErrors = new Counter('update_fruit_errors');
 const deleteFruitErrors = new Counter('delete_fruit_errors');
-const getFruitErrors = new Counter('get_fruit_errors');
-const getFruitsErrors = new Counter('get_fruits_errors');
 
-const successRate = new Rate('success_rate');
-
-const ADDR = __ENV.GRPC_SERVER_ADDRESS || `localhost:50051`;
+const ADDR = helpers.GRPCServerAddress();
 
 const client = new grpc.Client();
 client.load(['../../..'], './internal/example/provider/grpc/example.proto');
@@ -62,7 +63,7 @@ function runCrudOperations() {
         if (fruitId) {
             createdFruitIds.push(fruitId);
             updateFruit(client, fruitId);
-            sleep(1);
+            helpers.randomSleep(1)
             if (Math.random() < 0.3) {
                 deleteFruit(client, fruitId);
                 const index = createdFruitIds.indexOf(fruitId);
@@ -71,7 +72,7 @@ function runCrudOperations() {
                 }
             }
         }
-        sleep(Math.random() * 2);
+        helpers.randomSleep(2)
     });
 }
 
@@ -84,13 +85,13 @@ function runGetOperations() {
         } else {
             getFruitById(client, Math.floor(Math.random() * 10) + 1);
         }
-        sleep(Math.random() * 0.5);
+        helpers.randomSleep(0.5)
     });
 }
 
 function createFruit(client) {
     const data = {
-        name: `Fruit-${randomString(5)}`
+        name: helpers.GenerateRandomString()
     };
     const response = client.invoke('grpc.ExampleService/CreateFruit', data, {
         tags: { rpc: 'CreateFruit' }
@@ -112,7 +113,7 @@ function createFruit(client) {
 function updateFruit(client, id) {
     const data = {
         id: id,
-        name: `Updated-${randomString(5)}`
+        name: helpers.GenerateRandomString()
     };
     const response = client.invoke('grpc.ExampleService/UpdateFruit', data, {
         tags: { rpc: 'UpdateFruit' }

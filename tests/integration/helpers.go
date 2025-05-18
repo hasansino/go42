@@ -50,12 +50,12 @@ func GRPCServerAddress() string {
 
 // ---
 
-const randomNameLength = 8
+const randomStringDefaultLength = 8
 
-// GenerateRandomName returns a unique fruit name with given prefix.
-func GenerateRandomName(prefix string) string {
+// GenerateRandomString returns a unique fruit name with given prefix.
+func GenerateRandomString(prefix string) string {
 	const letters = "abcdefghijklmnopqrstuvwxyz"
-	b := make([]byte, randomNameLength)
+	b := make([]byte, randomStringDefaultLength)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}

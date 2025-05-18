@@ -52,7 +52,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 	Describe("POST /fruits", func() {
 		It("should create a new fruit and cleanup after itself", func() {
-			name := integration.GenerateRandomName("mango")
+			name := integration.GenerateRandomString("mango")
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
 			Expect(err).ToNot(HaveOccurred())
@@ -89,7 +89,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 	Describe("GET /fruits/{id}", func() {
 		It("should create, get by ID and cleanup", func() {
-			name := integration.GenerateRandomName("apple")
+			name := integration.GenerateRandomString("apple")
 			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
@@ -143,7 +143,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 	Describe("PUT /fruits/{id}", func() {
 		It("should create, update and cleanup a fruit", func() {
-			name := integration.GenerateRandomName("banana")
+			name := integration.GenerateRandomString("banana")
 			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)
@@ -163,7 +163,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// UpdateFruit fruit
-			updatedName := integration.GenerateRandomName("kek")
+			updatedName := integration.GenerateRandomString("kek")
 			updateReq := UpdateFruitRequest{Name: updatedName}
 			updateBytes, err := json.Marshal(updateReq)
 			Expect(err).ToNot(HaveOccurred())
@@ -201,7 +201,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 		})
 
 		It("should return 404 when updating non-existing fruit", func() {
-			updateReq := UpdateFruitRequest{Name: integration.GenerateRandomName("nonexistent")}
+			updateReq := UpdateFruitRequest{Name: integration.GenerateRandomString("nonexistent")}
 			bodyBytes, err := json.Marshal(updateReq)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -223,7 +223,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 
 	Describe("DELETE /fruits/{id}", func() {
 		It("should create and delete a fruit", func() {
-			name := integration.GenerateRandomName("peach")
+			name := integration.GenerateRandomString("peach")
 			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
 			bodyBytes, err := json.Marshal(reqBody)

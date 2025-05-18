@@ -57,7 +57,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 
 	Describe("CreateFruit", func() {
 		It("should create a new fruit and cleanup after itself", func() {
-			name := integration.GenerateRandomName("mango")
+			name := integration.GenerateRandomString("mango")
 			req := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -84,7 +84,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("GetFruit", func() {
 		It("should create, get by ID and cleanup", func() {
 			// Create fruit first
-			name := integration.GenerateRandomName("apple")
+			name := integration.GenerateRandomString("apple")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -132,7 +132,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("UpdateFruit", func() {
 		It("should create, update and cleanup a fruit", func() {
 			// Create fruit first
-			name := integration.GenerateRandomName("banana")
+			name := integration.GenerateRandomString("banana")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}
@@ -143,7 +143,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 			fruitID := createResp.Fruit.Id
 
 			// Update fruit
-			updatedName := integration.GenerateRandomName("updated-banana")
+			updatedName := integration.GenerateRandomString("updated-banana")
 			updateReq := &pb.UpdateFruitRequest{
 				Id:   fruitID,
 				Name: updatedName,
@@ -169,7 +169,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 		It("should return NotFound when updating non-existing fruit", func() {
 			updateReq := &pb.UpdateFruitRequest{
 				Id:   999999,
-				Name: integration.GenerateRandomName("nonexistent"),
+				Name: integration.GenerateRandomString("nonexistent"),
 			}
 
 			_, err := client.UpdateFruit(ctx, updateReq)
@@ -184,7 +184,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	Describe("DeleteFruit", func() {
 		It("should create and delete a fruit", func() {
 			// Create fruit first
-			name := integration.GenerateRandomName("peach")
+			name := integration.GenerateRandomString("peach")
 			createReq := &pb.CreateFruitRequest{
 				Name: name,
 			}

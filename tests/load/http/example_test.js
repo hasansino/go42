@@ -1,17 +1,18 @@
-import http from 'k6/http';
-import { check, group, sleep } from 'k6';
-import { Counter, Rate, Trend } from 'k6/metrics';
-import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+// noinspection JSUnusedGlobalSymbols
 
+import http from 'k6/http';
+import { check, group } from 'k6';
+import { Counter, Rate } from 'k6/metrics';
+import * as helpers from '../helpers.js';
+
+const successRate = new Rate('success_rate');
+const getFruitsErrors = new Counter('get_fruits_errors');
+const getFruitErrors = new Counter('get_fruit_errors');
 const createFruitErrors = new Counter('create_fruit_errors');
 const updateFruitErrors = new Counter('update_fruit_errors');
 const deleteFruitErrors = new Counter('delete_fruit_errors');
-const getFruitErrors = new Counter('get_fruit_errors');
-const getFruitsErrors = new Counter('get_fruits_errors');
 
-const successRate = new Rate('success_rate');
-
-const ADDR = __ENV.HTTP_SERVER_ADDRESS || `http://localhost:8080/api/v1`;
+const ADDR = helpers.HTTPServerAddress();
 
 export const options = {
     scenarios: {
@@ -57,7 +58,7 @@ function runCrudOperations() {
         if (fruitId) {
             createdFruitIds.push(fruitId);
             updateFruit(fruitId);
-            sleep(1);
+            helpers.randomSleep(1)
             if (Math.random() < 0.3) {
                 deleteFruit(fruitId);
                 const index = createdFruitIds.indexOf(fruitId);
@@ -66,7 +67,7 @@ function runCrudOperations() {
                 }
             }
         }
-        sleep(Math.random() * 2);
+        helpers.randomSleep(2)
     });
 }
 
@@ -79,14 +80,14 @@ function runGetOperations() {
         } else {
             getFruitById(Math.floor(Math.random() * 10) + 1);
         }
-        sleep(Math.random() * 0.5);
+        helpers.randomSleep(0.5)
     });
 }
 
 function createFruit() {
     const url = `${ADDR}/fruits`;
     const payload = JSON.stringify({
-        name: `Fruit-${randomString(5)}`
+        name: helpers.GenerateRandomString(),
     });
     const params = {
         headers: {
@@ -113,7 +114,7 @@ function createFruit() {
 function updateFruit(id) {
     const url = `${ADDR}/fruits/${id}`;
     const payload = JSON.stringify({
-        name: `Updated-${randomString(5)}`
+        name: helpers.GenerateRandomString()
     });
     const params = {
         headers: {
