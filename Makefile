@@ -96,10 +96,6 @@ lint-go:
 lint-docker:
 	@docker run --rm -i ghcr.io/hadolint/hadolint:latest < Dockerfile
 
-## lint-helm | lint helm files
-lint-helm:
-	@echo "__TODO__"
-
 ## gen-dep-graph | generate dependency graph
 # Dependencies:
 #   * brew install graphviz
@@ -113,13 +109,3 @@ gen-dep-graph:
 # Usage: FILTER={regex} make show-asm
 show-asm: build
 	@lensm -watch -text-size 22 -filter $(FILTER) bin/app
-
-## health-http | check http health
-health-http:
-	@curl localhost:8080/health-check
-
-## health-grpc | check grpc health
-# Dependencies:
-#   * go install github.com/grpc-ecosystem/grpc-health-probe@latest
-health-grpc:
-	@grpc-health-probe -addr localhost:50051

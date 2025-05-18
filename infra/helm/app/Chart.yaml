@@ -1,0 +1,14 @@
+apiVersion: v2
+name: go42
+description: A Helm chart for go42 application
+type: application
+version: 0.1.0
+appVersion: "v0.7.0"
+icon: https://raw.githubusercontent.com/hasansino/go42/master/static/favicon.svg
+maintainers:
+  - name: hasansino
+keywords:
+  - go42
+home: https://github.com/hasansino/go42
+sources:
+  - https://github.com/hasansino/go42
