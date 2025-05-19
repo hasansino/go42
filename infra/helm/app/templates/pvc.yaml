@@ -1,8 +1,7 @@
-{{- if .Values.persistence.enabled }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "go42.fullname" . }}-data
+  name: {{ include "go42.fqname" . }}-data
   labels:
     {{- include "go42.labels" . | nindent 4 }}
 spec:
@@ -14,4 +13,4 @@ spec:
   resources:
     requests:
       storage: {{ .Values.persistence.size }}
-{{- end }}
+

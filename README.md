@@ -23,11 +23,11 @@ Golang application blueprint.
 
 ### >>>
 
-+ deployment
-  * helm chart + linter
-  * kubernetes
-  * cloud environment
-  * revert deployment
++ health and ready probes
++ gRPC ingress / loadbalancer
++ nginx ingress provider
++ revert deployment
++ security context least privilege
 
 ### >>
 

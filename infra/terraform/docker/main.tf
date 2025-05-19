@@ -15,6 +15,9 @@ resource "kind_cluster" "this" {
       for_each = range(var.control_plane_nodes)
       content {
         role = "control-plane"
+        kubeadm_config_patches = [
+          "kind: InitConfiguration\nnodeRegistration:\n  kubeletExtraArgs:\n    node-labels: \"ingress-ready=true\"\n"
+        ]
         dynamic "extra_port_mappings" {
           for_each = var.extra_port_mappings // Assuming extra_port_mappings applies to control-plane
           content {

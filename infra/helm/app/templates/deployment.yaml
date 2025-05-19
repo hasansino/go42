@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "go42.fullname" . }}
+  name: {{ include "go42.fqname" . }}
   labels:
     {{- include "go42.labels" . | nindent 4 }}
 spec:
@@ -24,9 +24,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "go42.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "go42.fqname" . }}-serviceaccount
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -47,11 +46,9 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.persistence.enabled }}
           volumeMounts:
             - name: data
               mountPath: /data
-          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -64,9 +61,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if .Values.persistence.enabled }}
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ include "go42.fullname" . }}-data
-      {{- end }}
+            claimName: {{ include "go42.fqname" . }}-data
