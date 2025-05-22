@@ -53,7 +53,8 @@ provider "helm" {
 }
 
 resource "helm_release" "ingress_nginx_http" {
-  depends_on       = [kind_cluster.this]
+  depends_on = [kind_cluster.this]
+
   name             = "ingress-nginx-http"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
@@ -89,7 +90,8 @@ resource "helm_release" "ingress_nginx_http" {
 }
 
 resource "helm_release" "ingress_nginx_grpc" {
-  depends_on       = [kind_cluster.this]
+  depends_on = [kind_cluster.this]
+
   name             = "ingress-nginx-grpc"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
@@ -122,4 +124,91 @@ resource "helm_release" "ingress_nginx_grpc" {
     { name = "controller.containerPort.https", value = "8443" },
     { name = "controller.hostPort.ports.https", value = "8443" },
   ]
+}
+
+resource "helm_release" "argocd" {
+  depends_on = [kind_cluster.this]
+
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "8.0.9"
+  namespace        = "argocd"
+  create_namespace = true
+
+  values = [
+    <<-EOT
+    server:
+      extraArgs:
+        - --insecure
+      service:
+        type: ClusterIP
+    controller:
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    repoServer:
+      resources:
+        limits:
+          cpu: 300m
+          memory: 256Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
+    dex:
+      enabled: false
+    redis:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
+    EOT
+  ]
+}
+
+resource "kubernetes_manifest" "application" {
+  depends_on = [
+    kind_cluster.this,
+    helm_release.argocd
+  ]
+
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "go42-app"
+      namespace = "argocd"
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = "https://github.com/hasansino/go42.git"
+        targetRevision = "HEAD"
+        path           = "infra/helm/app"
+        helm = {
+          valueFiles = ["values.yaml"]
+        }
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "default"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = [
+          "CreateNamespace=true"
+        ]
+      }
+    }
+  }
 }
