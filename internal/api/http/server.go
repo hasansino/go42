@@ -159,8 +159,8 @@ func New(opts ...Option) *Server {
 	root := s.e.Group("")
 	root.Static("/", s.staticRoot)
 
-	root.GET("/health-check", s.health)
-	root.GET("/health-check", s.ready)
+	root.GET("/health", s.health)
+	root.GET("/ready", s.ready)
 	s.readyStatus.Store(true)
 
 	apiV1 := s.e.Group("/api/v1")

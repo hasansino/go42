@@ -3,7 +3,7 @@ name: go42
 description: A Helm chart for go42 application
 type: application
 version: 0.2.0
-appVersion: "v0.7.2"
+appVersion: "v0.7.3"
 icon: https://raw.githubusercontent.com/hasansino/go42/master/static/favicon.svg
 maintainers:
   - name: hasansino
