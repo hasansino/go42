@@ -41,7 +41,7 @@ type Server struct {
 	swaggerRoot string
 
 	tracingEnabled bool
-	healthStatus   atomic.Bool
+	readyStatus    atomic.Bool
 }
 
 func New(opts ...Option) *Server {
@@ -160,7 +160,8 @@ func New(opts ...Option) *Server {
 	root.Static("/", s.staticRoot)
 
 	root.GET("/health-check", s.health)
-	s.healthStatus.Store(true)
+	root.GET("/health-check", s.ready)
+	s.readyStatus.Store(true)
 
 	apiV1 := s.e.Group("/api/v1")
 	apiV1.Static("", s.swaggerRoot+"/v1")
@@ -194,7 +195,11 @@ func (s *Server) RegisterV1(providers ...providerAccessor) {
 }
 
 func (s *Server) health(ctx echo.Context) error {
-	if !s.healthStatus.Load() {
+	return ctx.NoContent(http.StatusOK)
+}
+
+func (s *Server) ready(ctx echo.Context) error {
+	if !s.readyStatus.Load() {
 		return ctx.NoContent(http.StatusServiceUnavailable)
 	}
 	return ctx.NoContent(http.StatusOK)

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
 	"github.com/hasansino/go42/internal/api/grpc/interceptors"
@@ -32,6 +33,7 @@ type Server struct {
 	maxRecvMsgSize int
 	maxSendMsgSize int
 	tracingEnabled bool
+	withReflection bool
 	healthServer   *health.Server
 }
 
@@ -82,6 +84,10 @@ func New(opts ...Option) *Server {
 	}
 
 	s.grpcServer = grpc.NewServer(serverOptions...)
+
+	if s.withReflection {
+		reflection.Register(s.grpcServer)
+	}
 
 	s.healthServer = health.NewServer()
 	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)

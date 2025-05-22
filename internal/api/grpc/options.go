@@ -47,3 +47,10 @@ func WitHealthCheckCtx(ctx context.Context) Option {
 		}()
 	}
 }
+
+// WithReflection enables/disables reflection.
+func WithReflection(enabled bool) Option {
+	return func(s *Server) {
+		s.withReflection = enabled
+	}
+}

@@ -1,19 +1,18 @@
-replicaCount: 1
-
-imagePullSecrets: []
-
 image:
   repository: ghcr.io/hasansino/go42
   pullPolicy: Always
 
+imagePullSecrets: []
+
 serviceAccountAnnotations: {}
 podAnnotations: {}
-nodeSelector: {}
-tolerations: []
-affinity: {}
 
 podSecurityContext: {}
 securityContext: {}
+
+nodeSelector: {}
+affinity: {}
+tolerations: []
 
 resources:
   requests:
@@ -34,25 +33,16 @@ env:
   SERVER_HTTP_LISTEN: ":8080"
   SERVER_GRPC_LISTEN: ":50051"
 
-ingress:
-  className: "nginx"
-  annotations: {}
-  tls: []
-  hosts:
-    - host: ""
-      paths:
-        - path: /
-          pathType: Prefix
-          port: 8080
+persistence:
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: 100Mi
+
+replicaCount: 1
 
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-persistence:
-  storageClass: "standard"
-  accessMode: ReadWriteOnce
-  size: 100Mi
+  targetMemoryUtilizationPercentage: 80

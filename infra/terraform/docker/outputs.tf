@@ -3,6 +3,12 @@ output "cluster_name" {
   value       = kind_cluster.this.name
 }
 
+output "cluster_endpoint" {
+  description = "The internal endpoint of the Kind cluster's API server (from within Docker network)."
+  value       = kind_cluster.this.endpoint
+  sensitive   = true
+}
+
 output "kubeconfig" {
   description = "Kubeconfig content to connect to the Kind cluster. Use with caution and protect this output."
   value       = kind_cluster.this.kubeconfig
@@ -10,12 +16,6 @@ output "kubeconfig" {
 }
 
 output "kubeconfig_path_local" {
-  description = "Path to the kubeconfig file if it was written locally."
-  value       = var.kubeconfig_output_path != "" ? pathexpand(var.kubeconfig_output_path) : "Kubeconfig not written to local file (kubeconfig_output_path was empty)."
-}
-
-output "cluster_endpoint" {
-  description = "The internal endpoint of the Kind cluster's API server (from within Docker network)."
-  value       = kind_cluster.this.endpoint
-  sensitive   = true
+  description = "Path to the .kubeconfig file."
+  value       = pathexpand(var.kubeconfig_output_path)
 }

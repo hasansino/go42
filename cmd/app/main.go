@@ -121,6 +121,7 @@ func main() {
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),
+		grpcAPI.WithReflection(cfg.Server.GRPC.ReflectionEnabled),
 	)
 
 	// database engine
@@ -357,7 +358,7 @@ func main() {
 		slog.Info("starting http server...", slog.String("port", cfg.Server.HTTP.Listen))
 		if err := httpServer.Start(cfg.Server.HTTP.Listen); err != nil &&
 			!errors.Is(err, http.ErrServerClosed) {
-			slog.Error("failed to start http server", slog.Any("error", err))
+			log.Fatalf("failed to start http server: %v\n", err)
 		}
 	}()
 
@@ -365,7 +366,7 @@ func main() {
 		slog.Info("starting grpc server...", slog.String("port", cfg.Server.GRPC.Listen))
 		if err := grpcServer.Serve(cfg.Server.GRPC.Listen); err != nil &&
 			!errors.Is(err, grpc.ErrServerStopped) {
-			slog.Error("failed to start grpc server", slog.Any("error", err))
+			log.Fatalf("failed to start grpc server: %v\n", err)
 		}
 	}()
 

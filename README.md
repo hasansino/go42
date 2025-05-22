@@ -21,14 +21,6 @@ Golang application blueprint.
 
 ## Backlog
 
-### >>>
-
-+ health and ready probes
-+ gRPC ingress / loadbalancer
-+ nginx ingress provider
-+ revert deployment
-+ security context least privilege
-
 ### >>
 
 + https://github.com/google/perfetto

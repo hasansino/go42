@@ -7,7 +7,7 @@ variable "cluster_name" {
 variable "cluster_version" {
   description = "The Kubernetes version to use for the Kind cluster nodes. Example: 'v1.28.0'."
   type        = string
-  default     = "v1.29.2"
+  default     = "v1.33.1"
 }
 
 variable "control_plane_nodes" {
@@ -31,9 +31,9 @@ variable "worker_nodes" {
 }
 
 variable "kubeconfig_output_path" {
-  description = "Optional path to write the generated kubeconfig. If empty, it's only available as a Terraform output."
+  description = "Path to write the generated .kubeconfig."
   type        = string
-  default     = ""
+  default     = ".kubeconfig"
 }
 
 variable "extra_port_mappings" {
