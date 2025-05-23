@@ -6,11 +6,9 @@ metadata:
     {{- include "go42.labels" . | nindent 4 }}
 spec:
   accessModes:
-    - {{ .Values.persistence.accessMode }}
-  {{- if .Values.persistence.storageClass }}
-  storageClassName: {{ .Values.persistence.storageClass }}
-  {{- end }}
+    - ReadWriteOnce
+  storageClassName: "standard"
   resources:
     requests:
-      storage: {{ .Values.persistence.size }}
+      storage: {{ .Values.volumeSize }}
 

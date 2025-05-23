@@ -2,17 +2,14 @@ image:
   repository: ghcr.io/hasansino/go42
   pullPolicy: Always
 
-imagePullSecrets: []
-
-serviceAccountAnnotations: {}
-podAnnotations: {}
+imagePullSecrets: {}
 
 podSecurityContext: {}
 securityContext: {}
 
 nodeSelector: {}
 affinity: {}
-tolerations: []
+tolerations: {}
 
 resources:
   requests:
@@ -23,7 +20,6 @@ resources:
     memory: 256Mi
 
 service:
-  type: ClusterIP
   httpPort: 8080
   grpcPort: 50051
 
@@ -33,10 +29,7 @@ env:
   SERVER_HTTP_LISTEN: ":8080"
   SERVER_GRPC_LISTEN: ":50051"
 
-persistence:
-  storageClass: "standard"
-  accessMode: ReadWriteOnce
-  size: 100Mi
+volumeSize: 100Mi
 
 replicaCount: 1
 
