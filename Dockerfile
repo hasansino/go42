@@ -49,7 +49,7 @@ RUN readelf -h app && du -h app && sha256sum app
 
 # For packaging stage, we use minimal(slim) image.
 # This reduces resulting image size and potential security risks.
-FROM alpine:3.21
+FROM alpine:3.22
 
 # Install dependencies.
 #   * ca-certificates - required for https requests
