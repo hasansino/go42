@@ -43,7 +43,7 @@ require (
 	go.uber.org/mock v0.5.2
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.6
-	gorm.io/driver/postgres v1.5.11
+	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 	modernc.org/sqlite v1.37.0
 )
