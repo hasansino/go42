@@ -30,7 +30,7 @@ require (
 	github.com/onsi/gomega v1.37.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pressly/goose/v3 v3.24.3
-	github.com/redis/go-redis/v9 v9.8.0
+	github.com/redis/go-redis/v9 v9.10.0
 	github.com/samber/slog-multi v1.4.0
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/client/v3 v3.5.21
