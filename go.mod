@@ -14,7 +14,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/getsentry/sentry-go v0.33.0
-	github.com/getsentry/sentry-go/slog v0.32.0
+	github.com/getsentry/sentry-go/slog v0.33.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/go-playground/validator/v10 v10.26.0

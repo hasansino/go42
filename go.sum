@@ -55,8 +55,8 @@ github.com/gabriel-vasile/mimetype v1.4.8 h1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3G
 github.com/gabriel-vasile/mimetype v1.4.8/go.mod h1:ByKUIKGjh1ODkGM1asKUbQZOLGrPjydw3hYPU2YU9t8=
 github.com/getsentry/sentry-go v0.33.0 h1:YWyDii0KGVov3xOaamOnF0mjOrqSjBqwv48UEzn7QFg=
 github.com/getsentry/sentry-go v0.33.0/go.mod h1:C55omcY9ChRQIUcVcGcs+Zdy4ZpQGvNJ7JYHIoSWOtE=
-github.com/getsentry/sentry-go/slog v0.32.0 h1:cXGYJzRI5aVh3Ku3KBpehtfGDjrX5ZPZSqPNTh/Su/o=
-github.com/getsentry/sentry-go/slog v0.32.0/go.mod h1:CzWubrnXm36RwJXRm9Bou2pBvxNYP1XfJgIdEtX4uMM=
+github.com/getsentry/sentry-go/slog v0.33.0 h1:/00kTrdJ5InG3VU1l1uXXTK0ivCiY1MWLTYNFPCqK4s=
+github.com/getsentry/sentry-go/slog v0.33.0/go.mod h1:Y+LOL05bbKhfiR8dT7zsa2ulsKAnNhSxDVB89TcXC0o=
 github.com/glebarez/go-sqlite v1.21.2 h1:3a6LFC4sKahUunAmynQKLZceZCOzUthkRkEAl9gAXWo=
 github.com/glebarez/go-sqlite v1.21.2/go.mod h1:sfxdZyhQjTM2Wry3gVYWaW072Ri1WMdWJi0k6+3382k=
 github.com/glebarez/sqlite v1.11.0 h1:wSG0irqzP6VurnMEpFGer5Li19RpIRi2qvQz++w0GMw=
