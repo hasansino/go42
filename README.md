@@ -34,6 +34,7 @@ Golang application blueprint.
 + https://github.com/bytedance/sonic
 + https://github.com/Masterminds/squirrel
 + https://github.com/agiledragon/gomonkey
++ https://github.com/asyncapi/spec
 
 ### <
 
@@ -54,7 +55,7 @@ Golang application blueprint.
 ### <<<
 
 + replace Make with some other build tool
-+ multi-repository example
++ multi-repository example with transactions
 + abstract withTransaction()
 + listFruits() | http/grpc | limit / offset - should validation be also in repository?
 + domain models should not depend on gorm or json(?)
