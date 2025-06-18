@@ -70,7 +70,7 @@ jobs:
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
         options: >-
-          --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
+          --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s
           --health-interval 5s
           --health-timeout 5s

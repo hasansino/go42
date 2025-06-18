@@ -63,7 +63,7 @@ jobs:
           ENVIRONMENT: ci-security-tests
           SERVER_HTTP_LISTEN: :8080
         options: >-
-          --health-cmd "curl -f http://localhost:8080/health-check || exit 1"
+          --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s
           --health-interval 5s
           --health-timeout 5s
