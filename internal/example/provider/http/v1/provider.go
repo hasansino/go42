@@ -61,7 +61,7 @@ func (p *Provider) fruitByID(ctx echo.Context) error {
 }
 
 type CreateFruitRequest struct {
-	Name string `json:"name" v:"required,min=3,max=20"`
+	Name string `json:"name" v:"required,min=3,max=255"`
 }
 
 func (p *Provider) createFruit(ctx echo.Context) error {
@@ -89,7 +89,7 @@ func (p *Provider) createFruit(ctx echo.Context) error {
 }
 
 type UpdateFruitRequest struct {
-	Name string `json:"name" v:"required,min=3,max=20"`
+	Name string `json:"name" v:"required,min=3,max=255"`
 }
 
 func (p *Provider) updateFruit(ctx echo.Context) error {

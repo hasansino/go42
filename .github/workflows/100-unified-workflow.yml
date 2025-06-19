@@ -59,7 +59,7 @@ jobs:
   # Stage 2: Unit tests
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yml
-    needs: [ golangci-lint, docker-lint ]
+    needs: [ golangci-lint, docker-lint, proto-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -130,7 +130,7 @@ jobs:
   # Stage 6: Cleanup
   cleanup:
     uses: ./.github/workflows/160-cleanup.yml
-    needs: [ integration-tests, load-tests, zap-api-scan ]
+    needs: [ docker-security, integration-tests, load-tests, zap-api-scan ]
     with:
       runs_on: ubuntu-latest
       service_name: "go42"

@@ -8,7 +8,7 @@ const MIMEApplicationProblemJSON = "application/problem+json"
 
 // Error is JSON error described by RFC9457.
 // @see https://datatracker.ietf.org/doc/html/rfc9457/
-// @note little deviation from rfc - title and status are required.
+// @note subtle deviation from rfc - title and status are required.
 type Error struct {
 	Type     string        `json:"type"`
 	Title    string        `json:"title"`

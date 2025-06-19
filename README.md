@@ -59,3 +59,4 @@ Golang project operation framework.
 + experiment with claude code memory files
 + external rate limit (api gateway) + internal rate limit
 + aerospike cache
++ https://buf.build/docs/protovalidate/quickstart/#validate-api-requests

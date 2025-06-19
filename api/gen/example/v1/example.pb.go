@@ -7,6 +7,7 @@
 package v1
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -534,7 +535,7 @@ var File_example_v1_example_proto protoreflect.FileDescriptor
 const file_example_v1_example_proto_rawDesc = "" +
 	"\n" +
 	"\x18example/v1/example.proto\x12\n" +
-	"example.v1\"+\n" +
+	"example.v1\x1a\x1bbuf/validate/validate.proto\"+\n" +
 	"\x05Fruit\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\";\n" +
@@ -546,14 +547,16 @@ const file_example_v1_example_proto_rawDesc = "" +
 	"\x12ListFruitsResponse\x12)\n" +
 	"\x06fruits\x18\x01 \x03(\v2\x11.example.v1.FruitR\x06fruits\"!\n" +
 	"\x0fGetFruitRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\"(\n" +
-	"\x12CreateFruitRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\">\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"7\n" +
+	"\x12CreateFruitRequest\x12!\n" +
+	"\x04name\x18\x01 \x01(\tB\r\xbaH\n" +
+	"\xc8\x01\x01r\x05\x10\x03\x18\xff\x01R\x04name\">\n" +
 	"\x13CreateFruitResponse\x12'\n" +
-	"\x05fruit\x18\x01 \x01(\v2\x11.example.v1.FruitR\x05fruit\"8\n" +
+	"\x05fruit\x18\x01 \x01(\v2\x11.example.v1.FruitR\x05fruit\"G\n" +
 	"\x12UpdateFruitRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\">\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12!\n" +
+	"\x04name\x18\x02 \x01(\tB\r\xbaH\n" +
+	"\xc8\x01\x01r\x05\x10\x03\x18\xff\x01R\x04name\">\n" +
 	"\x13UpdateFruitResponse\x12'\n" +
 	"\x05fruit\x18\x01 \x01(\v2\x11.example.v1.FruitR\x05fruit\"$\n" +
 	"\x12DeleteFruitRequest\x12\x0e\n" +

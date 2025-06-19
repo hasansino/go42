@@ -3,6 +3,7 @@ module github.com/hasansino/go42
 go 1.24.4
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1
 	github.com/IBM/sarama v1.45.2
 	github.com/KimMachineGun/automemlimit v0.7.2
 	github.com/ThreeDotsLabs/watermill v1.4.6
@@ -49,7 +50,10 @@ require (
 )
 
 require (
+	buf.build/go/protovalidate v0.13.1 // indirect
+	cel.dev/expr v0.23.1 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
@@ -71,6 +75,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/cel-go v0.25.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -115,6 +120,7 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/samber/lo v1.49.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
+	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
