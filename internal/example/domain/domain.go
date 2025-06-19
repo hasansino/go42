@@ -28,16 +28,6 @@ var EventTypes = map[int]string{
 
 // ---
 
-type CreateFruitRequest struct {
-	Name string `json:"name" v:"required,min=3,max=20"`
-}
-
-type UpdateFruitRequest struct {
-	Name string `json:"name" v:"required,min=3,max=20"`
-}
-
-// ---
-
 type ExampleEvent struct {
 	Type    int `json:"type"`
 	Payload any `json:"payload"`

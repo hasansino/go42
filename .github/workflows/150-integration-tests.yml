@@ -79,5 +79,5 @@ jobs:
       - run: go test -count=1 -v -race ./tests/integration/...
         env:
           CGO_ENABLED: 1 # needed for -race
-          HTTP_SERVER_ADDRESS: http://localhost:44442/api/v1
+          HTTP_SERVER_ADDRESS: http://localhost:44442
           GRPC_SERVER_ADDRESS: localhost:55552

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-amqp/v3/pkg/amqp"
@@ -17,6 +18,7 @@ type AMQP struct {
 	logger     *slog.Logger
 	publisher  *amqp.Publisher
 	subscriber *amqp.Subscriber
+	subwg      sync.WaitGroup
 }
 
 func New(dsn string, opts ...Option) (*AMQP, error) {
@@ -64,6 +66,7 @@ func (rmq *AMQP) Subscribe(
 	if err != nil {
 		return err
 	}
+	rmq.subwg.Add(1)
 	go func() {
 		for msg := range messages {
 			err := handler(ctx, msg.Payload)
@@ -73,6 +76,7 @@ func (rmq *AMQP) Subscribe(
 				msg.Ack()
 			}
 		}
+		rmq.subwg.Done()
 	}()
 	return nil
 }
@@ -80,12 +84,15 @@ func (rmq *AMQP) Subscribe(
 func (rmq *AMQP) Shutdown(ctx context.Context) error {
 	done := make(chan error)
 	go func() {
+		var errs []error
 		if err := rmq.publisher.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("publisher close: %w", err))
 		}
 		if err := rmq.subscriber.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
+		rmq.subwg.Wait()
+		done <- errors.Join(errs...)
 	}()
 	select {
 	case <-ctx.Done():

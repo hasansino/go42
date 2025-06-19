@@ -1,16 +1,16 @@
 // nolint
-package grpc
+package test
 
 import (
 	"context"
 	"testing"
 
-	grpclib "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/hasansino/go42/internal/example/provider/grpc"
+	pb "github.com/hasansino/go42/api/gen/example/v1"
 	"github.com/hasansino/go42/tests/integration"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,16 +19,16 @@ import (
 
 var _ = Describe("Fruits gRPC Integration Tests", func() {
 	var (
-		conn   *grpclib.ClientConn
+		conn   *grpc.ClientConn
 		client pb.ExampleServiceClient
 		ctx    context.Context
 	)
 
 	BeforeEach(func() {
 		var err error
-		conn, err = grpclib.NewClient(
+		conn, err = grpc.NewClient(
 			integration.GRPCServerAddress(),
-			grpclib.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 		Expect(err).NotTo(HaveOccurred())
 		client = pb.NewExampleServiceClient(conn)
@@ -102,8 +102,8 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 			fruit, err := client.GetFruit(ctx, getReq)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fruit).NotTo(BeNil())
-			Expect(fruit.Id).To(Equal(fruitID))
-			Expect(fruit.Name).To(Equal(name))
+			Expect(fruit.Fruit.Id).To(Equal(fruitID))
+			Expect(fruit.Fruit.Name).To(Equal(name))
 
 			// Cleanup
 			delReq := &pb.DeleteFruitRequest{

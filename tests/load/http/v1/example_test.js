@@ -3,7 +3,7 @@
 import http from 'k6/http';
 import { check, group } from 'k6';
 import { Counter, Rate } from 'k6/metrics';
-import * as helpers from '../helpers.js';
+import * as helpers from '../../helpers.js';
 
 const successRate = new Rate('success_rate');
 const getFruitsErrors = new Counter('get_fruits_errors');
@@ -27,9 +27,9 @@ export const options = {
         },
         get_operations: {
             executor: 'constant-arrival-rate',
-            rate: 500,
-            timeUnit: '1m',
-            duration: '1m',
+            rate: 10,
+            timeUnit: '1s',
+            duration: '60s',
             preAllocatedVUs: 10,
             maxVUs: 25,
         },
@@ -85,7 +85,7 @@ function runGetOperations() {
 }
 
 function createFruit() {
-    const url = `${ADDR}/fruits`;
+    const url = `${ADDR}/api/v1/fruits`;
     const payload = JSON.stringify({
         name: helpers.GenerateRandomString(),
     });
@@ -112,7 +112,7 @@ function createFruit() {
 }
 
 function updateFruit(id) {
-    const url = `${ADDR}/fruits/${id}`;
+    const url = `${ADDR}/api/v1/fruits/${id}`;
     const payload = JSON.stringify({
         name: helpers.GenerateRandomString()
     });
@@ -136,7 +136,7 @@ function updateFruit(id) {
 }
 
 function deleteFruit(id) {
-    const url = `${ADDR}/fruits/${id}`;
+    const url = `${ADDR}/api/v1/fruits/${id}`;
     const params = {
         tags: { name: 'delete_fruit' },
     };
@@ -154,7 +154,7 @@ function deleteFruit(id) {
 }
 
 function getFruitById(id) {
-    const url = `${ADDR}/fruits/${id}`;
+    const url = `${ADDR}/api/v1/fruits/${id}`;
     const params = {
         tags: { name: 'get_fruit_by_id' },
     };
@@ -173,7 +173,7 @@ function getFruitById(id) {
 }
 
 function getFruits(limit = 10, offset = 0) {
-    const url = `${ADDR}/fruits?limit=${limit}&offset=${offset}`;
+    const url = `${ADDR}/api/v1/fruits?limit=${limit}&offset=${offset}`;
     const params = {
         tags: { name: 'get_fruits' },
     };

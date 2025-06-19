@@ -6,6 +6,7 @@ name: unified-workflow
 # Actions are executed by `runners` that are provided by GitHub.
 # They are not free and billed per minute, although 2000 minutes per month are included in the free tier.
 # @note MacOS runners are 10x more expensive than Linux runners.
+# @note arm build are much slower than x86_64.
 #
 # Running this workflow too often can ramp-up actions costs significantly.
 # One way to mitigate this, is to use a self-hosted runners.
@@ -45,6 +46,13 @@ jobs:
     # Prevent dependabot from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
     uses: ./.github/workflows/110-docker-lint.yml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+  proto-lint:
+    # Prevent dependabot from starting this workflow.
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
+    uses: ./.github/workflows/110-proto-lint.yml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true

@@ -1,6 +1,3 @@
-# @note -race flag causes 'malformed LC_DYSYMTAB' warning, and is expected on darwin systems.
-# @see https://github.com/golang/go/issues/61229
-
 .PHONY: help
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -15,17 +12,13 @@ test-unit:
 test-integration:
 	@go test -count=1 -v -race ./tests/integration/...
 
-## test-load-http | run load test for http server
+## test-load | run load tests (http and grpc)
 # Dependencies:
 #   * brew install k6
-test-load-http:
-	@k6 run tests/load/http/example_test.js
-
-## test-load-grpc | run load test for grpc server
-# Dependencies:
-#   * brew install k6
-test-load-grpc:
-	@k6 run tests/load/grpc/example_test.js
+test-load:
+	@k6 version && \
+	k6 run tests/load/http/v1/example_test.js && \
+	k6 run tests/load/grpc/v1/example_test.js
 
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
@@ -33,12 +26,12 @@ test-load-grpc:
 run:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
-	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
-	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
+	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
+	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/api/doc/http && \
 	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
-## run-docker | run application in docker container
+## run-docker | run application in docker container (linux environment)
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
 # Using golang image version from go.mod file.
 # `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
@@ -48,9 +41,9 @@ run-docker:
 	docker run --rm -it --init \
 	--env-file .env.example \
 	--env-file .env \
-	--env SERVER_HTTP_STATIC_ROOT=/app/static \
-	--env SERVER_HTTP_SWAGGER_ROOT=/app/openapi \
 	--env DATABASE_MIGRATE_PATH=/app/migrate \
+	--env SERVER_HTTP_STATIC_ROOT=/app/static \
+	--env SERVER_HTTP_SWAGGER_ROOT=/app/api/doc/http \
 	-p "$${PPROF_LISTEN#:}:$${PPROF_LISTEN#:}" \
     -p "$${SERVER_HTTP_LISTEN#:}:$${SERVER_HTTP_LISTEN#:}" \
     -p "$${SERVER_GRPC_LISTEN#:}:$${SERVER_GRPC_LISTEN#:}" \
@@ -87,20 +80,34 @@ image:
 	.
 
 ## lint-go | lint golang files
+# Dependencies:
+#   * brew install golangci-lint
 lint-go:
-	@docker run --rm -v $(shell pwd):/app -w /app \
-	golangci/golangci-lint:v2.1-alpine \
-	golangci-lint run --config .golangci.yml
+	@golangci-lint run --config .golangci.yml
 
 ## lint-docker | lint dockerfile
+# Dependencies:
+#   * brew install hadolint
 lint-docker:
-	@docker run --rm -i ghcr.io/hadolint/hadolint:latest < Dockerfile
+	@hadolint Dockerfile
 
-## gen-dep-graph | generate dependency graph
+## lint-proto | lint protobuf files
+# Dependencies:
+#   * brew install bufbuild/buf/buf
+lint-proto:
+	@buf lint
+
+## generate | generate code for all modules
+# Dependencies:
+#   * brew install bufbuild/buf/buf
+generate:
+	@buf generate
+
+## generate-dep-graph | generate dependency graph
 # Dependencies:
 #   * brew install graphviz
 #   * go install github.com/loov/goda@latest
-gen-dep-graph:
+generate-dep-graph:
 	@goda graph "github.com/hasansino/go42/..." | dot -Tsvg -o dep-graph.svg
 
 ## show-asm | visualise assembly

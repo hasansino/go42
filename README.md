@@ -17,16 +17,13 @@
 
 # go42
 
-Golang application blueprint.
+Golang project operation framework.
 
 ## Backlog
 
 ### >>
 
-+ https://github.com/google/perfetto
-+ https://github.com/FiloSottile/mkcert
 + circuit breaker (https://github.com/sony/gobreaker) + retry
-+ https://github.com/bufbuild/protovalidate
 + https://github.com/maypok86/otter - https://s3fifo.com/
 + https://github.com/ent/ent
 + https://github.com/stoplightio/prism
@@ -61,3 +58,4 @@ Golang application blueprint.
 + domain models should not depend on gorm or json(?)
 + experiment with claude code memory files
 + external rate limit (api gateway) + internal rate limit
++ aerospike cache

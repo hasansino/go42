@@ -74,7 +74,9 @@ func (s *Service) withTransaction(
 
 	defer func() {
 		if r := recover(); r != nil {
-			_ = s.repository.Rollback(txCtx)
+			if rbErr := s.repository.Rollback(txCtx); rbErr != nil {
+				s.logger.Error("panic: rollback failed", slog.Any("err", rbErr))
+			}
 			panic(r)
 		}
 	}()
@@ -87,7 +89,10 @@ func (s *Service) withTransaction(
 	}
 
 	if err := s.repository.Commit(txCtx); err != nil {
-		_ = s.repository.Rollback(txCtx)
+		rbErr := s.repository.Rollback(txCtx)
+		if rbErr != nil {
+			return fmt.Errorf("error commiting transaction (rollback failed: %v): %w", rbErr, err)
+		}
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
@@ -102,15 +107,40 @@ func (s *Service) FruitByID(ctx context.Context, id int) (*models.Fruit, error) 
 	return s.repository.GetFruitByID(ctx, id)
 }
 
-func (s *Service) Create(ctx context.Context, req *domain.CreateFruitRequest) (*models.Fruit, error) {
+func (s *Service) Create(ctx context.Context, name string) (*models.Fruit, error) {
 	fruit := new(models.Fruit)
 	err := s.withTransaction(ctx, func(txCtx context.Context) error {
-		fruit.Name = req.Name
+		fruit.Name = name
 		err := s.repository.CreateFruit(txCtx, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to create fruit: %w", err)
 		}
 		err = s.sendEvent(domain.EventTypeCreated, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return fruit, nil
+}
+
+func (s *Service) Update(ctx context.Context, id int, name string) (*models.Fruit, error) {
+	var fruit *models.Fruit
+	err := s.withTransaction(ctx, func(txCtx context.Context) error {
+		var err error
+		fruit, err = s.repository.GetFruitByID(txCtx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get fruit by id: %w", err)
+		}
+		fruit.Name = name
+		err = s.repository.UpdateFruit(txCtx, fruit)
+		if err != nil {
+			return fmt.Errorf("failed to update fruit: %w", err)
+		}
+		err = s.sendEvent(domain.EventTypeUpdated, fruit)
 		if err != nil {
 			return fmt.Errorf("failed to send event: %w", err)
 		}
@@ -139,31 +169,6 @@ func (s *Service) Delete(ctx context.Context, id int) error {
 		}
 		return nil
 	})
-}
-
-func (s *Service) Update(ctx context.Context, id int, req *domain.UpdateFruitRequest) (*models.Fruit, error) {
-	var fruit *models.Fruit
-	err := s.withTransaction(ctx, func(txCtx context.Context) error {
-		var err error
-		fruit, err = s.repository.GetFruitByID(txCtx, id)
-		if err != nil {
-			return fmt.Errorf("failed to get fruit by id: %w", err)
-		}
-		fruit.Name = req.Name
-		err = s.repository.UpdateFruit(txCtx, fruit)
-		if err != nil {
-			return fmt.Errorf("failed to update fruit: %w", err)
-		}
-		err = s.sendEvent(domain.EventTypeUpdated, fruit)
-		if err != nil {
-			return fmt.Errorf("failed to send event: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return fruit, nil
 }
 
 func (s *Service) sendEvent(eventType int, payload any) error {

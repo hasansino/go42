@@ -16,5 +16,9 @@ This document is a repository of conventions and rules used by this project.
 ## Golang
 
 * import order
+* panic recovery
+* observability (tracing,tracing,metrics)
+* protocol 
+* api versioning 
 
 ## Code Review

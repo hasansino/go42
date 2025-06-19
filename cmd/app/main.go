@@ -49,8 +49,8 @@ import (
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
 	"github.com/hasansino/go42/internal/example"
-	exampleGrpcProvider "github.com/hasansino/go42/internal/example/provider/grpc"
-	exampleHttpProvider "github.com/hasansino/go42/internal/example/provider/http"
+	exampleGrpcProviderV1 "github.com/hasansino/go42/internal/example/provider/grpc/v1"
+	exampleHttpProviderV1 "github.com/hasansino/go42/internal/example/provider/http/v1"
 	exampleGormRepository "github.com/hasansino/go42/internal/example/repository/gorm"
 	"github.com/hasansino/go42/internal/metrics"
 	"github.com/hasansino/go42/internal/metrics/observers"
@@ -338,11 +338,11 @@ func main() {
 		)
 
 		// http server
-		exampleHttp := exampleHttpProvider.New(exampleService)
+		exampleHttp := exampleHttpProviderV1.New(exampleService)
 		httpServer.RegisterV1(exampleHttp)
 
 		// grpc server
-		exampleGrpc := exampleGrpcProvider.New(exampleService)
+		exampleGrpc := exampleGrpcProviderV1.New(exampleService)
 		grpcServer.Register(exampleGrpc)
 
 		// event consumer

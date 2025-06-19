@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 const (
-	defaultHttpServerAddress = "http://localhost:8080/api/v1"
+	defaultHttpServerAddress = "http://localhost:8080"
 	defaultGrpcServerAddress = "localhost:50051"
 )
 
@@ -26,11 +27,11 @@ var (
 func init() {
 	value, found := os.LookupEnv(httpServerAddressEnvVarName)
 	if found {
-		customHttpServerAddress = value
+		customHttpServerAddress = strings.TrimRight(value, "/")
 	}
 	value, found = os.LookupEnv(grpcServerAddressEnvVarName)
 	if found {
-		customGrpcServerAddress = value
+		customGrpcServerAddress = strings.TrimRight(value, "/")
 	}
 }
 

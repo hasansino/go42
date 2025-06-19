@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	wkafka "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
@@ -17,6 +18,7 @@ type Kafka struct {
 	logger     *slog.Logger
 	publisher  *wkafka.Publisher
 	subscriber *wkafka.Subscriber
+	subwg      sync.WaitGroup
 }
 
 func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
@@ -78,6 +80,7 @@ func (k *Kafka) Subscribe(
 	if err != nil {
 		return err
 	}
+	k.subwg.Add(1)
 	go func() {
 		for msg := range messages {
 			err := handler(ctx, msg.Payload)
@@ -87,6 +90,7 @@ func (k *Kafka) Subscribe(
 				msg.Ack()
 			}
 		}
+		k.subwg.Done()
 	}()
 	return nil
 }
@@ -94,12 +98,15 @@ func (k *Kafka) Subscribe(
 func (k *Kafka) Shutdown(ctx context.Context) error {
 	done := make(chan error)
 	go func() {
+		var errs []error
 		if err := k.publisher.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("publisher close: %w", err))
 		}
 		if err := k.subscriber.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
+		k.subwg.Wait()
+		done <- errors.Join(errs...)
 	}()
 	select {
 	case <-ctx.Done():

@@ -1,12 +1,16 @@
 syntax = "proto3";
 
-package grpc;
+package example.v1;
 
-option go_package = "github.com/hasansino/go42/internal/example/provider/grpc";
+option go_package = "github.com/hasansino/go42/api/example/v1";
 
 message Fruit {
   int64 id = 1;
   string name = 2;
+}
+
+message GetFruitResponse {
+  Fruit fruit = 1;
 }
 
 message ListFruitsRequest {
@@ -49,7 +53,7 @@ message DeleteFruitResponse {
 
 service ExampleService {
   rpc ListFruits(ListFruitsRequest) returns (ListFruitsResponse);
-  rpc GetFruit(GetFruitRequest) returns (Fruit);
+  rpc GetFruit(GetFruitRequest) returns (GetFruitResponse);
   rpc CreateFruit(CreateFruitRequest) returns (CreateFruitResponse);
   rpc UpdateFruit(UpdateFruitRequest) returns (UpdateFruitResponse);
   rpc DeleteFruit(DeleteFruitRequest) returns (DeleteFruitResponse);

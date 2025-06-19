@@ -3,7 +3,7 @@
 import grpc from 'k6/net/grpc';
 import { check, group } from 'k6';
 import { Counter, Rate } from 'k6/metrics';
-import * as helpers from '../helpers.js';
+import * as helpers from '../../helpers.js';
 
 const successRate = new Rate('success_rate');
 const getFruitsErrors = new Counter('get_fruits_errors');
@@ -15,7 +15,7 @@ const deleteFruitErrors = new Counter('delete_fruit_errors');
 const ADDR = helpers.GRPCServerAddress();
 
 const client = new grpc.Client();
-client.load(['../../..'], './internal/example/provider/grpc/example.proto');
+client.load(['../../../..'], './api/proto/example/v1/example.proto');
 
 export const options = {
     scenarios: {
@@ -30,9 +30,9 @@ export const options = {
         },
         get_operations: {
             executor: 'constant-arrival-rate',
-            rate: 500,
-            timeUnit: '1m',
-            duration: '1m',
+            rate: 10,
+            timeUnit: '1s',
+            duration: '60s',
             preAllocatedVUs: 10,
             maxVUs: 25,
         },
@@ -93,7 +93,7 @@ function createFruit(client) {
     const data = {
         name: helpers.GenerateRandomString()
     };
-    const response = client.invoke('grpc.ExampleService/CreateFruit', data, {
+    const response = client.invoke('example.v1.ExampleService/CreateFruit', data, {
         tags: { rpc: 'CreateFruit' }
     });
     const success = check(response, {
@@ -115,7 +115,7 @@ function updateFruit(client, id) {
         id: id,
         name: helpers.GenerateRandomString()
     };
-    const response = client.invoke('grpc.ExampleService/UpdateFruit', data, {
+    const response = client.invoke('example.v1.ExampleService/UpdateFruit', data, {
         tags: { rpc: 'UpdateFruit' }
     });
     const success = check(response, {
@@ -133,7 +133,7 @@ function deleteFruit(client, id) {
     const data = {
         id: id
     };
-    const response = client.invoke('grpc.ExampleService/DeleteFruit', data, {
+    const response = client.invoke('example.v1.ExampleService/DeleteFruit', data, {
         tags: { rpc: 'DeleteFruit' }
     });
     const success = check(response, {
@@ -151,12 +151,12 @@ function getFruitById(client, id) {
     const data = {
         id: id
     };
-    const response = client.invoke('grpc.ExampleService/GetFruit', data, {
+    const response = client.invoke('example.v1.ExampleService/GetFruit', data, {
         tags: { rpc: 'GetFruit' }
     });
     const success = check(response, {
         'get fruit status is valid': (r) => r.status === grpc.StatusOK || r.status === grpc.StatusNotFound,
-        'get fruit response has name': (r) => r.status === grpc.StatusNotFound || (r && r.message && r.message.name),
+        'get fruit response has name': (r) => r.status === grpc.StatusNotFound || (r && r.message && r.message.fruit.name),
     });
     successRate.add(success);
     if (!success) {
@@ -170,7 +170,7 @@ function getFruits(client, limit = 10, offset = 0) {
         limit: limit,
         offset: offset
     };
-    const response = client.invoke('grpc.ExampleService/ListFruits', data, {
+    const response = client.invoke('example.v1.ExampleService/ListFruits', data, {
         tags: { rpc: 'ListFruits' }
     });
     const success = check(response, {

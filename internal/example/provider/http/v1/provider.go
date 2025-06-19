@@ -1,4 +1,4 @@
-package http
+package provider
 
 import (
 	"net/http"
@@ -60,8 +60,12 @@ func (p *Provider) fruitByID(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+type CreateFruitRequest struct {
+	Name string `json:"name" v:"required,min=3,max=20"`
+}
+
 func (p *Provider) createFruit(ctx echo.Context) error {
-	req := new(domain.CreateFruitRequest)
+	req := new(CreateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -76,12 +80,46 @@ func (p *Provider) createFruit(ctx echo.Context) error {
 		)
 	}
 
-	r, err := p.service.Create(ctx.Request().Context(), req)
+	r, err := p.service.Create(ctx.Request().Context(), req.Name)
 	if err != nil {
 		return p.processError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusCreated, r)
+}
+
+type UpdateFruitRequest struct {
+	Name string `json:"name" v:"required,min=3,max=20"`
+}
+
+func (p *Provider) updateFruit(ctx echo.Context) error {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	req := new(UpdateFruitRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := tools.ValidateStruct(req)
+	if vErrs != nil {
+		return httpAPI.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
+		)
+	}
+
+	r, err := p.service.Update(ctx.Request().Context(), id, req.Name)
+	if err != nil {
+		return p.processError(ctx, err)
+	}
+
+	return ctx.JSON(http.StatusOK, r)
 }
 
 func (p *Provider) deleteFruit(ctx echo.Context) error {
@@ -94,34 +132,4 @@ func (p *Provider) deleteFruit(ctx echo.Context) error {
 		return p.processError(ctx, err)
 	}
 	return ctx.NoContent(http.StatusOK)
-}
-
-func (p *Provider) updateFruit(ctx echo.Context) error {
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		return httpAPI.SendJSONError(ctx,
-			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	}
-
-	req := new(domain.UpdateFruitRequest)
-
-	if err := ctx.Bind(req); err != nil {
-		return httpAPI.SendJSONError(ctx,
-			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	}
-
-	vErrs := tools.ValidateStruct(req)
-	if vErrs != nil {
-		return httpAPI.SendJSONError(
-			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
-			httpAPI.WithValidationErrors(vErrs...),
-		)
-	}
-
-	r, err := p.service.Update(ctx.Request().Context(), id, req)
-	if err != nil {
-		return p.processError(ctx, err)
-	}
-
-	return ctx.JSON(http.StatusOK, r)
 }

@@ -67,7 +67,7 @@ RUN addgroup -g 1000 appuser && \
     adduser -u 1000 -G appuser -s /bin/sh -D appuser
 
 COPY --from=builder --chown=appuser:appuser /tmp/build/app /usr/local/bin/
-COPY --chown=appuser:appuser openapi /usr/share/www/api
+COPY --chown=appuser:appuser api/doc/http /usr/share/www/api
 COPY --chown=appuser:appuser static /usr/share/www
 COPY --chown=appuser:appuser migrate /migrate
 COPY --chown=appuser:appuser .env.example /

@@ -1,0 +1,14 @@
+version: v2
+
+modules:
+  - path: api/proto
+
+lint:
+  use:
+    - STANDARD
+  ignore:
+    - proto/google/type/datetime.proto
+
+breaking:
+  use:
+    - FILE

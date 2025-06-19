@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	wnats "github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
@@ -22,6 +23,7 @@ type NATS struct {
 	logger     *slog.Logger
 	publisher  *wnats.Publisher
 	subscriber *wnats.Subscriber
+	subwg      sync.WaitGroup
 }
 
 func New(dsn string, opts ...Option) (*NATS, error) {
@@ -79,6 +81,7 @@ func (n *NATS) Subscribe(
 	if err != nil {
 		return err
 	}
+	n.subwg.Add(1)
 	go func() {
 		for msg := range messages {
 			err := handler(ctx, msg.Payload)
@@ -88,6 +91,7 @@ func (n *NATS) Subscribe(
 				msg.Ack()
 			}
 		}
+		n.subwg.Done()
 	}()
 	return nil
 }
@@ -95,12 +99,15 @@ func (n *NATS) Subscribe(
 func (n *NATS) Shutdown(ctx context.Context) error {
 	done := make(chan error)
 	go func() {
+		var errs []error
 		if err := n.publisher.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("publisher close: %w", err))
 		}
 		if err := n.subscriber.Close(); err != nil {
-			done <- err
+			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
+		n.subwg.Wait()
+		done <- errors.Join(errs...)
 	}()
 	select {
 	case <-ctx.Done():
