@@ -1,7 +1,5 @@
-.idea /
+.idea
 .DS_Store
 __debug*
 bin/
 .env
-
-**/.claude/settings.local.json

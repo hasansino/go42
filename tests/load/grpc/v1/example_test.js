@@ -15,7 +15,7 @@ const deleteFruitErrors = new Counter('delete_fruit_errors');
 const ADDR = helpers.GRPCServerAddress();
 
 const client = new grpc.Client();
-client.load(['../../../..'], './api/proto/example/v1/example.proto');
+client.load(['../../../../api/proto'], 'example/v1/example.proto');
 
 export const options = {
     scenarios: {

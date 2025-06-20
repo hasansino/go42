@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Wrapper struct {
+type Postgres struct {
 	logger *slog.Logger
 	gormDB *gorm.DB
 	sqlDB  *sql.DB
@@ -26,8 +26,8 @@ type Wrapper struct {
 	queryLogging bool
 }
 
-func New(dsn string, opts ...Option) (*Wrapper, error) {
-	w := new(Wrapper)
+func New(dsn string, opts ...Option) (*Postgres, error) {
+	w := new(Postgres)
 
 	for _, opt := range opts {
 		opt(w)
@@ -77,7 +77,7 @@ func New(dsn string, opts ...Option) (*Wrapper, error) {
 	return w, nil
 }
 
-func (w *Wrapper) Shutdown(ctx context.Context) error {
+func (w *Postgres) Shutdown(ctx context.Context) error {
 	doneChan := make(chan error)
 	go func() {
 		doneChan <- w.sqlDB.Close()
@@ -90,19 +90,19 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Wrapper) GormDB() *gorm.DB {
-	return w.gormDB
-}
-
-func (w *Wrapper) SqlDB() *sql.DB {
+func (w *Postgres) DB() *sql.DB {
 	return w.sqlDB
 }
 
-func (w *Wrapper) IsNotFoundError(err error) bool {
+func (w *Postgres) GormDB() *gorm.DB {
+	return w.gormDB
+}
+
+func (w *Postgres) IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-func (w *Wrapper) IsDuplicateKeyError(err error) bool {
+func (w *Postgres) IsDuplicateKeyError(err error) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		return pgErr.Code == "23505"

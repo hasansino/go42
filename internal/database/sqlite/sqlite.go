@@ -12,7 +12,7 @@ import (
 	sqlitelib "modernc.org/sqlite/lib"
 )
 
-type Wrapper struct {
+type Sqlite struct {
 	logger *slog.Logger
 	gormDB *gorm.DB
 	sqlDB  *sql.DB
@@ -27,8 +27,8 @@ type ConnectionOption struct {
 	Value string
 }
 
-func New(dbPath string, opts ...Option) (*Wrapper, error) {
-	w := new(Wrapper)
+func New(dbPath string, opts ...Option) (*Sqlite, error) {
+	w := new(Sqlite)
 
 	for _, opt := range opts {
 		opt(w)
@@ -69,10 +69,10 @@ func New(dbPath string, opts ...Option) (*Wrapper, error) {
 
 	sqlDB.SetMaxOpenConns(1)
 
-	return &Wrapper{gormDB: gormDB, sqlDB: sqlDB}, nil
+	return &Sqlite{gormDB: gormDB, sqlDB: sqlDB}, nil
 }
 
-func (w *Wrapper) Shutdown(ctx context.Context) error {
+func (w *Sqlite) Shutdown(ctx context.Context) error {
 	doneChan := make(chan error)
 	go func() {
 		doneChan <- w.sqlDB.Close()
@@ -85,12 +85,12 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Wrapper) GormDB() *gorm.DB {
-	return w.gormDB
+func (w *Sqlite) DB() *sql.DB {
+	return w.sqlDB
 }
 
-func (w *Wrapper) SqlDB() *sql.DB {
-	return w.sqlDB
+func (w *Sqlite) GormDB() *gorm.DB {
+	return w.gormDB
 }
 
 func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
@@ -107,11 +107,11 @@ func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
 	return dbPath
 }
 
-func (w *Wrapper) IsNotFoundError(err error) bool {
+func (w *Sqlite) IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
-func (w *Wrapper) IsDuplicateKeyError(err error) bool {
+func (w *Sqlite) IsDuplicateKeyError(err error) bool {
 	sqliteErr, ok := err.(interface{ Code() int })
 	if ok {
 		return sqliteErr.Code() == sqlitelib.SQLITE_CONSTRAINT_UNIQUE

@@ -1,12 +1,12 @@
 -- +goose Up
-create table example_events
+create table example_fruits_events
 (
     id         serial
-        constraint example_events_pk
+        constraint example_fruits_events_pk
             primary key,
-    created_at timestamptz default now() not null,
-    data      varchar(255)               not null
+    created_at timestamp default now() not null,
+    data      varchar(255)             not null
 );
 
 -- +goose Down
-drop table example_events;
+drop table example_fruits_events;

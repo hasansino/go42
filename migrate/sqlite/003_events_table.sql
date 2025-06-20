@@ -1,5 +1,5 @@
 -- +goose Up
-create table example_events
+create table example_fruits_events
 (
     id         integer primary key autoincrement,
     created_at datetime default (datetime('now')) not null,
@@ -7,4 +7,4 @@ create table example_events
 );
 
 -- +goose Down
-drop table example_events;
+drop table example_fruits_events;

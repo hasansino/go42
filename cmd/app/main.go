@@ -39,6 +39,7 @@ import (
 	"github.com/hasansino/go42/internal/cache/miniredis"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
+	"github.com/hasansino/go42/internal/database"
 	"github.com/hasansino/go42/internal/database/pgsql"
 	pgsqlMigrate "github.com/hasansino/go42/internal/database/pgsql/migrate"
 	"github.com/hasansino/go42/internal/database/sqlite"
@@ -51,16 +52,10 @@ import (
 	"github.com/hasansino/go42/internal/example"
 	exampleGrpcProviderV1 "github.com/hasansino/go42/internal/example/provider/grpc/v1"
 	exampleHttpProviderV1 "github.com/hasansino/go42/internal/example/provider/http/v1"
-	exampleGormRepository "github.com/hasansino/go42/internal/example/repository/gorm"
+	exampleFruitsRepository "github.com/hasansino/go42/internal/example/repository"
 	"github.com/hasansino/go42/internal/metrics"
 	"github.com/hasansino/go42/internal/metrics/observers"
 	metricsprovider "github.com/hasansino/go42/internal/metrics/providers/http"
-
-	// indirectly imported by `google.golang.org/grpc` @ version v4.0.4
-	// which is reported by nancy having CVE-2025-27144
-	// to avoid `go mod tidy` removing newer version, we are making blank import
-	// @try `go mod graph | grep github.com/go-jose/go-jose/v4`
-	_ "github.com/go-jose/go-jose/v4"
 )
 
 // These variables are passed as arguments to compiler.
@@ -126,11 +121,8 @@ func main() {
 
 	// database engine
 	var (
-		dbCloser ShutMeDown
-		// declare required repositories
-		exampleRepository example.Repository
+		dbEngine database.Database
 	)
-
 	switch cfg.Database.Engine {
 	case "sqlite":
 		// run database migrations
@@ -147,10 +139,9 @@ func main() {
 
 		// connect to database
 		slog.Info("Connecting to sqlite...")
-		sqliteConn, sqliteConnErr := sqlite.New(
+		var sqliteConnErr error
+		dbEngine, sqliteConnErr = sqlite.New(
 			cfg.Database.Sqlite.SqliteFile,
-			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
-			sqlite.WithQueryLogging(cfg.Database.LogQueries),
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
 		)
@@ -159,21 +150,6 @@ func main() {
 		}
 
 		slog.Info("connected to sqlite")
-
-		dbCloser = sqliteConn
-
-		// database metrics
-		dbObserver, err := observers.NewDatabaseObserver(
-			sqliteConn.SqlDB(),
-			observers.WithName("gorm"),
-		)
-		if err != nil {
-			log.Fatalf("failed to initialize database metrics: %v\n", err)
-		}
-		go dbObserver.Observe(ctx)
-
-		// initialize repositories
-		exampleRepository = exampleGormRepository.New(sqliteConn.GormDB(), sqliteConn)
 	case "pgsql":
 		// run database migrations
 		slog.Info("running database migrations...")
@@ -187,7 +163,8 @@ func main() {
 
 		// connect to database
 		slog.Info("connecting to PostgreSQL...")
-		pgsqlConn, pgsqlConnErr := pgsql.New(
+		var pgsqlConnErr error
+		dbEngine, pgsqlConnErr = pgsql.New(
 			cfg.Database.Pgsql.DSN(),
 			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
 			pgsql.WithQueryLogging(cfg.Database.LogQueries),
@@ -201,22 +178,19 @@ func main() {
 		}
 
 		slog.Info("connected to pgsql")
-
-		dbCloser = pgsqlConn
-
-		// database metrics
-		dbObserver, err := observers.NewDatabaseObserver(
-			pgsqlConn.SqlDB(),
-			observers.WithName("gorm"),
-		)
-		if err != nil {
-			log.Fatalf("failed to initialize database metrics: %v\n", err)
-		}
-		go dbObserver.Observe(ctx)
-
-		// initialize repositories
-		exampleRepository = exampleGormRepository.New(pgsqlConn.GormDB(), pgsqlConn)
+	default:
+		log.Fatalf("empty or not supported database engine: %v\n", cfg.Database.Engine)
 	}
+
+	// database metrics
+	dbObserver, err := observers.NewDatabaseObserver(
+		dbEngine.DB(),
+		observers.WithName("gorm"),
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize database metrics: %v\n", err)
+	}
+	go dbObserver.Observe(ctx)
 
 	// cache engine
 	var (
@@ -267,6 +241,8 @@ func main() {
 		}
 		log.Printf("memcached cache initialized\n")
 	}
+
+	// @todo cache metrics
 
 	// event engine
 	var (
@@ -323,6 +299,8 @@ func main() {
 		log.Printf("kafka event engine initialized\n")
 	}
 
+	// @todo events metrics
+
 	// ---
 
 	// service layer
@@ -330,6 +308,7 @@ func main() {
 	{
 		// example service
 		exampleLogger := slog.Default().With(slog.String("component", "example"))
+		exampleRepository := exampleFruitsRepository.New(dbEngine)
 		exampleService := example.NewService(
 			exampleRepository,
 			eventsEngine,
@@ -376,7 +355,7 @@ func main() {
 		cancel,
 		etcdCloser, pprofCloser,
 		httpServer, grpcServer, eventsEngine,
-		cacheEngine, dbCloser, tracingCloser,
+		cacheEngine, dbEngine, tracingCloser,
 	)
 }
 

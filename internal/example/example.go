@@ -34,6 +34,7 @@ type Repository interface {
 	Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error)
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
+	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 	ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error)
 	GetFruitByID(ctx context.Context, id int) (*models.Fruit, error)
 	CreateFruit(ctx context.Context, fruit *models.Fruit) error
@@ -62,43 +63,6 @@ func NewService(repository Repository, publisher Publisher, opts ...Option) *Ser
 	return svc
 }
 
-// withTransaction abstracts the transaction management pattern
-func (s *Service) withTransaction(
-	ctx context.Context,
-	fn func(txCtx context.Context) error,
-) error {
-	txCtx, err := s.repository.Begin(ctx, sql.LevelDefault)
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			if rbErr := s.repository.Rollback(txCtx); rbErr != nil {
-				s.logger.Error("panic: rollback failed", slog.Any("err", rbErr))
-			}
-			panic(r)
-		}
-	}()
-
-	if err := fn(txCtx); err != nil {
-		if rbErr := s.repository.Rollback(txCtx); rbErr != nil {
-			return fmt.Errorf("error executing transaction (rollback failed: %v): %w", rbErr, err)
-		}
-		return err
-	}
-
-	if err := s.repository.Commit(txCtx); err != nil {
-		rbErr := s.repository.Rollback(txCtx)
-		if rbErr != nil {
-			return fmt.Errorf("error commiting transaction (rollback failed: %v): %w", rbErr, err)
-		}
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
-}
-
 func (s *Service) Fruits(ctx context.Context, limit int, offset int) ([]*models.Fruit, error) {
 	return s.repository.ListFruits(ctx, limit, offset)
 }
@@ -109,7 +73,7 @@ func (s *Service) FruitByID(ctx context.Context, id int) (*models.Fruit, error) 
 
 func (s *Service) Create(ctx context.Context, name string) (*models.Fruit, error) {
 	fruit := new(models.Fruit)
-	err := s.withTransaction(ctx, func(txCtx context.Context) error {
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		fruit.Name = name
 		err := s.repository.CreateFruit(txCtx, fruit)
 		if err != nil {
@@ -129,7 +93,7 @@ func (s *Service) Create(ctx context.Context, name string) (*models.Fruit, error
 
 func (s *Service) Update(ctx context.Context, id int, name string) (*models.Fruit, error) {
 	var fruit *models.Fruit
-	err := s.withTransaction(ctx, func(txCtx context.Context) error {
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		var err error
 		fruit, err = s.repository.GetFruitByID(txCtx, id)
 		if err != nil {
@@ -153,7 +117,7 @@ func (s *Service) Update(ctx context.Context, id int, name string) (*models.Frui
 }
 
 func (s *Service) Delete(ctx context.Context, id int) error {
-	return s.withTransaction(ctx, func(txCtx context.Context) error {
+	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		var err error
 		fruit, err := s.repository.GetFruitByID(txCtx, id)
 		if err != nil {
@@ -198,7 +162,7 @@ func (s *Service) handleEvent(ctx context.Context, eventData []byte) error {
 	}
 
 	dbEvent := new(models.Event)
-	return s.withTransaction(ctx, func(txCtx context.Context) error {
+	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		dbEvent.Data = string(eventData)
 		err := s.repository.SaveEvent(txCtx, dbEvent)
 		if err != nil {

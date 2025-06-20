@@ -25,13 +25,10 @@ Golang project operation framework.
 
 + circuit breaker (https://github.com/sony/gobreaker) + retry
 + https://github.com/maypok86/otter - https://s3fifo.com/
-+ https://github.com/ent/ent
 + https://github.com/stoplightio/prism
 + https://github.com/daveshanley/vacuum
 + https://github.com/bytedance/sonic
-+ https://github.com/Masterminds/squirrel
 + https://github.com/agiledragon/gomonkey
-+ https://github.com/asyncapi/spec
 
 ### <
 
@@ -43,20 +40,11 @@ Golang project operation framework.
   * https://proxy.golang.org
   * https://github.com/gomods/athens
 
-### <<
-
-+ sketch README.md and choose doc generator
-  * https://docusaurus.io/
-+ draw logo sketches
-
 ### <<<
 
 + replace Make with some other build tool
 + multi-repository example with transactions
-+ abstract withTransaction()
 + listFruits() | http/grpc | limit / offset - should validation be also in repository?
-+ domain models should not depend on gorm or json(?)
-+ experiment with claude code memory files
 + external rate limit (api gateway) + internal rate limit
 + aerospike cache
 + https://buf.build/docs/protovalidate/quickstart/#validate-api-requests

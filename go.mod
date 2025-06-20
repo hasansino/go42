@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1
+	buf.build/go/protovalidate v0.13.1
 	github.com/IBM/sarama v1.45.2
 	github.com/KimMachineGun/automemlimit v0.7.2
 	github.com/ThreeDotsLabs/watermill v1.4.6
@@ -17,7 +18,6 @@ require (
 	github.com/getsentry/sentry-go v0.33.0
 	github.com/getsentry/sentry-go/slog v0.33.0
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
 	github.com/hasansino/cfg2env v1.3.1
@@ -50,7 +50,6 @@ require (
 )
 
 require (
-	buf.build/go/protovalidate v0.13.1 // indirect
 	cel.dev/expr v0.23.1 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect

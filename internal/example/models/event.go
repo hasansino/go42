@@ -5,11 +5,11 @@ import (
 )
 
 type Event struct {
-	ID        int       `json:"id"   gorm:"primarykey"`
-	CreatedAt time.Time `json:"-"`
-	Data      string    `json:"data"`
+	ID        int       `json:"id"   db:"id"`
+	CreatedAt time.Time `json:"-"    db:"created_at"`
+	Data      string    `json:"data" db:"data"`
 }
 
 func (m *Event) TableName() string {
-	return "example_events"
+	return "example_fruits_events"
 }

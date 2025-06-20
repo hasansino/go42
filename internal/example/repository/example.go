@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"gorm.io/gorm"
 
@@ -12,40 +13,38 @@ import (
 	"github.com/hasansino/go42/internal/example/models"
 )
 
-//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
-
-type sqlCoreAccessor interface {
+type sqlAccessor interface {
+	GormDB() *gorm.DB
 	IsNotFoundError(err error) bool
 	IsDuplicateKeyError(err error) bool
 }
 
 type Repository struct {
-	db      *gorm.DB
-	sqlCore sqlCoreAccessor
+	sql sqlAccessor
 }
 
-func New(db *gorm.DB, sqlCore sqlCoreAccessor) *Repository {
-	return &Repository{db: db, sqlCore: sqlCore}
+func New(sqlCore sqlAccessor) *Repository {
+	return &Repository{sql: sqlCore}
 }
 
-type txKey struct{}
+type ctxKeyTx struct{}
 
-func (r *Repository) getTxKey() txKey {
-	return txKey{}
+func (r *Repository) getTxKey() ctxKeyTx {
+	return ctxKeyTx{}
 }
 
 func (r *Repository) getTx(ctx context.Context) *gorm.DB {
 	if tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return tx
 	}
-	return r.db.WithContext(ctx)
+	return r.sql.GormDB().WithContext(ctx)
 }
 
 func (r *Repository) Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error) {
 	if _, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return ctx, errors.New("transaction already exists in context")
 	}
-	tx := r.db.WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLvl})
+	tx := r.sql.GormDB().WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLvl})
 	if tx.Error != nil {
 		return ctx, fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
@@ -74,6 +73,41 @@ func (r *Repository) Rollback(ctx context.Context) error {
 	return nil
 }
 
+func (r *Repository) WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error {
+	txCtx, err := r.Begin(ctx, sql.LevelDefault)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if rec := recover(); rec != nil {
+			if rbErr := r.Rollback(txCtx); rbErr != nil {
+				slog.Default().
+					With(slog.String("component", "db-repository")).
+					Error("panic: rollback failed", slog.Any("err", rbErr))
+			}
+			panic(rec)
+		}
+	}()
+
+	if err := fn(txCtx); err != nil {
+		if rbErr := r.Rollback(txCtx); rbErr != nil {
+			return fmt.Errorf("error executing transaction (rollback failed: %v): %w", rbErr, err)
+		}
+		return err
+	}
+
+	if err := r.Commit(txCtx); err != nil {
+		rbErr := r.Rollback(txCtx)
+		if rbErr != nil {
+			return fmt.Errorf("error commiting transaction (rollback failed: %v): %w", rbErr, err)
+		}
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
 	var fruits []*models.Fruit
 	result := r.getTx(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
@@ -87,7 +121,7 @@ func (r *Repository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, e
 	var fruit models.Fruit
 	result := r.getTx(ctx).First(&fruit, id)
 	if result.Error != nil {
-		if r.sqlCore.IsNotFoundError(result.Error) {
+		if r.sql.IsNotFoundError(result.Error) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("error fetching fruit by ID: %w", result.Error)
@@ -98,7 +132,7 @@ func (r *Repository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, e
 func (r *Repository) CreateFruit(ctx context.Context, fruit *models.Fruit) error {
 	err := r.getTx(ctx).Create(fruit).Error
 	if err != nil {
-		if r.sqlCore.IsDuplicateKeyError(err) {
+		if r.sql.IsDuplicateKeyError(err) {
 			return domain.ErrAlreadyExists
 		}
 		return fmt.Errorf("error creating fruit: %w", err)

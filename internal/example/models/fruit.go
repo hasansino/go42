@@ -7,11 +7,11 @@ import (
 )
 
 type Fruit struct {
-	ID        int            `json:"id"   gorm:"primarykey"`
-	CreatedAt time.Time      `json:"-"`
-	UpdatedAt time.Time      `json:"-"`
-	DeletedAt gorm.DeletedAt `json:"-"    gorm:"index"`
-	Name      string         `json:"name"`
+	ID        int            `json:"id"   db:"id"`
+	CreatedAt time.Time      `json:"-"    db:"created_at"`
+	UpdatedAt time.Time      `json:"-"    db:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-"    db:"deleted_at"`
+	Name      string         `json:"name" db:"name"`
 }
 
 func (m *Fruit) TableName() string {

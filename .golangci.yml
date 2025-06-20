@@ -48,6 +48,10 @@ linters:
     - asasalint
 
   settings:
+    errcheck:
+      exclude-functions:
+        # ignore lines like `defer rows.Close()`
+        - (*database/sql.Rows).Close
     sloglint:
       attr-only: true
       key-naming-case: snake

@@ -99,9 +99,9 @@ lint-proto:
 
 ## generate | generate code for all modules
 # Dependencies:
-#   * brew install bufbuild/buf/buf
+#   * brew install buf
 generate:
-	@buf generate
+	@buf generate && go generate ./...
 
 ## generate-dep-graph | generate dependency graph
 # Dependencies:

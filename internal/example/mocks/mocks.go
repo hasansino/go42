@@ -11,6 +11,7 @@ package mocks
 
 import (
 	context "context"
+	sql "database/sql"
 	reflect "reflect"
 	time "time"
 
@@ -186,18 +187,18 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 }
 
 // Begin mocks base method.
-func (m *MockRepository) Begin(ctx context.Context) (context.Context, error) {
+func (m *MockRepository) Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Begin", ctx)
+	ret := m.ctrl.Call(m, "Begin", ctx, isolationLvl)
 	ret0, _ := ret[0].(context.Context)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Begin indicates an expected call of Begin.
-func (mr *MockRepositoryMockRecorder) Begin(ctx any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Begin(ctx, isolationLvl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockRepository)(nil).Begin), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockRepository)(nil).Begin), ctx, isolationLvl)
 }
 
 // Commit mocks base method.
@@ -312,4 +313,18 @@ func (m *MockRepository) UpdateFruit(ctx context.Context, fruit *models.Fruit) e
 func (mr *MockRepositoryMockRecorder) UpdateFruit(ctx, fruit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFruit", reflect.TypeOf((*MockRepository)(nil).UpdateFruit), ctx, fruit)
+}
+
+// WithTransaction mocks base method.
+func (m *MockRepository) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithTransaction", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithTransaction indicates an expected call of WithTransaction.
+func (mr *MockRepositoryMockRecorder) WithTransaction(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithTransaction", reflect.TypeOf((*MockRepository)(nil).WithTransaction), ctx, fn)
 }

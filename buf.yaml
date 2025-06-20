@@ -1,8 +1,5 @@
 version: v2
 
-deps:
-  - buf.build/bufbuild/protovalidate:v0.13.3
-
 modules:
   - path: api/proto
 
@@ -11,6 +8,7 @@ lint:
     - STANDARD
   ignore:
     - proto/google/type/datetime.proto
+    - proto/buf/validate/validate.proto
 
 breaking:
   use:
