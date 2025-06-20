@@ -2,6 +2,11 @@
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+## setup | install dependencies
+# Prerequisites: brew, go
+setup:
+	@time
+
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
 test-unit:
@@ -96,6 +101,12 @@ lint-docker:
 #   * brew install bufbuild/buf/buf
 lint-proto:
 	@buf lint
+
+## lint-openapi | lint openapi files
+# Dependencies:
+#   * brew install daveshanley/vacuum/vacuum
+lint-openapi:
+	@vacuum lint -r vacuum.ruleset.yaml -d api/doc/http/**/*.yml
 
 ## generate | generate code for all modules
 # Dependencies:

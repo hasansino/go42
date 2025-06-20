@@ -1,0 +1,46 @@
+name: openapi-lint
+
+# OpenAPI linter.
+# @see https://quobix.com/vacuum/
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  openapi-lint:
+    name: openapi-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pb33f/vacuum-action@v2
+        with:
+          openapi_path: api/doc/http/**/*.yml
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          ruleset: 'vacuum.ruleset.yaml'

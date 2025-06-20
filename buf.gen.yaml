@@ -10,10 +10,10 @@ managed:
 
 plugins:
   - remote: buf.build/protocolbuffers/go
-    out: api/gen
+    out: api/gen/grpc
     opt: paths=source_relative
   - remote: buf.build/grpc/go:v1.5.1
-    out: api/gen
+    out: api/gen/grpc
     opt: paths=source_relative
 
 inputs:

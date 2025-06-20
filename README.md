@@ -25,8 +25,6 @@ Golang project operation framework.
 
 + circuit breaker (https://github.com/sony/gobreaker) + retry
 + https://github.com/maypok86/otter - https://s3fifo.com/
-+ https://github.com/stoplightio/prism
-+ https://github.com/daveshanley/vacuum
 + https://github.com/bytedance/sonic
 + https://github.com/agiledragon/gomonkey
 

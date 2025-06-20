@@ -56,10 +56,17 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+  openapi-lint:
+    # Prevent dependabot from starting this workflow.
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
+    uses: ./.github/workflows/110-openapi-lint.yml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
   # Stage 2: Unit tests
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yml
-    needs: [ golangci-lint, docker-lint, proto-lint ]
+    needs: [ golangci-lint, docker-lint, proto-lint, openapi-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true

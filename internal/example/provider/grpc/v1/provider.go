@@ -6,7 +6,7 @@ import (
 	"buf.build/go/protovalidate"
 	"google.golang.org/grpc"
 
-	pb "github.com/hasansino/go42/api/gen/example/v1"
+	pb "github.com/hasansino/go42/api/gen/grpc/example/v1"
 	"github.com/hasansino/go42/internal/example"
 	"github.com/hasansino/go42/internal/example/domain"
 )

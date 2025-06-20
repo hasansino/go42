@@ -4,6 +4,7 @@ This document is a repository of conventions and rules used by this project.
 
 ## Project Management
 
+* tooling versions
 * release process
 
 ## SVC
@@ -23,3 +24,7 @@ This document is a repository of conventions and rules used by this project.
 * api versioning 
 
 ## Code Review
+
+## Miscellaneous
+
+* yaml vs yml

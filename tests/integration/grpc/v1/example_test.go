@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/hasansino/go42/api/gen/example/v1"
+	pb "github.com/hasansino/go42/api/gen/grpc/example/v1"
 	"github.com/hasansino/go42/tests/integration"
 
 	. "github.com/onsi/ginkgo/v2"
