@@ -5,7 +5,11 @@ help: Makefile
 ## setup | install dependencies
 # Prerequisites: brew, go
 setup:
-	@time
+	@go mod tidy && go mod download && \
+	brew install golangci-lint hadolint buf daveshanley/vacuum/vacuum k6 && \
+	go install go.uber.org/mock/mockgen@latest && \
+	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest && \
+	go install github.com/go-delve/delve/cmd/dlv@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
@@ -33,7 +37,7 @@ run:
 	export $(shell grep -v '^#' .env | xargs) && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
 	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
-	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/api/doc/http && \
+	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/api/openapi && \
 	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
 ## run-docker | run application in docker container (linux environment)
@@ -48,7 +52,7 @@ run-docker:
 	--env-file .env \
 	--env DATABASE_MIGRATE_PATH=/app/migrate \
 	--env SERVER_HTTP_STATIC_ROOT=/app/static \
-	--env SERVER_HTTP_SWAGGER_ROOT=/app/api/doc/http \
+	--env SERVER_HTTP_SWAGGER_ROOT=/app/api/openapi \
 	-p "$${PPROF_LISTEN#:}:$${PPROF_LISTEN#:}" \
     -p "$${SERVER_HTTP_LISTEN#:}:$${SERVER_HTTP_LISTEN#:}" \
     -p "$${SERVER_GRPC_LISTEN#:}:$${SERVER_GRPC_LISTEN#:}" \
@@ -61,13 +65,13 @@ run-docker:
 
 ## debug | run application with delve debugger
 # Dependencies:
-#   * go install github.com/go-delve/delve@latest
+#   * go install github.com/go-delve/delve/cmd/dlv@latest
 debug:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
-	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
-	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/openapi && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
+	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
+	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/api/openapi && \
 	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2 -- ${@:2}
 
 ## build | build development version of binary
@@ -98,7 +102,7 @@ lint-docker:
 
 ## lint-proto | lint protobuf files
 # Dependencies:
-#   * brew install bufbuild/buf/buf
+#   * brew install buf
 lint-proto:
 	@buf lint
 
@@ -106,7 +110,7 @@ lint-proto:
 # Dependencies:
 #   * brew install daveshanley/vacuum/vacuum
 lint-openapi:
-	@vacuum lint -r vacuum.ruleset.yaml -d api/doc/http/**/*.yml
+	@vacuum lint -r vacuum.ruleset.yaml -d api/openapi/**/*.yml
 
 ## generate | generate code for all modules
 # Dependencies:
