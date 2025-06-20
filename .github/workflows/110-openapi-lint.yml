@@ -41,6 +41,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pb33f/vacuum-action@v2
         with:
-          openapi_path: api/openapi/openapi.yml
+          openapi_path: api/openapi/v1/openapi.yml
           github_token: ${{ secrets.GITHUB_TOKEN }}
           ruleset: 'vacuum.ruleset.yaml'
