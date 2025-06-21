@@ -184,11 +184,8 @@ func (db Database) FullMigratePath() string {
 }
 
 type Pgsql struct {
-	Host            string        `env:"DATABASE_PGSQL_HOST"               default:"localhost"`
-	Port            int           `env:"DATABASE_PGSQL_PORT"               default:"5432"`
-	User            string        `env:"DATABASE_PGSQL_USER"               default:"user"`
-	Password        string        `env:"DATABASE_PGSQL_PASSWORD"           default:"qwerty"`
-	Name            string        `env:"DATABASE_PGSQL_NAME"               default:"go42"`
+	Master          PgsqlMaster
+	Slave           PgsqlSlave
 	ConnMaxIdleTime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_LIFETIME"  default:"30m"`
 	MaxIdleConns    int           `env:"DATABASE_PGSQL_MAX_IDLE_CONNS"     default:"10"`
@@ -196,7 +193,30 @@ type Pgsql struct {
 	QueryTimeout    time.Duration `env:"DATABASE_PGSQL_QUERY_TIMEOUT"      default:"10s"`
 }
 
-func (db Pgsql) DSN() string {
+type PgsqlMaster struct {
+	Host     string `env:"DATABASE_PGSQL_MASTER_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_PGSQL_MASTER_PORT"     default:"5432"`
+	User     string `env:"DATABASE_PGSQL_MASTER_USER"     default:"user"`
+	Password string `env:"DATABASE_PGSQL_MASTER_PASSWORD" default:"qwerty"`
+	Name     string `env:"DATABASE_PGSQL_MASTER_NAME"     default:"go42"`
+}
+
+func (db PgsqlMaster) DSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s",
+		db.User, db.Password, db.Host, db.Port, db.Name,
+	)
+}
+
+type PgsqlSlave struct {
+	Host     string `env:"DATABASE_PGSQL_SLAVE_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_PGSQL_SLAVE_PORT"     default:"5432"`
+	User     string `env:"DATABASE_PGSQL_SLAVE_USER"     default:"user"`
+	Password string `env:"DATABASE_PGSQL_SLAVE_PASSWORD" default:"qwerty"`
+	Name     string `env:"DATABASE_PGSQL_SLAVE_NAME"     default:"go42"`
+}
+
+func (db PgsqlSlave) DSN() string {
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password, db.Host, db.Port, db.Name,
@@ -204,12 +224,8 @@ func (db Pgsql) DSN() string {
 }
 
 type Mysql struct {
-	Host            string        `env:"DATABASE_MYSQL_HOST"               default:"localhost"`
-	Port            int           `env:"DATABASE_MYSQL_PORT"               default:"3306"`
-	User            string        `env:"DATABASE_MYSQL_USER"               default:"user"`
-	Password        string        `env:"DATABASE_MYSQL_PASSWORD"           default:"qwerty"`
-	Charset         string        `env:"DATABASE_MYSQL_CHARSET"            default:"utf8mb4"`
-	Name            string        `env:"DATABASE_MYSQL_NAME"               default:"go42"`
+	Master          MysqlMaster
+	Slave           MysqlSlave
 	ConnMaxIdleTime time.Duration `env:"DATABASE_MYSQL_CONN_MAX_IDLE_TIME" default:"10m"`
 	ConnMaxLifetime time.Duration `env:"DATABASE_MYSQL_CONN_MAX_LIFETIME"  default:"30m"`
 	MaxIdleConns    int           `env:"DATABASE_MYSQL_MAX_IDLE_CONNS"     default:"10"`
@@ -217,7 +233,32 @@ type Mysql struct {
 	QueryTimeout    time.Duration `env:"DATABASE_MYSQL_QUERY_TIMEOUT"      default:"10s"`
 }
 
-func (db Mysql) DSN() string {
+type MysqlMaster struct {
+	Host     string `env:"DATABASE_MYSQL_SLAVE_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_MYSQL_SLAVE_PORT"     default:"3306"`
+	User     string `env:"DATABASE_MYSQL_SLAVE_USER"     default:"user"`
+	Password string `env:"DATABASE_MYSQL_SLAVE_PASSWORD" default:"qwerty"`
+	Charset  string `env:"DATABASE_MYSQL_SLAVE_CHARSET"  default:"utf8mb4"`
+	Name     string `env:"DATABASE_MYSQL_SLAVE_NAME"     default:"go42"`
+}
+
+func (db MysqlMaster) DSN() string {
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
+		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,
+	)
+}
+
+type MysqlSlave struct {
+	Host     string `env:"DATABASE_MYSQL_MASTER_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_MYSQL_MASTER_PORT"     default:"3306"`
+	User     string `env:"DATABASE_MYSQL_MASTER_USER"     default:"user"`
+	Password string `env:"DATABASE_MYSQL_MASTER_PASSWORD" default:"qwerty"`
+	Charset  string `env:"DATABASE_MYSQL_MASTER_CHARSET"  default:"utf8mb4"`
+	Name     string `env:"DATABASE_MYSQL_MASTER_NAME"     default:"go42"`
+}
+
+func (db MysqlSlave) DSN() string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
 		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,

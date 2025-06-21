@@ -23,7 +23,6 @@ Golang project operation framework.
 
 ### >
 
-+ read replicas for db
 + multi-repository example with transactions
 + external dependency management
   + circuit breaker (https://github.com/sony/gobreaker)

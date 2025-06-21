@@ -159,7 +159,7 @@ func main() {
 		// run database migrations
 		slog.Info("running database migrations...")
 		err = pgsqlMigrate.Migrate(
-			cfg.Database.Pgsql.DSN(),
+			cfg.Database.Pgsql.Master.DSN(),
 			cfg.Database.FullMigratePath(),
 		)
 		if err != nil {
@@ -170,7 +170,8 @@ func main() {
 		slog.Info("connecting to PostgreSQL...")
 		var pgsqlConnErr error
 		dbEngine, pgsqlConnErr = pgsql.New(
-			cfg.Database.Pgsql.DSN(),
+			cfg.Database.Pgsql.Master.DSN(),
+			cfg.Database.Pgsql.Slave.DSN(),
 			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
 			pgsql.WithQueryLogging(cfg.Database.LogQueries),
 			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
@@ -187,7 +188,7 @@ func main() {
 		// run database migrations
 		slog.Info("running database migrations...")
 		err = mysqlMigrate.Migrate(
-			cfg.Database.Mysql.DSN(),
+			cfg.Database.Mysql.Master.DSN(),
 			cfg.Database.FullMigratePath(),
 		)
 		if err != nil {
@@ -198,7 +199,8 @@ func main() {
 		slog.Info("connecting to MySQL...")
 		var mysqlConnErr error
 		dbEngine, mysqlConnErr = mysql.New(
-			cfg.Database.Mysql.DSN(),
+			cfg.Database.Mysql.Master.DSN(),
+			cfg.Database.Mysql.Slave.DSN(),
 			mysql.WithLogger(slog.Default().With(slog.String("component", "gorm-mysql"))),
 			mysql.WithQueryLogging(cfg.Database.LogQueries),
 			mysql.WithConnMaxIdleTime(cfg.Database.Mysql.ConnMaxIdleTime),
@@ -216,14 +218,33 @@ func main() {
 	}
 
 	// database metrics
-	dbObserver, err := observers.NewDatabaseObserver(
-		dbEngine.DB(),
-		observers.WithName("gorm"),
-	)
-	if err != nil {
-		log.Fatalf("failed to initialize database metrics: %v\n", err)
+	{
+		masterDB, err := dbEngine.Master().DB()
+		if err != nil {
+			log.Fatalf("failed to retrieve master db: %v\n", err)
+		}
+		dbObserverMaster, err := observers.NewDatabaseObserver(
+			masterDB,
+			observers.WithName("gorm-master"),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize database metrics: %v\n", err)
+		}
+		go dbObserverMaster.Observe(ctx)
+
+		slaveDB, err := dbEngine.Slave().DB()
+		if err != nil {
+			log.Fatalf("failed to retrieve slave db: %v\n", err)
+		}
+		dbObserverSlave, err := observers.NewDatabaseObserver(
+			slaveDB,
+			observers.WithName("gorm-slave"),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize database metrics: %v\n", err)
+		}
+		go dbObserverSlave.Observe(ctx)
 	}
-	go dbObserver.Observe(ctx)
 
 	// cache engine
 	var (

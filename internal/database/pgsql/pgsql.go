@@ -15,8 +15,11 @@ import (
 
 type Postgres struct {
 	logger *slog.Logger
-	gormDB *gorm.DB
-	sqlDB  *sql.DB
+
+	master     *gorm.DB
+	masterConn *sql.DB
+	slave      *gorm.DB
+	slaveConn  *sql.DB
 
 	connMaxIdleTime time.Duration
 	connMaxLifetime time.Duration
@@ -26,7 +29,7 @@ type Postgres struct {
 	queryLogging bool
 }
 
-func New(dsn string, opts ...Option) (*Postgres, error) {
+func New(masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
 	w := new(Postgres)
 
 	for _, opt := range opts {
@@ -51,8 +54,10 @@ func New(dsn string, opts ...Option) (*Postgres, error) {
 		slogGormOpts = append(slogGormOpts, slogGorm.WithIgnoreTrace())
 	}
 
-	gormDB, err := gorm.Open(
-		postgres.New(postgres.Config{DSN: dsn}),
+	// ---
+
+	masterConn, err := gorm.Open(
+		postgres.New(postgres.Config{DSN: masterDSN}),
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger:      slogGorm.New(slogGormOpts...),
@@ -61,18 +66,48 @@ func New(dsn string, opts ...Option) (*Postgres, error) {
 		return nil, err
 	}
 
-	sqlDB, err := gormDB.DB()
+	masterConnDB, err := masterConn.DB()
 	if err != nil {
 		return nil, err
 	}
 
-	sqlDB.SetMaxOpenConns(w.maxOpenConns)
-	sqlDB.SetMaxIdleConns(w.maxIdleConns)
-	sqlDB.SetConnMaxLifetime(w.connMaxLifetime)
-	sqlDB.SetConnMaxIdleTime(w.connMaxIdleTime)
+	masterConnDB.SetMaxOpenConns(w.maxOpenConns)
+	masterConnDB.SetMaxIdleConns(w.maxIdleConns)
+	masterConnDB.SetConnMaxLifetime(w.connMaxLifetime)
+	masterConnDB.SetConnMaxIdleTime(w.connMaxIdleTime)
 
-	w.gormDB = gormDB
-	w.sqlDB = sqlDB
+	w.master = masterConn
+	w.masterConn = masterConnDB
+
+	// ---
+
+	if len(slaveDSN) > 0 {
+		slaveConn, err := gorm.Open(
+			postgres.New(postgres.Config{DSN: slaveDSN}),
+			&gorm.Config{
+				PrepareStmt: true,
+				Logger:      slogGorm.New(slogGormOpts...),
+			})
+		if err != nil {
+			return nil, err
+		}
+
+		slaveConnDB, err := slaveConn.DB()
+		if err != nil {
+			return nil, err
+		}
+
+		slaveConnDB.SetMaxOpenConns(w.maxOpenConns)
+		slaveConnDB.SetMaxIdleConns(w.maxIdleConns)
+		slaveConnDB.SetConnMaxLifetime(w.connMaxLifetime)
+		slaveConnDB.SetConnMaxIdleTime(w.connMaxIdleTime)
+
+		w.slave = slaveConn
+		w.slaveConn = slaveConnDB
+	} else {
+		w.slave = masterConn
+		w.slaveConn = masterConnDB
+	}
 
 	return w, nil
 }
@@ -80,7 +115,9 @@ func New(dsn string, opts ...Option) (*Postgres, error) {
 func (w *Postgres) Shutdown(ctx context.Context) error {
 	doneChan := make(chan error)
 	go func() {
-		doneChan <- w.sqlDB.Close()
+		masterErr := w.masterConn.Close()
+		slaveErr := w.slaveConn.Close()
+		doneChan <- errors.Join(masterErr, slaveErr)
 	}()
 	select {
 	case <-ctx.Done():
@@ -90,12 +127,12 @@ func (w *Postgres) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Postgres) DB() *sql.DB {
-	return w.sqlDB
+func (w *Postgres) Master() *gorm.DB {
+	return w.master
 }
 
-func (w *Postgres) GormDB() *gorm.DB {
-	return w.gormDB
+func (w *Postgres) Slave() *gorm.DB {
+	return w.slave
 }
 
 func (w *Postgres) IsNotFoundError(err error) bool {

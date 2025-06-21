@@ -14,7 +14,8 @@ import (
 )
 
 type sqlAccessor interface {
-	GormDB() *gorm.DB
+	Master() *gorm.DB
+	Slave() *gorm.DB
 	IsNotFoundError(err error) bool
 	IsDuplicateKeyError(err error) bool
 }
@@ -37,14 +38,21 @@ func (r *Repository) getTx(ctx context.Context) *gorm.DB {
 	if tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return tx
 	}
-	return r.sql.GormDB().WithContext(ctx)
+	return r.sql.Master().WithContext(ctx)
+}
+
+func (r *Repository) getReadDB(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
+		return tx
+	}
+	return r.sql.Slave().WithContext(ctx)
 }
 
 func (r *Repository) Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error) {
 	if _, ok := ctx.Value(r.getTxKey()).(*gorm.DB); ok {
 		return ctx, errors.New("transaction already exists in context")
 	}
-	tx := r.sql.GormDB().WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLvl})
+	tx := r.sql.Master().WithContext(ctx).Begin(&sql.TxOptions{Isolation: isolationLvl})
 	if tx.Error != nil {
 		return ctx, fmt.Errorf("failed to begin transaction: %w", tx.Error)
 	}
@@ -110,7 +118,7 @@ func (r *Repository) WithTransaction(ctx context.Context, fn func(txCtx context.
 
 func (r *Repository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
 	var fruits []*models.Fruit
-	result := r.getTx(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
+	result := r.getReadDB(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&fruits)
 	if result.Error != nil {
 		return nil, fmt.Errorf("error listing fruits: %w", result.Error)
 	}
@@ -119,7 +127,7 @@ func (r *Repository) ListFruits(ctx context.Context, limit, offset int) ([]*mode
 
 func (r *Repository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, error) {
 	var fruit models.Fruit
-	result := r.getTx(ctx).First(&fruit, id)
+	result := r.getReadDB(ctx).First(&fruit, id)
 	if result.Error != nil {
 		if r.sql.IsNotFoundError(result.Error) {
 			return nil, domain.ErrNotFound
@@ -152,9 +160,9 @@ func (r *Repository) DeleteFruit(ctx context.Context, fruit *models.Fruit) error
 }
 
 func (r *Repository) UpdateFruit(ctx context.Context, fruit *models.Fruit) error {
-	tx := r.getTx(ctx).Save(fruit)
-	if tx.Error != nil {
-		return fmt.Errorf("error updating fruit: %w", tx.Error)
+	result := r.getTx(ctx).Save(fruit)
+	if result.Error != nil {
+		return fmt.Errorf("error updating fruit: %w", result.Error)
 	}
 	return nil
 }

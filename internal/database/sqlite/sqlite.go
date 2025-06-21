@@ -14,6 +14,7 @@ import (
 
 type Sqlite struct {
 	logger *slog.Logger
+
 	gormDB *gorm.DB
 	sqlDB  *sql.DB
 
@@ -85,11 +86,11 @@ func (w *Sqlite) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Sqlite) DB() *sql.DB {
-	return w.sqlDB
+func (w *Sqlite) Master() *gorm.DB {
+	return w.gormDB
 }
 
-func (w *Sqlite) GormDB() *gorm.DB {
+func (w *Sqlite) Slave() *gorm.DB {
 	return w.gormDB
 }
 
