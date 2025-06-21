@@ -2,6 +2,7 @@ name: release
 
 # Release.
 # Triggered by semver tag push.
+# @note jobs are separated to allow for parallel execution, amd64 is fast, while arm build are much slower.
 
 on:
   push:
@@ -14,7 +15,7 @@ permissions:
   id-token: write
 
 jobs:
-  docker-build:
+  docker-build-amd64:
     name: docker-build
     uses: ./.github/workflows/140-docker-build.yml
     with:
@@ -22,4 +23,13 @@ jobs:
       continue_on_error: false
       service_name: "go42"
       image_tag: ${{ github.ref_name }}
-      platforms: "linux/amd64,linux/arm64"
+      platforms: "linux/amd64"
+  docker-build-arm64:
+    name: docker-build
+    uses: ./.github/workflows/140-docker-build.yml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: false
+      service_name: "go42"
+      image_tag: ${{ github.ref_name }}
+      platforms: "linux/arm64"
