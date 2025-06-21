@@ -89,6 +89,7 @@ jobs:
         ${{
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
+      platforms: "linux/amd64"
   docker-security:
     uses: ./.github/workflows/140-docker-security.yml
     needs: [ docker-build ]

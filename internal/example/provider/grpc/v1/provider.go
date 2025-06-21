@@ -6,16 +6,26 @@ import (
 	"google.golang.org/grpc"
 
 	pb "github.com/hasansino/go42/api/gen/grpc/example/v1"
-	"github.com/hasansino/go42/internal/example"
 	"github.com/hasansino/go42/internal/example/domain"
+	"github.com/hasansino/go42/internal/example/models"
 )
+
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
+
+type serviceAccessor interface {
+	Fruits(ctx context.Context, limit int, offset int) ([]*models.Fruit, error)
+	FruitByID(ctx context.Context, id int) (*models.Fruit, error)
+	Create(ctx context.Context, name string) (*models.Fruit, error)
+	Update(ctx context.Context, id int, name string) (*models.Fruit, error)
+	Delete(ctx context.Context, id int) error
+}
 
 type Provider struct {
 	pb.UnimplementedExampleServiceServer
-	service *example.Service
+	service serviceAccessor
 }
 
-func New(svc *example.Service) *Provider {
+func New(svc serviceAccessor) *Provider {
 	return &Provider{service: svc}
 }
 

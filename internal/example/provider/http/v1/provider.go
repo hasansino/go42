@@ -1,24 +1,35 @@
 package provider
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
-	"github.com/hasansino/go42/internal/example"
 	"github.com/hasansino/go42/internal/example/domain"
+	"github.com/hasansino/go42/internal/example/models"
 	"github.com/hasansino/go42/internal/tools"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
+
+type serviceAccessor interface {
+	Fruits(ctx context.Context, limit int, offset int) ([]*models.Fruit, error)
+	FruitByID(ctx context.Context, id int) (*models.Fruit, error)
+	Create(ctx context.Context, name string) (*models.Fruit, error)
+	Update(ctx context.Context, id int, name string) (*models.Fruit, error)
+	Delete(ctx context.Context, id int) error
+}
+
 // Provider Provider for fiber framework
 type Provider struct {
-	service *example.Service
+	service serviceAccessor
 }
 
 // New provides handlers for its http endpoints
-func New(s *example.Service) *Provider {
+func New(s serviceAccessor) *Provider {
 	return &Provider{service: s}
 }
 

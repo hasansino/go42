@@ -13,6 +13,8 @@ import (
 	"github.com/hasansino/go42/internal/example/models"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
+
 type sqlAccessor interface {
 	Master() *gorm.DB
 	Slave() *gorm.DB
