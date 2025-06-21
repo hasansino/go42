@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 
-	"buf.build/go/protovalidate"
 	"google.golang.org/grpc"
 
 	pb "github.com/hasansino/go42/api/gen/grpc/example/v1"
@@ -25,10 +24,6 @@ func (p *Provider) Register(grpcServer *grpc.Server) {
 }
 
 func (p *Provider) ListFruits(ctx context.Context, req *pb.ListFruitsRequest) (*pb.ListFruitsResponse, error) {
-	vErr := protovalidate.Validate(req)
-	if vErr != nil {
-		return nil, p.processError(vErr)
-	}
 	if req.Limit < 0 {
 		req.Limit = domain.DefaultFetchLimit
 	}
@@ -50,10 +45,6 @@ func (p *Provider) ListFruits(ctx context.Context, req *pb.ListFruitsRequest) (*
 }
 
 func (p *Provider) GetFruit(ctx context.Context, req *pb.GetFruitRequest) (*pb.GetFruitResponse, error) {
-	vErr := protovalidate.Validate(req)
-	if vErr != nil {
-		return nil, p.processError(vErr)
-	}
 	fruit, err := p.service.FruitByID(ctx, int(req.Id))
 	if err != nil {
 		return nil, p.processError(err)
@@ -67,10 +58,6 @@ func (p *Provider) GetFruit(ctx context.Context, req *pb.GetFruitRequest) (*pb.G
 }
 
 func (p *Provider) CreateFruit(ctx context.Context, req *pb.CreateFruitRequest) (*pb.CreateFruitResponse, error) {
-	vErr := protovalidate.Validate(req)
-	if vErr != nil {
-		return nil, p.processError(vErr)
-	}
 	created, err := p.service.Create(ctx, req.Name)
 	if err != nil {
 		return nil, p.processError(err)
@@ -84,10 +71,6 @@ func (p *Provider) CreateFruit(ctx context.Context, req *pb.CreateFruitRequest) 
 }
 
 func (p *Provider) UpdateFruit(ctx context.Context, req *pb.UpdateFruitRequest) (*pb.UpdateFruitResponse, error) {
-	vErr := protovalidate.Validate(req)
-	if vErr != nil {
-		return nil, p.processError(vErr)
-	}
 	updated, err := p.service.Update(ctx, int(req.Id), req.Name)
 	if err != nil {
 		return nil, p.processError(err)
@@ -101,10 +84,6 @@ func (p *Provider) UpdateFruit(ctx context.Context, req *pb.UpdateFruitRequest) 
 }
 
 func (p *Provider) DeleteFruit(ctx context.Context, req *pb.DeleteFruitRequest) (*pb.DeleteFruitResponse, error) {
-	vErr := protovalidate.Validate(req)
-	if vErr != nil {
-		return nil, p.processError(vErr)
-	}
 	err := p.service.Delete(ctx, int(req.Id))
 	if err != nil {
 		return nil, p.processError(err)

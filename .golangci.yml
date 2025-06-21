@@ -50,7 +50,8 @@ linters:
   settings:
     errcheck:
       exclude-functions:
-        # ignore lines like `defer rows.Close()`
+        # ignore lines like `defer rows.Close() etc.`
+        - (*database/sql.DB).Close
         - (*database/sql.Rows).Close
     sloglint:
       attr-only: true

@@ -35,11 +35,14 @@ import (
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/cache"
+	"github.com/hasansino/go42/internal/cache/aerospike"
 	"github.com/hasansino/go42/internal/cache/memcached"
 	"github.com/hasansino/go42/internal/cache/miniredis"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
+	"github.com/hasansino/go42/internal/database/mysql"
+	mysqlMigrate "github.com/hasansino/go42/internal/database/mysql/migrate"
 	"github.com/hasansino/go42/internal/database/pgsql"
 	pgsqlMigrate "github.com/hasansino/go42/internal/database/pgsql/migrate"
 	"github.com/hasansino/go42/internal/database/sqlite"
@@ -144,6 +147,8 @@ func main() {
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
+			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlte"))),
+			sqlite.WithQueryLogging(cfg.Database.LogQueries),
 		)
 		if sqliteConnErr != nil {
 			log.Fatalf("failed to connect to sqlite: %v\n", sqliteConnErr)
@@ -178,6 +183,34 @@ func main() {
 		}
 
 		slog.Info("connected to pgsql")
+	case "mysql":
+		// run database migrations
+		slog.Info("running database migrations...")
+		err = mysqlMigrate.Migrate(
+			cfg.Database.Mysql.DSN(),
+			cfg.Database.FullMigratePath(),
+		)
+		if err != nil {
+			log.Fatalf("failed to execute migrations: %v\n", err)
+		}
+
+		// connect to database
+		slog.Info("connecting to MySQL...")
+		var mysqlConnErr error
+		dbEngine, mysqlConnErr = mysql.New(
+			cfg.Database.Mysql.DSN(),
+			mysql.WithLogger(slog.Default().With(slog.String("component", "gorm-mysql"))),
+			mysql.WithQueryLogging(cfg.Database.LogQueries),
+			mysql.WithConnMaxIdleTime(cfg.Database.Mysql.ConnMaxIdleTime),
+			mysql.WithConnMaxLifetime(cfg.Database.Mysql.ConnMaxLifetime),
+			mysql.WithMaxOpenConns(cfg.Database.Mysql.MaxOpenConns),
+			mysql.WithMaxIdleConns(cfg.Database.Mysql.MaxIdleConns),
+		)
+		if mysqlConnErr != nil {
+			log.Fatalf("failed to connect to mysql: %v\n", mysqlConnErr)
+		}
+
+		slog.Info("connected to mysql")
 	default:
 		log.Fatalf("empty or not supported database engine: %v\n", cfg.Database.Engine)
 	}
@@ -240,6 +273,16 @@ func main() {
 			log.Fatalf("failed to initialize memcached cache: %v\n", err)
 		}
 		log.Printf("memcached cache initialized\n")
+	case "aerospike":
+		var err error
+		cacheEngine, err = aerospike.New(
+			cfg.Cache.Aerospike.Hosts,
+			cfg.Cache.Aerospike.Namespace,
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize aerospike cache: %v\n", err)
+		}
+		log.Printf("aerospike cache initialized\n")
 	}
 
 	// @todo cache metrics

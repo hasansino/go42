@@ -21,12 +21,16 @@ Golang project operation framework.
 
 ## Backlog
 
-### >>
+### >
 
-+ circuit breaker (https://github.com/sony/gobreaker) + retry
++ read replicas for db
++ multi-repository example with transactions
++ external dependency management
+  + circuit breaker (https://github.com/sony/gobreaker)
+  + retry (https://github.com/avast/retry-go)
++ rate limit (https://github.com/uber-go/ratelimit)
 + https://github.com/maypok86/otter - https://s3fifo.com/
-+ https://github.com/bytedance/sonic
-+ https://github.com/agiledragon/gomonkey
++ https://github.com/agiledragon/gomonkey 
 
 ### <
 
@@ -37,12 +41,3 @@ Golang project operation framework.
   * https://goproxy.githubapp.com
   * https://proxy.golang.org
   * https://github.com/gomods/athens
-
-### <<<
-
-+ replace Make with some other build tool
-+ multi-repository example with transactions
-+ listFruits() | http/grpc | limit / offset - should validation be also in repository?
-+ external rate limit (api gateway) + internal rate limit
-+ aerospike cache
-+ https://buf.build/docs/protovalidate/quickstart/#validate-api-requests

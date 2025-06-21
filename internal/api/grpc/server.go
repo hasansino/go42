@@ -6,7 +6,9 @@ import (
 	"net"
 	"runtime/debug"
 
+	"buf.build/go/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	protovalidateInterceptor "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -61,11 +63,13 @@ func New(opts ...Option) *Server {
 		interceptors.UnaryMetricsInterceptor(),
 		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
 	}
 	streamInterceptors := []grpc.StreamServerInterceptor{
 		interceptors.StreamMetricsInterceptor(),
 		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
 	}
 
 	serverOptions := []grpc.ServerOption{

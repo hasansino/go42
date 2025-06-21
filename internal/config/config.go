@@ -161,11 +161,18 @@ type Etcd struct {
 // ╰──────────────────────────────╯
 
 type Database struct {
-	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql"`
+	Engine      string `env:"DATABASE_ENGINE"       default:"sqlite"   v:"oneof=sqlite pgsql mysql"`
 	MigratePath string `env:"DATABASE_MIGRATE_PATH" default:"/migrate"`
 	LogQueries  bool   `env:"DATABASE_LOG_QUERIES"  default:"false"`
-	Pgsql       Pgsql
 	Sqlite      Sqlite
+	Pgsql       Pgsql
+	Mysql       Mysql
+}
+
+type Sqlite struct {
+	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
+	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
+	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
 }
 
 func (db Database) FullMigratePath() string {
@@ -196,10 +203,25 @@ func (db Pgsql) DSN() string {
 	)
 }
 
-type Sqlite struct {
-	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
-	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
-	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
+type Mysql struct {
+	Host            string        `env:"DATABASE_MYSQL_HOST"               default:"localhost"`
+	Port            int           `env:"DATABASE_MYSQL_PORT"               default:"3306"`
+	User            string        `env:"DATABASE_MYSQL_USER"               default:"user"`
+	Password        string        `env:"DATABASE_MYSQL_PASSWORD"           default:"qwerty"`
+	Charset         string        `env:"DATABASE_MYSQL_CHARSET"            default:"utf8mb4"`
+	Name            string        `env:"DATABASE_MYSQL_NAME"               default:"go42"`
+	ConnMaxIdleTime time.Duration `env:"DATABASE_MYSQL_CONN_MAX_IDLE_TIME" default:"10m"`
+	ConnMaxLifetime time.Duration `env:"DATABASE_MYSQL_CONN_MAX_LIFETIME"  default:"30m"`
+	MaxIdleConns    int           `env:"DATABASE_MYSQL_MAX_IDLE_CONNS"     default:"10"`
+	MaxOpenConns    int           `env:"DATABASE_MYSQL_MAX_OPEN_CONNS"     default:"100"`
+	QueryTimeout    time.Duration `env:"DATABASE_MYSQL_QUERY_TIMEOUT"      default:"10s"`
+}
+
+func (db Mysql) DSN() string {
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
+		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,
+	)
 }
 
 // ╭──────────────────────────────╮
@@ -207,9 +229,10 @@ type Sqlite struct {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached"`
+	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached aerospike"`
 	Redis     Redis
 	Memcached Memcached
+	Aerospike Aerospike
 }
 
 type Redis struct {
@@ -237,6 +260,11 @@ type Memcached struct {
 	Hosts        []string      `env:"CACHE_MEMCACHED_HOSTS"          default:"localhost:11211"`
 	Timeout      time.Duration `env:"CACHE_MEMCACHED_TIMEOUT"        default:"1s"`
 	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
+}
+
+type Aerospike struct {
+	Hosts     []string `env:"CACHE_AEROSPIKE_HOSTS"     default:"localhost:3000"`
+	Namespace string   `env:"CACHE_AEROSPIKE_NAMESPACE" default:"go42"`
 }
 
 // ╭──────────────────────────────╮
