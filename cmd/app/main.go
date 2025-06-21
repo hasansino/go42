@@ -21,6 +21,7 @@ import (
 	"github.com/hasansino/etcd2cfg"
 	"github.com/hasansino/vault2cfg"
 	"github.com/hashicorp/vault-client-go"
+	"github.com/lmittmann/tint"
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel"
@@ -459,6 +460,12 @@ func initLogging(cfg *config.Config) {
 			Level: cfg.Logger.Level(),
 		}
 		slogHandler = slog.NewJSONHandler(slogOutput, loggerOpts)
+	case "tint":
+		loggerOpts := &tint.Options{
+			Level:      cfg.Logger.Level(),
+			TimeFormat: time.Kitchen,
+		}
+		slogHandler = tint.NewHandler(slogOutput, loggerOpts)
 	default:
 		log.Fatalf("unsupported logging format: %s", cfg.Logger.LogFormat)
 	}
