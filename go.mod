@@ -13,6 +13,7 @@ require (
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/VictoriaMetrics/metrics v1.37.0
 	github.com/aerospike/aerospike-client-go/v8 v8.2.2
+	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.13.3
@@ -29,6 +30,7 @@ require (
 	github.com/hashicorp/vault-client-go v0.4.3
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
+	github.com/maypok86/otter/v2 v2.0.0
 	github.com/nats-io/nats.go v1.43.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/onsi/ginkgo/v2 v2.23.4

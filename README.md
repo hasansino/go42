@@ -28,8 +28,6 @@ Golang project operation framework.
   + circuit breaker (https://github.com/sony/gobreaker)
   + retry (https://github.com/avast/retry-go)
 + rate limit (https://github.com/uber-go/ratelimit)
-+ https://github.com/maypok86/otter - https://s3fifo.com/
-+ https://github.com/agiledragon/gomonkey 
 
 ### <
 

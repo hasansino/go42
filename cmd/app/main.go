@@ -38,6 +38,7 @@ import (
 	"github.com/hasansino/go42/internal/cache/aerospike"
 	"github.com/hasansino/go42/internal/cache/memcached"
 	"github.com/hasansino/go42/internal/cache/miniredis"
+	"github.com/hasansino/go42/internal/cache/otter"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
@@ -254,6 +255,12 @@ func main() {
 	case "none":
 		cacheEngine = cache.NewNoop()
 		log.Printf("no cache engine initialized\n")
+	case "otter":
+		cacheEngine, err = otter.New()
+		if err != nil {
+			log.Fatalf("failed to initialize otter cache: %v\n", err)
+		}
+		log.Printf("otter cache engine initialized\n")
 	case "redis":
 		var err error
 		cacheEngine, err = redis.New(

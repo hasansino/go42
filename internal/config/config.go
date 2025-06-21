@@ -270,7 +270,7 @@ func (db MysqlSlave) DSN() string {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached aerospike"`
+	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached aerospike otter"`
 	Redis     Redis
 	Memcached Memcached
 	Aerospike Aerospike
