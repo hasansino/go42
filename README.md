@@ -17,7 +17,7 @@
 
 # go42
 
-Golang project operation framework.
+Golang project operation blueprint.
 
 ## Backlog
 

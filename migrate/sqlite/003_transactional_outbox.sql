@@ -14,7 +14,7 @@ create table transactional_outbox (
     metadata text not null
 );
 
-create unique index transactional_outbox_publisher ON transactional_outbox (status);
+create index transactional_outbox_publisher ON transactional_outbox (status);
 
 -- +goose Down
 drop table transactional_outbox;

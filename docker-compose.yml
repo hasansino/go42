@@ -7,7 +7,7 @@ services:
 
   # --- databases ---
 
-  postgres:
+  pgsql:
     image: postgres:latest
     environment:
       POSTGRES_USER: user
