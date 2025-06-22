@@ -1,0 +1,45 @@
+name: git-lint
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  git-lint:
+    name: git-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    steps:
+      - run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          
+          PATTERN="^[A-Za-z0-9-]+$"
+          
+          if ! echo "$BRANCH_NAME" | grep -qE "$PATTERN"; then
+            echo "Branch names should follow regex ^[A-Za-z0-9-]+$"
+            exit 1
+          fi

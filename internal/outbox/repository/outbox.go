@@ -62,9 +62,6 @@ func (r *Repository) SaveProcessedMessages(ctx context.Context, messages []model
 
 func (r *Repository) SaveFailedMessages(ctx context.Context, messages []models.Message) error {
 	for _, message := range messages {
-		if message.RetryCount == message.MaxRetries {
-			message.Status = models.MessageStatusFailed
-		}
 		result := r.GetTx(ctx).Save(&message)
 		if result.Error != nil {
 			return fmt.Errorf("error saving message with ID %d: %w", message.ID, result.Error)

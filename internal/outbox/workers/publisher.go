@@ -89,6 +89,9 @@ func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
 			if err != nil {
 				message.RetryCount++
 				message.LastError = err.Error()
+				if message.RetryCount == message.MaxRetries {
+					message.Status = models.MessageStatusFailed
+				}
 				failed = append(failed, message)
 				p.logger.Error("failed to publish message", slog.Any("error", err))
 				metrics.Counter("application_errors", map[string]interface{}{
