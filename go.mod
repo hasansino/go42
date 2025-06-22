@@ -6,12 +6,12 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1
 	buf.build/go/protovalidate v0.13.1
 	github.com/IBM/sarama v1.45.2
-	github.com/KimMachineGun/automemlimit v0.7.2
+	github.com/KimMachineGun/automemlimit v0.7.3
 	github.com/ThreeDotsLabs/watermill v1.4.6
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
-	github.com/VictoriaMetrics/metrics v1.37.0
+	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/aerospike/aerospike-client-go/v8 v8.2.2
 	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
