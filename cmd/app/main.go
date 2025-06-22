@@ -314,8 +314,6 @@ func main() {
 		log.Printf("aerospike cache initialized\n")
 	}
 
-	// @todo cache metrics
-
 	// event engine
 	var (
 		eventsEngine events.Eventer
@@ -370,8 +368,6 @@ func main() {
 		}
 		log.Printf("kafka event engine initialized\n")
 	}
-
-	// @todo events metrics
 
 	// ---
 
