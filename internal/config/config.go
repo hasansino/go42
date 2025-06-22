@@ -270,7 +270,7 @@ func (db MysqlSlave) DSN() string {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none redis miniredis memcached aerospike otter"`
+	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none otter memcached redis aerospike"`
 	Redis     Redis
 	Memcached Memcached
 	Aerospike Aerospike
@@ -398,17 +398,7 @@ func New() (*Config, error) {
 		return nil, err
 	}
 
-	vErrs := tools.ValidateStruct(cfg)
-	if len(vErrs) > 0 {
-		var line string
-		for _, vErr := range vErrs {
-			line += vErr.Compact() + ","
-		}
-		line = strings.TrimSuffix(line, ",")
-		return nil, fmt.Errorf("validation errors: %s", line)
-	}
-
-	return cfg, nil
+	return cfg, tools.ValidateStructCompact(cfg)
 }
 
 func (c *Config) String() string {

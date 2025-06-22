@@ -3,8 +3,6 @@ name: load-tests
 # Load tests.
 # Simulates load on application and records statistics.
 # When this workflow is triggered in pull request, it will post statistics to pull request.
-#
-# @todo theory: grpc tests are slower due to previous http test artifacts.
 
 on:
   workflow_dispatch:
@@ -52,9 +50,74 @@ permissions:
   issues: write
 
 jobs:
-  load-tests:
+  load-tests-http:
     # ---
-    name: load-tests
+    name: load-tests-http
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    services:
+      app:
+        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+        ports:
+          - 44443:8080  # should be unique to avoid conflicts on self-hosted runners
+        env:
+          LOG_LEVEL: warn
+          ENVIRONMENT: ci-load-tests-http
+          SERVER_HTTP_LISTEN: :8080
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health || exit 1"
+          --health-start-period 1s
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      # http tests
+      - uses: grafana/run-k6-action@v1
+        with:
+          path: ./tests/load/http/v1/example_test.js
+          flags: --summary-export=k6-summary-http-v1.json
+        env:
+          HTTP_SERVER_ADDRESS: http://localhost:44443
+      # ---
+      - uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary-http-v1
+          path: k6-summary-http-v1.json
+      # ---
+      - if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            const resultsHttpV1 = JSON.parse(fs.readFileSync('k6-summary-http-v1.json', 'utf8'));
+            
+            const summary = `## Load Test Results
+            
+            ### HTTP v1
+            
+            | Metric          | Value  |
+            |-----------------|--------|
+            | Virtual Users   | ${resultsHttpV1.metrics.vus_max.value} max (${resultsHttpV1.metrics.vus.min}-${resultsHttpV1.metrics.vus.max}) |
+            | Total Requests  | ${resultsHttpV1.metrics.http_reqs.count} @ ${resultsHttpV1.metrics.http_reqs.rate.toFixed(2)}/sec |
+            | Response Time   | Avg: ${resultsHttpV1.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttpV1.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+            | Failed Requests | ${resultsHttpV1.metrics.http_req_failed.passes} (${(resultsHttpV1.metrics.http_req_failed.value * 100).toFixed(2)}%) |
+            | Success Rate    | ${(resultsHttpV1.metrics.checks.passes / (resultsHttpV1.metrics.checks.passes + resultsHttpV1.metrics.checks.fails) * 100).toFixed(2)}% |
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+  load-tests-grpc:
+    # ---
+    name: load-tests-grpc
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
@@ -79,14 +142,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
-      # http tests
-      - uses: grafana/run-k6-action@v1
-        with:
-          path: ./tests/load/http/v1/example_test.js
-          flags: --summary-export=k6-summary-http-v1.json
-        env:
-          HTTP_SERVER_ADDRESS: http://localhost:44443
-      # grpc tests
       - uses: grafana/run-k6-action@v1
         with:
           path: ./tests/load/grpc/v1/example_test.js
@@ -94,10 +149,6 @@ jobs:
         env:
           GRPC_SERVER_ADDRESS: localhost:55553
       # ---
-      - uses: actions/upload-artifact@v4
-        with:
-          name: k6-summary-http-v1
-          path: k6-summary-http-v1.json
       - uses: actions/upload-artifact@v4
         with:
           name: k6-summary-grpc-v1
@@ -110,20 +161,9 @@ jobs:
           script: |
             const fs = require('fs');
             
-            const resultsHttpV1 = JSON.parse(fs.readFileSync('k6-summary-http-v1.json', 'utf8'));
             const resultsGrpcV1 = JSON.parse(fs.readFileSync('k6-summary-grpc-v1.json', 'utf8'));
             
             const summary = `## Load Test Results
-            
-            ### HTTP v1
-            
-            | Metric          | Value  |
-            |-----------------|--------|
-            | Virtual Users   | ${resultsHttpV1.metrics.vus_max.value} max (${resultsHttpV1.metrics.vus.min}-${resultsHttpV1.metrics.vus.max}) |
-            | Total Requests  | ${resultsHttpV1.metrics.http_reqs.count} @ ${resultsHttpV1.metrics.http_reqs.rate.toFixed(2)}/sec |
-            | Response Time   | Avg: ${resultsHttpV1.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttpV1.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
-            | Failed Requests | ${resultsHttpV1.metrics.http_req_failed.passes} (${(resultsHttpV1.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-            | Success Rate    | ${(resultsHttpV1.metrics.checks.passes / (resultsHttpV1.metrics.checks.passes + resultsHttpV1.metrics.checks.fails) * 100).toFixed(2)}% |
             
             ### GRPC v1
             
@@ -134,8 +174,6 @@ jobs:
             | Response Time   | Avg: ${(resultsGrpcV1.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(resultsGrpcV1.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |
             | Failed Requests | ${resultsGrpcV1.metrics.checks.fails} (${(resultsGrpcV1.metrics.checks.fails / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}%) |
             | Success Rate    | ${(resultsGrpcV1.metrics.checks.passes / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}% |      
-            
-            [View full results](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,

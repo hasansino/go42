@@ -23,14 +23,13 @@ Golang project operation framework.
 
 ### >
 
-+ multi-repository example with transactions
-+ external dependency management
-  + circuit breaker (https://github.com/sony/gobreaker)
-  + retry (https://github.com/avast/retry-go)
-+ rate limit (https://github.com/uber-go/ratelimit)
-
-### <
-
++ external dependencies
+  * circuit breaker (https://github.com/sony/gobreaker)
+  * retry (https://github.com/avast/retry-go)
++ rate limiting 
+  * https://pkg.go.dev/golang.org/x/time/rate
+  * https://github.com/uber-go/ratelimit
+  * https://github.com/grpc-ecosystem/go-grpc-middleware/
 + reproducible builds
   * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
   * https://go.dev/blog/rebuild

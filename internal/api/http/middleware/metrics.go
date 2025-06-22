@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"strconv"
 	"time"
 
@@ -38,7 +37,10 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			duration := time.Since(start).Seconds()
 
 			labels["status"] = strconv.Itoa(resRecorder.status)
-			labels["is_error"] = toStringBool(err != nil)
+			labels["is_error"] = "no"
+			if err != nil {
+				labels["is_error"] = "yes"
+			}
 
 			metrics.Counter("application_http_responses_count", labels).Inc()
 			metrics.Histogram("application_http_latency_sec", labels).Update(duration)
@@ -46,28 +48,4 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			return err
 		}
 	}
-}
-
-func toStringBool(is bool) string {
-	if is {
-		return "yes"
-	}
-	return "no"
-}
-
-type responseRecorder struct {
-	http.ResponseWriter
-	status int
-	size   int
-}
-
-func (r *responseRecorder) WriteHeader(status int) {
-	r.status = status
-	r.ResponseWriter.WriteHeader(status)
-}
-
-func (r *responseRecorder) Write(b []byte) (int, error) {
-	size, err := r.ResponseWriter.Write(b)
-	r.size += size
-	return size, err
 }

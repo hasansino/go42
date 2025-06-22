@@ -4,10 +4,12 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
+	"github.com/hasansino/go42/internal/api/http/middleware"
 	"github.com/hasansino/go42/internal/example/domain"
 	"github.com/hasansino/go42/internal/example/models"
 	"github.com/hasansino/go42/internal/tools"
@@ -23,20 +25,35 @@ type serviceAccessor interface {
 	Delete(ctx context.Context, id int) error
 }
 
+type cache interface {
+	Get(ctx context.Context, key string) (string, error)
+	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+}
+
 // Provider Provider for fiber framework
 type Provider struct {
-	service serviceAccessor
+	service  serviceAccessor
+	cache    cache
+	cacheTTL time.Duration
 }
 
 // New provides handlers for its http endpoints
-func New(s serviceAccessor) *Provider {
-	return &Provider{service: s}
+func New(s serviceAccessor, c cache, opts ...Option) *Provider {
+	p := &Provider{service: s, cache: c}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
 // Register endpoints in fiber framework
 func (p *Provider) Register(e *echo.Group) {
-	e.GET("/fruits", p.fruits)
-	e.GET("/fruits/:id", p.fruitByID)
+	var cacheMiddleware echo.MiddlewareFunc
+	if p.cache != nil && p.cacheTTL > 0 {
+		cacheMiddleware = middleware.CacheMiddleware(p.cache, p.cacheTTL)
+	}
+	e.GET("/fruits", p.fruits, cacheMiddleware)
+	e.GET("/fruits/:id", p.fruitByID, cacheMiddleware)
 	e.POST("/fruits", p.createFruit)
 	e.PUT("/fruits/:id", p.updateFruit)
 	e.DELETE("/fruits/:id", p.deleteFruit)

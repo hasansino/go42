@@ -121,7 +121,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=qwerty
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
-      - "3000:3000" # ui
+      - "3333:3000" # ui
 
   zipkin:
     image: openzipkin/zipkin:latest

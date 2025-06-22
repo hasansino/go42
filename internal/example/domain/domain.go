@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"encoding/json"
 	"errors"
 )
 
@@ -14,29 +13,10 @@ var (
 
 // ---
 
+const TopicNameFruitEvents = "fruit-events"
+
 const (
-	EventTypeCreated = iota
-	EventTypeUpdated
-	EventTypeDeleted
+	EventTypeCreated = "fruit.created"
+	EventTypeUpdated = "fruit.updated"
+	EventTypeDeleted = "fruit.deleted"
 )
-
-var EventTypes = map[int]string{
-	EventTypeCreated: "fruit.created",
-	EventTypeUpdated: "fruit.updated",
-	EventTypeDeleted: "fruit.deleted",
-}
-
-// ---
-
-type ExampleEvent struct {
-	Type    int `json:"type"`
-	Payload any `json:"payload"`
-}
-
-func (e *ExampleEvent) Marshal() ([]byte, error) {
-	return json.Marshal(e)
-}
-
-func (e *ExampleEvent) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, e)
-}
