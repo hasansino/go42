@@ -11,7 +11,7 @@ require (
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
-	github.com/VictoriaMetrics/metrics v1.37.0
+	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/aerospike/aerospike-client-go/v8 v8.2.2
 	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
