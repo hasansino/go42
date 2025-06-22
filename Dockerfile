@@ -7,9 +7,8 @@ ARG RELEASE_TAG=INVALID
 FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /tmp/build
-RUN go env -w GOMODCACHE=/root/.cache/go-build
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/root/.cache/go-build go mod download
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomodcache go mod download
 
 COPY . .
 
@@ -39,10 +38,11 @@ ENV GOGC=100
 #
 # xBuild... are variables accessable in main.go
 #
-RUN --mount=type=cache,target=/root/.cache/go-build \
-go build -v -trimpath \
--ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
--o app cmd/app/main.go
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomodcache \
+    --mount=type=cache,target=/root/.cache/go-build,id=gobuildcache \
+    go build -v -trimpath \
+    -ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
+    -o app cmd/app/main.go
 
 # Validate binary.
 RUN readelf -h app && du -h app && sha256sum app
