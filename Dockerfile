@@ -1,5 +1,3 @@
-ARG GOMODCACHE_DIR=/root/.cache/go-build
-
 # We want to fail if arguments were not passed.
 ARG GO_VERSION=INVALID
 ARG COMMIT_HASH=INVALID
@@ -9,9 +7,9 @@ ARG RELEASE_TAG=INVALID
 FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /tmp/build
-RUN go env -w GOMODCACHE=${GOMODCACHE_DIR}
+RUN go env -w GOMODCACHE=/root/.cache/go-build
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=${GOMODCACHE_DIR} go mod download
+RUN --mount=type=cache,target=/root/.cache/go-build go mod download
 
 COPY . .
 
@@ -41,7 +39,7 @@ ENV GOGC=100
 #
 # xBuild... are variables accessable in main.go
 #
-RUN --mount=type=cache,target=${GOMODCACHE_DIR} \
+RUN --mount=type=cache,target=/root/.cache/go-build \
 go build -v -trimpath \
 -ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
 -o app cmd/app/main.go
