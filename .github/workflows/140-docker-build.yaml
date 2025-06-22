@@ -93,6 +93,7 @@ jobs:
           skip-extraction: ${{ steps.cache.outputs.cache-hit }}
       # ---
       - uses: docker/build-push-action@v6
+        id: build
         with:
           context: ${{ github.workspace }}/
           file: ${{ github.workspace }}/Dockerfile
@@ -111,3 +112,4 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
