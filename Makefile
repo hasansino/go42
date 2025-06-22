@@ -81,7 +81,7 @@ build:
 
 ## image | build docker image
 image:
-	@docker buildx build --no-cache --platform linux/amd64,linux/arm64 \
+	@docker buildx build --platform linux/amd64,linux/arm64 \
     --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
     --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
     --build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \

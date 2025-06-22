@@ -73,7 +73,6 @@ jobs:
       - run: echo "release_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')" >> $GITHUB_ENV
       # ---
       - uses: docker/setup-buildx-action@v3
-        id: setup-buildx
         with:
           cache-binary: true
       - uses: docker/login-action@v3
@@ -112,4 +111,3 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
