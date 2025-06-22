@@ -14,27 +14,32 @@ on:
         required: true
         type: string
         default: ubuntu-latest
-        description: "runs_on"
+        description: "Runner type"
       continue_on_error:
         required: true
         type: boolean
         default: false
-        description: "continue_on_error"
+        description: "Continue on error"
       service_name:
         required: true
         type: string
         default: "go42"
-        description: "service_name"
+        description: "Image name"
       image_tag:
         required: true
         type: string
         default: "tmp"
-        description: "image_tag"
+        description: "Image tag"
       platforms:
         required: true
         type: string
         default: "linux/amd64"
-        description: "platforms"
+        description: "Build platform"
+      attestation:
+        required: true
+        type: boolean
+        default: false
+        description: "Generate attestation"
   workflow_call:
     inputs:
       runs_on:
@@ -54,6 +59,9 @@ on:
       platforms:
         required: true
         type: string
+      attestation:
+        required: true
+        type: boolean
 
 permissions:
   packages: write
@@ -98,7 +106,8 @@ jobs:
             COMMIT_HASH=${{ env.commit_hash }}
             RELEASE_TAG=${{ env.release_tag }}
       # ---
-      - uses: actions/attest-build-provenance@v2
+      - if: ${{ inputs.attestation }}
+        uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}

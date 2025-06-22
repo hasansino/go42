@@ -24,6 +24,7 @@ jobs:
       service_name: "go42"
       image_tag: ${{ github.ref_name }}
       platforms: "linux/amd64"
+      attestation: true
   docker-build-arm64:
     name: docker-build
     uses: ./.github/workflows/140-docker-build.yaml
@@ -33,3 +34,4 @@ jobs:
       service_name: "go42"
       image_tag: ${{ github.ref_name }}
       platforms: "linux/arm64"
+      attestation: true
