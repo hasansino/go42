@@ -33,7 +33,7 @@ func New(host string, db int, opts ...Option) (*Wrapper, error) {
 func (w *Wrapper) Shutdown(ctx context.Context) error {
 	done := make(chan error)
 	go func() {
-		done <- w.client.Shutdown(ctx).Err()
+		done <- w.client.Close()
 	}()
 	select {
 	case <-ctx.Done():
@@ -46,6 +46,9 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 func (w *Wrapper) Get(ctx context.Context, key string) (string, error) {
 	cmd := w.client.Get(ctx, key)
 	if cmd.Err() != nil {
+		if errors.Is(cmd.Err(), redis.Nil) {
+			return "", nil
+		}
 		return "", cmd.Err()
 	}
 	return cmd.Val(), nil

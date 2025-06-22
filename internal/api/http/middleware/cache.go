@@ -24,7 +24,7 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			key := fmt.Sprintf(
-				"%s_%s_%s",
+				"%s+%s?%s",
 				c.Request().Method, c.Request().URL.Path, c.Request().URL.RawQuery,
 			)
 
