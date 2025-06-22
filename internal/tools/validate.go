@@ -6,14 +6,21 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/go-playground/locales/en"
+	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	translations "github.com/go-playground/validator/v10/translations/en"
 )
 
 const ValidateRulesTagName = "v"
 
-var validate *validator.Validate
+var (
+	validate   *validator.Validate
+	translator ut.Translator
+)
 
 func init() {
+	// validator
 	validate = validator.New(validator.WithRequiredStructEnabled())
 	validate.SetTagName(ValidateRulesTagName)
 	validate.RegisterTagNameFunc(func(field reflect.StructField) string {
@@ -24,6 +31,11 @@ func init() {
 		return strings.
 			ReplaceAll(jsonTag, ",omitempty", "")
 	})
+	// validation translations
+	english := en.New()
+	uni := ut.New(english, english)
+	translator, _ = uni.GetTranslator("en")
+	_ = translations.RegisterDefaultTranslations(validate, translator)
 }
 
 // ValidateStruct validates arbitrary struct
@@ -75,8 +87,7 @@ func (e ValidationError) Detail() string {
 	if e.detail != "" {
 		return e.detail
 	}
-	// @todo translate rules to pretty sentences
-	return fmt.Sprintf("rule `%s` with value of %s", e.original.ActualTag(), e.original.Param())
+	return e.original.Translate(translator)
 }
 
 func (e ValidationError) Code() string {
@@ -86,17 +97,13 @@ func (e ValidationError) Code() string {
 	return "INVALID_VALUE"
 }
 
-func (e ValidationError) Compact() string {
-	return fmt.Sprintf("(%s)[%s='%s']", e.original.Field(), e.original.ActualTag(), e.original.Param())
-}
-
 // ---
 
 func compactValidationErrors(vErrs []ValidationError) error {
 	if len(vErrs) > 0 {
 		var line string
 		for _, vErr := range vErrs {
-			line += vErr.Compact() + ","
+			line += vErr.Detail() + ","
 		}
 		line = strings.TrimSuffix(line, ",")
 		return fmt.Errorf("validation errors: %s", line)
