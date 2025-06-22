@@ -4,6 +4,8 @@ name: docker-build
 # Builds Dockerfile, which in turn builds golang binary.
 # buildx allows building multi-arch images.
 # Pushes image to ghcr.io.
+#
+# @note should be executed only with single platform at a time for cache to work properly.
 
 on:
   workflow_dispatch:
@@ -73,6 +75,7 @@ jobs:
       - run: echo "release_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')" >> $GITHUB_ENV
       # ---
       - uses: docker/setup-buildx-action@v3
+        id: setup-buildx
         with:
           cache-binary: true
       - uses: docker/login-action@v3
@@ -84,7 +87,7 @@ jobs:
         id: cache
         with:
           path: go-build-cache
-          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-${{ inputs.platforms }}-go-build-cache-${{ hashFiles('**/go.sum') }}
       - uses: reproducible-containers/buildkit-cache-dance@5b81f4d29dc8397a7d341dba3aeecc7ec54d6361
         with:
           builder: ${{ steps.setup-buildx.outputs.name }}
@@ -100,7 +103,6 @@ jobs:
           platforms: ${{ inputs.platforms }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          no-cache: false
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           build-args: |
@@ -112,4 +114,3 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
