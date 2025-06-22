@@ -35,51 +35,58 @@ permissions:
 
 jobs:
   # Stage 1: Linting
+  git-lint:
+    # Prevent dependabot from starting this workflow.
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
+    uses: ./.github/workflows/110-git-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: false
   golangci-lint:
     # Prevent dependabot from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
-    uses: ./.github/workflows/110-golangci-lint.yml
+    uses: ./.github/workflows/110-golangci-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   docker-lint:
     # Prevent dependabot from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
-    uses: ./.github/workflows/110-docker-lint.yml
+    uses: ./.github/workflows/110-docker-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   proto-lint:
     # Prevent dependabot from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
-    uses: ./.github/workflows/110-proto-lint.yml
+    uses: ./.github/workflows/110-proto-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   openapi-lint:
     # Prevent dependabot from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
-    uses: ./.github/workflows/110-openapi-lint.yml
+    uses: ./.github/workflows/110-openapi-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   # Stage 2: Unit tests
   unit-tests:
-    uses: ./.github/workflows/120-unit-tests.yml
+    uses: ./.github/workflows/120-unit-tests.yaml
     needs: [ golangci-lint, docker-lint, proto-lint, openapi-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   # Stage 3: Vulnerability Scanning
   security:
-    uses: ./.github/workflows/130-security.yml
+    uses: ./.github/workflows/130-security.yaml
     needs: [ unit-tests ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   # Stage 4: Build
   docker-build:
-    uses: ./.github/workflows/140-docker-build.yml
+    uses: ./.github/workflows/140-docker-build.yaml
     needs: [ security ]
     with:
       runs_on: ubuntu-latest
@@ -91,7 +98,7 @@ jobs:
         }}-${{ github.run_id }}
       platforms: "linux/amd64"
   docker-security:
-    uses: ./.github/workflows/140-docker-security.yml
+    uses: ./.github/workflows/140-docker-security.yaml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
@@ -103,7 +110,7 @@ jobs:
         }}-${{ github.run_id }}
   # Stage 5: Actions with running application
   integration-tests:
-    uses: ./.github/workflows/150-integration-tests.yml
+    uses: ./.github/workflows/150-integration-tests.yaml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
@@ -114,7 +121,7 @@ jobs:
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   load-tests:
-    uses: ./.github/workflows/150-load-tests.yml
+    uses: ./.github/workflows/150-load-tests.yaml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
@@ -125,7 +132,7 @@ jobs:
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
   zap-api-scan:
-    uses: ./.github/workflows/150-zap-api-scan.yml
+    uses: ./.github/workflows/150-zap-api-scan.yaml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
@@ -137,7 +144,7 @@ jobs:
         }}-${{ github.run_id }}
   # Stage 6: Cleanup
   cleanup:
-    uses: ./.github/workflows/160-cleanup.yml
+    uses: ./.github/workflows/160-cleanup.yaml
     needs: [ docker-security, integration-tests, load-tests, zap-api-scan ]
     with:
       runs_on: ubuntu-latest
