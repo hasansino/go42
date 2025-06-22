@@ -1,9 +1,7 @@
 -- +goose Up
 create table example_fruits
 (
-    id         serial
-        constraint example_fruits_pk
-            primary key,
+    id         serial primary key,
     created_at timestamp default now() not null,
     updated_at timestamp default now() not null,
     deleted_at timestamp default NULL,

@@ -11,212 +11,39 @@ package mocks
 
 import (
 	context "context"
-	sql "database/sql"
 	reflect "reflect"
-	time "time"
 
 	models "github.com/hasansino/go42/internal/example/models"
+	domain "github.com/hasansino/go42/internal/outbox/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockPublisher is a mock of Publisher interface.
-type MockPublisher struct {
+// Mockrepository is a mock of repository interface.
+type Mockrepository struct {
 	ctrl     *gomock.Controller
-	recorder *MockPublisherMockRecorder
+	recorder *MockrepositoryMockRecorder
 	isgomock struct{}
 }
 
-// MockPublisherMockRecorder is the mock recorder for MockPublisher.
-type MockPublisherMockRecorder struct {
-	mock *MockPublisher
+// MockrepositoryMockRecorder is the mock recorder for Mockrepository.
+type MockrepositoryMockRecorder struct {
+	mock *Mockrepository
 }
 
-// NewMockPublisher creates a new mock instance.
-func NewMockPublisher(ctrl *gomock.Controller) *MockPublisher {
-	mock := &MockPublisher{ctrl: ctrl}
-	mock.recorder = &MockPublisherMockRecorder{mock}
+// NewMockrepository creates a new mock instance.
+func NewMockrepository(ctrl *gomock.Controller) *Mockrepository {
+	mock := &Mockrepository{ctrl: ctrl}
+	mock.recorder = &MockrepositoryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPublisher) EXPECT() *MockPublisherMockRecorder {
+func (m *Mockrepository) EXPECT() *MockrepositoryMockRecorder {
 	return m.recorder
-}
-
-// Publish mocks base method.
-func (m *MockPublisher) Publish(topic string, event []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", topic, event)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Publish indicates an expected call of Publish.
-func (mr *MockPublisherMockRecorder) Publish(topic, event any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockPublisher)(nil).Publish), topic, event)
-}
-
-// MockSubscriber is a mock of Subscriber interface.
-type MockSubscriber struct {
-	ctrl     *gomock.Controller
-	recorder *MockSubscriberMockRecorder
-	isgomock struct{}
-}
-
-// MockSubscriberMockRecorder is the mock recorder for MockSubscriber.
-type MockSubscriberMockRecorder struct {
-	mock *MockSubscriber
-}
-
-// NewMockSubscriber creates a new mock instance.
-func NewMockSubscriber(ctrl *gomock.Controller) *MockSubscriber {
-	mock := &MockSubscriber{ctrl: ctrl}
-	mock.recorder = &MockSubscriberMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockSubscriber) EXPECT() *MockSubscriberMockRecorder {
-	return m.recorder
-}
-
-// Subscribe mocks base method.
-func (m *MockSubscriber) Subscribe(ctx context.Context, topic string, handler func(context.Context, []byte) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", ctx, topic, handler)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Subscribe indicates an expected call of Subscribe.
-func (mr *MockSubscriberMockRecorder) Subscribe(ctx, topic, handler any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockSubscriber)(nil).Subscribe), ctx, topic, handler)
-}
-
-// MockCache is a mock of Cache interface.
-type MockCache struct {
-	ctrl     *gomock.Controller
-	recorder *MockCacheMockRecorder
-	isgomock struct{}
-}
-
-// MockCacheMockRecorder is the mock recorder for MockCache.
-type MockCacheMockRecorder struct {
-	mock *MockCache
-}
-
-// NewMockCache creates a new mock instance.
-func NewMockCache(ctrl *gomock.Controller) *MockCache {
-	mock := &MockCache{ctrl: ctrl}
-	mock.recorder = &MockCacheMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockCache) EXPECT() *MockCacheMockRecorder {
-	return m.recorder
-}
-
-// Get mocks base method.
-func (m *MockCache) Get(ctx context.Context, key string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, key)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get.
-func (mr *MockCacheMockRecorder) Get(ctx, key any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), ctx, key)
-}
-
-// Set mocks base method.
-func (m *MockCache) Set(ctx context.Context, key, value string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set", ctx, key, value)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Set indicates an expected call of Set.
-func (mr *MockCacheMockRecorder) Set(ctx, key, value any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), ctx, key, value)
-}
-
-// SetTTL mocks base method.
-func (m *MockCache) SetTTL(ctx context.Context, key, value string, ttl time.Duration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTTL", ctx, key, value, ttl)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTTL indicates an expected call of SetTTL.
-func (mr *MockCacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*MockCache)(nil).SetTTL), ctx, key, value, ttl)
-}
-
-// MockRepository is a mock of Repository interface.
-type MockRepository struct {
-	ctrl     *gomock.Controller
-	recorder *MockRepositoryMockRecorder
-	isgomock struct{}
-}
-
-// MockRepositoryMockRecorder is the mock recorder for MockRepository.
-type MockRepositoryMockRecorder struct {
-	mock *MockRepository
-}
-
-// NewMockRepository creates a new mock instance.
-func NewMockRepository(ctrl *gomock.Controller) *MockRepository {
-	mock := &MockRepository{ctrl: ctrl}
-	mock.recorder = &MockRepositoryMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
-	return m.recorder
-}
-
-// Begin mocks base method.
-func (m *MockRepository) Begin(ctx context.Context, isolationLvl sql.IsolationLevel) (context.Context, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Begin", ctx, isolationLvl)
-	ret0, _ := ret[0].(context.Context)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Begin indicates an expected call of Begin.
-func (mr *MockRepositoryMockRecorder) Begin(ctx, isolationLvl any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockRepository)(nil).Begin), ctx, isolationLvl)
-}
-
-// Commit mocks base method.
-func (m *MockRepository) Commit(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Commit", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Commit indicates an expected call of Commit.
-func (mr *MockRepositoryMockRecorder) Commit(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockRepository)(nil).Commit), ctx)
 }
 
 // CreateFruit mocks base method.
-func (m *MockRepository) CreateFruit(ctx context.Context, fruit *models.Fruit) error {
+func (m *Mockrepository) CreateFruit(ctx context.Context, fruit *models.Fruit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateFruit", ctx, fruit)
 	ret0, _ := ret[0].(error)
@@ -224,13 +51,13 @@ func (m *MockRepository) CreateFruit(ctx context.Context, fruit *models.Fruit) e
 }
 
 // CreateFruit indicates an expected call of CreateFruit.
-func (mr *MockRepositoryMockRecorder) CreateFruit(ctx, fruit any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) CreateFruit(ctx, fruit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFruit", reflect.TypeOf((*MockRepository)(nil).CreateFruit), ctx, fruit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFruit", reflect.TypeOf((*Mockrepository)(nil).CreateFruit), ctx, fruit)
 }
 
 // DeleteFruit mocks base method.
-func (m *MockRepository) DeleteFruit(ctx context.Context, fruit *models.Fruit) error {
+func (m *Mockrepository) DeleteFruit(ctx context.Context, fruit *models.Fruit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteFruit", ctx, fruit)
 	ret0, _ := ret[0].(error)
@@ -238,13 +65,13 @@ func (m *MockRepository) DeleteFruit(ctx context.Context, fruit *models.Fruit) e
 }
 
 // DeleteFruit indicates an expected call of DeleteFruit.
-func (mr *MockRepositoryMockRecorder) DeleteFruit(ctx, fruit any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) DeleteFruit(ctx, fruit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFruit", reflect.TypeOf((*MockRepository)(nil).DeleteFruit), ctx, fruit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFruit", reflect.TypeOf((*Mockrepository)(nil).DeleteFruit), ctx, fruit)
 }
 
 // GetFruitByID mocks base method.
-func (m *MockRepository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, error) {
+func (m *Mockrepository) GetFruitByID(ctx context.Context, id int) (*models.Fruit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFruitByID", ctx, id)
 	ret0, _ := ret[0].(*models.Fruit)
@@ -253,13 +80,13 @@ func (m *MockRepository) GetFruitByID(ctx context.Context, id int) (*models.Frui
 }
 
 // GetFruitByID indicates an expected call of GetFruitByID.
-func (mr *MockRepositoryMockRecorder) GetFruitByID(ctx, id any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) GetFruitByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFruitByID", reflect.TypeOf((*MockRepository)(nil).GetFruitByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFruitByID", reflect.TypeOf((*Mockrepository)(nil).GetFruitByID), ctx, id)
 }
 
 // ListFruits mocks base method.
-func (m *MockRepository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
+func (m *Mockrepository) ListFruits(ctx context.Context, limit, offset int) ([]*models.Fruit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListFruits", ctx, limit, offset)
 	ret0, _ := ret[0].([]*models.Fruit)
@@ -268,41 +95,13 @@ func (m *MockRepository) ListFruits(ctx context.Context, limit, offset int) ([]*
 }
 
 // ListFruits indicates an expected call of ListFruits.
-func (mr *MockRepositoryMockRecorder) ListFruits(ctx, limit, offset any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) ListFruits(ctx, limit, offset any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFruits", reflect.TypeOf((*MockRepository)(nil).ListFruits), ctx, limit, offset)
-}
-
-// Rollback mocks base method.
-func (m *MockRepository) Rollback(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Rollback", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Rollback indicates an expected call of Rollback.
-func (mr *MockRepositoryMockRecorder) Rollback(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockRepository)(nil).Rollback), ctx)
-}
-
-// SaveEvent mocks base method.
-func (m *MockRepository) SaveEvent(ctx context.Context, event *models.Event) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveEvent", ctx, event)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveEvent indicates an expected call of SaveEvent.
-func (mr *MockRepositoryMockRecorder) SaveEvent(ctx, event any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEvent", reflect.TypeOf((*MockRepository)(nil).SaveEvent), ctx, event)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFruits", reflect.TypeOf((*Mockrepository)(nil).ListFruits), ctx, limit, offset)
 }
 
 // UpdateFruit mocks base method.
-func (m *MockRepository) UpdateFruit(ctx context.Context, fruit *models.Fruit) error {
+func (m *Mockrepository) UpdateFruit(ctx context.Context, fruit *models.Fruit) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateFruit", ctx, fruit)
 	ret0, _ := ret[0].(error)
@@ -310,13 +109,13 @@ func (m *MockRepository) UpdateFruit(ctx context.Context, fruit *models.Fruit) e
 }
 
 // UpdateFruit indicates an expected call of UpdateFruit.
-func (mr *MockRepositoryMockRecorder) UpdateFruit(ctx, fruit any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) UpdateFruit(ctx, fruit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFruit", reflect.TypeOf((*MockRepository)(nil).UpdateFruit), ctx, fruit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFruit", reflect.TypeOf((*Mockrepository)(nil).UpdateFruit), ctx, fruit)
 }
 
 // WithTransaction mocks base method.
-func (m *MockRepository) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
+func (m *Mockrepository) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WithTransaction", ctx, fn)
 	ret0, _ := ret[0].(error)
@@ -324,7 +123,45 @@ func (m *MockRepository) WithTransaction(ctx context.Context, fn func(context.Co
 }
 
 // WithTransaction indicates an expected call of WithTransaction.
-func (mr *MockRepositoryMockRecorder) WithTransaction(ctx, fn any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) WithTransaction(ctx, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithTransaction", reflect.TypeOf((*MockRepository)(nil).WithTransaction), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithTransaction", reflect.TypeOf((*Mockrepository)(nil).WithTransaction), ctx, fn)
+}
+
+// MockoutboxService is a mock of outboxService interface.
+type MockoutboxService struct {
+	ctrl     *gomock.Controller
+	recorder *MockoutboxServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockoutboxServiceMockRecorder is the mock recorder for MockoutboxService.
+type MockoutboxServiceMockRecorder struct {
+	mock *MockoutboxService
+}
+
+// NewMockoutboxService creates a new mock instance.
+func NewMockoutboxService(ctrl *gomock.Controller) *MockoutboxService {
+	mock := &MockoutboxService{ctrl: ctrl}
+	mock.recorder = &MockoutboxServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockoutboxService) EXPECT() *MockoutboxServiceMockRecorder {
+	return m.recorder
+}
+
+// NewOutboxMessage mocks base method.
+func (m *MockoutboxService) NewOutboxMessage(ctx context.Context, topic string, msg *domain.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewOutboxMessage", ctx, topic, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewOutboxMessage indicates an expected call of NewOutboxMessage.
+func (mr *MockoutboxServiceMockRecorder) NewOutboxMessage(ctx, topic, msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewOutboxMessage", reflect.TypeOf((*MockoutboxService)(nil).NewOutboxMessage), ctx, topic, msg)
 }

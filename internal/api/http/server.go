@@ -133,6 +133,13 @@ func New(opts ...Option) *Server {
 
 	// 3. normal operation logging (http 100-499)
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			// do not log metrics or health checks - they will just spam logs
+			if c.Path() == "/health" || c.Path() == "/metrics" {
+				return true
+			}
+			return false
+		},
 		LogError:  true,
 		LogStatus: true,
 		LogMethod: true,

@@ -26,6 +26,7 @@ func init() {
 	})
 }
 
+// ValidateStruct validates arbitrary struct
 func ValidateStruct(s interface{}) []ValidationError {
 	err := validate.Struct(s)
 	if err != nil {
@@ -47,6 +48,11 @@ func ValidateStruct(s interface{}) []ValidationError {
 		}
 	}
 	return nil
+}
+
+// ValidateStructCompact calls ValidateStruct but returns single error instance
+func ValidateStructCompact(s interface{}) error {
+	return compactValidationErrors(ValidateStruct(s))
 }
 
 // ---
@@ -82,4 +88,18 @@ func (e ValidationError) Code() string {
 
 func (e ValidationError) Compact() string {
 	return fmt.Sprintf("(%s)[%s='%s']", e.original.Field(), e.original.ActualTag(), e.original.Param())
+}
+
+// ---
+
+func compactValidationErrors(vErrs []ValidationError) error {
+	if len(vErrs) > 0 {
+		var line string
+		for _, vErr := range vErrs {
+			line += vErr.Compact() + ","
+		}
+		line = strings.TrimSuffix(line, ",")
+		return fmt.Errorf("validation errors: %s", line)
+	}
+	return nil
 }

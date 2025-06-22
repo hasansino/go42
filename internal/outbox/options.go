@@ -1,8 +1,6 @@
-package example
+package outbox
 
-import (
-	"log/slog"
-)
+import "log/slog"
 
 type Option func(*Service)
 

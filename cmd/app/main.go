@@ -38,7 +38,6 @@ import (
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/cache/aerospike"
 	"github.com/hasansino/go42/internal/cache/memcached"
-	"github.com/hasansino/go42/internal/cache/miniredis"
 	"github.com/hasansino/go42/internal/cache/otter"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
@@ -57,10 +56,14 @@ import (
 	"github.com/hasansino/go42/internal/example"
 	exampleGrpcProviderV1 "github.com/hasansino/go42/internal/example/provider/grpc/v1"
 	exampleHttpProviderV1 "github.com/hasansino/go42/internal/example/provider/http/v1"
-	exampleFruitsRepository "github.com/hasansino/go42/internal/example/repository"
+	exampleRepositoryPkg "github.com/hasansino/go42/internal/example/repository"
+	exampleWorkers "github.com/hasansino/go42/internal/example/workers"
 	"github.com/hasansino/go42/internal/metrics"
 	"github.com/hasansino/go42/internal/metrics/observers"
 	metricsprovider "github.com/hasansino/go42/internal/metrics/providers/http"
+	"github.com/hasansino/go42/internal/outbox"
+	outboxRepositoryPkg "github.com/hasansino/go42/internal/outbox/repository"
+	outboxWorkers "github.com/hasansino/go42/internal/outbox/workers"
 )
 
 // These variables are passed as arguments to compiler.
@@ -262,6 +265,17 @@ func main() {
 			log.Fatalf("failed to initialize otter cache: %v\n", err)
 		}
 		log.Printf("otter cache engine initialized\n")
+	case "memcached":
+		var err error
+		cacheEngine, err = memcached.New(
+			cfg.Cache.Memcached.Hosts,
+			memcached.WithTimeout(cfg.Cache.Memcached.Timeout),
+			memcached.WithMaxIdleConns(cfg.Cache.Memcached.MaxIdleConns),
+		)
+		if err != nil {
+			log.Fatalf("failed to initialize memcached cache: %v\n", err)
+		}
+		log.Printf("memcached cache initialized\n")
 	case "redis":
 		var err error
 		cacheEngine, err = redis.New(
@@ -288,20 +302,6 @@ func main() {
 			log.Fatalf("failed to initialize redis cache: %v\n", err)
 		}
 		log.Printf("redis cache initialized\n")
-	case "miniredis":
-		cacheEngine = miniredis.New()
-		log.Printf("miniredis cache initialized\n")
-	case "memcached":
-		var err error
-		cacheEngine, err = memcached.New(
-			cfg.Cache.Memcached.Hosts,
-			memcached.WithTimeout(cfg.Cache.Memcached.Timeout),
-			memcached.WithMaxIdleConns(cfg.Cache.Memcached.MaxIdleConns),
-		)
-		if err != nil {
-			log.Fatalf("failed to initialize memcached cache: %v\n", err)
-		}
-		log.Printf("memcached cache initialized\n")
 	case "aerospike":
 		var err error
 		cacheEngine, err = aerospike.New(
@@ -378,29 +378,50 @@ func main() {
 	// service layer
 
 	{
-		// example service
-		exampleLogger := slog.Default().With(slog.String("component", "example"))
-		exampleRepository := exampleFruitsRepository.New(dbEngine)
-		exampleService := example.NewService(
-			exampleRepository,
-			eventsEngine,
-			example.WithLogger(exampleLogger),
-			example.WithCache(cacheEngine),
+		// outbox domain
+		outboxLogger := slog.Default().With(slog.String("component", "outbox-service"))
+		outboxRepository := outboxRepositoryPkg.New(database.NewBaseRepository(dbEngine))
+		outboxService := outbox.NewService(
+			outboxRepository,
+			outbox.WithLogger(outboxLogger),
 		)
 
+		outboxPublisher := outboxWorkers.NewOutboxMessagePublisher(
+			slog.Default().With(slog.String("component", "outbox-publisher")),
+			outboxRepository,
+			eventsEngine,
+		)
+		go outboxPublisher.Run(ctx, 5*time.Second, 100)
+
+		// example domain
+		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
+		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
+		exampleService := example.NewService(
+			exampleRepository,
+			outboxService,
+			example.WithLogger(exampleLogger),
+		)
+
+		fruitEventSubscriber := exampleWorkers.NewFruitEventSubscriber(
+			slog.Default().With(slog.String("component", "example-subscriber")),
+			exampleRepository,
+			eventsEngine,
+		)
+		err := fruitEventSubscriber.Subscribe(ctx, eventsEngine)
+		if err != nil {
+			log.Fatalf("failed to subscribe to events: %v\n", err)
+		}
+
 		// http server
-		exampleHttp := exampleHttpProviderV1.New(exampleService)
+		exampleHttp := exampleHttpProviderV1.New(
+			exampleService, cacheEngine,
+			exampleHttpProviderV1.WithCache(cacheEngine, 1*time.Second),
+		)
 		httpServer.RegisterV1(exampleHttp)
 
 		// grpc server
 		exampleGrpc := exampleGrpcProviderV1.New(exampleService)
 		grpcServer.Register(exampleGrpc)
-
-		// event consumer
-		err := exampleService.Subscribe(ctx, eventsEngine)
-		if err != nil {
-			log.Fatalf("example-service failed to subscribe to events: %v\n", err)
-		}
 	}
 
 	// ---

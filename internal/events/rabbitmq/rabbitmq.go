@@ -31,6 +31,10 @@ func New(dsn string, opts ...Option) (*AMQP, error) {
 		opt(engine, &amqpConfig)
 	}
 
+	if engine.logger == nil {
+		engine.logger = slog.New(slog.DiscardHandler)
+	}
+
 	publisher, err := amqp.NewPublisher(
 		amqpConfig,
 		watermill.NewSlogLogger(engine.logger),

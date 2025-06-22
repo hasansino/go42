@@ -123,10 +123,14 @@ func handlers(l *slog.Logger) []natsgo.Option {
 			l.Debug("connection established")
 		}),
 		natsgo.ErrorHandler(func(conn *natsgo.Conn, sub *natsgo.Subscription, err error) {
-			l.Debug("connection error", slog.String("error", err.Error()))
+			if err != nil {
+				l.Debug("connection error", slog.String("error", err.Error()))
+			}
 		}),
 		natsgo.DisconnectErrHandler(func(conn *natsgo.Conn, err error) {
-			l.Debug("disconnection error", slog.String("error", err.Error()))
+			if err != nil {
+				l.Debug("disconnection error", slog.String("error", err.Error()))
+			}
 		}),
 		natsgo.LameDuckModeHandler(func(conn *natsgo.Conn) {
 			l.Debug("server entering lame duck mode")
