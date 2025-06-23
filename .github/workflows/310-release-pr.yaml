@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/app/Chart.yaml
       - uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "release ${{ inputs.tag }}"
