@@ -101,7 +101,7 @@ func main() {
 	initVault(ctx, cfg)
 	etcdCloser := initEtcd(ctx, cfg)
 	initLimits(cfg)
-	initSentry(cfg)
+	initSentry(ctx, cfg)
 	pprofCloser := initProfiling(cfg)
 	metricsHandler := initMetrics(cfg)
 	tracingCloser := initTracing(cfg)
@@ -635,7 +635,7 @@ func initLimits(cfg *config.Config) {
 	}
 }
 
-func initSentry(cfg *config.Config) ShutMeDown {
+func initSentry(ctx context.Context, cfg *config.Config) ShutMeDown {
 	if !cfg.Sentry.Enabled {
 		slog.Warn("sentry is disabled")
 		return nil
@@ -666,8 +666,8 @@ func initSentry(cfg *config.Config) ShutMeDown {
 	}
 
 	sentryHandler := sentryslog.Option{
-		Level: slog.LevelError,
-	}.NewSentryHandler()
+		EventLevel: []slog.Level{slog.LevelError},
+	}.NewSentryHandler(ctx)
 
 	multiLogger := slog.New(
 		slogmulti.Fanout(
