@@ -1,7 +1,7 @@
 name: release-pr
 
 # Creates a PR to update the appVersion in the Chart.yaml file.
-# Merging this PR will trigger a new release by ArgoCD.
+# Merging this PR will trigger deployment.
 
 on:
   workflow_call:
@@ -53,9 +53,9 @@ jobs:
           title: "🚀 Release ${{ inputs.tag }} 🚀"
           body: |
             This is automated release PR.
-            Merging this PR will trigger a new release by ArgoCD.
+            Merging this PR will trigger deployment.
             ${{ steps.prev_tag.outputs.previous_tag && format('- Previous version: `{0}`', steps.prev_tag.outputs.previous_tag) || '' }}
-            ${{ steps.prev_tag.outputs.comparison_url && format('### 📋 Full Changelog\n\nView all changes: {0}', steps.prev_tag.outputs.comparison_url) || '' }}
+            ${{ steps.prev_tag.outputs.comparison_url && format('- Changelog: {0}', steps.prev_tag.outputs.comparison_url) || '' }}
           branch: "auto-release-${{ inputs.tag }}"
           delete-branch: true
           branch-suffix: random

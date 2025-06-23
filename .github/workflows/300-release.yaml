@@ -37,7 +37,7 @@ jobs:
       platforms: "linux/arm64"
       attestation: true
   release-pr:
-    # needs: [docker-build-amd64, docker-build-arm64]
+    needs: [docker-build-amd64, docker-build-arm64]
     name: release-pr
     uses: ./.github/workflows/310-release-pr.yaml
     with:
