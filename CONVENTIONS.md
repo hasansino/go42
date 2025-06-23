@@ -13,6 +13,7 @@ This document is a repository of conventions and rules used by this project.
 * commit message
 * pull request names and description
 * tag naming
+* sub-module tags
 
 ## Golang
 
@@ -29,6 +30,9 @@ This document is a repository of conventions and rules used by this project.
 * WithTransaction should NOT be used in repository level 
 * use slog.Any("error", err) for slog errors
 * log.fatal can be used only during init phase in main functions
+* logger should be passed as option, if not passed, must default to noop logger
+* string == "" vs len(string) == 0
+* log fields with dash, metric labels with underscore
 
 ## Code Review
 

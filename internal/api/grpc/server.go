@@ -20,6 +20,7 @@ import (
 
 	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	"github.com/hasansino/go42/internal/metrics"
+	"github.com/hasansino/go42/internal/tools"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
@@ -60,16 +61,18 @@ func New(opts ...Option) *Server {
 	}
 
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
+		interceptors.UnaryRequestIDInterceptor(),
 		interceptors.UnaryMetricsInterceptor(),
 		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
-		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
 	}
 	streamInterceptors := []grpc.StreamServerInterceptor{
+		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
+		interceptors.StreamRequestIDInterceptor(),
 		interceptors.StreamMetricsInterceptor(),
 		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
-		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
 	}
 
 	serverOptions := []grpc.ServerOption{
@@ -121,6 +124,7 @@ func (s *Server) Register(providers ...providerAccessor) {
 
 func interceptorLogger(l *slog.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
-		l.Log(ctx, slog.Level(lvl), msg, fields...)
+		l.With(slog.String("request_id", tools.GetRequestIDFromContext(ctx))).
+			Log(ctx, slog.Level(lvl), msg, fields...)
 	})
 }

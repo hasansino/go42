@@ -43,10 +43,7 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueMISS)
 			}
 
-			resRecorder := &responseRecorder{
-				ResponseWriter: c.Response().Writer,
-				status:         200,
-			}
+			resRecorder := newResponseRecorder(c.Response().Writer, true)
 			c.Response().Writer = resRecorder
 
 			if err := next(c); err != nil {

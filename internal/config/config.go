@@ -234,12 +234,12 @@ type Mysql struct {
 }
 
 type MysqlMaster struct {
-	Host     string `env:"DATABASE_MYSQL_SLAVE_HOST"     default:"localhost"`
-	Port     int    `env:"DATABASE_MYSQL_SLAVE_PORT"     default:"3306"`
-	User     string `env:"DATABASE_MYSQL_SLAVE_USER"     default:"user"`
-	Password string `env:"DATABASE_MYSQL_SLAVE_PASSWORD" default:"qwerty"`
-	Charset  string `env:"DATABASE_MYSQL_SLAVE_CHARSET"  default:"utf8mb4"`
-	Name     string `env:"DATABASE_MYSQL_SLAVE_NAME"     default:"go42"`
+	Host     string `env:"DATABASE_MYSQL_MASTER_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_MYSQL_MASTER_PORT"     default:"3306"`
+	User     string `env:"DATABASE_MYSQL_MASTER_USER"     default:"user"`
+	Password string `env:"DATABASE_MYSQL_MASTER_PASSWORD" default:"qwerty"`
+	Charset  string `env:"DATABASE_MYSQL_MASTER_CHARSET"  default:"utf8mb4"`
+	Name     string `env:"DATABASE_MYSQL_MASTER_NAME"     default:"go42"`
 }
 
 func (db MysqlMaster) DSN() string {
@@ -250,12 +250,12 @@ func (db MysqlMaster) DSN() string {
 }
 
 type MysqlSlave struct {
-	Host     string `env:"DATABASE_MYSQL_MASTER_HOST"     default:"localhost"`
-	Port     int    `env:"DATABASE_MYSQL_MASTER_PORT"     default:"3306"`
-	User     string `env:"DATABASE_MYSQL_MASTER_USER"     default:"user"`
-	Password string `env:"DATABASE_MYSQL_MASTER_PASSWORD" default:"qwerty"`
-	Charset  string `env:"DATABASE_MYSQL_MASTER_CHARSET"  default:"utf8mb4"`
-	Name     string `env:"DATABASE_MYSQL_MASTER_NAME"     default:"go42"`
+	Host     string `env:"DATABASE_MYSQL_SLAVE_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_MYSQL_SLAVE_PORT"     default:"3306"`
+	User     string `env:"DATABASE_MYSQL_SLAVE_USER"     default:"user"`
+	Password string `env:"DATABASE_MYSQL_SLAVE_PASSWORD" default:"qwerty"`
+	Charset  string `env:"DATABASE_MYSQL_SLAVE_CHARSET"  default:"utf8mb4"`
+	Name     string `env:"DATABASE_MYSQL_SLAVE_NAME"     default:"go42"`
 }
 
 func (db MysqlSlave) DSN() string {

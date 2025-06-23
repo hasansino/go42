@@ -22,10 +22,7 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 
 			metrics.Counter("application_http_requests_count", labels).Inc()
 
-			resRecorder := &responseRecorder{
-				ResponseWriter: c.Response().Writer,
-				status:         200,
-			}
+			resRecorder := newResponseRecorder(c.Response().Writer, false)
 			c.Response().Writer = resRecorder
 
 			// --- BEFORE

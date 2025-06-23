@@ -32,15 +32,21 @@ type OutboxMessagePublisher struct {
 }
 
 func NewOutboxMessagePublisher(
-	logger *slog.Logger,
 	repository repository,
 	publisher publisher,
+	opts ...OutboxMessagePublisherOption,
 ) *OutboxMessagePublisher {
-	return &OutboxMessagePublisher{
-		logger:     logger,
+	pub := &OutboxMessagePublisher{
 		repository: repository,
 		publisher:  publisher,
 	}
+	for _, opt := range opts {
+		opt(pub)
+	}
+	if pub.logger == nil {
+		pub.logger = slog.New(slog.DiscardHandler)
+	}
+	return pub
 }
 
 func (p *OutboxMessagePublisher) Run(
@@ -126,5 +132,13 @@ func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
 		metrics.Counter("application_errors", map[string]interface{}{
 			"type": "outbox_publisher_error",
 		}).Inc()
+	}
+}
+
+type OutboxMessagePublisherOption func(*OutboxMessagePublisher)
+
+func OutboxMessagePublisherWithLogger(logger *slog.Logger) OutboxMessagePublisherOption {
+	return func(o *OutboxMessagePublisher) {
+		o.logger = logger
 	}
 }

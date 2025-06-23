@@ -37,3 +37,13 @@ Golang project operation blueprint.
   * https://goproxy.githubapp.com
   * https://proxy.golang.org
   * https://github.com/gomods/athens
++ research swagger libraries
+  * https://github.com/go-swagger/go-swagger
+  * https://github.com/swaggo/swag?tab=readme-ov-file#supported-web-frameworks
++ research https://backstage.io/
++ support hetzner, aws, gcp, azure
++ interactive setup wizard
++ cost analysis for different scales
++ feature flags system
++ security headers
++ api token system

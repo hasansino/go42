@@ -64,6 +64,7 @@ import (
 	"github.com/hasansino/go42/internal/outbox"
 	outboxRepositoryPkg "github.com/hasansino/go42/internal/outbox/repository"
 	outboxWorkers "github.com/hasansino/go42/internal/outbox/workers"
+	"github.com/hasansino/go42/internal/tools"
 )
 
 // These variables are passed as arguments to compiler.
@@ -383,9 +384,11 @@ func main() {
 		)
 
 		outboxPublisher := outboxWorkers.NewOutboxMessagePublisher(
-			slog.Default().With(slog.String("component", "outbox-publisher")),
 			outboxRepository,
 			eventsEngine,
+			outboxWorkers.OutboxMessagePublisherWithLogger(
+				slog.Default().With(slog.String("component", "outbox-publisher")),
+			),
 		)
 		go outboxPublisher.Run(ctx, 5*time.Second, 100)
 
@@ -399,9 +402,11 @@ func main() {
 		)
 
 		fruitEventSubscriber := exampleWorkers.NewFruitEventSubscriber(
-			slog.Default().With(slog.String("component", "example-subscriber")),
 			exampleRepository,
 			eventsEngine,
+			exampleWorkers.FruitEventSubscriberWithLogger(
+				slog.Default().With(slog.String("component", "example-subscriber")),
+			),
 		)
 		err := fruitEventSubscriber.Subscribe(ctx, eventsEngine)
 		if err != nil {
@@ -489,7 +494,7 @@ func initLogging(cfg *config.Config) {
 
 	hostname, _ := os.Hostname()
 
-	logger := slog.New(slogHandler)
+	logger := slog.New(tools.SlogContextWrapper(slogHandler))
 	enrichedLogger := logger.With(
 		slog.String("service", cfg.Core.ServiceName),
 		slog.String("environment", cfg.Core.Environment),

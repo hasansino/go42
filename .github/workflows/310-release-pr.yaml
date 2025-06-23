@@ -1,0 +1,48 @@
+name: release-pr
+
+# Creates a PR to update the appVersion in the Chart.yaml file.
+# Merging this PR will trigger a new release by ArgoCD.
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: release-pr
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/Chart.yaml
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "release ${{ inputs.tag }}"
+          title: "Release ${{ inputs.tag }}"
+          body: ""
+          branch: "auto-release-${{ inputs.tag }}"
+          delete-branch: true
+          branch-suffix: random
+          sign-commits: true
+          assignees: ${{ github.actor }}
+          reviewers: ${{ github.actor }}

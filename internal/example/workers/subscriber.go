@@ -33,15 +33,21 @@ type FruitEventSubscriber struct {
 }
 
 func NewFruitEventSubscriber(
-	logger *slog.Logger,
 	repository repository,
 	subscriber subscriber,
+	opts ...FruitEventSubscriberOption,
 ) *FruitEventSubscriber {
-	return &FruitEventSubscriber{
-		logger:     logger,
+	sub := &FruitEventSubscriber{
 		repository: repository,
 		subscriber: subscriber,
 	}
+	for _, o := range opts {
+		o(sub)
+	}
+	if sub.logger == nil {
+		sub.logger = slog.New(slog.DiscardHandler)
+	}
+	return sub
 }
 
 func (s *FruitEventSubscriber) Subscribe(ctx context.Context, subscriber subscriber) error {
@@ -82,4 +88,12 @@ func (s *FruitEventSubscriber) handleEvent(ctx context.Context, eventData []byte
 		metrics.Counter("application_example_subscriber_processed", nil).Inc()
 		return nil
 	})
+}
+
+type FruitEventSubscriberOption func(*FruitEventSubscriber)
+
+func FruitEventSubscriberWithLogger(logger *slog.Logger) FruitEventSubscriberOption {
+	return func(o *FruitEventSubscriber) {
+		o.logger = logger
+	}
 }

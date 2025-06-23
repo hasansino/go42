@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"sync/atomic"
@@ -95,29 +96,30 @@ func New(opts ...Option) *Server {
 			httpMessage = http.StatusText(httpStatus)
 		}
 
-		metrics.Counter("errors", map[string]interface{}{
-			"type": metricErrorType,
-		}).Inc()
-
-		slogAttrs := []interface{}{
-			slog.String("error", err.Error()),
-			slog.Int("status", httpStatus),
-			slog.String("method", c.Request().Method),
-			slog.String("uri", c.Request().RequestURI),
-			slog.String("who", "echo.HTTPErrorHandler"),
+		if httpStatus >= 500 {
+			metrics.Counter("errors", map[string]interface{}{
+				"type": metricErrorType,
+			}).Inc()
+			slogAttrs := []interface{}{
+				slog.String("error", err.Error()),
+				slog.Int("status", httpStatus),
+				slog.String("method", c.Request().Method),
+				slog.String("uri", c.Request().RequestURI),
+				slog.String("who", "echo.HTTPErrorHandler"),
+			}
+			if len(panicStack) > 0 {
+				slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
+			}
+			s.l.Error(logMessage, slogAttrs...)
 		}
-		if len(panicStack) > 0 {
-			slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
-		}
-		s.l.Error(logMessage, slogAttrs...)
 
-		// during normal operation, for 4xx errors, response will be already written
+		// if response is not commited, something unexpected happened
 		if c.Response().Committed {
 			return
 		}
 
 		if err := SendJSONError(c, httpStatus, httpMessage); err != nil {
-			slog.Error("failed to send json error response", slog.Any("error", err))
+			s.l.Error("failed to send json error response", slog.Any("error", err))
 		}
 	}
 
@@ -133,20 +135,17 @@ func New(opts ...Option) *Server {
 
 	// 3. normal operation logging (http 100-499)
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		Skipper: func(c echo.Context) bool {
-			// do not log metrics or health checks - they will just spam logs
-			if c.Path() == "/health" || c.Path() == "/metrics" {
-				return true
-			}
-			return false
-		},
-		LogError:  true,
-		LogStatus: true,
-		LogMethod: true,
-		LogURI:    true,
+		Skipper:      customMiddleware.DefaultSkipper,
+		LogError:     true,
+		LogStatus:    true,
+		LogMethod:    true,
+		LogURI:       true,
+		LogRequestID: true,
 		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			if v.Error == nil {
-				s.l.InfoContext(
+			// log any request with status code < 500 as normal INFO level
+			echoErr := new(echo.HTTPError)
+			if v.Error == nil || errors.As(v.Error, &echoErr) && echoErr.Code < 500 {
+				s.l.DebugContext(
 					c.Request().Context(), "request",
 					slog.Int("status", v.Status),
 					slog.String("method", v.Method),
@@ -163,6 +162,9 @@ func New(opts ...Option) *Server {
 		s.e.Use(otelecho.Middleware("http-server"))
 	}
 
+	// 5. request id
+	s.e.Use(customMiddleware.NewRequestID())
+
 	root := s.e.Group("")
 	root.Static("/", s.staticRoot)
 
@@ -171,7 +173,19 @@ func New(opts ...Option) *Server {
 	s.readyStatus.Store(true)
 
 	apiV1 := s.e.Group("/api/v1")
+
+	// serve openapi specification files
 	apiV1.Static("", s.swaggerRoot+"/v1")
+
+	// embed swagger html template itself
+	tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
+	apiV1.GET("/", func(c echo.Context) error {
+		return tmpl.Execute(c.Response(), swaggerTemplateData{
+			SpecURL: "/api/v1/openapi.yml",
+			CDN:     swaggerCDNjsdelivr,
+			Version: swaggerUIVersion,
+		})
+	})
 
 	s.root = root
 	s.v1 = apiV1
