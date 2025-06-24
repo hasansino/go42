@@ -32,7 +32,9 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 			if err != nil {
 				slog.Default().
 					With(slog.String("component", "echo-middleware-cache")).
-					Error("failed to fetch cached data", slog.Any("error", err))
+					ErrorContext(
+						c.Request().Context(),
+						"failed to fetch cached data", slog.Any("error", err))
 				return next(c)
 			}
 
@@ -54,7 +56,9 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 			if err != nil {
 				slog.Default().
 					With(slog.String("component", "echo-middleware-cache")).
-					Error("failed to cache response", slog.Any("error", err))
+					ErrorContext(
+						c.Request().Context(),
+						"failed to cache response", slog.Any("error", err))
 			}
 
 			return nil

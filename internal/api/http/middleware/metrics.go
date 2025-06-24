@@ -25,11 +25,7 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			resRecorder := newResponseRecorder(c.Response().Writer, false)
 			c.Response().Writer = resRecorder
 
-			// --- BEFORE
-
-			err := next(c) // -- APP
-
-			// --- AFTER
+			err := next(c)
 
 			duration := time.Since(start).Seconds()
 

@@ -18,8 +18,8 @@ name: unified-workflow
 on:
   workflow_dispatch:
   # push or merge to master
-#  push:
-#    branches: [ master ]
+  push:
+    branches: [ master ]
   # pull request targeting master branch created or updated
   pull_request:
     branches: [ master ]

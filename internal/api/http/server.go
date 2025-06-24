@@ -110,7 +110,7 @@ func New(opts ...Option) *Server {
 			if len(panicStack) > 0 {
 				slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
 			}
-			s.l.Error(logMessage, slogAttrs...)
+			s.l.ErrorContext(c.Request().Context(), logMessage, slogAttrs...)
 		}
 
 		// if response is not commited, something unexpected happened
@@ -119,7 +119,9 @@ func New(opts ...Option) *Server {
 		}
 
 		if err := SendJSONError(c, httpStatus, httpMessage); err != nil {
-			s.l.Error("failed to send json error response", slog.Any("error", err))
+			s.l.ErrorContext(
+				c.Request().Context(),
+				"failed to send json error response", slog.Any("error", err))
 		}
 	}
 
@@ -146,7 +148,8 @@ func New(opts ...Option) *Server {
 			echoErr := new(echo.HTTPError)
 			if v.Error == nil || errors.As(v.Error, &echoErr) && echoErr.Code < 500 {
 				s.l.DebugContext(
-					c.Request().Context(), "request",
+					c.Request().Context(),
+					"request",
 					slog.Int("status", v.Status),
 					slog.String("method", v.Method),
 					slog.String("uri", v.URI),

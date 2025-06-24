@@ -33,6 +33,7 @@ This document is a repository of conventions and rules used by this project.
 * logger should be passed as option, if not passed, must default to noop logger
 * string == "" vs len(string) == 0
 * log fields with dash, metric labels with underscore
+* always use xContext() version of slog methods where context is available
 
 ## Code Review
 
