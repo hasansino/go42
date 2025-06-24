@@ -1,5 +1,9 @@
 name: git-lint
 
+# Git linter.
+# Designed to check if user adheres to the project's Git rules.
+# Also branch naming have implicit limitations due to docker tag naming rules.
+
 on:
   workflow_dispatch:
     inputs:
