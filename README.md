@@ -21,8 +21,6 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ realease go binary have invalid build tag and version
-
 + external dependencies
   * circuit breaker (https://github.com/sony/gobreaker)
   * retry (https://github.com/avast/retry-go)

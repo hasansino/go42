@@ -1,10 +1,12 @@
 # We want to fail if arguments were not passed.
 ARG GO_VERSION=INVALID
-ARG COMMIT_HASH=INVALID
-ARG RELEASE_TAG=INVALID
 
 # For build stage we use standard debian version of image.
 FROM golang:${GO_VERSION} AS builder
+
+# FROM resets arguements, so we need to declare them after.
+ARG COMMIT_HASH=INVALID
+ARG RELEASE_TAG=INVALID
 
 WORKDIR /tmp/build
 COPY go.mod go.sum ./
