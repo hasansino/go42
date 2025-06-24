@@ -67,6 +67,18 @@ func ValidateStructCompact(s interface{}) error {
 	return compactValidationErrors(ValidateStruct(s))
 }
 
+func compactValidationErrors(vErrs []ValidationError) error {
+	if len(vErrs) > 0 {
+		var line string
+		for _, vErr := range vErrs {
+			line += vErr.Detail() + ","
+		}
+		line = strings.TrimSuffix(line, ",")
+		return fmt.Errorf("validation errors: %s", line)
+	}
+	return nil
+}
+
 // ---
 
 type ValidationError struct {
@@ -95,18 +107,4 @@ func (e ValidationError) Code() string {
 		return e.code
 	}
 	return "INVALID_VALUE"
-}
-
-// ---
-
-func compactValidationErrors(vErrs []ValidationError) error {
-	if len(vErrs) > 0 {
-		var line string
-		for _, vErr := range vErrs {
-			line += vErr.Detail() + ","
-		}
-		line = strings.TrimSuffix(line, ",")
-		return fmt.Errorf("validation errors: %s", line)
-	}
-	return nil
 }

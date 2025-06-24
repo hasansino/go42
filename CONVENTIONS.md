@@ -35,6 +35,7 @@ This document is a repository of conventions and rules used by this project.
 * string == "" vs len(string) == 0
 * log fields with dash, metric labels with underscore
 * always use xContext() version of slog methods where context is available
+* github.com/hasansino/go42/internal/tools should never import anything from internal
 
 ## Code Review
 

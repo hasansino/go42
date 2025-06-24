@@ -30,10 +30,7 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			duration := time.Since(start).Seconds()
 
 			labels["status"] = strconv.Itoa(resRecorder.status)
-			labels["is_error"] = "no"
-			if err != nil {
-				labels["is_error"] = "yes"
-			}
+			labels["is_error"] = toStringBool(err == nil)
 
 			metrics.Counter("application_http_responses_count", labels).Inc()
 			metrics.Histogram("application_http_latency_sec", labels).Update(duration)
@@ -41,4 +38,11 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			return err
 		}
 	}
+}
+
+func toStringBool(is bool) string {
+	if is {
+		return "yes"
+	}
+	return "no"
 }

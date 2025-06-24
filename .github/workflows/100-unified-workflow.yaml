@@ -36,35 +36,35 @@ permissions:
 jobs:
   # Stage 1: Linting
   git-lint:
-    # Prevent dependabot from starting this workflow.
+    # Prevent automations from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
     uses: ./.github/workflows/110-git-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
   golangci-lint:
-    # Prevent dependabot from starting this workflow.
+    # Prevent automations from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
     uses: ./.github/workflows/110-golangci-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   docker-lint:
-    # Prevent dependabot from starting this workflow.
+    # Prevent automations from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
     uses: ./.github/workflows/110-docker-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   proto-lint:
-    # Prevent dependabot from starting this workflow.
+    # Prevent automations from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
     uses: ./.github/workflows/110-proto-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   openapi-lint:
-    # Prevent dependabot from starting this workflow.
+    # Prevent automations from starting this workflow.
     if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
     uses: ./.github/workflows/110-openapi-lint.yaml
     with:
