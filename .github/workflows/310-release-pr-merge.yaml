@@ -31,3 +31,4 @@ jobs:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
           generate_release_notes: true
+          files: ""

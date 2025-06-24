@@ -50,7 +50,7 @@ jobs:
       - uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "release ${{ inputs.tag }}"
-          title: "Release ${{ inputs.tag }} 🚀"
+          title: "Release ${{ inputs.tag }}"
           body: |
             This is automated release PR.
             Merging this PR will trigger deployment.
