@@ -14,6 +14,7 @@ This document is a repository of conventions and rules used by this project.
 * pull request names and description
 * tag naming
 * sub-module tags
+* always prefer rebase to merge commits
 
 ## Golang
 

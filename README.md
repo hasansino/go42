@@ -31,7 +31,7 @@ Golang project operation blueprint.
 + reproducible builds
   * https://docs.docker.com/build/ci/github-actions/reproducible-builds/
   * https://go.dev/blog/rebuild
-+ research swagger libraries]()
++ research swagger libraries
   * https://github.com/go-swagger/go-swagger
   * https://github.com/swaggo/swag?tab=readme-ov-file#supported-web-frameworks
 + research https://backstage.io/
