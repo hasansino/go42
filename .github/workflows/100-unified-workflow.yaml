@@ -16,6 +16,7 @@ name: unified-workflow
 # @see https://github.com/orgs/community/discussions/25246
 
 on:
+  # manual trigger
   workflow_dispatch:
   # push or merge to master
   push:
@@ -36,36 +37,41 @@ permissions:
 jobs:
   # Stage 1: Linting
   git-lint:
-    # Prevent automations from starting this workflow.
-    if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
     uses: ./.github/workflows/110-git-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
   golangci-lint:
-    # Prevent automations from starting this workflow.
-    if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
     uses: ./.github/workflows/110-golangci-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   docker-lint:
-    # Prevent automations from starting this workflow.
-    if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
     uses: ./.github/workflows/110-docker-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   proto-lint:
-    # Prevent automations from starting this workflow.
-    if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
     uses: ./.github/workflows/110-proto-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
   openapi-lint:
-    # Prevent automations from starting this workflow.
-    if: github.event_name == 'workflow_dispatch' || endsWith(github.actor, '[bot]') == false
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
     uses: ./.github/workflows/110-openapi-lint.yaml
     with:
       runs_on: ubuntu-latest

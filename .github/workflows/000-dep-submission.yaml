@@ -3,7 +3,9 @@ name: dep-submission
 # Syncs go dependencies with GitHub dependency submission API.
 
 on:
+  # manual trigger
   workflow_dispatch:
+  # push or merge to master
   push:
     branches: [ master ]
 
@@ -12,7 +14,9 @@ permissions:
 
 jobs:
   dep-submission:
-    name: dep-submission
+    if: |
+      github.event.head_commit.message != 'initial commit' &&
+      !startsWith(github.event.head_commit.message, 'release')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
