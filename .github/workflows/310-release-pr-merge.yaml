@@ -18,6 +18,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - id: extract_semver
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          VERSION=$(echo "$PR_TITLE" | grep -oP '\d+\.\d+\.\d+' | head -n 1)
+          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
         with:
+          name: Release ${{ steps.extract_semver.outputs.version }}
+          tag_name: ${{ steps.extract_semver.outputs.version }}
           generate_release_notes: true
