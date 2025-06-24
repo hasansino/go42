@@ -21,7 +21,6 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ when merging release pr, create github release
 + realease go binary have invalid build tag and version
 
 + external dependencies

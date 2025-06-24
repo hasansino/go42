@@ -15,8 +15,7 @@ permissions:
 jobs:
   dep-submission:
     if: |
-      github.event.head_commit.message != 'initial commit' &&
-      !startsWith(github.event.head_commit.message, 'release')
+      github.event.head_commit.message != 'initial commit'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

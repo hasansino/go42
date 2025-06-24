@@ -61,4 +61,4 @@ jobs:
           branch-suffix: random
           sign-commits: true
           base: master
-          assignees: ${{ github.actor }}
+          assignees: ${{ github.actor }} # will be whoever created a tag

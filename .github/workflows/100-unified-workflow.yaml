@@ -39,7 +39,7 @@ jobs:
   git-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
+      (github.event.head_commit.message != 'initial commit')
     uses: ./.github/workflows/110-git-lint.yaml
     with:
       runs_on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
   golangci-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
+      (github.event.head_commit.message != 'initial commit')
     uses: ./.github/workflows/110-golangci-lint.yaml
     with:
       runs_on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
   docker-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
+      (github.event.head_commit.message != 'initial commit')
     uses: ./.github/workflows/110-docker-lint.yaml
     with:
       runs_on: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
   proto-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
+      (github.event.head_commit.message != 'initial commit')
     uses: ./.github/workflows/110-proto-lint.yaml
     with:
       runs_on: ubuntu-latest
@@ -71,7 +71,7 @@ jobs:
   openapi-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      (github.event.head_commit.message != 'initial commit' || !startsWith(github.event.head_commit.message, 'release'))
+      (github.event.head_commit.message != 'initial commit')
     uses: ./.github/workflows/110-openapi-lint.yaml
     with:
       runs_on: ubuntu-latest
