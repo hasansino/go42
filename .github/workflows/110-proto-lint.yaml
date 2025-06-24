@@ -44,3 +44,4 @@ jobs:
           version: 1.55.0
           lint: true
           format: true
+          pr_comment: false

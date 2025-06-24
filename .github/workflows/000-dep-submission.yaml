@@ -1,0 +1,24 @@
+name: dep-submission
+
+# Syncs go dependencies with GitHub dependency submission API.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  dep-submission:
+    name: dep-submission
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - uses: actions/go-dependency-submission@v2
+        with:
+          go-mod-path: go.mod
+          go-build-target: cmd/app/main.go
