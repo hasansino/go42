@@ -116,7 +116,7 @@ lint-openapi:
 # Dependencies:
 #   * brew install buf
 generate:
-	@buf generate && go generate ./...
+	@buf generate && go generate ./... && go run cmd/cfg2env/main.go
 
 ## generate-dep-graph | generate dependency graph
 # Dependencies:

@@ -313,7 +313,7 @@ type Aerospike struct {
 // ╰──────────────────────────────╯
 
 type Events struct {
-	Engine   string `env:"EVENTS_ENGINE" default:"none" v:"oneof=none gochan nats rabbitmq kafka"`
+	Engine   string `env:"EVENTS_ENGINE" default:"gochan" v:"oneof=none gochan nats rabbitmq kafka"`
 	NATS     NATS
 	RabbitMQ RabbitMQ
 	Kafka    Kafka
