@@ -11,8 +11,8 @@ jobs:
   release-pr-merge:
     if: |
       github.event.pull_request.merged == true && 
-      startsWith(github.event.pull_request.title, '🚀') && 
-      endsWith(github.event.pull_request.title, '🚀')
+      startsWith(github.event.pull_request.title, 'Release') &&
+      github.event.pull_request.user.login == 'github-actions[bot]'
     name: release-pr-merge
     runs-on: ubuntu-latest
     continue-on-error: false
