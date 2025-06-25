@@ -49,7 +49,7 @@ on:
         required: true
         type: boolean
         default: false
-      description: "attestation_sbom"
+        description: "attestation_sbom"
   workflow_call:
     inputs:
       runs_on:
