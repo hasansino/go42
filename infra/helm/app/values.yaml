@@ -11,6 +11,8 @@ nodeSelector: {}
 affinity: {}
 tolerations: {}
 
+replicaCount: 1
+
 resources:
   requests:
     cpu: 500m
@@ -30,12 +32,3 @@ env:
   SERVER_GRPC_LISTEN: ":50051"
 
 volumeSize: 100Mi
-
-replicaCount: 1
-
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80

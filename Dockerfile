@@ -4,9 +4,14 @@ ARG GO_VERSION=INVALID
 # For build stage we use standard debian version of image.
 FROM golang:${GO_VERSION} AS builder
 
-# FROM resets arguements, so we need to declare them after.
+# FROM resets arguments, so we need to declare them after.
 ARG COMMIT_HASH=INVALID
 ARG RELEASE_TAG=INVALID
+
+# Fail if arguments were not passed.
+RUN if [ "$COMMIT_HASH" = "INVALID" ] || [ "$RELEASE_TAG" = "INVALID" ]; \
+      then echo "ERROR: COMMIT_HASH and RELEASE_TAG must be set"; exit 1; \
+    fi
 
 WORKDIR /tmp/build
 COPY go.mod go.sum ./

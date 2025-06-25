@@ -35,13 +35,13 @@ Golang project operation blueprint.
   * https://github.com/go-swagger/go-swagger
   * https://github.com/swaggo/swag?tab=readme-ov-file#supported-web-frameworks
 + research https://backstage.io/
-+ support hetzner, aws, gcp, azure
-+ interactive setup wizard
-+ cost analysis for different scales
-+ feature flags system
 + security headers
 + api token system
-+ pr llm review
-+ switch from zipkin to jaeger or tempo
 + service discovery
++ feature flags system
++ switch from zipkin to jaeger or tempo
++ pr llm review
 + working with private repositories, .netrc, GOPRIVATE, modules
++ interactive setup wizard
++ support hetzner, aws, gcp, azure
++ cost analysis for different scales

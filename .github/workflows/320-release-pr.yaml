@@ -1,7 +1,7 @@
 name: release-pr
 
 # Creates a PR to update the appVersion in the Chart.yaml file.
-# Merging this PR will trigger deployment.
+# @note merging this PR will trigger deployment.
 
 on:
   workflow_call:

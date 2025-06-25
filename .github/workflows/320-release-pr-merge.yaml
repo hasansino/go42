@@ -1,5 +1,7 @@
 name: release-pr-merge
 
+# After auto-release pull request is merged, create release and delete branch.
+
 on:
   pull_request:
     types: [closed]
@@ -26,9 +28,15 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           VERSION=$(echo "$PR_TITLE" | grep -oP '\d+\.\d+\.\d+' | head -n 1)
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+      # create release
       - uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
           generate_release_notes: true
-          files: ""
+      # remove branch after merge
+      - run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH_NAME"
+        env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

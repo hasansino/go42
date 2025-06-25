@@ -259,13 +259,13 @@ func main() {
 	switch cfg.Cache.Engine {
 	case "none":
 		cacheEngine = cache.NewNoop()
-		log.Printf("no cache engine initialized\n")
+		slog.Info("no cache engine initialized")
 	case "otter":
 		cacheEngine, err = otter.New()
 		if err != nil {
 			log.Fatalf("failed to initialize otter cache: %v\n", err)
 		}
-		log.Printf("otter cache engine initialized\n")
+		slog.Info("otter cache engine initialized")
 	case "memcached":
 		var err error
 		cacheEngine, err = memcached.New(
@@ -276,7 +276,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize memcached cache: %v\n", err)
 		}
-		log.Printf("memcached cache initialized\n")
+		slog.Info("memcached cache initialized")
 	case "redis":
 		var err error
 		cacheEngine, err = redis.New(
@@ -302,7 +302,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize redis cache: %v\n", err)
 		}
-		log.Printf("redis cache initialized\n")
+		slog.Info("redis cache initialized")
 	case "aerospike":
 		var err error
 		cacheEngine, err = aerospike.New(
@@ -312,7 +312,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize aerospike cache: %v\n", err)
 		}
-		log.Printf("aerospike cache initialized\n")
+		slog.Info("aerospike cache initialized")
 	}
 
 	// event engine
@@ -323,12 +323,12 @@ func main() {
 	switch cfg.Events.Engine {
 	case "none":
 		eventsEngine = events.NewNoop()
-		log.Printf("no event engine initialized\n")
+		slog.Info("no event engine initialized")
 	case "gochan":
 		eventsEngine = gochan.New(
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
 		)
-		log.Printf("gochan event engine initialized\n")
+		slog.Info("gochan event engine initialized")
 	case "nats":
 		eventsEngine, err = nats.New(
 			cfg.Events.NATS.DSN,
@@ -348,7 +348,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize nats event engine: %v\n", err)
 		}
-		log.Printf("nats event engine initialized\n")
+		slog.Info("nats event engine initialized")
 	case "rabbitmq":
 		eventsEngine, err = rabbitmq.New(
 			cfg.Events.RabbitMQ.DSN,
@@ -357,7 +357,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize rabbitmq event engine: %v\n", err)
 		}
-		log.Printf("rabbitmq event engine initialized\n")
+		slog.Info("rabbitmq event engine initialized")
 	case "kafka":
 		eventsEngine, err = kafka.New(
 			cfg.Events.Kafka.Brokers,
@@ -367,7 +367,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize kafka event engine: %v\n", err)
 		}
-		log.Printf("kafka event engine initialized\n")
+		slog.Info("kafka event engine initialized")
 	}
 
 	// ---
@@ -804,7 +804,7 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 
 	// wait for signal
 	sig := <-sigChan
-	log.Printf("Received %s, shutting down...\n", sig.String())
+	slog.Info("Received signal, shutting down...", slog.String("signal", sig.String()))
 
 	// allows second signal to bypass graceful shutdown and terminate application immediately
 	signal.Stop(sigChan)
@@ -837,9 +837,9 @@ func shutdown(cfg *config.Config, mainCancel context.CancelFunc, closers ...Shut
 
 	select {
 	case <-done:
-		log.Println("shutdown completed")
+		slog.Info("shutdown completed")
 	case <-ctx.Done():
-		log.Println("shutdown timed out")
+		slog.Info("shutdown timed out")
 	}
 
 	// When an application receives a signal (SIGINT/SIGTERM) and catches it using a signal handler,

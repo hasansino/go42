@@ -26,13 +26,14 @@ on:
     branches: [ master ]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   attestations: write
   id-token: write
   security-events: write
   pull-requests: write
   issues: write
+  actions: read
 
 jobs:
   # Stage 1: Linting
@@ -109,6 +110,7 @@ jobs:
         }}-${{ github.run_id }}
       platforms: "linux/amd64"
       attestation: false
+      attestation_sbom: false
   docker-security:
     uses: ./.github/workflows/140-docker-security.yaml
     needs: [ docker-build ]

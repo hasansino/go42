@@ -14,32 +14,30 @@ on:
         required: true
         type: string
         default: ubuntu-latest
-        description: "Runner type"
       continue_on_error:
         required: true
         type: boolean
         default: false
-        description: "Continue on error"
       service_name:
         required: true
         type: string
         default: "go42"
-        description: "Image name"
       image_tag:
         required: true
         type: string
         default: "tmp"
-        description: "Image tag"
       platforms:
         required: true
         type: string
         default: "linux/amd64"
-        description: "Build platform"
       attestation:
         required: true
         type: boolean
         default: false
-        description: "Generate attestation"
+      attestation_sbom:
+        required: true
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       runs_on:
@@ -62,12 +60,16 @@ on:
       attestation:
         required: true
         type: boolean
+      attestation_sbom:
+        required: true
+        type: boolean
 
 permissions:
   packages: write
-  contents: read
+  contents: write
   attestations: write
   id-token: write
+  actions: read
 
 jobs:
   docker-build:
@@ -106,8 +108,22 @@ jobs:
             COMMIT_HASH=${{ env.commit_hash }}
             RELEASE_TAG=${{ env.release_tag }}
       # ---
+      - uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          format: spdx-json
+          output-file: docker-image-sbom.json
+          dependency-snapshot: true
+      # ---
       - if: ${{ inputs.attestation }}
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
+      - if: ${{ inputs.attestation_sbom }}
+        uses: actions/attest-sbom@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: docker-image-sbom.json
+          push-to-registry: true
