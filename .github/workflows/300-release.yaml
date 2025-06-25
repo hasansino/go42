@@ -14,6 +14,7 @@ permissions:
   attestations: write
   id-token: write
   pull-requests: write
+  actions: read
 
 jobs:
   docker-build-amd64:
