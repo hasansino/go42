@@ -14,30 +14,42 @@ on:
         required: true
         type: string
         default: ubuntu-latest
+        description: "runs_on"
       continue_on_error:
         required: true
         type: boolean
         default: false
+        description: "continue_on_error"
       service_name:
         required: true
         type: string
-        default: "go42"
+        description: "service_name"
       image_tag:
         required: true
         type: string
-        default: "tmp"
+        description: "image_tag"
       platforms:
         required: true
-        type: string
-        default: "linux/amd64"
+        type: choice
+        options:
+          - linux/amd64
+          - linux/arm64
+        description: "platforms"
       attestation:
         required: true
         type: boolean
         default: false
+        description: "attestation"
+      generate_sbom:
+        required: true
+        type: boolean
+        default: false
+        description: "generate_sbom"
       attestation_sbom:
         required: true
         type: boolean
         default: false
+      description: "attestation_sbom"
   workflow_call:
     inputs:
       runs_on:
@@ -58,6 +70,9 @@ on:
         required: true
         type: string
       attestation:
+        required: true
+        type: boolean
+      generate_sbom:
         required: true
         type: boolean
       attestation_sbom:
@@ -108,11 +123,12 @@ jobs:
             COMMIT_HASH=${{ env.commit_hash }}
             RELEASE_TAG=${{ env.release_tag }}
       # ---
-      - uses: anchore/sbom-action@v0
+      - if: ${{ inputs.generate_sbom }}
+        uses: anchore/sbom-action@v0
         with:
           image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: spdx-json
-          output-file: docker-image-sbom.json
+          output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
           upload-artifact: true
       # ---
       - if: ${{ inputs.attestation }}
@@ -126,5 +142,5 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
-          sbom-path: docker-image-sbom.json
+          sbom-path: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
           show-summary: true

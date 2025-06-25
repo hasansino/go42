@@ -27,6 +27,7 @@ jobs:
       image_tag: ${{ github.ref_name }}
       platforms: "linux/amd64"
       attestation: true
+      generate_sbom: true
       attestation_sbom: true
   docker-build-arm64:
     name: docker-build
@@ -38,9 +39,10 @@ jobs:
       image_tag: ${{ github.ref_name }}
       platforms: "linux/arm64"
       attestation: true
-      attestation_sbom: true
+      generate_sbom: false
+      attestation_sbom: false
   release-pr:
-    needs: [docker-build-amd64]
+    needs: [docker-build-amd64, docker-build-arm64]
     name: release-pr
     uses: ./.github/workflows/320-release-pr.yaml
     with:

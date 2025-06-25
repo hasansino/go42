@@ -19,8 +19,8 @@ on:
   # manual trigger
   workflow_dispatch:
   # push or merge to master
-#  push:
-#    branches: [ master ]
+  push:
+    branches: [ master ]
   # pull request targeting master branch created or updated
   pull_request:
     branches: [ master ]
@@ -110,6 +110,7 @@ jobs:
         }}-${{ github.run_id }}
       platforms: "linux/amd64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
+      generate_sbom: true
       attestation_sbom: ${{ github.ref == 'refs/heads/master' }}
   docker-security:
     uses: ./.github/workflows/140-docker-security.yaml
