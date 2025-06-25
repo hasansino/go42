@@ -113,17 +113,18 @@ jobs:
           image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: spdx-json
           output-file: docker-image-sbom.json
-          dependency-snapshot: true
+          upload-artifact: true
       # ---
       - if: ${{ inputs.attestation }}
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
+          show-summary: true
       - if: ${{ inputs.attestation_sbom }}
         uses: actions/attest-sbom@v2
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
           sbom-path: docker-image-sbom.json
-          push-to-registry: true
+          show-summary: true
