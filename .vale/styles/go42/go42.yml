@@ -1,0 +1,7 @@
+extends: existence
+message: "Catch all mentions of `go42`."
+level: error
+scope: raw
+nonword: true
+tokens:
+  - '\bgo42\b'
