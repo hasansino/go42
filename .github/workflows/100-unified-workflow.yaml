@@ -6,7 +6,6 @@ name: unified-workflow
 # Actions are executed by `runners` that are provided by GitHub.
 # They are not free and billed per minute, although 2000 minutes per month are included in the free tier.
 # @note macos runners are 10x more expensive than Linux runners.
-# @note arm build are much slower than x86_64.
 #
 # Running this workflow too often can ramp-up actions costs significantly.
 # One way to mitigate this, is to use a self-hosted runners.
@@ -82,10 +81,19 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+  markdown-lint:
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      ( github.event.head_commit.message != 'initial commit' 
+      && !startsWith(github.event.head_commit.message, 'auto-release-'))
+    uses: ./.github/workflows/110-markdown-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
   # Stage 2: Unit tests
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
-    needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint ]
+    needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true

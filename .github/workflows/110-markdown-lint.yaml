@@ -1,0 +1,44 @@
+name: markdown-lint
+
+# Markdown linter.
+# @see https://github.com/DavidAnson/markdownlint
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    name: markdown-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          config: '.markdownlint.yaml'
+          globs: '**/*.md'

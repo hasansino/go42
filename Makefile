@@ -80,37 +80,30 @@ build:
 	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app && go tool buildid ./bin/app
 
 ## image | build docker image
+# @see https://reproducible-builds.org/docs/source-date-epoch/
 image:
-	@docker buildx build --platform linux/amd64,linux/arm64 \
+	@export SOURCE_DATE_EPOCH=0 && \
+	docker buildx build --no-cache --platform linux/amd64,linux/arm64 \
     --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
     --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
     --build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
 	-t ghcr.io/hasansino/go42:dev \
 	.
 
-## lint-go | lint golang files
+## lint | run all linting tools
 # Dependencies:
-#   * brew install golangci-lint
-lint-go:
+#   * brew install golangci-lint, hadolint, buf, daveshanley/vacuum/vacuum, markdownlint-cli2
+lint:
+	@echo "Linting go files..."
 	@golangci-lint run --config .golangci.yml
-
-## lint-docker | lint dockerfile
-# Dependencies:
-#   * brew install hadolint
-lint-docker:
+	@echo "Linting dockerfile..."
 	@hadolint Dockerfile
-
-## lint-proto | lint protobuf files
-# Dependencies:
-#   * brew install buf
-lint-proto:
+	@echo "Linting proto files..."
 	@buf lint
-
-## lint-openapi | lint openapi files
-# Dependencies:
-#   * brew install daveshanley/vacuum/vacuum
-lint-openapi:
+	@echo "Linting openapi specifications..."
 	@vacuum lint -r vacuum.ruleset.yaml -d api/openapi/**/*.yml
+	@echo "Linting markdown files..."
+	@markdownlint-cli2 --config .markdownlint.yaml **/*.md
 
 ## generate | generate code for all modules
 # Dependencies:

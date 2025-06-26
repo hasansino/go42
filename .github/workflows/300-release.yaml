@@ -2,7 +2,6 @@ name: release
 
 # Release.
 # Triggered by semver tag push.
-# @note jobs are separated to allow for parallel execution, amd64 is fast, while arm build are much slower.
 
 on:
   push:

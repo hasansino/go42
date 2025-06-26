@@ -6,14 +6,14 @@ ARG GO_VERSION=INVALID
 # @see https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS builder
 
-# FROM resets arguments, so we need to declare them after.
-ARG COMMIT_HASH=INVALID
-ARG RELEASE_TAG=INVALID
+# SOURCE_DATE_EPOCH helps with reproducible builds by making build timestamp deterministic.
+# @see https://reproducible-builds.org/docs/source-date-epoch/
+ARG SOURCE_DATE_EPOCH=0
+ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 
-# Fail if arguments were not passed.
-RUN if [ "$COMMIT_HASH" = "INVALID" ] || [ "$RELEASE_TAG" = "INVALID" ]; \
-      then echo "error: invalid COMMIT_HASH or RELEASE_TAG value"; exit 1; \
-    fi
+# FROM resets arguments, so we need to declare them after.
+ARG COMMIT_HASH
+ARG RELEASE_TAG
 
 WORKDIR /tmp/build
 COPY go.mod go.sum ./
@@ -79,6 +79,7 @@ RUN apk add --no-cache ca-certificates=20241121-r2 tzdata=2025b-r0 tini=0.19.0-r
 RUN addgroup -g 1000 appuser && \
     adduser -u 1000 -G appuser -s /bin/sh -D appuser
 
+# Copy binary and other files from builder stage.
 COPY --from=builder --chown=appuser:appuser /tmp/build/app /usr/local/bin/
 COPY --chown=appuser:appuser api/openapi /usr/share/www/api
 COPY --chown=appuser:appuser static /usr/share/www

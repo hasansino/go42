@@ -21,10 +21,6 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ re-check git history for any sensitive information
-+ single make lint command
-+ markdown lint
-+ https://vale.sh/
 + external dependencies
   * circuit breaker (https://github.com/sony/gobreaker)
   * retry (https://github.com/avast/retry-go)

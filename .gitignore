@@ -1,4 +1,5 @@
-.idea
+.idea/
+.claude/
 .DS_Store
 __debug*
 bin/
