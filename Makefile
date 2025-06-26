@@ -77,7 +77,7 @@ debug:
 ## build | build development version of binary
 build:
 	@go build -gcflags="all=-N -l" -race -v -o ./bin/app ./cmd/app/main.go
-	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app
+	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app && go tool buildid ./bin/app
 
 ## image | build docker image
 image:

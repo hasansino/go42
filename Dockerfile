@@ -2,7 +2,9 @@
 ARG GO_VERSION=INVALID
 
 # For build stage we use standard debian version of image.
-FROM golang:${GO_VERSION} AS builder
+# --platform=$BUILDPLATFORM ensures cross-compilation using `go build` instead of QEMU.
+# @see https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS builder
 
 # FROM resets arguments, so we need to declare them after.
 ARG COMMIT_HASH=INVALID
@@ -10,7 +12,7 @@ ARG RELEASE_TAG=INVALID
 
 # Fail if arguments were not passed.
 RUN if [ "$COMMIT_HASH" = "INVALID" ] || [ "$RELEASE_TAG" = "INVALID" ]; \
-      then echo "ERROR: COMMIT_HASH and RELEASE_TAG must be set"; exit 1; \
+      then echo "error: invalid COMMIT_HASH or RELEASE_TAG value"; exit 1; \
     fi
 
 WORKDIR /tmp/build
@@ -39,6 +41,8 @@ ENV GOGC=100
 #
 # -trimpath removes file system paths from the binary, improves build reproducibility.
 #
+# -buildvcs=false removes vcs information from the binary, improves build reproducibility.
+#
 # -s -w strips debugging data from binary, reducing its size, but makes debugging more complicated.
 # Specifically, line numbers, paths and some panic information will be missing. Systems, like Sentry,
 # will not be able to provide detailed insights because of that.
@@ -47,12 +51,12 @@ ENV GOGC=100
 #
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomodcache \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuildcache \
-    go build -v -trimpath \
-    -ldflags "-s -w -X main.xBuildDate=$(date -u +%Y%m%d.%H%M%S) -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
+    go build -v -trimpath -buildvcs=false \
+    -ldflags "-s -w -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
     -o app cmd/app/main.go
 
 # Validate binary.
-RUN readelf -h app && du -h app && sha256sum app
+RUN readelf -h app && du -h app && sha256sum app && go tool buildid app
 
 # ---
 

@@ -111,7 +111,7 @@ jobs:
       platforms: "linux/amd64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
-      attestation_sbom: ${{ github.ref == 'refs/heads/master' }}
+      attestation_sbom: false
   docker-security:
     uses: ./.github/workflows/140-docker-security.yaml
     needs: [ docker-build ]

@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   docker-build-amd64:
-    name: docker-build
+    name: docker-build-amd64
     uses: ./.github/workflows/140-docker-build.yaml
     with:
       runs_on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
       generate_sbom: true
       attestation_sbom: true
   docker-build-arm64:
-    name: docker-build
+    name: docker-build-arm64
     uses: ./.github/workflows/140-docker-build.yaml
     with:
       runs_on: ubuntu-latest

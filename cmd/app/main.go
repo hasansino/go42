@@ -69,15 +69,11 @@ import (
 
 // These variables are passed as arguments to compiler.
 var (
-	xBuildDate   string
 	xBuildTag    string
 	xBuildCommit string
 )
 
 func init() {
-	if len(xBuildDate) == 0 {
-		xBuildDate = "dev"
-	}
 	if len(xBuildTag) == 0 {
 		xBuildTag = "dev"
 	}
@@ -499,7 +495,6 @@ func initLogging(cfg *config.Config) {
 		slog.String("service", cfg.Core.ServiceName),
 		slog.String("environment", cfg.Core.Environment),
 		slog.String("hostname", hostname),
-		slog.String("build_date", xBuildDate),
 		slog.String("build_tag", xBuildTag),
 		slog.String("build_commit", xBuildCommit),
 	)
@@ -654,7 +649,6 @@ func initSentry(ctx context.Context, cfg *config.Config) ShutMeDown {
 		Tags: map[string]string{
 			"service":      cfg.Core.ServiceName,
 			"hostname":     hostname,
-			"build_date":   xBuildDate,
 			"build_tag":    xBuildTag,
 			"build_commit": xBuildCommit,
 		},
@@ -738,7 +732,6 @@ func initMetrics(cfg *config.Config) http.Handler {
 		"hostname":    hostname,
 	})
 	metrics.Gauge("application_build", map[string]interface{}{
-		"build_date":   xBuildDate,
 		"build_tag":    xBuildTag,
 		"build_commit": xBuildCommit,
 	}).Set(1)

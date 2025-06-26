@@ -53,7 +53,7 @@ jobs:
           title: "Release ${{ inputs.tag }}"
           body: |
             This is automated release PR.
-            Merging this PR will trigger deployment.
+            Merging this PR will trigger a deployment.
             ${{ steps.prev_tag.outputs.previous_tag && format('- Previous version: `{0}`', steps.prev_tag.outputs.previous_tag) || '' }}
             ${{ steps.prev_tag.outputs.comparison_url && format('- Changelog: {0}', steps.prev_tag.outputs.comparison_url) || '' }}
           branch: "auto-release-${{ inputs.tag }}"
