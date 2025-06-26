@@ -1,4 +1,4 @@
-# This file limits what can be copied inside the docker container during build stage.
+# This file limits what can be copied inside the docker image during image build.
 
 *
 !api

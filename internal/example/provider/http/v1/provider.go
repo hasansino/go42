@@ -30,7 +30,7 @@ type cache interface {
 	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
-// Provider Provider for fiber framework
+// Provider for fiber framework
 type Provider struct {
 	service  serviceAccessor
 	cache    cache

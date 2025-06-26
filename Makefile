@@ -5,11 +5,13 @@ help: Makefile
 ## setup | install dependencies
 # Prerequisites: brew, go
 setup:
-	@go mod tidy && go mod download && \
-	brew install golangci-lint hadolint buf daveshanley/vacuum/vacuum k6 && \
-	go install go.uber.org/mock/mockgen@latest && \
-	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest && \
-	go install github.com/go-delve/delve/cmd/dlv@latest
+	@go mod tidy && go mod download
+	@brew install golangci-lint hadolint buf daveshanley/vacuum/vacuum markdownlint-cli2 vale
+	@vale sync
+	@brew install k6
+	@go install go.uber.org/mock/mockgen@latest
+	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+	@go install github.com/go-delve/delve/cmd/dlv@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
@@ -25,9 +27,9 @@ test-integration:
 # Dependencies:
 #   * brew install k6
 test-load:
-	@k6 version && \
-	k6 run tests/load/http/v1/example_test.js && \
-	k6 run tests/load/grpc/v1/example_test.js
+	@k6 version
+	@k6 run tests/load/http/v1/example_test.js
+	@k6 run tests/load/grpc/v1/example_test.js
 
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
@@ -92,7 +94,7 @@ image:
 
 ## lint | run all linting tools
 # Dependencies:
-#   * brew install golangci-lint, hadolint, buf, daveshanley/vacuum/vacuum, markdownlint-cli2
+#   * brew install golangci-lint, hadolint, buf, daveshanley/vacuum/vacuum, markdownlint-cli2, vale
 lint:
 	@echo "Linting go files..."
 	@golangci-lint run --config .golangci.yml
@@ -101,9 +103,11 @@ lint:
 	@echo "Linting proto files..."
 	@buf lint
 	@echo "Linting openapi specifications..."
-	@vacuum lint -r vacuum.ruleset.yaml -d api/openapi/**/*.yml
+	@vacuum --config vacuum.conf.yaml lint -r vacuum.ruleset.yaml -d api/openapi/**/*.yml
 	@echo "Linting markdown files..."
-	@markdownlint-cli2 --config .markdownlint.yaml **/*.md
+	@markdownlint-cli2 --config .markdownlint.yaml README.md CONVENTIONS.md || true
+	@echo "Linting writing..."
+	@vale --no-exit --config .vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
 
 ## generate | generate code for all modules
 # Dependencies:

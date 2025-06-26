@@ -1,3 +1,5 @@
+# @note all COPY commands are restricted to list of files in .dockerignore file.
+
 # We want to fail if arguments were not passed.
 ARG GO_VERSION=INVALID
 

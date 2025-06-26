@@ -1,0 +1,47 @@
+name: writing-lint
+
+# Markdown linter.
+# @see https://github.com/errata-ai/vale
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: self-hosted
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  writing-lint:
+    name: writing-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: errata-ai/vale-action@v2.1.1
+        with:
+          fail_on_error: true
+          files: '["README.md","CONVENTIONS.md","internal/","cmd/","pkg/","tests/"]'
+          vale_flags: "--config .vale.ini"
+
+
