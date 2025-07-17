@@ -21,19 +21,25 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ external dependencies
-  * circuit breaker (https://github.com/sony/gobreaker)
-  * retry (https://github.com/avast/retry-go)
-+ rate limiting 
++ jwt authentication
++ security headers
++ api token system
++ rate limiting
   * https://pkg.go.dev/golang.org/x/time/rate
   * https://github.com/uber-go/ratelimit
   * https://github.com/grpc-ecosystem/go-grpc-middleware/
+
++ BDRs in repository
++ ADRs in repository
++ github copilot space
++ github Automatic dependency submission vs custom workflow
++ external dependencies
+  * circuit breaker (https://github.com/sony/gobreaker)
+  * retry (https://github.com/avast/retry-go)
 + research swagger libraries
   * https://github.com/go-swagger/go-swagger
   * https://github.com/swaggo/swag?tab=readme-ov-file#supported-web-frameworks
 + research https://backstage.io/
-+ security headers
-+ api token system
 + service discovery
   * consul + consul kv for config
   * etcd

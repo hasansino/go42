@@ -14,7 +14,7 @@ This document is a repository of conventions and rules used by this project.
 * pull request names and description
 * tag naming
 * sub-module tags
-* always prefer rebase to merge commits
+* always prefer merge commits to rebase (disable rebase)
 
 ## Golang
 
@@ -42,3 +42,4 @@ This document is a repository of conventions and rules used by this project.
 ## Miscellaneous
 
 * yaml vs yml
+* migration file naming
