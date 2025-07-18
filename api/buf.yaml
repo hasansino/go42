@@ -1,13 +1,13 @@
 version: v2
 
 modules:
-  - path: api/proto
+  - path: proto
 
 lint:
   use:
     - STANDARD
   ignore:
-    - api/proto/buf/validate/validate.proto
+    - proto/buf/validate/validate.proto
 
 breaking:
   use:

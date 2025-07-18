@@ -101,7 +101,7 @@ lint:
 	@echo "Linting dockerfile..."
 	@hadolint Dockerfile
 	@echo "Linting proto files..."
-	@buf lint --config api/buf.yaml
+	@buf lint api
 	@echo "Linting openapi specifications..."
 	@redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
 	@echo "Linting markdown files..."
@@ -113,7 +113,7 @@ lint:
 # Dependencies:
 #   * brew install buf
 generate:
-	@buf generate --config api/buf.yaml --template api/buf.gen.yaml
+	@buf generate api --template api/buf.gen.yaml
 	@go generate ./...
 	@go run cmd/cfg2env/main.go
 
