@@ -7,7 +7,7 @@ This document is a repository of conventions and rules used by this project.
 * https://google.github.io/eng-practices/
 * https://google.github.io/styleguide/go/decisions.html
 
-## Review 
+## Review
 
 ## Project Management
 

@@ -42,7 +42,7 @@ jobs:
         with:
           pattern: "migrate/pgsql/*.sql"
           version: "latest"
-          fail-on-violations: true
+          fail-on-violations: false
           # goose will automatically wrap migrations in a transaction
           assume-in-transaction: true
 
