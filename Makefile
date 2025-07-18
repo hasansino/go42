@@ -6,8 +6,8 @@ help: Makefile
 # Prerequisites: brew, go
 setup:
 	@go mod tidy && go mod download
-	@brew install golangci-lint hadolint buf daveshanley/vacuum/vacuum markdownlint-cli2 vale
-	@vale sync
+	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
+	@vale --config etc/.vale.ini sync
 	@brew install k6
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
@@ -94,26 +94,28 @@ image:
 
 ## lint | run all linting tools
 # Dependencies:
-#   * brew install golangci-lint, hadolint, buf, daveshanley/vacuum/vacuum, markdownlint-cli2, vale
+#   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 lint:
 	@echo "Linting go files..."
-	@golangci-lint run --config .golangci.yml
+	@golangci-lint run --config etc/.golangci.yml
 	@echo "Linting dockerfile..."
 	@hadolint Dockerfile
 	@echo "Linting proto files..."
-	@buf lint
+	@buf lint --config api/buf.yaml
 	@echo "Linting openapi specifications..."
-	@vacuum --config vacuum.conf.yaml lint -r vacuum.ruleset.yaml -d api/openapi/**/*.yml
+	@redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
 	@echo "Linting markdown files..."
-	@markdownlint-cli2 --config .markdownlint.yaml README.md CONVENTIONS.md || true
+	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
-	@vale --no-exit --config .vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
+	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
 
 ## generate | generate code for all modules
 # Dependencies:
 #   * brew install buf
 generate:
-	@buf generate && go generate ./... && go run cmd/cfg2env/main.go
+	@buf generate --config api/buf.yaml --template api/buf.gen.yaml
+	@go generate ./...
+	@go run cmd/cfg2env/main.go
 
 ## generate-dep-graph | generate dependency graph
 # Dependencies:

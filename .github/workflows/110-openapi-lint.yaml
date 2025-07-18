@@ -1,7 +1,7 @@
 name: openapi-lint
 
 # OpenAPI linter.
-# @see https://quobix.com/vacuum/
+# @see https://redocly.com/docs/cli
 
 on:
   workflow_dispatch:
@@ -39,8 +39,6 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - uses: pb33f/vacuum-action@v2
+      - uses: trybeapp/redocly-openapi-cli-github-action@v1.0.0
         with:
-          openapi_path: api/openapi/v1/openapi.yml
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          ruleset: 'vacuum.ruleset.yaml'
+          args: lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml

@@ -42,6 +42,7 @@ jobs:
       - uses: bufbuild/buf-action@v1
         with:
           version: 1.55.0
+          input: api
           lint: true
           format: true
           pr_comment: false

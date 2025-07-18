@@ -14,5 +14,6 @@ package api
 // │    REST clients and mocks    │
 // ╰──────────────────────────────╯
 
+//go:generate mkdir -p gen/http/v1
 //go:generate oapi-codegen -package client -o gen/http/v1/client.gen.go -generate models,client openapi/v1/openapi.yml
 //go:generate mockgen -source gen/http/v1/client.gen.go -package mocks -destination gen/http/v1/mocks/client.gen.go

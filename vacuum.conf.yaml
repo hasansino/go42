@@ -1,7 +1,0 @@
-lint:
-  all-results: true
-  details: true
-  errors: true
-  no-banner: true
-  no-clip: true
-  snippets: true

@@ -22,13 +22,13 @@ This document is a repository of conventions and rules used by this project.
 * import order
 * panic recovery
 * observability (tracing,tracing,metrics)
-* protocol 
-* api versioning 
+* protocol
+* api versioning
 * //go:generate mockgen -> always local binary
 * v for validation tag
 * db for db column name tag
 * pass logger is dependancy injection with component field, but can be used globally where needed
-* WithTransaction should NOT be used in repository level 
+* WithTransaction should NOT be used in repository level
 * use `slog.Any("error", err)` for slog errors
 * log.fatal can be used only during init phase in main functions
 * logger should be passed as option, if not passed, must default to noop logger
@@ -43,3 +43,4 @@ This document is a repository of conventions and rules used by this project.
 
 * yaml vs yml
 * migration file naming
+* using @see @todo @fixme @note etc. in comments
