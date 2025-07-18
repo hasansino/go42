@@ -27,8 +27,6 @@ Golang project operation blueprint.
   + https://pkg.go.dev/golang.org/x/time/rate
   + https://github.com/uber-go/ratelimit
   + https://github.com/grpc-ecosystem/go-grpc-middleware/
-+ BDRs in repository
-+ ADRs in repository
 + github copilot space
 + github Automatic dependency submission vs custom workflow
 + external dependencies

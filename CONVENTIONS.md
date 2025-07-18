@@ -2,6 +2,13 @@
 
 This document is a repository of conventions and rules used by this project.
 
+## Guides
+
+* https://google.github.io/eng-practices/
+* https://google.github.io/styleguide/go/decisions.html
+
+## Review 
+
 ## Project Management
 
 * tooling versions
