@@ -38,12 +38,8 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - uses: sbdchd/squawk-action@v2
+      - uses: actions/setup-node@v4
         with:
-          pattern: "migrate/pgsql/*.sql"
-          version: "latest"
-          fail-on-violations: false
-          # goose will automatically wrap migrations in a transaction
-          assume-in-transaction: true
-
-
+          node-version: '20'
+      - run: npm install -g squawk-cli@latest
+      - run: squawk --assume-in-transaction migrate/pgsql/*
