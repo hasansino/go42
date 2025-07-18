@@ -44,3 +44,4 @@ This document is a repository of conventions and rules used by this project.
 * yaml vs yml
 * migration file naming
 * using @see @todo @fixme @note etc. in comments
+* tools configuration files should be in etc di rectory

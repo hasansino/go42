@@ -39,6 +39,9 @@ jobs:
     # ---
     steps:
       - uses: actions/checkout@v4
-      - uses: trybeapp/redocly-openapi-cli-github-action@v1.0.0
-        with:
-          args: lint --config etc/redocly.yaml --format github-actions api/openapi/*/*.yml
+      - run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workdir" \
+            -w /workdir \
+            ghcr.io/redocly/cli:latest \
+            lint --config etc/redocly.yaml --format github-actions "api/openapi/*/*.yml"
