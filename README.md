@@ -19,6 +19,7 @@ Golang project operation blueprint.
 
 ## Backlog
 
++ connection retry logic
 + https://testcontainers.com/?language=go
 + jwt authentication
 + security headers

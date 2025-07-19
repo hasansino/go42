@@ -28,7 +28,7 @@ type ConnectionOption struct {
 	Value string
 }
 
-func New(dbPath string, opts ...Option) (*Sqlite, error) {
+func Open(dbPath string, opts ...Option) (*Sqlite, error) {
 	w := new(Sqlite)
 
 	for _, opt := range opts {

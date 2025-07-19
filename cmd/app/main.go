@@ -146,7 +146,7 @@ func main() {
 		// connect to database
 		slog.Info("Connecting to sqlite...")
 		var sqliteConnErr error
-		dbEngine, sqliteConnErr = sqlite.New(
+		dbEngine, sqliteConnErr = sqlite.Open(
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
 			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
@@ -173,7 +173,8 @@ func main() {
 		// connect to database
 		slog.Info("connecting to MySQL...")
 		var mysqlConnErr error
-		dbEngine, mysqlConnErr = mysql.New(
+		dbEngine, mysqlConnErr = mysql.Open(
+			ctx,
 			cfg.Database.Mysql.Master.DSN(),
 			cfg.Database.Mysql.Slave.DSN(),
 			mysql.WithLogger(slog.Default().With(slog.String("component", "gorm-mysql"))),
@@ -203,7 +204,8 @@ func main() {
 		// connect to database
 		slog.Info("connecting to PostgreSQL...")
 		var pgsqlConnErr error
-		dbEngine, pgsqlConnErr = pgsql.New(
+		dbEngine, pgsqlConnErr = pgsql.Open(
+			ctx,
 			cfg.Database.Pgsql.Master.DSN(),
 			cfg.Database.Pgsql.Slave.DSN(),
 			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
@@ -267,7 +269,8 @@ func main() {
 		slog.Info("otter cache engine initialized")
 	case "memcached":
 		var err error
-		cacheEngine, err = memcached.New(
+		cacheEngine, err = memcached.Open(
+			ctx,
 			cfg.Cache.Memcached.Hosts,
 			memcached.WithTimeout(cfg.Cache.Memcached.Timeout),
 			memcached.WithMaxIdleConns(cfg.Cache.Memcached.MaxIdleConns),
@@ -278,7 +281,8 @@ func main() {
 		slog.Info("memcached cache initialized")
 	case "redis":
 		var err error
-		cacheEngine, err = redis.New(
+		cacheEngine, err = redis.Open(
+			ctx,
 			cfg.Cache.Redis.Host, cfg.Cache.Redis.DB,
 			redis.WithClientName(cfg.Core.ServiceName),
 			redis.WithUserName(cfg.Cache.Redis.Username),
@@ -304,7 +308,8 @@ func main() {
 		slog.Info("redis cache initialized")
 	case "aerospike":
 		var err error
-		cacheEngine, err = aerospike.New(
+		cacheEngine, err = aerospike.Open(
+			ctx,
 			cfg.Cache.Aerospike.Hosts,
 			cfg.Cache.Aerospike.Namespace,
 		)

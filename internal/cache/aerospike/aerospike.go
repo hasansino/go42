@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
 
 	aslib "github.com/aerospike/aerospike-client-go/v8"
 	asTypes "github.com/aerospike/aerospike-client-go/v8/types"
+	"github.com/avast/retry-go/v4"
 )
 
 const (
@@ -21,7 +23,7 @@ type Wrapper struct {
 	namespace string
 }
 
-func New(hosts []string, namespace string, opts ...Option) (*Wrapper, error) {
+func Open(ctx context.Context, hosts []string, namespace string, opts ...Option) (*Wrapper, error) {
 	w := &Wrapper{
 		namespace: namespace,
 	}
@@ -37,15 +39,35 @@ func New(hosts []string, namespace string, opts ...Option) (*Wrapper, error) {
 		return nil, fmt.Errorf("failed to parse hosts: %w", err)
 	}
 
-	client, err := aslib.NewClientWithPolicyAndHost(policy, parsedHosts...)
+	client, err := retry.DoWithData[*aslib.Client](func() (*aslib.Client, error) {
+		client, err := aslib.NewClientWithPolicyAndHost(policy, parsedHosts...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create aerospike client: %w", err)
+		}
+		_, err = client.WarmUp(len(parsedHosts))
+		if err != nil {
+			client.Close()
+			return nil, fmt.Errorf("failed to warm up aerospike client: %w", err)
+		}
+		return client, nil
+	},
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(2*time.Second),
+		retry.MaxDelay(2*time.Second),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			slog.Default().WarnContext(
+				ctx,
+				"cache connection attempt failed, retrying...",
+				slog.String("component", "redis"),
+				slog.Int("attempt", int(n+1)),
+				slog.String("error", err.Error()),
+			)
+		}),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create aerospike client: %w", err)
-	}
-
-	_, err = client.WarmUp(len(parsedHosts))
-	if err != nil {
-		client.Close()
-		return nil, fmt.Errorf("failed to warm up aerospike client: %w", err)
+		return nil, err
 	}
 
 	w.client = client

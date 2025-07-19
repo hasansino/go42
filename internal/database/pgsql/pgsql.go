@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/jackc/pgx/v5/pgconn"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
@@ -29,7 +31,7 @@ type Postgres struct {
 	queryLogging bool
 }
 
-func New(masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
+func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
 	w := new(Postgres)
 
 	for _, opt := range opts {
@@ -56,8 +58,8 @@ func New(masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
 
 	// ---
 
-	masterConn, err := gorm.Open(
-		postgres.New(postgres.Config{DSN: masterDSN}),
+	masterConn, err := w.connect(
+		ctx, masterDSN,
 		&gorm.Config{
 			PrepareStmt: true,
 			Logger:      slogGorm.New(slogGormOpts...),
@@ -82,8 +84,8 @@ func New(masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
 	// ---
 
 	if len(slaveDSN) > 0 {
-		slaveConn, err := gorm.Open(
-			postgres.New(postgres.Config{DSN: slaveDSN}),
+		slaveConn, err := w.connect(
+			ctx, slaveDSN,
 			&gorm.Config{
 				PrepareStmt: true,
 				Logger:      slogGorm.New(slogGormOpts...),
@@ -110,6 +112,41 @@ func New(masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
 	}
 
 	return w, nil
+}
+
+func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config) (*gorm.DB, error) {
+	db, err := retry.DoWithData[*gorm.DB](func() (*gorm.DB, error) {
+		conn, err := gorm.Open(postgres.New(postgres.Config{DSN: dsn}), config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open database connection: %w", err)
+		}
+		connDB, err := conn.DB()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get database instance: %w", err)
+		}
+		if err := connDB.Ping(); err != nil {
+			return nil, fmt.Errorf("failed to ping database: %w", err)
+		}
+		return conn, nil
+	},
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(2*time.Second),
+		retry.MaxDelay(2*time.Second),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			w.logger.WarnContext(
+				ctx,
+				"database connection attempt failed, retrying...",
+				slog.Int("attempt", int(n+1)),
+				slog.String("error", err.Error()),
+			)
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 func (w *Postgres) Shutdown(ctx context.Context) error {

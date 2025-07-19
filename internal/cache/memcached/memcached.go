@@ -3,8 +3,10 @@ package memcached
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
@@ -12,10 +14,31 @@ type Wrapper struct {
 	client *memcache.Client
 }
 
-func New(hosts []string, opts ...Option) (*Wrapper, error) {
-	client := memcache.New(hosts...)
-	for _, opt := range opts {
-		opt(client)
+func Open(ctx context.Context, hosts []string, opts ...Option) (*Wrapper, error) {
+	client, err := retry.DoWithData[*memcache.Client](func() (*memcache.Client, error) {
+		client := memcache.New(hosts...)
+		for _, opt := range opts {
+			opt(client)
+		}
+		return client, client.Ping()
+	},
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(2*time.Second),
+		retry.MaxDelay(2*time.Second),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			slog.Default().WarnContext(
+				ctx,
+				"cache connection attempt failed, retrying...",
+				slog.String("component", "memcached"),
+				slog.Int("attempt", int(n+1)),
+				slog.String("error", err.Error()),
+			)
+		}),
+	)
+	if err != nil {
+		return nil, err
 	}
 	return &Wrapper{client: client}, client.Ping()
 }

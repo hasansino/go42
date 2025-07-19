@@ -3,8 +3,10 @@ package redis
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -12,8 +14,9 @@ type Wrapper struct {
 	client *redis.Client
 }
 
-func New(host string, db int, opts ...Option) (*Wrapper, error) {
+func Open(ctx context.Context, host string, db int, opts ...Option) (*Wrapper, error) {
 	w := new(Wrapper)
+
 	cfg := &redis.Options{
 		Addr: host,
 		DB:   db,
@@ -21,11 +24,34 @@ func New(host string, db int, opts ...Option) (*Wrapper, error) {
 	for _, opt := range opts {
 		opt(w, cfg)
 	}
-	rdb := redis.NewClient(cfg)
-	status := rdb.Ping(context.Background())
-	if status.Err() != nil {
-		return nil, status.Err()
+
+	rdb, err := retry.DoWithData[*redis.Client](func() (*redis.Client, error) {
+		rdb := redis.NewClient(cfg)
+		status := rdb.Ping(context.Background())
+		if status.Err() != nil {
+			return nil, status.Err()
+		}
+		return rdb, nil
+	},
+		retry.Context(ctx),
+		retry.Attempts(5),
+		retry.Delay(2*time.Second),
+		retry.MaxDelay(2*time.Second),
+		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			slog.Default().WarnContext(
+				ctx,
+				"cache connection attempt failed, retrying...",
+				slog.String("component", "redis"),
+				slog.Int("attempt", int(n+1)),
+				slog.String("error", err.Error()),
+			)
+		}),
+	)
+	if err != nil {
+		return nil, err
 	}
+
 	w.client = rdb
 	return w, nil
 }

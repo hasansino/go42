@@ -88,11 +88,13 @@ jobs:
         ports:
           - 44442:8080  # should be unique to avoid conflicts on self-hosted runners
           - 55552:50051 # should be unique to avoid conflicts on self-hosted runners
+        # environment variables read by service against which integration tests are run
         env:
           LOG_LEVEL: warn
           ENVIRONMENT: ci-integration-tests
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
+          DATABASE_ENGINE: mysql
         options: >-
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s
@@ -107,6 +109,7 @@ jobs:
           go-version-file: 'go.mod'
       - run: go mod download
       - run: go test -count=1 -v -race ./tests/integration/...
+        # environment variables read by integration tests
         env:
           CGO_ENABLED: 1 # needed for -race
           HTTP_SERVER_ADDRESS: http://localhost:44442

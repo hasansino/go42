@@ -14,6 +14,7 @@ require (
 	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/aerospike/aerospike-client-go/v8 v8.2.2
 	github.com/agiledragon/gomonkey/v2 v2.13.0
+	github.com/avast/retry-go/v4 v4.6.1
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.13.3
 	github.com/caarlos0/env/v11 v11.3.1
