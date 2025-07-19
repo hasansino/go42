@@ -210,7 +210,7 @@ func (db MysqlMaster) DSN() string {
 }
 
 type MysqlSlave struct {
-	Host     string `env:"DATABASE_MYSQL_SLAVE_HOST"     default:"localhost"`
+	Host     string `env:"DATABASE_MYSQL_SLAVE_HOST"     default:""`
 	Port     int    `env:"DATABASE_MYSQL_SLAVE_PORT"     default:"3306"`
 	User     string `env:"DATABASE_MYSQL_SLAVE_USER"     default:"user"`
 	Password string `env:"DATABASE_MYSQL_SLAVE_PASSWORD" default:"qwerty"`
@@ -251,7 +251,7 @@ func (db PgsqlMaster) DSN() string {
 }
 
 type PgsqlSlave struct {
-	Host     string `env:"DATABASE_PGSQL_SLAVE_HOST"     default:"localhost"`
+	Host     string `env:"DATABASE_PGSQL_SLAVE_HOST"     default:""`
 	Port     int    `env:"DATABASE_PGSQL_SLAVE_PORT"     default:"5432"`
 	User     string `env:"DATABASE_PGSQL_SLAVE_USER"     default:"user"`
 	Password string `env:"DATABASE_PGSQL_SLAVE_PASSWORD" default:"qwerty"`
