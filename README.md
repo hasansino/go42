@@ -19,31 +19,54 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ TLS connections and management
-+ https://testcontainers.com/?language=go
+### 1
+
 + jwt authentication
 + security headers
 + api token system
+
+### 2
+
 + rate limiting
   + https://pkg.go.dev/golang.org/x/time/rate
   + https://github.com/uber-go/ratelimit
   + https://github.com/grpc-ecosystem/go-grpc-middleware/
-+ github copilot space
-+ github Automatic dependency submission vs custom workflow
 + external dependencies
   + circuit breaker (https://github.com/sony/gobreaker)
-+ research https://backstage.io/
+
+### 3
+
 + service discovery
   + consul + consul kv for config
   + etcd
   + k8 CoreDNS
-+ feature flags system
-+ release annotations
 + switch from zipkin to jaeger or tempo
+
+### 4
+
++ datadog integration
++ release annotations
 + pr llm review
+
+### 5
+
 + working with private repositories, .netrc, GOPRIVATE, modules
-+ interactive setup wizard
-  + repository configuration validation
++ go42-cli (round-kick, fist-punch ASCII)
++ go42-runner
+
+### 6
+
 + support hetzner, aws, gcp, azure
 + cost analysis for different scales
-+ goland / vscode setup
+
+### 7
+
++ Documentation
+
+## 100% after v1.0.0 release
+
++ TLS connections and certificate management
++ Try https://testcontainers.com/
++ Try https://backstage.io/
++ Feature flags system
++ GoLand / VSCode configuration

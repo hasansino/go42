@@ -47,10 +47,8 @@ func WithWriteTimeout(timeout time.Duration) Option {
 
 func WithKeepAlive(keepAlive time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		if keepAlive > 0 {
-			pubCfg.Net.KeepAlive = keepAlive
-			subCfg.Net.KeepAlive = keepAlive
-		}
+		pubCfg.Net.KeepAlive = keepAlive
+		subCfg.Net.KeepAlive = keepAlive
 	}
 }
 
@@ -97,17 +95,13 @@ func WithProducerCompression(compression string) Option {
 
 func WithProducerFlushMessages(messages int) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		if messages > 0 {
-			pubCfg.Producer.Flush.Messages = messages
-		}
+		pubCfg.Producer.Flush.Messages = messages
 	}
 }
 
 func WithProducerFlushFrequency(frequency time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		if frequency > 0 {
-			pubCfg.Producer.Flush.Frequency = frequency
-		}
+		pubCfg.Producer.Flush.Frequency = frequency
 	}
 }
 
@@ -143,9 +137,7 @@ func WithConsumerFetchDefault(bytes int32) Option {
 
 func WithConsumerFetchMax(bytes int32) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		if bytes > 0 {
-			subCfg.Consumer.Fetch.Max = bytes
-		}
+		subCfg.Consumer.Fetch.Max = bytes
 	}
 }
 
@@ -157,9 +149,7 @@ func WithConsumerMaxWaitTime(duration time.Duration) Option {
 
 func WithConsumerMaxProcessingTime(duration time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		if duration > 0 {
-			subCfg.Consumer.MaxProcessingTime = duration
-		}
+		subCfg.Consumer.MaxProcessingTime = duration
 	}
 }
 
