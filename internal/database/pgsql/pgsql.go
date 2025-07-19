@@ -138,7 +138,7 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 			w.logger.WarnContext(
 				ctx,
 				"database connection attempt failed, retrying...",
-				slog.Int("attempt", int(n+1)),
+				slog.Any("attempt", n+1),
 				slog.String("error", err.Error()),
 			)
 		}),

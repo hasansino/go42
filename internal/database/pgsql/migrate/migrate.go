@@ -43,7 +43,7 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 			logger.WarnContext(
 				ctx,
 				"database connection attempt failed, retrying...",
-				slog.Int("attempt", int(n+1)),
+				slog.Any("attempt", n+1),
 				slog.String("error", err.Error()),
 			)
 		}),

@@ -61,7 +61,7 @@ func Open(ctx context.Context, hosts []string, namespace string, opts ...Option)
 				ctx,
 				"cache connection attempt failed, retrying...",
 				slog.String("component", "redis"),
-				slog.Int("attempt", int(n+1)),
+				slog.Any("attempt", n+1),
 				slog.String("error", err.Error()),
 			)
 		}),

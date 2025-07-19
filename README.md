@@ -19,7 +19,6 @@ Golang project operation blueprint.
 
 ## Backlog
 
-+ connection retry logic
 + https://testcontainers.com/?language=go
 + jwt authentication
 + security headers
@@ -32,7 +31,6 @@ Golang project operation blueprint.
 + github Automatic dependency submission vs custom workflow
 + external dependencies
   + circuit breaker (https://github.com/sony/gobreaker)
-  + retry (https://github.com/avast/retry-go)
 + research https://backstage.io/
 + service discovery
   + consul + consul kv for config

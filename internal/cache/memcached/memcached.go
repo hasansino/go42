@@ -32,7 +32,7 @@ func Open(ctx context.Context, hosts []string, opts ...Option) (*Wrapper, error)
 				ctx,
 				"cache connection attempt failed, retrying...",
 				slog.String("component", "memcached"),
-				slog.Int("attempt", int(n+1)),
+				slog.Any("attempt", n+1),
 				slog.String("error", err.Error()),
 			)
 		}),
