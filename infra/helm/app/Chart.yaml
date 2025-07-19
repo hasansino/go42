@@ -3,7 +3,7 @@ name: go42
 description: go42 service
 type: application
 version: 0.9.1
-appVersion: "v0.9.36"
+appVersion: "v0.9.37"
 icon: https://raw.githubusercontent.com/hasansino/go42/master/static/favicon.svg
 home: https://github.com/hasansino/go42
 sources:
