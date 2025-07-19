@@ -45,6 +45,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   integration-tests:
@@ -53,6 +54,35 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
     services:
+      mysql:
+        image: mysql:latest
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_USER: user
+          MYSQL_PASSWORD: qwerty
+          MYSQL_DATABASE: go42
+          MYSQL_ROOT_PASSWORD: qwerty
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root -pqwerty || exit 1"
+          --health-start-period 30s
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      pgsql:
+        image: postgres:latest
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: qwerty
+          POSTGRES_DB: go42
+        options: >-
+          --health-cmd "pg_isready -U user -d go42 || exit 1"
+          --health-start-period 10s
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:

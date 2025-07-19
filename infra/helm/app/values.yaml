@@ -4,9 +4,6 @@ image:
 
 imagePullSecrets: {}
 
-podSecurityContext: {}
-securityContext: {}
-
 nodeSelector: {}
 affinity: {}
 tolerations: {}

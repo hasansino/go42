@@ -1,3 +1,7 @@
+# ╭────────────────────----------------──────────╮
+# │               General workflow               │
+# ╰─────────────────────----------------─────────╯
+
 .PHONY: help
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -117,6 +121,14 @@ generate:
 	@go generate ./...
 	@go run cmd/cfg2env/main.go
 
+# ╭────────────────────----------------──────────╮
+# │                Miscellaneous                 │
+# ╰─────────────────────----------------─────────╯
+
+## generate-migration-id | generate migration file prefix
+generate-migration-id:
+	@echo "$(shell date +%Y%m%d%H%M%S)"
+
 ## generate-dep-graph | generate dependency graph
 # Dependencies:
 #   * brew install graphviz
@@ -130,3 +142,4 @@ generate-dep-graph:
 # Usage: FILTER={regex} make show-asm
 show-asm: build
 	@lensm -watch -text-size 22 -filter $(FILTER) bin/app
+

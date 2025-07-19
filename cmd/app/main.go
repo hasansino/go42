@@ -133,6 +133,7 @@ func main() {
 		// run database migrations
 		slog.Info("running database migrations...")
 		err = sqliteMigrate.Migrate(
+			ctx,
 			cfg.Database.Sqlite.SqliteFile,
 			cfg.Database.FullMigratePath(),
 			sqlite.ConnectionOption{Key: "mode", Value: cfg.Database.Sqlite.Mode},
@@ -157,39 +158,11 @@ func main() {
 		}
 
 		slog.Info("connected to sqlite")
-	case "pgsql":
-		// run database migrations
-		slog.Info("running database migrations...")
-		err = pgsqlMigrate.Migrate(
-			cfg.Database.Pgsql.Master.DSN(),
-			cfg.Database.FullMigratePath(),
-		)
-		if err != nil {
-			log.Fatalf("failed to execute migrations: %v\n", err)
-		}
-
-		// connect to database
-		slog.Info("connecting to PostgreSQL...")
-		var pgsqlConnErr error
-		dbEngine, pgsqlConnErr = pgsql.New(
-			cfg.Database.Pgsql.Master.DSN(),
-			cfg.Database.Pgsql.Slave.DSN(),
-			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
-			pgsql.WithQueryLogging(cfg.Database.LogQueries),
-			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
-			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
-			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
-			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
-		)
-		if pgsqlConnErr != nil {
-			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)
-		}
-
-		slog.Info("connected to pgsql")
 	case "mysql":
 		// run database migrations
 		slog.Info("running database migrations...")
 		err = mysqlMigrate.Migrate(
+			ctx,
 			cfg.Database.Mysql.Master.DSN(),
 			cfg.Database.FullMigratePath(),
 		)
@@ -215,6 +188,36 @@ func main() {
 		}
 
 		slog.Info("connected to mysql")
+	case "pgsql":
+		// run database migrations
+		slog.Info("running database migrations...")
+		err = pgsqlMigrate.Migrate(
+			ctx,
+			cfg.Database.Pgsql.Master.DSN(),
+			cfg.Database.FullMigratePath(),
+		)
+		if err != nil {
+			log.Fatalf("failed to execute migrations: %v\n", err)
+		}
+
+		// connect to database
+		slog.Info("connecting to PostgreSQL...")
+		var pgsqlConnErr error
+		dbEngine, pgsqlConnErr = pgsql.New(
+			cfg.Database.Pgsql.Master.DSN(),
+			cfg.Database.Pgsql.Slave.DSN(),
+			pgsql.WithLogger(slog.Default().With(slog.String("component", "gorm-pgsql"))),
+			pgsql.WithQueryLogging(cfg.Database.LogQueries),
+			pgsql.WithConnMaxIdleTime(cfg.Database.Pgsql.ConnMaxIdleTime),
+			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
+			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
+			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
+		)
+		if pgsqlConnErr != nil {
+			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)
+		}
+
+		slog.Info("connected to pgsql")
 	default:
 		log.Fatalf("empty or not supported database engine: %v\n", cfg.Database.Engine)
 	}

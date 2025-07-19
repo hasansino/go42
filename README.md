@@ -6,13 +6,12 @@
 ██║░░╚██╗██║░░██║███████╗██╔══╝░░░
 ╚██████╔╝╚█████╔╝╚════██║███████║░
 ░╚═════╝░░╚════╝░░░░░░╚═╝╚══════╝░
-
-
+<br>
 01101111 01101110 01100101 01110100 01101111 01100110
 01101111 01110010 01100101 01100111 01101111 01100110
 01101111 01110010 01101101 01100001 01101110 01111001
 </pre></div>
-<!---->
+<!-- markdownlint-enable MD033 MD041 -->
 
 # go42
 
@@ -47,3 +46,4 @@ Golang project operation blueprint.
   + repository configuration validation
 + support hetzner, aws, gcp, azure
 + cost analysis for different scales
++ goland / vscode setup\
