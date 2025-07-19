@@ -1,7 +1,5 @@
 package rabbitmq
 
-// @todo config options
-
 import (
 	"context"
 	"errors"

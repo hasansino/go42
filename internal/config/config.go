@@ -339,12 +339,66 @@ type NATSSubscriber struct {
 }
 
 type RabbitMQ struct {
-	DSN string `env:"RABBITMQ_DSN" default:"amqp://guest:guest@localhost:5672/"`
+	DSN                      string        `env:"RABBITMQ_DSN"                        default:"amqp://guest:guest@localhost:5672/"`
+	ReconnectInitialInterval time.Duration `env:"RABBITMQ_RECONNECT_INITIAL_INTERVAL" default:"500ms"`
+	ReconnectMultiplier      float64       `env:"RABBITMQ_RECONNECT_MULTIPLIER"       default:"1.5"`
+	ReconnectMaxInterval     time.Duration `env:"RABBITMQ_RECONNECT_MAX_INTERVAL"     default:"30s"`
+	ExchangeName             string        `env:"RABBITMQ_EXCHANGE_NAME"              default:""`
+	ExchangeType             string        `env:"RABBITMQ_EXCHANGE_TYPE"              default:"topic"`
+	ExchangeDurable          bool          `env:"RABBITMQ_EXCHANGE_DURABLE"           default:"true"`
+	ExchangeAutoDelete       bool          `env:"RABBITMQ_EXCHANGE_AUTO_DELETE"       default:"false"`
+	QueueName                string        `env:"RABBITMQ_QUEUE_NAME"                 default:""`
+	QueueDurable             bool          `env:"RABBITMQ_QUEUE_DURABLE"              default:"true"`
+	QueueAutoDelete          bool          `env:"RABBITMQ_QUEUE_AUTO_DELETE"          default:"false"`
+	QueueExclusive           bool          `env:"RABBITMQ_QUEUE_EXCLUSIVE"            default:"false"`
+	PublishMandatory         bool          `env:"RABBITMQ_PUBLISH_MANDATORY"          default:"false"`
+	PublishImmediate         bool          `env:"RABBITMQ_PUBLISH_IMMEDIATE"          default:"false"`
+	PublishTransactional     bool          `env:"RABBITMQ_PUBLISH_TRANSACTIONAL"      default:"false"`
+	PublishChannelPool       int           `env:"RABBITMQ_PUBLISH_CHANNEL_POOL"       default:"5"`
+	PublishConfirm           bool          `env:"RABBITMQ_PUBLISH_CONFIRM"            default:"false"`
+	ConsumeNoRequeue         bool          `env:"RABBITMQ_CONSUME_NO_REQUEUE"         default:"false"`
+	ConsumeConsumerName      string        `env:"RABBITMQ_CONSUME_CONSUMER_NAME"      default:""`
+	ConsumeExclusive         bool          `env:"RABBITMQ_CONSUME_EXCLUSIVE"          default:"false"`
+	ConsumeNoLocal           bool          `env:"RABBITMQ_CONSUME_NO_LOCAL"           default:"false"`
+	ConsumePrefetchCount     int           `env:"RABBITMQ_CONSUME_PREFETCH_COUNT"     default:"1"`
+	ConsumePrefetchSize      int           `env:"RABBITMQ_CONSUME_PREFETCH_SIZE"      default:"0"`
+	ConsumeQosGlobal         bool          `env:"RABBITMQ_CONSUME_QOS_GLOBAL"         default:"false"`
+	NotPersistentMode        bool          `env:"RABBITMQ_NOT_PERSISTENT_MODE"        default:"false"`
+	MessageUUIDHeader        string        `env:"RABBITMQ_MESSAGE_UUID_HEADER"        default:""`
 }
 
 type Kafka struct {
-	Brokers       []string `env:"KAFKA_BROKERS"        default:"localhost:9092"`
-	ConsumerGroup string   `env:"KAFKA_CONSUMER_GROUP" default:"example"`
+	Brokers                   []string      `env:"KAFKA_BROKERS"                      default:"localhost:9092"`
+	ConsumerGroup             string        `env:"KAFKA_CONSUMER_GROUP"               default:"example"`
+	ClientID                  string        `env:"KAFKA_CLIENT_ID"                    default:""`
+	Version                   string        `env:"KAFKA_VERSION"                      default:"2.1.0"`
+	DialTimeout               time.Duration `env:"KAFKA_DIAL_TIMEOUT"                 default:"30s"`
+	ReadTimeout               time.Duration `env:"KAFKA_READ_TIMEOUT"                 default:"30s"`
+	WriteTimeout              time.Duration `env:"KAFKA_WRITE_TIMEOUT"                default:"30s"`
+	KeepAlive                 time.Duration `env:"KAFKA_KEEP_ALIVE"                   default:"0s"`
+	ProducerRetryMax          int           `env:"KAFKA_PRODUCER_RETRY_MAX"           default:"3"`
+	ProducerRetryBackoff      time.Duration `env:"KAFKA_PRODUCER_RETRY_BACKOFF"       default:"100ms"`
+	ProducerMaxMessageBytes   int           `env:"KAFKA_PRODUCER_MAX_MESSAGE_BYTES"   default:"1000000"`
+	ProducerCompression       string        `env:"KAFKA_PRODUCER_COMPRESSION"         default:"none"`
+	ProducerCompressionLevel  int           `env:"KAFKA_PRODUCER_COMPRESSION_LEVEL"   default:"-1"`
+	ProducerFlushMessages     int           `env:"KAFKA_PRODUCER_FLUSH_MESSAGES"      default:"0"`
+	ProducerFlushFrequency    time.Duration `env:"KAFKA_PRODUCER_FLUSH_FREQUENCY"     default:"0s"`
+	ProducerRequiredAcks      int16         `env:"KAFKA_PRODUCER_REQUIRED_ACKS"       default:"1"`
+	ProducerIdempotent        bool          `env:"KAFKA_PRODUCER_IDEMPOTENT"          default:"false"`
+	ConsumerRetryBackoff      time.Duration `env:"KAFKA_CONSUMER_RETRY_BACKOFF"       default:"2s"`
+	ConsumerFetchMin          int32         `env:"KAFKA_CONSUMER_FETCH_MIN"           default:"1"`
+	ConsumerFetchDefault      int32         `env:"KAFKA_CONSUMER_FETCH_DEFAULT"       default:"1048576"`
+	ConsumerFetchMax          int32         `env:"KAFKA_CONSUMER_FETCH_MAX"           default:"0"`
+	ConsumerMaxWaitTime       time.Duration `env:"KAFKA_CONSUMER_MAX_WAIT_TIME"       default:"250ms"`
+	ConsumerMaxProcessingTime time.Duration `env:"KAFKA_CONSUMER_MAX_PROCESSING_TIME" default:"100ms"`
+	ConsumerReturnErrors      bool          `env:"KAFKA_CONSUMER_RETURN_ERRORS"       default:"false"`
+	ConsumerOffsetInitial     int64         `env:"KAFKA_CONSUMER_OFFSET_INITIAL"      default:"-1"`
+	ConsumerSessionTimeout    time.Duration `env:"KAFKA_CONSUMER_SESSION_TIMEOUT"     default:"10s"`
+	ConsumerHeartbeatInterval time.Duration `env:"KAFKA_CONSUMER_HEARTBEAT_INTERVAL"  default:"3s"`
+	ConsumerRebalanceStrategy string        `env:"KAFKA_CONSUMER_REBALANCE_STRATEGY"  default:"range"`
+	MetadataRefreshFrequency  time.Duration `env:"KAFKA_METADATA_REFRESH_FREQUENCY"   default:"10m"`
+	MetadataRetryMax          int           `env:"KAFKA_METADATA_RETRY_MAX"           default:"3"`
+	MetadataRetryBackoff      time.Duration `env:"KAFKA_METADATA_RETRY_BACKOFF"       default:"250ms"`
 }
 
 // ╭──────────────────────────────╮

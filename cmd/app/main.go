@@ -323,7 +323,6 @@ func main() {
 	var (
 		eventsEngine events.Eventer
 	)
-
 	switch cfg.Events.Engine {
 	case "none":
 		eventsEngine = events.NewNoop()
@@ -357,6 +356,31 @@ func main() {
 		eventsEngine, err = rabbitmq.New(
 			cfg.Events.RabbitMQ.DSN,
 			rabbitmq.WithLogger(slog.Default().With(slog.String("component", "events-rabbitmq"))),
+			rabbitmq.WithReconnectBackoffInitialInterval(cfg.Events.RabbitMQ.ReconnectInitialInterval),
+			rabbitmq.WithReconnectBackoffMultiplier(cfg.Events.RabbitMQ.ReconnectMultiplier),
+			rabbitmq.WithReconnectBackoffMaxInterval(cfg.Events.RabbitMQ.ReconnectMaxInterval),
+			rabbitmq.WithExchangeName(cfg.Events.RabbitMQ.ExchangeName),
+			rabbitmq.WithExchangeType(cfg.Events.RabbitMQ.ExchangeType),
+			rabbitmq.WithExchangeDurable(cfg.Events.RabbitMQ.ExchangeDurable),
+			rabbitmq.WithExchangeAutoDelete(cfg.Events.RabbitMQ.ExchangeAutoDelete),
+			rabbitmq.WithQueueName(cfg.Events.RabbitMQ.QueueName),
+			rabbitmq.WithQueueDurable(cfg.Events.RabbitMQ.QueueDurable),
+			rabbitmq.WithQueueAutoDelete(cfg.Events.RabbitMQ.QueueAutoDelete),
+			rabbitmq.WithQueueExclusive(cfg.Events.RabbitMQ.QueueExclusive),
+			rabbitmq.WithPublishMandatory(cfg.Events.RabbitMQ.PublishMandatory),
+			rabbitmq.WithPublishImmediate(cfg.Events.RabbitMQ.PublishImmediate),
+			rabbitmq.WithPublishTransactional(cfg.Events.RabbitMQ.PublishTransactional),
+			rabbitmq.WithPublishChannelPoolSize(cfg.Events.RabbitMQ.PublishChannelPool),
+			rabbitmq.WithPublishConfirmDelivery(cfg.Events.RabbitMQ.PublishConfirm),
+			rabbitmq.WithConsumeConsumerName(cfg.Events.RabbitMQ.ConsumeConsumerName),
+			rabbitmq.WithConsumeNoRequeueOnNack(cfg.Events.RabbitMQ.ConsumeNoRequeue),
+			rabbitmq.WithConsumeExclusive(cfg.Events.RabbitMQ.ConsumeExclusive),
+			rabbitmq.WithConsumeNoLocal(cfg.Events.RabbitMQ.ConsumeNoLocal),
+			rabbitmq.WithConsumeQosPrefetchCount(cfg.Events.RabbitMQ.ConsumePrefetchCount),
+			rabbitmq.WithConsumeQosPrefetchSize(cfg.Events.RabbitMQ.ConsumePrefetchSize),
+			rabbitmq.WithConsumeQosGlobal(cfg.Events.RabbitMQ.ConsumeQosGlobal),
+			rabbitmq.WithNotPersistentDeliveryMode(cfg.Events.RabbitMQ.NotPersistentMode),
+			rabbitmq.WithMessageUUIDHeaderKey(cfg.Events.RabbitMQ.MessageUUIDHeader),
 		)
 		if err != nil {
 			log.Fatalf("failed to initialize rabbitmq event engine: %v\n", err)
@@ -367,6 +391,35 @@ func main() {
 			cfg.Events.Kafka.Brokers,
 			cfg.Events.Kafka.ConsumerGroup,
 			kafka.WithLogger(slog.Default().With(slog.String("component", "events-kafka"))),
+			kafka.WithClientID(cfg.Events.Kafka.ClientID),
+			kafka.WithKafkaVersion(cfg.Events.Kafka.Version),
+			kafka.WithDialTimeout(cfg.Events.Kafka.DialTimeout),
+			kafka.WithReadTimeout(cfg.Events.Kafka.ReadTimeout),
+			kafka.WithWriteTimeout(cfg.Events.Kafka.WriteTimeout),
+			kafka.WithKeepAlive(cfg.Events.Kafka.KeepAlive),
+			kafka.WithProducerRetryMax(cfg.Events.Kafka.ProducerRetryMax),
+			kafka.WithProducerRetryBackoff(cfg.Events.Kafka.ProducerRetryBackoff),
+			kafka.WithProducerMaxMessageBytes(cfg.Events.Kafka.ProducerMaxMessageBytes),
+			kafka.WithProducerCompression(cfg.Events.Kafka.ProducerCompression),
+			kafka.WithProducerCompressionLevel(cfg.Events.Kafka.ProducerCompressionLevel),
+			kafka.WithProducerFlushMessages(cfg.Events.Kafka.ProducerFlushMessages),
+			kafka.WithProducerFlushFrequency(cfg.Events.Kafka.ProducerFlushFrequency),
+			kafka.WithProducerRequiredAcks(cfg.Events.Kafka.ProducerRequiredAcks),
+			kafka.WithProducerIdempotent(cfg.Events.Kafka.ProducerIdempotent),
+			kafka.WithConsumerRetryBackoff(cfg.Events.Kafka.ConsumerRetryBackoff),
+			kafka.WithConsumerFetchMin(cfg.Events.Kafka.ConsumerFetchMin),
+			kafka.WithConsumerFetchDefault(cfg.Events.Kafka.ConsumerFetchDefault),
+			kafka.WithConsumerFetchMax(cfg.Events.Kafka.ConsumerFetchMax),
+			kafka.WithConsumerMaxWaitTime(cfg.Events.Kafka.ConsumerMaxWaitTime),
+			kafka.WithConsumerMaxProcessingTime(cfg.Events.Kafka.ConsumerMaxProcessingTime),
+			kafka.WithConsumerReturnErrors(cfg.Events.Kafka.ConsumerReturnErrors),
+			kafka.WithConsumerOffsetInitial(cfg.Events.Kafka.ConsumerOffsetInitial),
+			kafka.WithConsumerGroupSessionTimeout(cfg.Events.Kafka.ConsumerSessionTimeout),
+			kafka.WithConsumerGroupHeartbeatInterval(cfg.Events.Kafka.ConsumerHeartbeatInterval),
+			kafka.WithConsumerGroupRebalanceStrategy(cfg.Events.Kafka.ConsumerRebalanceStrategy),
+			kafka.WithMetadataRefreshFrequency(cfg.Events.Kafka.MetadataRefreshFrequency),
+			kafka.WithMetadataRetryMax(cfg.Events.Kafka.MetadataRetryMax),
+			kafka.WithMetadataRetryBackoff(cfg.Events.Kafka.MetadataRetryBackoff),
 		)
 		if err != nil {
 			log.Fatalf("failed to initialize kafka event engine: %v\n", err)
@@ -394,6 +447,8 @@ func main() {
 				slog.Default().With(slog.String("component", "outbox-publisher")),
 			),
 		)
+
+		// @todo This prevents us to catch errors immediately, maybe we can do better?
 		go outboxPublisher.Run(ctx, 5*time.Second, 100)
 
 		// example domain
@@ -507,6 +562,9 @@ func initLogging(cfg *config.Config) {
 		slog.String("build_commit", xBuildCommit),
 	)
 
+	// Any call to log.* will be redirected to slog.Error.
+	// Because of that, we need to agree to use `log` package only for errors.
+	slog.SetLogLoggerLevel(slog.LevelError)
 	// for both 'log' and 'slog'
 	slog.SetDefault(enrichedLogger)
 

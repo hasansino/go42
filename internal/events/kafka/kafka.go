@@ -1,7 +1,5 @@
 package kafka
 
-// @todo config options
-
 import (
 	"context"
 	"errors"

@@ -94,7 +94,7 @@ jobs:
           ENVIRONMENT: ci-integration-tests
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
-          DATABASE_ENGINE: pgsql
+          DATABASE_ENGINE: sqlite
           DATABASE_MYSQL_MASTER_HOST: mysql
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql

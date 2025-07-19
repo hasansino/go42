@@ -19,6 +19,7 @@ Golang project operation blueprint.
 
 ## Backlog
 
++ TLS connections and management
 + https://testcontainers.com/?language=go
 + jwt authentication
 + security headers
@@ -45,4 +46,4 @@ Golang project operation blueprint.
   + repository configuration validation
 + support hetzner, aws, gcp, azure
 + cost analysis for different scales
-+ goland / vscode setup\
++ goland / vscode setup
