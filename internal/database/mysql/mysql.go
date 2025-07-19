@@ -130,7 +130,7 @@ func (w *Mysql) connect(ctx context.Context, dsn string, config *gorm.Config) (*
 		return conn, nil
 	},
 		retry.Context(ctx),
-		retry.Attempts(5),
+		retry.Attempts(10),
 		retry.Delay(2*time.Second),
 		retry.MaxDelay(2*time.Second),
 		retry.LastErrorOnly(true),

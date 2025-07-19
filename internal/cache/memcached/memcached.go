@@ -23,7 +23,7 @@ func Open(ctx context.Context, hosts []string, opts ...Option) (*Wrapper, error)
 		return client, client.Ping()
 	},
 		retry.Context(ctx),
-		retry.Attempts(5),
+		retry.Attempts(10),
 		retry.Delay(2*time.Second),
 		retry.MaxDelay(2*time.Second),
 		retry.LastErrorOnly(true),

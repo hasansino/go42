@@ -62,9 +62,9 @@ jobs:
           MYSQL_USER: user
           MYSQL_PASSWORD: qwerty
           MYSQL_DATABASE: go42
-          MYSQL_ROOT_PASSWORD: qwerty
+          MYSQL_ROOT_PASSWORD: root
         options: >-
-          --health-cmd "mysqladmin ping -h localhost -u root -pqwerty || exit 1"
+          --health-cmd "mysqladmin ping -h localhost -u root -proot || exit 1"
           --health-start-period 30s
           --health-interval 10s
           --health-timeout 5s
@@ -96,6 +96,7 @@ jobs:
           SERVER_GRPC_LISTEN: :50051
           DATABASE_ENGINE: mysql
           DATABASE_MYSQL_MASTER_HOST: mysql
+          DATABASE_PGSQL_MASTER_HOST: pgsql
         options: >-
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s

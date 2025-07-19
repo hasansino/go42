@@ -169,12 +169,6 @@ type Database struct {
 	Mysql       Mysql
 }
 
-type Sqlite struct {
-	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
-	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
-	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
-}
-
 func (db Database) FullMigratePath() string {
 	return fmt.Sprintf(
 		"%s/%s",
@@ -183,44 +177,10 @@ func (db Database) FullMigratePath() string {
 	)
 }
 
-type Pgsql struct {
-	Master          PgsqlMaster
-	Slave           PgsqlSlave
-	ConnMaxIdleTime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_IDLE_TIME" default:"10m"`
-	ConnMaxLifetime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_LIFETIME"  default:"30m"`
-	MaxIdleConns    int           `env:"DATABASE_PGSQL_MAX_IDLE_CONNS"     default:"10"`
-	MaxOpenConns    int           `env:"DATABASE_PGSQL_MAX_OPEN_CONNS"     default:"100"`
-	QueryTimeout    time.Duration `env:"DATABASE_PGSQL_QUERY_TIMEOUT"      default:"10s"`
-}
-
-type PgsqlMaster struct {
-	Host     string `env:"DATABASE_PGSQL_MASTER_HOST"     default:"localhost"`
-	Port     int    `env:"DATABASE_PGSQL_MASTER_PORT"     default:"5432"`
-	User     string `env:"DATABASE_PGSQL_MASTER_USER"     default:"user"`
-	Password string `env:"DATABASE_PGSQL_MASTER_PASSWORD" default:"qwerty"`
-	Name     string `env:"DATABASE_PGSQL_MASTER_NAME"     default:"go42"`
-}
-
-func (db PgsqlMaster) DSN() string {
-	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s",
-		db.User, db.Password, db.Host, db.Port, db.Name,
-	)
-}
-
-type PgsqlSlave struct {
-	Host     string `env:"DATABASE_PGSQL_SLAVE_HOST"     default:"localhost"`
-	Port     int    `env:"DATABASE_PGSQL_SLAVE_PORT"     default:"5432"`
-	User     string `env:"DATABASE_PGSQL_SLAVE_USER"     default:"user"`
-	Password string `env:"DATABASE_PGSQL_SLAVE_PASSWORD" default:"qwerty"`
-	Name     string `env:"DATABASE_PGSQL_SLAVE_NAME"     default:"go42"`
-}
-
-func (db PgsqlSlave) DSN() string {
-	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s",
-		db.User, db.Password, db.Host, db.Port, db.Name,
-	)
+type Sqlite struct {
+	Mode       string `env:"DATABASE_SQLITE_MODE"       default:"memory"`
+	SqliteFile string `env:"DATABASE_SQLITE_PATH"       default:"file::memory:"`
+	CacheMode  string `env:"DATABASE_SQLITE_CACHE_MODE" default:"shared"`
 }
 
 type Mysql struct {
@@ -262,6 +222,46 @@ func (db MysqlSlave) DSN() string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
 		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,
+	)
+}
+
+type Pgsql struct {
+	Master          PgsqlMaster
+	Slave           PgsqlSlave
+	ConnMaxIdleTime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_IDLE_TIME" default:"10m"`
+	ConnMaxLifetime time.Duration `env:"DATABASE_PGSQL_CONN_MAX_LIFETIME"  default:"30m"`
+	MaxIdleConns    int           `env:"DATABASE_PGSQL_MAX_IDLE_CONNS"     default:"10"`
+	MaxOpenConns    int           `env:"DATABASE_PGSQL_MAX_OPEN_CONNS"     default:"100"`
+	QueryTimeout    time.Duration `env:"DATABASE_PGSQL_QUERY_TIMEOUT"      default:"10s"`
+}
+
+type PgsqlMaster struct {
+	Host     string `env:"DATABASE_PGSQL_MASTER_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_PGSQL_MASTER_PORT"     default:"5432"`
+	User     string `env:"DATABASE_PGSQL_MASTER_USER"     default:"user"`
+	Password string `env:"DATABASE_PGSQL_MASTER_PASSWORD" default:"qwerty"`
+	Name     string `env:"DATABASE_PGSQL_MASTER_NAME"     default:"go42"`
+}
+
+func (db PgsqlMaster) DSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s",
+		db.User, db.Password, db.Host, db.Port, db.Name,
+	)
+}
+
+type PgsqlSlave struct {
+	Host     string `env:"DATABASE_PGSQL_SLAVE_HOST"     default:"localhost"`
+	Port     int    `env:"DATABASE_PGSQL_SLAVE_PORT"     default:"5432"`
+	User     string `env:"DATABASE_PGSQL_SLAVE_USER"     default:"user"`
+	Password string `env:"DATABASE_PGSQL_SLAVE_PASSWORD" default:"qwerty"`
+	Name     string `env:"DATABASE_PGSQL_SLAVE_NAME"     default:"go42"`
+}
+
+func (db PgsqlSlave) DSN() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s",
+		db.User, db.Password, db.Host, db.Port, db.Name,
 	)
 }
 

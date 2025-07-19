@@ -32,7 +32,7 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 		return db, nil
 	},
 		retry.Context(ctx),
-		retry.Attempts(5),
+		retry.Attempts(10),
 		retry.Delay(2*time.Second),
 		retry.MaxDelay(2*time.Second),
 		retry.LastErrorOnly(true),

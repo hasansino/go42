@@ -52,7 +52,7 @@ func Open(ctx context.Context, hosts []string, namespace string, opts ...Option)
 		return client, nil
 	},
 		retry.Context(ctx),
-		retry.Attempts(5),
+		retry.Attempts(10),
 		retry.Delay(2*time.Second),
 		retry.MaxDelay(2*time.Second),
 		retry.LastErrorOnly(true),
