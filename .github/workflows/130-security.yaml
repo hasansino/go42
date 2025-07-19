@@ -6,6 +6,7 @@ name: security
 # @see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
 # @see https://github.com/sonatype-nexus-community/nancy
 # @see https://codeql.github.com/
+# @see https://github.com/google/go-licenses
 
 on:
   workflow_dispatch:
@@ -112,3 +113,15 @@ jobs:
       - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3
 
+  licenses:
+    name: licenses
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: joeig/go-licenses-action@v1.1
+        with:
+          # some packages may miss license files, or they are linked to outside libraries
+          # for stricter checks, add `unknown` to this list
+          disallowed-types: "forbidden,restricted"

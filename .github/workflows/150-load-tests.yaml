@@ -96,7 +96,9 @@ jobs:
           SERVER_HTTP_LISTEN: :8080
           DATABASE_ENGINE: mysql
           DATABASE_MYSQL_MASTER_HOST: mysql
+          DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
+          DATABASE_PGSQL_SLAVE_HOST: pgsql
         options: >-
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s
@@ -195,7 +197,9 @@ jobs:
           SERVER_GRPC_LISTEN: :50051
           DATABASE_ENGINE: mysql
           DATABASE_MYSQL_MASTER_HOST: mysql
+          DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
+          DATABASE_PGSQL_SLAVE_HOST: pgsql
         options: >-
           --health-cmd "curl -f http://localhost:8080/health || exit 1"
           --health-start-period 1s
