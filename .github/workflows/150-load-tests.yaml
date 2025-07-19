@@ -67,7 +67,7 @@ jobs:
           MYSQL_DATABASE: go42
           MYSQL_ROOT_PASSWORD: qwerty
         options: >-
-          --health-cmd "mysqladmin ping -h localhost -u root -pqwerty || exit 1"
+          --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1"
           --health-start-period 30s
           --health-interval 10s
           --health-timeout 5s
@@ -81,7 +81,7 @@ jobs:
           POSTGRES_PASSWORD: qwerty
           POSTGRES_DB: go42
         options: >-
-          --health-cmd "pg_isready -U user -d go42 || exit 1"
+          --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1"
           --health-start-period 10s
           --health-interval 5s
           --health-timeout 5s
@@ -164,7 +164,7 @@ jobs:
           MYSQL_DATABASE: go42
           MYSQL_ROOT_PASSWORD: qwerty
         options: >-
-          --health-cmd "mysqladmin ping -h localhost -u root -pqwerty || exit 1"
+          --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1"
           --health-start-period 30s
           --health-interval 10s
           --health-timeout 5s
@@ -178,7 +178,7 @@ jobs:
           POSTGRES_PASSWORD: qwerty
           POSTGRES_DB: go42
         options: >-
-          --health-cmd "pg_isready -U user -d go42 || exit 1"
+          --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1"
           --health-start-period 10s
           --health-interval 5s
           --health-timeout 5s
