@@ -108,6 +108,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       # ---
+      # Prepare tags, labels and annotations for the image.
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
+          tags: |
+            type=raw,value=${{ inputs.image_tag }}
+          flavor: |
+            latest=false
+          # @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
+          labels: |
+            org.opencontainers.image.title: ${{ inputs.service_name }}
+            org.opencontainers.image.description: "go42 - golang project operation blueprint."
+            org.opencontainers.image.source: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}
+            org.opencontainers.image.url: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}
+            org.opencontainers.image.version: ${{ inputs.image_tag }}
+            org.opencontainers.image.revision: ${{ env.commit_hash }}
+            org.opencontainers.image.licenses: MIT
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+      # ---
       - uses: docker/build-push-action@v6
         id: build
         with:
@@ -117,19 +139,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             GO_VERSION=${{ env.go_version }}
             COMMIT_HASH=${{ env.commit_hash }}
             RELEASE_TAG=${{ env.release_tag }}
-          annotations:
-            org.opencontainers.image.title: ${{ inputs.service_name }}
-            org.opencontainers.image.source: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}.git
-            org.opencontainers.image.url: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}
-            org.opencontainers.image.description: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-            org.opencontainers.image.version: ${{ inputs.image_tag }}
-            org.opencontainers.image.revision: ${{ env.commit_hash }}
-            org.opencontainers.image.licenses: MIT
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
         env:
           # @see https://reproducible-builds.org/docs/source-date-epoch/
           SOURCE_DATE_EPOCH: 0
