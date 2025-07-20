@@ -75,3 +75,4 @@ Golang project operation blueprint.
 + Feature flags system
 + GoLand / VSCode configuration
 + Scaling and organizing multiple projects
++ Try `docker buildx bake`

@@ -24,24 +24,24 @@ jobs:
       continue_on_error: false
       service_name: "go42"
       image_tag: ${{ github.ref_name }}
-      platforms: "linux/amd64"
+      platforms: "linux/amd64,linux/arm64"
       attestation: true
       generate_sbom: true
       attestation_sbom: true
-  docker-build-arm64:
-    name: docker-build-arm64
-    uses: ./.github/workflows/140-docker-build.yaml
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: false
-      service_name: "go42"
-      image_tag: ${{ github.ref_name }}
-      platforms: "linux/arm64"
-      attestation: true
-      generate_sbom: false
-      attestation_sbom: false
+#  docker-build-arm64:
+#    name: docker-build-arm64
+#    uses: ./.github/workflows/140-docker-build.yaml
+#    with:
+#      runs_on: ubuntu-latest
+#      continue_on_error: false
+#      service_name: "go42"
+#      image_tag: ${{ github.ref_name }}
+#      platforms: "linux/arm64"
+#      attestation: true
+#      generate_sbom: false
+#      attestation_sbom: false
   release-pr:
-    needs: [docker-build-amd64, docker-build-arm64]
+    needs: [ docker-build-amd64 ]
     name: release-pr
     uses: ./.github/workflows/320-release-pr.yaml
     with:

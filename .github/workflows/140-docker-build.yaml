@@ -4,8 +4,6 @@ name: docker-build
 # Builds Dockerfile, which in turn builds golang binary.
 # buildx allows building multi-arch images.
 # Pushes image to ghcr.io.
-#
-# @note should be executed only with single platform at a time for cache to work properly.
 
 on:
   workflow_dispatch:
@@ -81,7 +79,7 @@ on:
 
 permissions:
   packages: write
-  contents: write
+  contents: read
   attestations: write
   id-token: write
   actions: read
