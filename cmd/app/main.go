@@ -448,7 +448,6 @@ func main() {
 			),
 		)
 
-		// @todo This prevents us to catch errors immediately, maybe we can do better?
 		go outboxPublisher.Run(ctx, 5*time.Second, 100)
 
 		// example domain

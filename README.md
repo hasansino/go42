@@ -47,6 +47,10 @@ Golang project operation blueprint.
 + datadog integration
 + release annotations
 + pr llm review
++ generate release summary with llm
++ integration with project management tools
++ using AI agents to complete tasks
++ arch/business/feature documentation generation
 
 ### 5
 
@@ -70,3 +74,4 @@ Golang project operation blueprint.
 + Try https://backstage.io/
 + Feature flags system
 + GoLand / VSCode configuration
++ Scaling and organizing multiple projects

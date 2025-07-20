@@ -371,7 +371,7 @@ type Kafka struct {
 	Brokers                   []string      `env:"KAFKA_BROKERS"                      default:"localhost:9092"`
 	ConsumerGroup             string        `env:"KAFKA_CONSUMER_GROUP"               default:"example"`
 	ClientID                  string        `env:"KAFKA_CLIENT_ID"                    default:""`
-	Version                   string        `env:"KAFKA_VERSION"                      default:"2.1.0"`
+	Version                   string        `env:"KAFKA_VERSION"                      default:"4.0.0"`
 	DialTimeout               time.Duration `env:"KAFKA_DIAL_TIMEOUT"                 default:"30s"`
 	ReadTimeout               time.Duration `env:"KAFKA_READ_TIMEOUT"                 default:"30s"`
 	WriteTimeout              time.Duration `env:"KAFKA_WRITE_TIMEOUT"                default:"30s"`

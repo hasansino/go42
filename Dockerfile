@@ -66,6 +66,8 @@ RUN readelf -h app && du -h app && sha256sum app && go tool buildid app
 # This reduces resulting image size and potential security risks.
 FROM alpine:3.22
 
+LABEL org.opencontainers.image.source=https://github.com/hasansino/go42
+
 # Install dependencies.
 #   * ca-certificates - required for https requests
 #   * tzdata - required for time zone operations

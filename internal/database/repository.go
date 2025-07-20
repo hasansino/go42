@@ -84,6 +84,8 @@ func (r *BaseRepository) WithTransaction(ctx context.Context, fn func(txCtx cont
 					With(slog.String("component", "db-repository")).
 					Error("panic: rollback failed", slog.Any("err", rbErr))
 			}
+			// we handled panic only to roll back the transaction
+			// actual handling of panic should be done by the caller
 			panic(rec)
 		}
 	}()
@@ -98,7 +100,7 @@ func (r *BaseRepository) WithTransaction(ctx context.Context, fn func(txCtx cont
 	if err := r.Commit(txCtx); err != nil {
 		rbErr := r.Rollback(txCtx)
 		if rbErr != nil {
-			return fmt.Errorf("error commiting transaction (rollback failed: %v): %w", rbErr, err)
+			return fmt.Errorf("error committing transaction (rollback failed: %v): %w", rbErr, err)
 		}
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
