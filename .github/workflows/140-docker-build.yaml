@@ -106,6 +106,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       # ---
+      # For single platform builds `index` annotations will fail - check and set levels accordingly.
+      - id: annotations-levels
+        run: |
+          platforms="${{ inputs.platforms }}"
+          count=$(echo "$platforms" | awk -F',' '{print NF}')
+          if [ "$count" -gt 1 ]; then
+            echo "levels=manifest,index" >> $GITHUB_OUTPUT
+          else
+            echo "levels=manifest" >> $GITHUB_OUTPUT
+          fi
       # Prepare tags, labels and annotations for the image.
       - uses: docker/metadata-action@v5
         id: meta
@@ -126,7 +136,7 @@ jobs:
             org.opencontainers.image.revision: ${{ env.commit_hash }}
             org.opencontainers.image.licenses: MIT
         env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: ${{ steps.annotations-levels.outputs.levels }}
       # ---
       - uses: docker/build-push-action@v6
         id: build

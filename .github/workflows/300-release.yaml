@@ -1,7 +1,7 @@
 name: release
 
 # Release.
-# Triggered by semver tag push.
+# Triggered by v{semver} tag push.
 
 on:
   push:
@@ -16,8 +16,8 @@ permissions:
   actions: read
 
 jobs:
-  docker-build-amd64:
-    name: docker-build-amd64
+  docker-build:
+    name: docker-build
     uses: ./.github/workflows/140-docker-build.yaml
     with:
       runs_on: ubuntu-latest
@@ -28,20 +28,8 @@ jobs:
       attestation: true
       generate_sbom: true
       attestation_sbom: true
-#  docker-build-arm64:
-#    name: docker-build-arm64
-#    uses: ./.github/workflows/140-docker-build.yaml
-#    with:
-#      runs_on: ubuntu-latest
-#      continue_on_error: false
-#      service_name: "go42"
-#      image_tag: ${{ github.ref_name }}
-#      platforms: "linux/arm64"
-#      attestation: true
-#      generate_sbom: false
-#      attestation_sbom: false
   release-pr:
-    needs: [ docker-build-amd64 ]
+    needs: [ docker-build ]
     name: release-pr
     uses: ./.github/workflows/320-release-pr.yaml
     with:

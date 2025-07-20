@@ -125,7 +125,7 @@ jobs:
         ${{
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
-      platforms: "linux/amd64"
+      platforms: "linux/amd64,linux/arm64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
       attestation_sbom: false
