@@ -29,6 +29,10 @@ type providerAccessor interface {
 	Register(*grpc.Server)
 }
 
+type rateLimiterAccessor interface {
+	Limit(key any) bool
+}
+
 type Server struct {
 	logger     *slog.Logger
 	grpcServer *grpc.Server
@@ -38,6 +42,7 @@ type Server struct {
 	tracingEnabled bool
 	withReflection bool
 	healthServer   *health.Server
+	rateLimiter    rateLimiterAccessor
 }
 
 func New(opts ...Option) *Server {
@@ -61,18 +66,20 @@ func New(opts ...Option) *Server {
 	}
 
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
-		interceptors.UnaryRequestIDInterceptor(),
-		interceptors.UnaryMetricsInterceptor(),
-		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
 		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		interceptors.UnaryServerRateLimiterInterceptor(s.rateLimiter),
+		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
+		interceptors.UnaryMetricsInterceptor(),
+		interceptors.UnaryRequestIDInterceptor(),
+		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
 	}
 	streamInterceptors := []grpc.StreamServerInterceptor{
-		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
-		interceptors.StreamRequestIDInterceptor(),
-		interceptors.StreamMetricsInterceptor(),
-		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
 		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		interceptors.StreamServerRateLimiterInterceptor(s.rateLimiter),
+		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
+		interceptors.StreamMetricsInterceptor(),
+		interceptors.StreamRequestIDInterceptor(),
+		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
 	}
 
 	serverOptions := []grpc.ServerOption{

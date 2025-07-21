@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/hasansino/go42/internal/tools"
 )
 
 type Option func(s *Server)
@@ -59,5 +61,12 @@ func WitHealthCheckCtx(ctx context.Context) Option {
 			<-ctx.Done()
 			s.readyStatus.Store(false)
 		}()
+	}
+}
+
+// WithRateLimiter enables/disables rate limiting.
+func WithRateLimiter(rate int, burst int) Option {
+	return func(s *Server) {
+		s.rateLimiter = tools.NewRateLimiter(rate, burst)
 	}
 }

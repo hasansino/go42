@@ -103,7 +103,7 @@ func main() {
 	tracingCloser := initTracing(cfg)
 
 	// http server
-	httpServer := httpAPI.New(
+	httpServerOpts := []httpAPI.Option{
 		httpAPI.WitHealthCheckCtx(ctx),
 		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
@@ -111,18 +111,36 @@ func main() {
 		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
 		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
-	)
+	}
+
+	if cfg.Server.HTTP.RateLimiter.Enabled {
+		httpServerOpts = append(httpServerOpts, httpAPI.WithRateLimiter(
+			cfg.Server.HTTP.RateLimiter.Rate,
+			cfg.Server.HTTP.RateLimiter.Burst,
+		))
+	}
+
+	httpServer := httpAPI.New(httpServerOpts...)
 	httpServer.Register(metricsprovider.New(metricsHandler))
 
 	// grpc server
-	grpcServer := grpcAPI.New(
+	grpcServerOpts := []grpcAPI.Option{
 		grpcAPI.WitHealthCheckCtx(ctx),
 		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),
 		grpcAPI.WithReflection(cfg.Server.GRPC.ReflectionEnabled),
-	)
+	}
+
+	if cfg.Server.GRPC.RateLimiter.Enabled {
+		grpcServerOpts = append(grpcServerOpts, grpcAPI.WithRateLimiter(
+			cfg.Server.GRPC.RateLimiter.Rate,
+			cfg.Server.GRPC.RateLimiter.Burst,
+		))
+	}
+
+	grpcServer := grpcAPI.New(grpcServerOpts...)
 
 	// database engine
 	var (
@@ -451,6 +469,7 @@ func main() {
 		go outboxPublisher.Run(ctx, 5*time.Second, 100)
 
 		// example domain
+		// @note for example package we are not cluttering configuration, expect magic values
 		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
 		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
 		exampleService := example.NewService(

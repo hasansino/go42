@@ -428,6 +428,13 @@ type HTTP struct {
 	WriteTimeout time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_HTTP_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_HTTP_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+	RateLimiter  HTTPRateLimiter
+}
+
+type HTTPRateLimiter struct {
+	Enabled bool `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"true"`
+	Rate    int  `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int  `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
 }
 
 type GRPC struct {
@@ -435,6 +442,13 @@ type GRPC struct {
 	MaxRecvMsgSize    int    `env:"SERVER_GRPC_MAX_RECV_MSG_SIZE"  default:"1024"`
 	MaxSendMsgSize    int    `env:"SERVER_GRPC_MAX_SEND_MSG_SIZE"  default:"1024"`
 	ReflectionEnabled bool   `env:"SERVER_GRPC_REFLECTION_ENABLED" default:"false"`
+	RateLimiter       GRPCRateLimiter
+}
+
+type GRPCRateLimiter struct {
+	Enabled bool `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"true"`
+	Rate    int  `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int  `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
 }
 
 const (

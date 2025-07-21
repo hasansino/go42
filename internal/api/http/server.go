@@ -18,9 +18,12 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
-// providerAccessor for all handler providers.
 type providerAccessor interface {
 	Register(*echo.Group)
+}
+
+type rateLimiterAccessor interface {
+	Limit(key any) bool
 }
 
 type PanicError struct {
@@ -43,6 +46,8 @@ type Server struct {
 
 	tracingEnabled bool
 	readyStatus    atomic.Bool
+
+	rateLimiter rateLimiterAccessor
 }
 
 func New(opts ...Option) *Server {
@@ -125,17 +130,21 @@ func New(opts ...Option) *Server {
 		}
 	}
 
-	// 1. panics are handled and passed to the HTTPErrorHandler
+	// panics are handled and passed to the HTTPErrorHandler
+	// this middleware should be always the first one in the chain
 	s.e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
 			return &PanicError{BaseErr: err, Stack: stack}
 		},
 	}))
 
-	// 2. metric collector
-	s.e.Use(customMiddleware.NewMetricsCollector())
+	if s.tracingEnabled {
+		s.e.Use(otelecho.Middleware("http-server"))
+	}
 
-	// 3. normal operation logging (http 100-499)
+	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
+
+	// normal operation logging (http 100-499)
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper:      customMiddleware.DefaultSkipper,
 		LogError:     true,
@@ -160,12 +169,7 @@ func New(opts ...Option) *Server {
 		},
 	}))
 
-	// 4. tracing
-	if s.tracingEnabled {
-		s.e.Use(otelecho.Middleware("http-server"))
-	}
-
-	// 5. request id
+	s.e.Use(customMiddleware.NewMetricsCollector())
 	s.e.Use(customMiddleware.NewRequestID())
 
 	root := s.e.Group("")

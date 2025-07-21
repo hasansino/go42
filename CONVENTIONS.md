@@ -22,6 +22,7 @@ This document is a repository of conventions and rules used by this project.
 * tag naming
 * sub-module tags
 * always prefer merge commits to rebase (disable rebase)
+* .gitignore -> current dir / .gitkeep
 
 ## Golang
 
@@ -43,6 +44,8 @@ This document is a repository of conventions and rules used by this project.
 * log fields with dash, metric labels with underscore
 * always use xContext() version of slog methods where context is available
 * github.com/hasansino/go42/internal/tools should never import anything from internal
+* retry pattern
+* naming interfaces and generating mocks
 
 ## Code Review
 

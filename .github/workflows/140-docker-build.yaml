@@ -129,7 +129,6 @@ jobs:
           # @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
           labels: |
             org.opencontainers.image.title: ${{ inputs.service_name }}
-            org.opencontainers.image.description: "go42 - golang project operation blueprint."
             org.opencontainers.image.source: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}
             org.opencontainers.image.url: https://github.com/${{ github.repository_owner }}/${{ inputs.service_name }}
             org.opencontainers.image.version: ${{ inputs.image_tag }}

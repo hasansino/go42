@@ -25,15 +25,6 @@ Golang project operation blueprint.
 + security headers
 + api token system
 
-### 2
-
-+ rate limiting
-  + https://pkg.go.dev/golang.org/x/time/rate
-  + https://github.com/uber-go/ratelimit
-  + https://github.com/grpc-ecosystem/go-grpc-middleware/
-+ external dependencies
-  + circuit breaker (https://github.com/sony/gobreaker)
-
 ### 3
 
 + service discovery
@@ -41,6 +32,8 @@ Golang project operation blueprint.
   + etcd
   + k8 CoreDNS
 + switch from zipkin to jaeger or tempo
+  + https://echo.labstack.com/docs/middleware/jaeger 
++ circuit breaker (https://github.com/sony/gobreaker)
 
 ### 4
 
@@ -66,6 +59,7 @@ Golang project operation blueprint.
 ### 7
 
 + Documentation
++ Conventions + validation
 
 ## 100% after v1.0.0 release
 
@@ -76,3 +70,7 @@ Golang project operation blueprint.
 + GoLand / VSCode configuration
 + Scaling and organizing multiple projects
 + Try https://github.com/docker/bake-action
++ Try https://github.com/mvdan/gofumpt (again)
++ @bug same-line imports
++ https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
++ migration linting and change management

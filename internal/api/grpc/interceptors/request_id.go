@@ -94,6 +94,8 @@ func StreamClientRequestIDInterceptor() grpc.StreamClientInterceptor {
 	}
 }
 
+// ---
+
 func propagateRequestID(ctx context.Context) context.Context {
 	if requestID := tools.GetRequestIDFromContext(ctx); requestID != "" {
 		return metadata.AppendToOutgoingContext(ctx, headerNameRequestID, requestID)

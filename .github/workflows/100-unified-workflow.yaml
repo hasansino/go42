@@ -13,6 +13,7 @@ name: unified-workflow
 #
 # @note `with` arguments are repeated because `with` does not support context
 # @see https://github.com/orgs/community/discussions/25246
+# May be fixed with https://github.com/marketplace/actions/dynamic-uses
 
 on:
   # manual trigger
@@ -125,6 +126,7 @@ jobs:
         ${{
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
+      # @note adding arm64 platform adds only about 10-20 seconds to the build time
       platforms: "linux/amd64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
