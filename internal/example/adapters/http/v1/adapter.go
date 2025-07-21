@@ -1,4 +1,4 @@
-package provider
+package adapter
 
 import (
 	"context"
@@ -30,16 +30,16 @@ type cache interface {
 	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
-// Provider for fiber framework
-type Provider struct {
+// Adapter for fiber framework
+type Adapter struct {
 	service  serviceAccessor
 	cache    cache
 	cacheTTL time.Duration
 }
 
 // New provides handlers for its http endpoints
-func New(s serviceAccessor, c cache, opts ...Option) *Provider {
-	p := &Provider{service: s, cache: c}
+func New(s serviceAccessor, c cache, opts ...Option) *Adapter {
+	p := &Adapter{service: s, cache: c}
 	for _, opt := range opts {
 		opt(p)
 	}
@@ -47,19 +47,19 @@ func New(s serviceAccessor, c cache, opts ...Option) *Provider {
 }
 
 // Register endpoints in fiber framework
-func (p *Provider) Register(e *echo.Group) {
+func (a *Adapter) Register(e *echo.Group) {
 	var cacheMiddleware echo.MiddlewareFunc
-	if p.cache != nil && p.cacheTTL > 0 {
-		cacheMiddleware = middleware.CacheMiddleware(p.cache, p.cacheTTL)
+	if a.cache != nil && a.cacheTTL > 0 {
+		cacheMiddleware = middleware.CacheMiddleware(a.cache, a.cacheTTL)
 	}
-	e.GET("/fruits", p.fruits, cacheMiddleware)
-	e.GET("/fruits/:id", p.fruitByID, cacheMiddleware)
-	e.POST("/fruits", p.createFruit)
-	e.PUT("/fruits/:id", p.updateFruit)
-	e.DELETE("/fruits/:id", p.deleteFruit)
+	e.GET("/fruits", a.fruits, cacheMiddleware)
+	e.GET("/fruits/:id", a.fruitByID, cacheMiddleware)
+	e.POST("/fruits", a.createFruit)
+	e.PUT("/fruits/:id", a.updateFruit)
+	e.DELETE("/fruits/:id", a.deleteFruit)
 }
 
-func (p *Provider) fruits(ctx echo.Context) error {
+func (a *Adapter) fruits(ctx echo.Context) error {
 	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
 	if err != nil || limit < 0 {
 		limit = domain.DefaultFetchLimit
@@ -68,22 +68,22 @@ func (p *Provider) fruits(ctx echo.Context) error {
 	if err != nil || offSet < 0 {
 		offSet = 0
 	}
-	r, err := p.service.Fruits(ctx.Request().Context(), limit, offSet)
+	r, err := a.service.Fruits(ctx.Request().Context(), limit, offSet)
 	if err != nil {
-		return p.processError(ctx, err)
+		return a.processError(ctx, err)
 	}
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (p *Provider) fruitByID(ctx echo.Context) error {
+func (a *Adapter) fruitByID(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	r, err := p.service.FruitByID(ctx.Request().Context(), id)
+	r, err := a.service.FruitByID(ctx.Request().Context(), id)
 	if err != nil {
-		return p.processError(ctx, err)
+		return a.processError(ctx, err)
 	}
 	return ctx.JSON(http.StatusOK, r)
 }
@@ -92,7 +92,7 @@ type CreateFruitRequest struct {
 	Name string `json:"name" v:"required,min=3,max=255"`
 }
 
-func (p *Provider) createFruit(ctx echo.Context) error {
+func (a *Adapter) createFruit(ctx echo.Context) error {
 	req := new(CreateFruitRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -108,9 +108,9 @@ func (p *Provider) createFruit(ctx echo.Context) error {
 		)
 	}
 
-	r, err := p.service.Create(ctx.Request().Context(), req.Name)
+	r, err := a.service.Create(ctx.Request().Context(), req.Name)
 	if err != nil {
-		return p.processError(ctx, err)
+		return a.processError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusCreated, r)
@@ -120,7 +120,7 @@ type UpdateFruitRequest struct {
 	Name string `json:"name" v:"required,min=3,max=255"`
 }
 
-func (p *Provider) updateFruit(ctx echo.Context) error {
+func (a *Adapter) updateFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -142,22 +142,22 @@ func (p *Provider) updateFruit(ctx echo.Context) error {
 		)
 	}
 
-	r, err := p.service.Update(ctx.Request().Context(), id, req.Name)
+	r, err := a.service.Update(ctx.Request().Context(), id, req.Name)
 	if err != nil {
-		return p.processError(ctx, err)
+		return a.processError(ctx, err)
 	}
 
 	return ctx.JSON(http.StatusOK, r)
 }
 
-func (p *Provider) deleteFruit(ctx echo.Context) error {
+func (a *Adapter) deleteFruit(ctx echo.Context) error {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	if err := p.service.Delete(ctx.Request().Context(), id); err != nil {
-		return p.processError(ctx, err)
+	if err := a.service.Delete(ctx.Request().Context(), id); err != nil {
+		return a.processError(ctx, err)
 	}
 	return ctx.NoContent(http.StatusOK)
 }

@@ -54,13 +54,13 @@ import (
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
 	"github.com/hasansino/go42/internal/example"
-	exampleGrpcProviderV1 "github.com/hasansino/go42/internal/example/provider/grpc/v1"
-	exampleHttpProviderV1 "github.com/hasansino/go42/internal/example/provider/http/v1"
+	exampleGrpcAdapterV1 "github.com/hasansino/go42/internal/example/adapters/grpc/v1"
+	exampleHttpAdapterV1 "github.com/hasansino/go42/internal/example/adapters/http/v1"
 	exampleRepositoryPkg "github.com/hasansino/go42/internal/example/repository"
 	exampleWorkers "github.com/hasansino/go42/internal/example/workers"
 	"github.com/hasansino/go42/internal/metrics"
+	metricsAdapterV1 "github.com/hasansino/go42/internal/metrics/adapters/http"
 	"github.com/hasansino/go42/internal/metrics/observers"
-	metricsprovider "github.com/hasansino/go42/internal/metrics/providers/http"
 	"github.com/hasansino/go42/internal/outbox"
 	outboxRepositoryPkg "github.com/hasansino/go42/internal/outbox/repository"
 	outboxWorkers "github.com/hasansino/go42/internal/outbox/workers"
@@ -121,7 +121,7 @@ func main() {
 	}
 
 	httpServer := httpAPI.New(httpServerOpts...)
-	httpServer.Register(metricsprovider.New(metricsHandler))
+	httpServer.Register(metricsAdapterV1.New(metricsHandler))
 
 	// grpc server
 	grpcServerOpts := []grpcAPI.Option{
@@ -491,14 +491,14 @@ func main() {
 		}
 
 		// http server
-		exampleHttp := exampleHttpProviderV1.New(
+		exampleHttp := exampleHttpAdapterV1.New(
 			exampleService, cacheEngine,
-			exampleHttpProviderV1.WithCache(cacheEngine, 1*time.Second),
+			exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
 		)
 		httpServer.RegisterV1(exampleHttp)
 
 		// grpc server
-		exampleGrpc := exampleGrpcProviderV1.New(exampleService)
+		exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
 		grpcServer.Register(exampleGrpc)
 	}
 

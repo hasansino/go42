@@ -18,7 +18,7 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
-type providerAccessor interface {
+type adapterAccessor interface {
 	Register(*echo.Group)
 }
 
@@ -208,16 +208,16 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.e.Shutdown(ctx)
 }
 
-// Register providers for /
-func (s *Server) Register(providers ...providerAccessor) {
-	for _, p := range providers {
+// Register adapters for /
+func (s *Server) Register(adapters ...adapterAccessor) {
+	for _, p := range adapters {
 		p.Register(s.root)
 	}
 }
 
-// RegisterV1 providers for /api/v1/
-func (s *Server) RegisterV1(providers ...providerAccessor) {
-	for _, p := range providers {
+// RegisterV1 adapters for /api/v1/
+func (s *Server) RegisterV1(adapters ...adapterAccessor) {
+	for _, p := range adapters {
 		p.Register(s.v1)
 	}
 }

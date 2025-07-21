@@ -25,7 +25,7 @@ import (
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
-type providerAccessor interface {
+type adapterAccessor interface {
 	Register(*grpc.Server)
 }
 
@@ -123,8 +123,8 @@ func (s *Server) Shutdown(_ context.Context) error {
 	return nil
 }
 
-func (s *Server) Register(providers ...providerAccessor) {
-	for _, p := range providers {
+func (s *Server) Register(adapters ...adapterAccessor) {
+	for _, p := range adapters {
 		p.Register(s.grpcServer)
 	}
 }

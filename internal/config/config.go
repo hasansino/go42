@@ -432,7 +432,7 @@ type HTTP struct {
 }
 
 type HTTPRateLimiter struct {
-	Enabled bool `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"true"`
+	Enabled bool `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"false"`
 	Rate    int  `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
 	Burst   int  `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
 }
@@ -446,7 +446,7 @@ type GRPC struct {
 }
 
 type GRPCRateLimiter struct {
-	Enabled bool `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"true"`
+	Enabled bool `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"false"`
 	Rate    int  `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
 	Burst   int  `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
 }

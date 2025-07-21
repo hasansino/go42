@@ -1,4 +1,4 @@
-package provider
+package adapter
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ var (
 	rpcErrorInternal = status.New(codes.Internal, "internal error")
 )
 
-func (p *Provider) processError(err error) error {
+func (a *Adapter) processError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		return rpcErrorNotFound.Err()

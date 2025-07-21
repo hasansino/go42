@@ -1,4 +1,4 @@
-package http
+package adapter
 
 import (
 	"net/http"
@@ -6,17 +6,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Handler provider for echo framework
-type Handler struct {
+// Adapter for echo framework
+type Adapter struct {
 	handler http.Handler
 }
 
 // New provides handlers for its http endpoints
-func New(h http.Handler) *Handler {
-	return &Handler{handler: h}
+func New(h http.Handler) *Adapter {
+	return &Adapter{handler: h}
 }
 
 // Register endpoints in echo framework
-func (h *Handler) Register(e *echo.Group) {
+func (h *Adapter) Register(e *echo.Group) {
 	e.GET("/metrics", echo.WrapHandler(h.handler))
 }

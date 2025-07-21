@@ -21,9 +21,10 @@ Golang project operation blueprint.
 
 ### 1
 
++ user system custom + auth0
 + jwt authentication
-+ security headers
 + api token system
++ security headers
 
 ### 3
 
@@ -32,7 +33,7 @@ Golang project operation blueprint.
   + etcd
   + k8 CoreDNS
 + switch from zipkin to jaeger or tempo
-  + https://echo.labstack.com/docs/middleware/jaeger 
+  + https://echo.labstack.com/docs/middleware/jaeger
 + circuit breaker (https://github.com/sony/gobreaker)
 
 ### 4
@@ -61,6 +62,11 @@ Golang project operation blueprint.
 + Documentation
 + Conventions + validation
 
+## Bugs
+
++ govulncheck warnings and availability
++ same-line imports fixes from linters
+
 ## 100% after v1.0.0 release
 
 + TLS connections and certificate management
@@ -71,6 +77,6 @@ Golang project operation blueprint.
 + Scaling and organizing multiple projects
 + Try https://github.com/docker/bake-action
 + Try https://github.com/mvdan/gofumpt (again)
-+ @bug same-line imports
 + https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
 + migration linting and change management
++ Try https://github.com/hypermodeinc/badger

@@ -16,38 +16,76 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockproviderAccessor is a mock of providerAccessor interface.
-type MockproviderAccessor struct {
+// MockadapterAccessor is a mock of adapterAccessor interface.
+type MockadapterAccessor struct {
 	ctrl     *gomock.Controller
-	recorder *MockproviderAccessorMockRecorder
+	recorder *MockadapterAccessorMockRecorder
 	isgomock struct{}
 }
 
-// MockproviderAccessorMockRecorder is the mock recorder for MockproviderAccessor.
-type MockproviderAccessorMockRecorder struct {
-	mock *MockproviderAccessor
+// MockadapterAccessorMockRecorder is the mock recorder for MockadapterAccessor.
+type MockadapterAccessorMockRecorder struct {
+	mock *MockadapterAccessor
 }
 
-// NewMockproviderAccessor creates a new mock instance.
-func NewMockproviderAccessor(ctrl *gomock.Controller) *MockproviderAccessor {
-	mock := &MockproviderAccessor{ctrl: ctrl}
-	mock.recorder = &MockproviderAccessorMockRecorder{mock}
+// NewMockadapterAccessor creates a new mock instance.
+func NewMockadapterAccessor(ctrl *gomock.Controller) *MockadapterAccessor {
+	mock := &MockadapterAccessor{ctrl: ctrl}
+	mock.recorder = &MockadapterAccessorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockproviderAccessor) EXPECT() *MockproviderAccessorMockRecorder {
+func (m *MockadapterAccessor) EXPECT() *MockadapterAccessorMockRecorder {
 	return m.recorder
 }
 
 // Register mocks base method.
-func (m *MockproviderAccessor) Register(arg0 *echo.Group) {
+func (m *MockadapterAccessor) Register(arg0 *echo.Group) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Register", arg0)
 }
 
 // Register indicates an expected call of Register.
-func (mr *MockproviderAccessorMockRecorder) Register(arg0 any) *gomock.Call {
+func (mr *MockadapterAccessorMockRecorder) Register(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockproviderAccessor)(nil).Register), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockadapterAccessor)(nil).Register), arg0)
+}
+
+// MockrateLimiterAccessor is a mock of rateLimiterAccessor interface.
+type MockrateLimiterAccessor struct {
+	ctrl     *gomock.Controller
+	recorder *MockrateLimiterAccessorMockRecorder
+	isgomock struct{}
+}
+
+// MockrateLimiterAccessorMockRecorder is the mock recorder for MockrateLimiterAccessor.
+type MockrateLimiterAccessorMockRecorder struct {
+	mock *MockrateLimiterAccessor
+}
+
+// NewMockrateLimiterAccessor creates a new mock instance.
+func NewMockrateLimiterAccessor(ctrl *gomock.Controller) *MockrateLimiterAccessor {
+	mock := &MockrateLimiterAccessor{ctrl: ctrl}
+	mock.recorder = &MockrateLimiterAccessorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockrateLimiterAccessor) EXPECT() *MockrateLimiterAccessorMockRecorder {
+	return m.recorder
+}
+
+// Limit mocks base method.
+func (m *MockrateLimiterAccessor) Limit(key any) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Limit", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Limit indicates an expected call of Limit.
+func (mr *MockrateLimiterAccessorMockRecorder) Limit(key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Limit", reflect.TypeOf((*MockrateLimiterAccessor)(nil).Limit), key)
 }

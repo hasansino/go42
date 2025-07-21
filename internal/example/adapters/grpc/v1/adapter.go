@@ -1,4 +1,4 @@
-package provider
+package adapter
 
 import (
 	"context"
@@ -20,29 +20,29 @@ type serviceAccessor interface {
 	Delete(ctx context.Context, id int) error
 }
 
-type Provider struct {
+type Adapter struct {
 	pb.UnimplementedExampleServiceServer
 	service serviceAccessor
 }
 
-func New(svc serviceAccessor) *Provider {
-	return &Provider{service: svc}
+func New(svc serviceAccessor) *Adapter {
+	return &Adapter{service: svc}
 }
 
-func (p *Provider) Register(grpcServer *grpc.Server) {
-	pb.RegisterExampleServiceServer(grpcServer, p)
+func (a *Adapter) Register(grpcServer *grpc.Server) {
+	pb.RegisterExampleServiceServer(grpcServer, a)
 }
 
-func (p *Provider) ListFruits(ctx context.Context, req *pb.ListFruitsRequest) (*pb.ListFruitsResponse, error) {
+func (a *Adapter) ListFruits(ctx context.Context, req *pb.ListFruitsRequest) (*pb.ListFruitsResponse, error) {
 	if req.Limit < 0 {
 		req.Limit = domain.DefaultFetchLimit
 	}
 	if req.Offset < 0 {
 		req.Offset = 0
 	}
-	fruits, err := p.service.Fruits(ctx, int(req.Limit), int(req.Offset))
+	fruits, err := a.service.Fruits(ctx, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, p.processError(err)
+		return nil, a.processError(err)
 	}
 	resp := &pb.ListFruitsResponse{}
 	for _, f := range fruits {
@@ -54,10 +54,10 @@ func (p *Provider) ListFruits(ctx context.Context, req *pb.ListFruitsRequest) (*
 	return resp, nil
 }
 
-func (p *Provider) GetFruit(ctx context.Context, req *pb.GetFruitRequest) (*pb.GetFruitResponse, error) {
-	fruit, err := p.service.FruitByID(ctx, int(req.Id))
+func (a *Adapter) GetFruit(ctx context.Context, req *pb.GetFruitRequest) (*pb.GetFruitResponse, error) {
+	fruit, err := a.service.FruitByID(ctx, int(req.Id))
 	if err != nil {
-		return nil, p.processError(err)
+		return nil, a.processError(err)
 	}
 	return &pb.GetFruitResponse{
 		Fruit: &pb.Fruit{
@@ -67,10 +67,10 @@ func (p *Provider) GetFruit(ctx context.Context, req *pb.GetFruitRequest) (*pb.G
 	}, nil
 }
 
-func (p *Provider) CreateFruit(ctx context.Context, req *pb.CreateFruitRequest) (*pb.CreateFruitResponse, error) {
-	created, err := p.service.Create(ctx, req.Name)
+func (a *Adapter) CreateFruit(ctx context.Context, req *pb.CreateFruitRequest) (*pb.CreateFruitResponse, error) {
+	created, err := a.service.Create(ctx, req.Name)
 	if err != nil {
-		return nil, p.processError(err)
+		return nil, a.processError(err)
 	}
 	return &pb.CreateFruitResponse{
 		Fruit: &pb.Fruit{
@@ -80,10 +80,10 @@ func (p *Provider) CreateFruit(ctx context.Context, req *pb.CreateFruitRequest) 
 	}, nil
 }
 
-func (p *Provider) UpdateFruit(ctx context.Context, req *pb.UpdateFruitRequest) (*pb.UpdateFruitResponse, error) {
-	updated, err := p.service.Update(ctx, int(req.Id), req.Name)
+func (a *Adapter) UpdateFruit(ctx context.Context, req *pb.UpdateFruitRequest) (*pb.UpdateFruitResponse, error) {
+	updated, err := a.service.Update(ctx, int(req.Id), req.Name)
 	if err != nil {
-		return nil, p.processError(err)
+		return nil, a.processError(err)
 	}
 	return &pb.UpdateFruitResponse{
 		Fruit: &pb.Fruit{
@@ -93,10 +93,10 @@ func (p *Provider) UpdateFruit(ctx context.Context, req *pb.UpdateFruitRequest) 
 	}, nil
 }
 
-func (p *Provider) DeleteFruit(ctx context.Context, req *pb.DeleteFruitRequest) (*pb.DeleteFruitResponse, error) {
-	err := p.service.Delete(ctx, int(req.Id))
+func (a *Adapter) DeleteFruit(ctx context.Context, req *pb.DeleteFruitRequest) (*pb.DeleteFruitResponse, error) {
+	err := a.service.Delete(ctx, int(req.Id))
 	if err != nil {
-		return nil, p.processError(err)
+		return nil, a.processError(err)
 	}
 	return &pb.DeleteFruitResponse{Success: true}, nil
 }
