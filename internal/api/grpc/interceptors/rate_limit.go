@@ -20,6 +20,9 @@ func UnaryServerRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnarySer
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
+		if limiter == nil {
+			return handler(ctx, req)
+		}
 		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
 			return nil, status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
@@ -34,6 +37,9 @@ func StreamServerRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.StreamS
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
 	) error {
+		if limiter == nil {
+			return handler(srv, stream)
+		}
 		if !limiter.Limit(extractRateLimitKeyFromCtx(stream.Context())) {
 			return status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
@@ -50,6 +56,9 @@ func UnaryClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnaryCli
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error {
+		if limiter == nil {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}
 		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
 			return status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
@@ -66,6 +75,9 @@ func StreamClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.StreamC
 		streamer grpc.Streamer,
 		opts ...grpc.CallOption,
 	) (grpc.ClientStream, error) {
+		if limiter == nil {
+			return streamer(ctx, desc, cc, method, opts...)
+		}
 		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
 			return nil, status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}

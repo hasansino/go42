@@ -46,6 +46,8 @@ This document is a repository of conventions and rules used by this project.
 * github.com/hasansino/go42/internal/tools should never import anything from internal
 * retry pattern
 * naming interfaces and generating mocks
+* use `any` instead of `interface{}` in function signatures
+* context.Context -> ctx but echo.Context -> c
 
 ## Code Review
 
@@ -54,4 +56,6 @@ This document is a repository of conventions and rules used by this project.
 * yaml vs yml
 * migration file naming
 * using @see @todo @fixme @note etc. in comments
-* tools configuration files should be in etc di rectory
+* tools configuration files should be in etc directory
+* migrations should be idempotent
+* always leave empty lines at the end of files

@@ -18,7 +18,7 @@ import (
 const (
 	lockID         = 1288990
 	lockTimeoutSec = 30
-	lockAttemptCnt = 10
+	lockAttemptCnt = 15
 )
 
 func Migrate(ctx context.Context, uri string, schemaPath string) error {

@@ -9,6 +9,7 @@ type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value string) error
 	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+	Invalidate(ctx context.Context, key string) error
 	Shutdown(ctx context.Context) error
 }
 
@@ -21,17 +22,19 @@ func NewNoop() *NoopCache {
 	return &NoopCache{}
 }
 
-func (NoopCache) Get(ctx context.Context, key string) (string, error) {
+func (NoopCache) Get(_ context.Context, key string) (string, error) {
 	return "", nil
 }
 
-func (NoopCache) Set(ctx context.Context, key string, value string) error {
+func (NoopCache) Set(_ context.Context, key string, value string) error {
 	return nil
 }
 
-func (NoopCache) SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error {
+func (NoopCache) SetTTL(_ context.Context, key string, value string, ttl time.Duration) error {
 	return nil
 }
+
+func (NoopCache) Invalidate(_ context.Context, key string) error { return nil }
 
 func (NoopCache) Shutdown(_ context.Context) error {
 	return nil

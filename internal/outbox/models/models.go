@@ -14,18 +14,18 @@ const (
 )
 
 type Message struct {
-	ID            uuid.UUID    `json:"id"             gorm:"primaryKey"`
-	AggregateID   int          `json:"aggregate_id"   gorm:""`
-	AggregateType string       `json:"aggregate_type" gorm:""`
-	Topic         string       `json:"topic"          gorm:""`
-	Payload       []byte       `json:"payload"        gorm:""`
-	CreatedAt     time.Time    `json:"created_at"     gorm:""`
-	ProcessedAt   sql.NullTime `json:"processed_at"   gorm:""`
-	Status        string       `json:"status"         gorm:""`
-	RetryCount    int          `json:"retry_count"    gorm:""`
-	MaxRetries    int          `json:"max_retries"    gorm:""`
-	LastError     string       `json:"last_error"     gorm:""`
-	Metadata      string       `json:"metadata"       gorm:""`
+	ID            uuid.UUID    `json:"id"`
+	AggregateID   int          `json:"aggregate_id"`
+	AggregateType string       `json:"aggregate_type"`
+	Topic         string       `json:"topic"`
+	Payload       []byte       `json:"payload"`
+	CreatedAt     time.Time    `json:"created_at"`
+	ProcessedAt   sql.NullTime `json:"processed_at"`
+	Status        string       `json:"status"`
+	RetryCount    int          `json:"retry_count"`
+	MaxRetries    int          `json:"max_retries"`
+	LastError     string       `json:"last_error"`
+	Metadata      string       `json:"metadata"`
 }
 
 func (m *Message) TableName() string {

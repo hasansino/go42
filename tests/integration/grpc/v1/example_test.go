@@ -82,7 +82,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 	})
 
 	Describe("GetFruit", func() {
-		It("should create, get by ID and cleanup", func() {
+		It("should create, get by UserID and cleanup", func() {
 			// Create fruit first
 			name := integration.GenerateRandomString("apple")
 			createReq := &pb.CreateFruitRequest{
@@ -94,7 +94,7 @@ var _ = Describe("Fruits gRPC Integration Tests", func() {
 			Expect(createResp.Fruit).NotTo(BeNil())
 			fruitID := createResp.Fruit.Id
 
-			// Get by ID
+			// Get by UserID
 			getReq := &pb.GetFruitRequest{
 				Id: fruitID,
 			}

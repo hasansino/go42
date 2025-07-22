@@ -88,3 +88,11 @@ func (w *Wrapper) SetTTL(ctx context.Context, key string, value string, ttl time
 	cmd := w.client.Set(ctx, key, value, ttl)
 	return cmd.Err()
 }
+
+func (w *Wrapper) Invalidate(ctx context.Context, key string) error {
+	cmd := w.client.Del(ctx, key)
+	if cmd.Err() != nil {
+		return cmd.Err()
+	}
+	return nil
+}

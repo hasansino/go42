@@ -32,7 +32,7 @@ ENV CGO_ENABLED=0
 # GOGC during compilation.
 # Default is GOGC=100.
 # Higher values reduce frequency of garbage collection, potentially reducing compilation time,
-# but increasing memory usage.
+# but increasing memory consumption.
 ENV GOGC=100
 
 # Build.
@@ -64,6 +64,7 @@ RUN readelf -h app && du -h app && sha256sum app && go tool buildid app
 
 # For packaging stage, we use minimal(slim) image.
 # This reduces resulting image size and potential security risks.
+# @warn dependabot will update image version automatically, but it will not update package versions.
 FROM alpine:3.22
 
 # Install dependencies.

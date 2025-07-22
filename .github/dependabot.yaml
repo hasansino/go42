@@ -8,6 +8,7 @@ updates:
       interval: "weekly"
     pull-request-branch-name:
       separator: "-"
+    open-pull-requests-limit: 10
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -15,6 +16,7 @@ updates:
       interval: "weekly"
     pull-request-branch-name:
       separator: "-"
+    open-pull-requests-limit: 10
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -22,3 +24,4 @@ updates:
       interval: "weekly"
     pull-request-branch-name:
       separator: "-"
+    open-pull-requests-limit: 10

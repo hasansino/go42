@@ -134,6 +134,21 @@ func (w *Wrapper) SetTTL(_ context.Context, key string, value string, ttl time.D
 	return nil
 }
 
+func (w *Wrapper) Invalidate(_ context.Context, key string) error {
+	asKey, err := aslib.NewKey(w.namespace, defaultSet, key)
+	if err != nil {
+		return fmt.Errorf("failed to create aerospike key: %w", err)
+	}
+	_, err = w.client.Delete(w.client.GetDefaultWritePolicy(), asKey)
+	if err != nil {
+		if err.Matches(asTypes.KEY_NOT_FOUND_ERROR) {
+			return nil
+		}
+		return fmt.Errorf("failed to invalidate aerospike key: %w", err)
+	}
+	return nil
+}
+
 func parseHosts(hosts []string) ([]*aslib.Host, error) {
 	var parsedHosts []*aslib.Host
 	for _, host := range hosts {

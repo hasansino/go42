@@ -8,11 +8,11 @@ import (
 )
 
 type Fruit struct {
-	ID        int            `json:"id"         gorm:"primaryKey"`
-	CreatedAt time.Time      `json:"created_at" gorm:""`
-	UpdatedAt time.Time      `json:"updated_at" gorm:""`
-	DeletedAt gorm.DeletedAt `json:"-"          gorm:""`
-	Name      string         `json:"name"       gorm:""`
+	ID        int            `json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-"`
+	Name      string         `json:"name"`
 }
 
 func (m *Fruit) TableName() string {
@@ -20,13 +20,13 @@ func (m *Fruit) TableName() string {
 }
 
 type FruitEventLog struct {
-	ID         uuid.UUID `gorm:"primaryKey"`
-	OccurredAt time.Time `gorm:""`
-	CreatedAt  time.Time `gorm:""`
-	FruitID    int       `gorm:""`
-	EventType  string    `gorm:""`
-	Data       []byte    `gorm:""`
-	Metadata   string    `gorm:""`
+	ID         uuid.UUID
+	OccurredAt time.Time
+	CreatedAt  time.Time
+	FruitID    int
+	EventType  string
+	Data       []byte
+	Metadata   string
 }
 
 func (m *FruitEventLog) TableName() string {

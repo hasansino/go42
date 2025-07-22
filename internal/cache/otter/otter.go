@@ -46,3 +46,8 @@ func (w *Wrapper) SetTTL(_ context.Context, key string, value string, ttl time.D
 	w.otter.SetExpiresAfter(key, ttl)
 	return nil
 }
+
+func (w *Wrapper) Invalidate(_ context.Context, key string) error {
+	w.otter.Invalidate(key)
+	return nil
+}

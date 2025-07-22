@@ -28,6 +28,7 @@ type Config struct {
 	Events   Events
 	Pprof    Pprof
 	Server   Server
+	Auth     Auth
 }
 
 // ╭──────────────────────────────╮
@@ -450,6 +451,18 @@ type GRPCRateLimiter struct {
 	Rate    int  `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
 	Burst   int  `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
 }
+
+// ╭──────────────────────────────╮
+// │             AUTH             │
+// ╰──────────────────────────────╯
+
+type Auth struct {
+	JWTSecret          string        `env:"AUTH_JWT_SECRET"            default:"0128899"`
+	JWTAccessTokenTTL  time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"  default:"15m"`
+	JWTRefreshTokenTTL time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL" default:"168h"`
+}
+
+// ---
 
 const (
 	TagNameEnvVarName   = "env"

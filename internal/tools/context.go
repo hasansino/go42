@@ -1,13 +1,15 @@
 package tools
 
-import "context"
+import (
+	"context"
+)
 
-const ContextKeyRequestID contextKey = "request_id"
+const contextKeyRequestID contextKey = "request_id"
 
 type contextKey string
 
 func GetRequestIDFromContext(ctx context.Context) string {
-	val, ok := ctx.Value(ContextKeyRequestID).(string)
+	val, ok := ctx.Value(contextKeyRequestID).(string)
 	if ok {
 		return val
 	}
@@ -15,5 +17,5 @@ func GetRequestIDFromContext(ctx context.Context) string {
 }
 
 func SetRequestIDToContext(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, ContextKeyRequestID, requestID)
+	return context.WithValue(ctx, contextKeyRequestID, requestID)
 }

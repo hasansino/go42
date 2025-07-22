@@ -32,7 +32,7 @@ func (r *Repository) GetUnprocessedMessages(ctx context.Context, limit int) ([]m
 	var messages []models.Message
 	result := r.
 		GetTx(ctx).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Clauses(clause.Locking{Strength: clause.LockingStrengthUpdate, Options: clause.LockingOptionsSkipLocked}).
 		Where("status = ?", models.MessageStatusPending).
 		Limit(limit).Find(&messages)
 	if result.Error != nil {

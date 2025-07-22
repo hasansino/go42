@@ -88,7 +88,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 	})
 
 	Describe("GET /fruits/{id}", func() {
-		It("should create, get by ID and cleanup", func() {
+		It("should create, get by UserID and cleanup", func() {
 			name := integration.GenerateRandomString("apple")
 			// CreateFruit fruit
 			reqBody := CreateFruitRequest{Name: name}
@@ -108,7 +108,7 @@ var _ = Describe("Fruits API Integration Tests", func() {
 			err = json.NewDecoder(resp.Body).Decode(&fruit)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Get by ID
+			// Get by UserID
 			getResp, err := client.Get(integration.HTTPServerAddress() + fmt.Sprintf("/api/v1/fruits/%d", fruit.ID))
 			Expect(err).ToNot(HaveOccurred())
 			defer getResp.Body.Close()

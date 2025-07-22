@@ -35,6 +35,9 @@ import (
 
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
+	"github.com/hasansino/go42/internal/auth"
+	authHttpAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/http/v1"
+	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/cache/aerospike"
 	"github.com/hasansino/go42/internal/cache/memcached"
@@ -468,8 +471,20 @@ func main() {
 
 		go outboxPublisher.Run(ctx, 5*time.Second, 100)
 
+		// auth domain
+		authLogger := slog.Default().With(slog.String("component", "auth-service"))
+		authRepository := authRepositoryPkg.New(database.NewBaseRepository(dbEngine))
+		authService := auth.NewService(
+			authRepository,
+			auth.WithLogger(authLogger),
+			auth.WithJWTSecret(cfg.Auth.JWTSecret),
+			auth.WithAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
+			auth.WithRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
+		)
+		authHttpAdapter := authHttpAdapterV1.New(authService)
+		httpServer.RegisterV1(authHttpAdapter)
+
 		// example domain
-		// @note for example package we are not cluttering configuration, expect magic values
 		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
 		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
 		exampleService := example.NewService(

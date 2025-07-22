@@ -21,9 +21,9 @@ Golang project operation blueprint.
 
 ### 1
 
-+ user system custom + auth0
-+ jwt authentication
-+ api token system
++ auth0
++ casbin
++ api tokens
 + security headers
 
 ### 3
@@ -80,3 +80,5 @@ Golang project operation blueprint.
 + https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
 + migration linting and change management
 + Try https://github.com/hypermodeinc/badger
++ Lock tools version and sync with CI
++ register echo validator -> simplify adapter

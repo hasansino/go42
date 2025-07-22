@@ -71,3 +71,7 @@ func (w *Wrapper) Set(_ context.Context, key string, value string) error {
 func (w *Wrapper) SetTTL(_ context.Context, key string, value string, ttl time.Duration) error {
 	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value), Expiration: int32(ttl.Seconds())})
 }
+
+func (w *Wrapper) Invalidate(_ context.Context, key string) error {
+	return w.client.Delete(key)
+}

@@ -25,7 +25,7 @@ func NewRateLimiter(rate, burst int) *RateLimiter {
 func (m *RateLimiter) Limit(key any) bool {
 	if key == nil {
 		if str, ok := key.(string); ok && str == "" {
-			// forbid empty keys - treat it as mistake
+			// forbid empty keys - treat them as mistake
 			return false
 		}
 	}
