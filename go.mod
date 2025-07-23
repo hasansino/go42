@@ -37,7 +37,7 @@ require (
 	github.com/lmittmann/tint v1.1.2
 	github.com/maypok86/otter/v2 v2.2.0
 	github.com/nats-io/nats.go v1.43.0
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
 	github.com/orandin/slog-gorm v1.4.0
