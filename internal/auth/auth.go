@@ -23,6 +23,8 @@ type repository interface {
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	AssignRoleToUser(ctx context.Context, userID int, role string) error
+	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 }
 
 type Service struct {
@@ -64,8 +66,17 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		Status:   domain.UserStatusActive,
 	}
 
-	if err := s.repository.CreateUser(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+	err = s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+		if err := s.repository.CreateUser(txCtx, user); err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+		if err := s.repository.AssignRoleToUser(txCtx, user.ID, domain.RBACRoleUser); err != nil {
+			return fmt.Errorf("failed to assign user role: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil

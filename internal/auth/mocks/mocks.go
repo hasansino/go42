@@ -41,6 +41,20 @@ func (m *Mockrepository) EXPECT() *MockrepositoryMockRecorder {
 	return m.recorder
 }
 
+// AssignRoleToUser mocks base method.
+func (m *Mockrepository) AssignRoleToUser(ctx context.Context, userID int, role string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AssignRoleToUser", ctx, userID, role)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AssignRoleToUser indicates an expected call of AssignRoleToUser.
+func (mr *MockrepositoryMockRecorder) AssignRoleToUser(ctx, userID, role any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssignRoleToUser", reflect.TypeOf((*Mockrepository)(nil).AssignRoleToUser), ctx, userID, role)
+}
+
 // CreateUser mocks base method.
 func (m *Mockrepository) CreateUser(ctx context.Context, user *models.User) error {
 	m.ctrl.T.Helper()
@@ -98,4 +112,18 @@ func (m *Mockrepository) GetUserByUUID(ctx context.Context, uuid string) (*model
 func (mr *MockrepositoryMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*Mockrepository)(nil).GetUserByUUID), ctx, uuid)
+}
+
+// WithTransaction mocks base method.
+func (m *Mockrepository) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithTransaction", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithTransaction indicates an expected call of WithTransaction.
+func (mr *MockrepositoryMockRecorder) WithTransaction(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithTransaction", reflect.TypeOf((*Mockrepository)(nil).WithTransaction), ctx, fn)
 }

@@ -5,6 +5,14 @@ import (
 )
 
 const (
+	RBACRoleUser = "user"
+)
+
+const (
+	RBACPermissionUserReadSelf = "user:read_self"
+)
+
+const (
 	UserStatusActive = "active"
 )
 

@@ -21,7 +21,7 @@ type User struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt
 
-	Roles []Role `gorm:"many2many:auth_user_roles"`
+	Roles []Role `gorm:"many2many:auth_user_roles;association_autoupdate:false"`
 }
 
 func (u *User) RoleList() []string {

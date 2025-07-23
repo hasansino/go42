@@ -41,7 +41,7 @@ func (a *Adapter) Register(g *echo.Group) {
 	authGroup.POST("/refresh", a.refresh)
 
 	userGroup := g.Group("/users", authMiddleware.NewAuthMiddleware(a.service))
-	userGroup.GET("/me", a.currentUser)
+	userGroup.GET("/me", a.currentUser, authMiddleware.NewAccessMiddleware(domain.RBACPermissionUserReadSelf))
 }
 
 type SignupRequest struct {

@@ -49,7 +49,8 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	var user models.User
 	tx := r.GetReadDB(ctx).
 		Preload("Roles", func(db *gorm.DB) *gorm.DB {
-			return db.Joins("JOIN auth_user_roles ON auth_user_roles.role_id = auth_roles.id").
+			return db.
+				Joins("JOIN auth_user_roles ON auth_user_roles.user_id = id").
 				Where("auth_user_roles.expires_at IS NULL OR auth_user_roles.expires_at > ?", time.Now())
 		}).
 		Preload("Roles.Permissions")
@@ -65,4 +66,20 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	}
 
 	return &user, err
+}
+
+func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, role string) error {
+	var roleID int
+	err := r.GetTx(ctx).Raw("SELECT id FROM auth_roles WHERE name = ?", role).Scan(&roleID).Error
+	if err != nil {
+		return fmt.Errorf("error finding role: %w", err)
+	}
+	err = r.GetTx(ctx).Exec(
+		"INSERT INTO auth_user_roles (user_id, role_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
+		userID, roleID,
+	).Error
+	if err != nil {
+		return fmt.Errorf("error assigning role to user: %w", err)
+	}
+	return nil
 }
