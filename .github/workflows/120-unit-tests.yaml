@@ -8,7 +8,7 @@ on:
       runs_on:
         required: true
         type: string
-        default: self-hosted
+        default: ubuntu-latest
         description: "runs_on"
       continue_on_error:
         required: true

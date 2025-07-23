@@ -11,7 +11,7 @@ on:
       runs_on:
         required: true
         type: string
-        default: self-hosted
+        default: ubuntu-latest
         description: "runs_on"
       continue_on_error:
         required: true
@@ -52,8 +52,8 @@ permissions:
   security-events: write
 
 jobs:
-  docker-security:
-    name: docker-security
+  trivy:
+    name: trivy
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     # ---
