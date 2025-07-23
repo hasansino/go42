@@ -98,12 +98,31 @@ jobs:
           allow_issue_writing: false
 
   osv-scanner:
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.1.0"
-    with:
-      scan-args: |
-        -r
-        ./
-      results-file-name: osv-scanner-results.sarif
-      upload-sarif: true
-      fail-on-vuln: false
-      download-artifact: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
+    name: osv-scanner
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
+        with:
+          scan-args: |-
+            --output=results.json
+            --format=json
+            -r
+            ./
+      - uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
+        with:
+          scan-args: |-
+            --output=osv-scanner-results.sarif
+            --new=results.json
+            --gh-annotations=false
+            --fail-on-vuln=false
+      - uses: actions/upload-artifact@v4
+        with:
+          path: osv-scanner-results.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: osv-scanner-results.sarif
