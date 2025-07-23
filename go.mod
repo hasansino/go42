@@ -18,8 +18,8 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.13.3
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/getsentry/sentry-go v0.34.0
-	github.com/getsentry/sentry-go/slog v0.34.0
+	github.com/getsentry/sentry-go v0.34.1
+	github.com/getsentry/sentry-go/slog v0.34.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
