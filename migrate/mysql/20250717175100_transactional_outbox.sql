@@ -1,5 +1,5 @@
 -- +goose Up
-create table transactional_outbox (
+create table if not exists transactional_outbox (
     id char(36) primary key,
     aggregate_id int not null,
     aggregate_type varchar(100) not null,
@@ -11,10 +11,9 @@ create table transactional_outbox (
     retry_count int not null,
     max_retries int not null,
     last_error text not null ,
-    metadata text not null
+    metadata text not null,
+    key transactional_outbox_publisher (status)
 );
 
-create index transactional_outbox_publisher ON transactional_outbox (status);
-
 -- +goose Down
-DROP TABLE transactional_outbox;
+drop table if exists transactional_outbox;

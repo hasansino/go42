@@ -37,7 +37,7 @@ type Config struct {
 
 type Core struct {
 	ServiceName              string        `env:"SERVICE_NAME"               default:"go42"`
-	Environment              string        `env:"ENVIRONMENT"                default:""`
+	Environment              string        `env:"ENVIRONMENT"                default:"default"`
 	ShutdownGracePeriod      time.Duration `env:"SHUTDOWN_GRACE_PERIOD"      default:"10s"`
 	ShutdownWaitForProbe     time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"    default:"2s"`
 	ShutdownComponentTimeout time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT" default:"3s"`
@@ -245,6 +245,9 @@ type PgsqlMaster struct {
 }
 
 func (db PgsqlMaster) DSN() string {
+	if db.Host == "" {
+		return ""
+	}
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password, db.Host, db.Port, db.Name,
@@ -260,6 +263,9 @@ type PgsqlSlave struct {
 }
 
 func (db PgsqlSlave) DSN() string {
+	if db.Host == "" {
+		return ""
+	}
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s",
 		db.User, db.Password, db.Host, db.Port, db.Name,

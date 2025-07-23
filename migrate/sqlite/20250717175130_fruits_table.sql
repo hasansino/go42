@@ -1,5 +1,5 @@
 -- +goose Up
-create table example_fruits
+create table if not exists example_fruits
 (
     id         integer primary key autoincrement,
     created_at datetime default (datetime('now')) not null,
@@ -9,4 +9,4 @@ create table example_fruits
 );
 
 -- +goose Down
-drop table example_fruits;
+drop table if exists example_fruits;

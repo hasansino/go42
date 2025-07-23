@@ -1,81 +1,86 @@
 -- +goose Up
 
-CREATE TABLE IF NOT EXISTS auth_users (
-    id BIGSERIAL PRIMARY KEY,
-    uuid uuid NOT NULL,
-    password VARCHAR(255) NULL,
-    email VARCHAR(255) NOT NULL,
-    status VARCHAR(255) NOT NULL DEFAULT 'active',
-    metadata JSONB NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
+create table if not exists auth_users (
+    id bigserial primary key,
+    uuid uuid not null,
+    password varchar(255) null,
+    email varchar(255) not null,
+    status varchar(255) not null default 'active',
+    metadata jsonb null,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
+    deleted_at timestamp null
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_uuid ON auth_users(uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
-CREATE INDEX IF NOT EXISTS idx_auth_users_deleted_at ON auth_users(deleted_at);
+create unique index if not exists idx_auth_users_uuid on auth_users(uuid);
+create unique index if not exists idx_auth_users_email on auth_users(email);
+create index if not exists idx_auth_users_deleted_at on auth_users(deleted_at);
 
---
-
-CREATE TABLE IF NOT EXISTS auth_roles (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    description VARCHAR(255) NOT NULL DEFAULT '',
-    is_system BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
+create table if not exists auth_roles (
+    id bigserial primary key,
+    name varchar(50) not null,
+    description varchar(255) not null default '',
+    is_system boolean not null default false,
+    created_at timestamp not null default current_timestamp,
+    updated_at timestamp not null default current_timestamp,
+    deleted_at timestamp null
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_roles_name ON auth_roles(name);
-CREATE INDEX IF NOT EXISTS idx_auth_roles_deleted_at ON auth_roles(deleted_at);
+insert into auth_roles (name, description, is_system) values
+('admin', 'administrator role with full access', true),
+('user', 'standard user role with limited access', false)
+on conflict do nothing;
 
---
+create unique index if not exists idx_auth_roles_name on auth_roles(name);
+create index if not exists idx_auth_roles_deleted_at on auth_roles(deleted_at);
 
-CREATE TABLE IF NOT EXISTS auth_permissions (
-    id BIGSERIAL PRIMARY KEY,
-    resource VARCHAR(255) NOT NULL,
-    action VARCHAR(255) NOT NULL,
-    scope VARCHAR(255) NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+create table if not exists auth_permissions (
+    id bigserial primary key,
+    resource varchar(255) not null,
+    action varchar(255) not null,
+    scope varchar(255) null,
+    created_at timestamp not null default current_timestamp
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_permissions_resource_action_scope ON auth_permissions(resource, action, scope);
+create unique index if not exists idx_auth_permissions_resource_action_scope on auth_permissions(resource, action, scope);
 
---
+insert into auth_permissions (resource, action, scope) values
+('user', 'read_self', null)
+on conflict do nothing;
 
-CREATE TABLE IF NOT EXISTS auth_role_permissions (
-    role_id BIGINT NOT NULL,
-    permission_id BIGINT NOT NULL,
-    PRIMARY KEY (role_id, permission_id),
-    CONSTRAINT fk_auth_role_permissions_role_id FOREIGN KEY (role_id) REFERENCES auth_roles(id) ON DELETE CASCADE,
-    CONSTRAINT fk_auth_role_permissions_permission_id FOREIGN KEY (permission_id) REFERENCES auth_permissions(id) ON DELETE CASCADE
+create table if not exists auth_role_permissions (
+    role_id bigint not null,
+    permission_id bigint not null,
+    primary key (role_id, permission_id),
+    constraint fk_auth_role_permissions_role_id foreign key (role_id) references auth_roles(id) on delete cascade,
+    constraint fk_auth_role_permissions_permission_id foreign key (permission_id) references auth_permissions(id) on delete cascade
 );
 
---
+insert into auth_role_permissions (role_id, permission_id) values
+((select id from auth_roles where name = 'admin'), (select id from auth_permissions)),
+((select id from auth_roles where name = 'user'), (select id from auth_permissions where resource = 'user' and action = 'read_self'))
+on conflict do nothing;
 
-CREATE TABLE IF NOT EXISTS auth_user_roles (
-    user_id BIGINT NOT NULL,
-    role_id BIGINT NOT NULL,
-    granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    granted_by BIGINT NULL,
-    expires_at TIMESTAMP NULL,
-    PRIMARY KEY (user_id, role_id),
-    CONSTRAINT fk_auth_user_roles_user_id FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_auth_user_roles_role_id FOREIGN KEY (role_id) REFERENCES auth_roles(id) ON DELETE CASCADE,
-    CONSTRAINT fk_auth_user_roles_granted_by FOREIGN KEY (granted_by) REFERENCES auth_users(id) ON DELETE SET NULL
+create table if not exists auth_user_roles (
+    user_id bigint not null,
+    role_id bigint not null,
+    granted_at timestamp not null default current_timestamp,
+    granted_by bigint null,
+    expires_at timestamp null,
+    primary key (user_id, role_id),
+    constraint fk_auth_user_roles_user_id foreign key (user_id) references auth_users(id) on delete cascade,
+    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade,
+    constraint fk_auth_user_roles_granted_by foreign key (granted_by) references auth_users(id) on delete set null
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_user_roles_role_id ON auth_user_roles(role_id);
-CREATE INDEX IF NOT EXISTS idx_auth_user_roles_expires_at ON auth_user_roles(expires_at);
-
-CREATE INDEX IF NOT EXISTS idx_auth_role_permissions_permission_id ON auth_role_permissions(permission_id);
+create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);
+create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(expires_at);
+create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions(permission_id);
 
 -- +goose Down
 
-DROP TABLE IF EXISTS auth_user_roles;
-DROP TABLE IF EXISTS auth_role_permissions;
-DROP TABLE IF EXISTS auth_permissions;
-DROP TABLE IF EXISTS auth_roles;
-DROP TABLE IF EXISTS auth_users;
+drop table if exists auth_user_roles;
+drop table if exists auth_role_permissions;
+drop table if exists auth_permissions;
+drop table if exists auth_roles;
+drop table if exists auth_users;

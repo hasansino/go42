@@ -47,7 +47,8 @@ This document is a repository of conventions and rules used by this project.
 * retry pattern
 * naming interfaces and generating mocks
 * use `any` instead of `interface{}` in function signatures
-* context.Context -> ctx but echo.Context -> c
+* `context.Context` -> ctx but `echo.Context` -> c
+* put technical phrases in backticks in comments to avoid linting issues
 
 ## Code Review
 
@@ -58,4 +59,5 @@ This document is a repository of conventions and rules used by this project.
 * using @see @todo @fixme @note etc. in comments
 * tools configuration files should be in etc directory
 * migrations should be idempotent
+* sql lowercase -> it is a choice
 * always leave empty lines at the end of files

@@ -17,12 +17,14 @@ var (
 	ErrTokenExpired       = errors.New("token expired")
 )
 
+// Tokens represents the structure of JWT authentication tokens.
 type Tokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+// ContextAuthInfo holds authentication information in the request context.
 type ContextAuthInfo struct {
 	ID            int
 	UUID          string

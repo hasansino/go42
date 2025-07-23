@@ -1,14 +1,13 @@
 -- +goose Up
-CREATE TABLE example_fruits
+create table if not exists example_fruits
 (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    deleted_at TIMESTAMP NULL DEFAULT NULL,
-    name       VARCHAR(255) NOT NULL
+    id         int auto_increment primary key,
+    created_at timestamp default current_timestamp not null,
+    updated_at timestamp default current_timestamp not null,
+    deleted_at timestamp null default null,
+    name       varchar(255) not null,
+    unique key example_fruits_name_unique (name)
 );
 
-CREATE UNIQUE INDEX example_fruits_name_unique ON example_fruits (name);
-
 -- +goose Down
-DROP TABLE example_fruits;
+drop table if exists example_fruits;

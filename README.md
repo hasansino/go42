@@ -81,4 +81,5 @@ Golang project operation blueprint.
 + migration linting and change management
 + Try https://github.com/hypermodeinc/badger
 + Lock tools version and sync with CI
++ Try asyncapi (again)
 + register echo validator -> simplify adapter

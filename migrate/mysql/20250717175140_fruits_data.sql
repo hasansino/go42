@@ -1,5 +1,5 @@
 -- +goose Up
-insert into example_fruits (name) values
+insert ignore into example_fruits (name) values
 ('orange'),
 ('pineapple'),
 ('watermelon'),

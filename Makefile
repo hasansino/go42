@@ -10,6 +10,7 @@ help: Makefile
 # Prerequisites: brew, go
 setup:
 	@go mod tidy && go mod download
+	@brew install yq
 	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 	@vale --config etc/.vale.ini sync
 	@brew install k6
@@ -107,7 +108,7 @@ lint:
 	@echo "Linting proto files..."
 	@buf lint api
 	@echo "Linting openapi specifications..."
-	@redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
@@ -120,6 +121,8 @@ generate:
 	@buf generate api --template api/buf.gen.yaml
 	@go generate ./...
 	@go run cmd/cfg2env/main.go
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly join api/openapi/v1/*.yml -o api/openapi/v1/.combined.yaml
+	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
 
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │

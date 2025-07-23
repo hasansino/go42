@@ -1,71 +1,82 @@
 -- +goose Up
 
-CREATE TABLE IF NOT EXISTS auth_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uuid text NOT NULL UNIQUE,
-    password TEXT,
-    email TEXT NOT NULL UNIQUE,
-    status TEXT NOT NULL DEFAULT 'active',
-    metadata TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME
+create table if not exists auth_users (
+    id integer primary key autoincrement,
+    uuid text not null unique,
+    password text,
+    email text not null unique,
+    status text not null default 'active',
+    metadata text,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp,
+    deleted_at datetime
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_users_uuid ON auth_users(uuid);
-CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
-CREATE INDEX IF NOT EXISTS idx_auth_users_deleted_at ON auth_users(deleted_at);
+create index if not exists idx_auth_users_uuid on auth_users(uuid);
+create index if not exists idx_auth_users_email on auth_users(email);
+create index if not exists idx_auth_users_deleted_at on auth_users(deleted_at);
 
-CREATE TABLE IF NOT EXISTS auth_roles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL DEFAULT '',
-    is_system INTEGER NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME
+create table if not exists auth_roles (
+    id integer primary key autoincrement,
+    name text not null unique,
+    description text not null default '',
+    is_system integer not null default 0,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp,
+    deleted_at datetime
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_roles_deleted_at ON auth_roles(deleted_at);
+create index if not exists idx_auth_roles_deleted_at on auth_roles(deleted_at);
 
-CREATE TABLE IF NOT EXISTS auth_permissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    resource TEXT NOT NULL,
-    action TEXT NOT NULL,
-    scope TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(resource, action, scope)
+insert or ignore into auth_roles (name, description, is_system) values
+('admin', 'administrator role with full access', 1),
+('user', 'standard user role with limited access', 0);
+
+create table if not exists auth_permissions (
+    id integer primary key autoincrement,
+    resource text not null,
+    action text not null,
+    scope text,
+    created_at datetime not null default current_timestamp,
+    unique(resource, action, scope)
 );
 
-CREATE TABLE IF NOT EXISTS auth_role_permissions (
-    role_id INTEGER NOT NULL,
-    permission_id INTEGER NOT NULL,
-    PRIMARY KEY (role_id, permission_id),
-    FOREIGN KEY (role_id) REFERENCES auth_roles(id) ON DELETE CASCADE,
-    FOREIGN KEY (permission_id) REFERENCES auth_permissions(id) ON DELETE CASCADE
+insert or ignore into auth_permissions (resource, action, scope) values
+    ('user', 'read_self', null);
+
+create table if not exists auth_role_permissions (
+    role_id integer not null,
+    permission_id integer not null,
+    primary key (role_id, permission_id),
+    foreign key (role_id) references auth_roles(id) on delete cascade,
+    foreign key (permission_id) references auth_permissions(id) on delete cascade
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_role_permissions_permission_id ON auth_role_permissions(permission_id);
+insert or ignore into auth_role_permissions (role_id, permission_id) values
+((select id from auth_roles where name = 'admin'), (select id from auth_permissions)),
+((select id from auth_roles where name = 'user'), (select id from auth_permissions where resource = 'user' and action = 'read_self'));
 
-CREATE TABLE IF NOT EXISTS auth_user_roles (
-    user_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
-    granted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    granted_by INTEGER,
-    expires_at DATETIME,
-    PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES auth_roles(id) ON DELETE CASCADE,
-    FOREIGN KEY (granted_by) REFERENCES auth_users(id) ON DELETE SET NULL
+create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions(permission_id);
+
+create table if not exists auth_user_roles (
+    user_id integer not null,
+    role_id integer not null,
+    granted_at datetime not null default current_timestamp,
+    granted_by integer,
+    expires_at datetime,
+    primary key (user_id, role_id),
+    foreign key (user_id) references auth_users(id) on delete cascade,
+    foreign key (role_id) references auth_roles(id) on delete cascade,
+    foreign key (granted_by) references auth_users(id) on delete set null
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_user_roles_role_id ON auth_user_roles(role_id);
-CREATE INDEX IF NOT EXISTS idx_auth_user_roles_expires_at ON auth_user_roles(expires_at);
+create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);
+create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(expires_at);
 
 -- +goose Down
 
-DROP TABLE IF EXISTS auth_user_roles;
-DROP TABLE IF EXISTS auth_role_permissions;
-DROP TABLE IF EXISTS auth_permissions;
-DROP TABLE IF EXISTS auth_roles;
-DROP TABLE IF EXISTS auth_users;
+drop table if exists auth_user_roles;
+drop table if exists auth_role_permissions;
+drop table if exists auth_permissions;
+drop table if exists auth_roles;
+drop table if exists auth_users;

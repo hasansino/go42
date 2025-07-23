@@ -9,7 +9,8 @@ insert into example_fruits (name) values
 ('grapes'),
 ('pear'),
 ('banana'),
-('peach');
+('peach')
+on conflict do nothing;
 
 -- +goose Down
 truncate example_fruits;

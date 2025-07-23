@@ -1,11 +1,62 @@
 openapi: 3.1.0
 info:
-  title: 'example'
+  title: v1 combined specification
   version: 1.0.0
 servers:
-  - url: 'http://localhost:8080/api/v1'
+  - url: http://localhost:8080/api/v1
     description: local
+tags:
+  - name: auth
+    x-displayName: auth
+  - name: fruits
+    x-displayName: fruits
 paths:
+  /auth/signup:
+    post:
+      tags:
+        - auth
+      summary: Create a new user
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+        '409':
+          description: User already exists
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login an existing user
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Invalid request
+        '403':
+          description: User inactive
   /fruits:
     get:
       tags:
@@ -119,9 +170,48 @@ paths:
           description: Fruit deleted
         '404':
           description: Fruit not found
-# ---
 components:
   schemas:
+    User:
+      type: object
+      properties:
+        uuid:
+          type: string
+    Tokens:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          default: user@example.com
+        password:
+          type: string
+          default: '1234567890'
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          default: user@example.com
+        password:
+          type: string
+          default: '1234567890'
+    CreateFruitResponse:
+      $ref: '#/components/schemas/User'
     Fruit:
       type: object
       properties:
@@ -147,3 +237,10 @@ components:
           type: string
           minLength: 3
           maxLength: 20
+x-tagGroups:
+  - name: auth
+    tags:
+      - auth
+  - name: example
+    tags:
+      - fruits

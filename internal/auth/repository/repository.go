@@ -63,5 +63,6 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	if r.IsNotFoundError(err) {
 		return nil, domain.ErrEntityNotFound
 	}
+
 	return &user, err
 }

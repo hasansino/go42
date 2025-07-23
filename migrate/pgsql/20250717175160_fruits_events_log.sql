@@ -1,5 +1,5 @@
 -- +goose Up
-create table example_fruits_events_log
+create table if not exists example_fruits_events_log
 (
     id          text primary key,
     occurred_at timestamp not null,
@@ -11,4 +11,4 @@ create table example_fruits_events_log
 );
 
 -- +goose Down
-drop table example_fruits_events_log;
+drop table if exists example_fruits_events_log;

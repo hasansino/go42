@@ -1,5 +1,5 @@
 -- +goose Up
-create table transactional_outbox (
+create table if not exists transactional_outbox (
     id text primary key,
     aggregate_id integer not null,
     aggregate_type text not null,
@@ -14,7 +14,7 @@ create table transactional_outbox (
     metadata text not null
 );
 
-create index transactional_outbox_publisher ON transactional_outbox (status);
+create index if not exists transactional_outbox_publisher ON transactional_outbox (status);
 
 -- +goose Down
-drop table transactional_outbox;
+drop table if exists transactional_outbox;
