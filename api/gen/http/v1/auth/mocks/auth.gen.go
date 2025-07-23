@@ -122,6 +122,46 @@ func (mr *MockClientInterfaceMockRecorder) LoginWithBody(ctx, contentType, body 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginWithBody", reflect.TypeOf((*MockClientInterface)(nil).LoginWithBody), varargs...)
 }
 
+// Refresh mocks base method.
+func (m *MockClientInterface) Refresh(ctx context.Context, body client.RefreshJSONRequestBody, reqEditors ...client.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Refresh", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Refresh indicates an expected call of Refresh.
+func (mr *MockClientInterfaceMockRecorder) Refresh(ctx, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refresh", reflect.TypeOf((*MockClientInterface)(nil).Refresh), varargs...)
+}
+
+// RefreshWithBody mocks base method.
+func (m *MockClientInterface) RefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...client.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RefreshWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshWithBody indicates an expected call of RefreshWithBody.
+func (mr *MockClientInterfaceMockRecorder) RefreshWithBody(ctx, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshWithBody", reflect.TypeOf((*MockClientInterface)(nil).RefreshWithBody), varargs...)
+}
+
 // Signup mocks base method.
 func (m *MockClientInterface) Signup(ctx context.Context, body client.SignupJSONRequestBody, reqEditors ...client.RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -160,6 +200,26 @@ func (mr *MockClientInterfaceMockRecorder) SignupWithBody(ctx, contentType, body
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, contentType, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignupWithBody", reflect.TypeOf((*MockClientInterface)(nil).SignupWithBody), varargs...)
+}
+
+// UsersMe mocks base method.
+func (m *MockClientInterface) UsersMe(ctx context.Context, reqEditors ...client.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UsersMe", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UsersMe indicates an expected call of UsersMe.
+func (mr *MockClientInterfaceMockRecorder) UsersMe(ctx any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UsersMe", reflect.TypeOf((*MockClientInterface)(nil).UsersMe), varargs...)
 }
 
 // MockClientWithResponsesInterface is a mock of ClientWithResponsesInterface interface.
@@ -226,6 +286,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) LoginWithResponse(ctx, b
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).LoginWithResponse), varargs...)
 }
 
+// RefreshWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) RefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...client.RequestEditorFn) (*client.RefreshResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RefreshWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*client.RefreshResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshWithBodyWithResponse indicates an expected call of RefreshWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) RefreshWithBodyWithResponse(ctx, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RefreshWithBodyWithResponse), varargs...)
+}
+
+// RefreshWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) RefreshWithResponse(ctx context.Context, body client.RefreshJSONRequestBody, reqEditors ...client.RequestEditorFn) (*client.RefreshResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RefreshWithResponse", varargs...)
+	ret0, _ := ret[0].(*client.RefreshResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshWithResponse indicates an expected call of RefreshWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) RefreshWithResponse(ctx, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).RefreshWithResponse), varargs...)
+}
+
 // SignupWithBodyWithResponse mocks base method.
 func (m *MockClientWithResponsesInterface) SignupWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...client.RequestEditorFn) (*client.SignupResponse, error) {
 	m.ctrl.T.Helper()
@@ -264,4 +364,24 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) SignupWithResponse(ctx, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignupWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).SignupWithResponse), varargs...)
+}
+
+// UsersMeWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) UsersMeWithResponse(ctx context.Context, reqEditors ...client.RequestEditorFn) (*client.UsersMeResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UsersMeWithResponse", varargs...)
+	ret0, _ := ret[0].(*client.UsersMeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UsersMeWithResponse indicates an expected call of UsersMeWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) UsersMeWithResponse(ctx any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UsersMeWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).UsersMeWithResponse), varargs...)
 }

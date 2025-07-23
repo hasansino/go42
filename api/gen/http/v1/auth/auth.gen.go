@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+const (
+	JwtScopes = "jwt.Scopes"
+)
+
 // CreateUserRequest defines model for CreateUserRequest.
 type CreateUserRequest struct {
 	Email    string `json:"email"`
@@ -24,6 +28,11 @@ type CreateUserRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+// RefreshRequest defines model for RefreshRequest.
+type RefreshRequest struct {
+	Token string `json:"token"`
 }
 
 // Tokens defines model for Tokens.
@@ -38,8 +47,14 @@ type User struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
+// UserInfo defines model for UserInfo.
+type UserInfo = User
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
+
+// RefreshJSONRequestBody defines body for Refresh for application/json ContentType.
+type RefreshJSONRequestBody = RefreshRequest
 
 // SignupJSONRequestBody defines body for Signup for application/json ContentType.
 type SignupJSONRequestBody = CreateUserRequest
@@ -122,10 +137,18 @@ type ClientInterface interface {
 
 	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RefreshWithBody request with any body
+	RefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Refresh(ctx context.Context, body RefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SignupWithBody request with any body
 	SignupWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	Signup(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersMe request
+	UsersMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -142,6 +165,30 @@ func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.
 
 func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Refresh(ctx context.Context, body RefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +223,18 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 	return c.Client.Do(req)
 }
 
+func (c *Client) UsersMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersMeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // NewLoginRequest calls the generic Login builder with application/json body
 func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -197,6 +256,46 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 	}
 
 	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRefreshRequest calls the generic Refresh builder with application/json body
+func NewRefreshRequest(server string, body RefreshJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRefreshRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewRefreshRequestWithBody generates requests for Refresh with any type of body
+func NewRefreshRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/refresh")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -256,6 +355,33 @@ func NewSignupRequestWithBody(server string, contentType string, body io.Reader)
 	return req, nil
 }
 
+// NewUsersMeRequest generates requests for UsersMe
+func NewUsersMeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -304,10 +430,18 @@ type ClientWithResponsesInterface interface {
 
 	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
+	// RefreshWithBodyWithResponse request with any body
+	RefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshResponse, error)
+
+	RefreshWithResponse(ctx context.Context, body RefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*RefreshResponse, error)
+
 	// SignupWithBodyWithResponse request with any body
 	SignupWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SignupResponse, error)
 
 	SignupWithResponse(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*SignupResponse, error)
+
+	// UsersMeWithResponse request
+	UsersMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeResponse, error)
 }
 
 type LoginResponse struct {
@@ -326,6 +460,28 @@ func (r LoginResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RefreshResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Tokens
+}
+
+// Status returns HTTPResponse.Status
+func (r RefreshResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RefreshResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -354,6 +510,28 @@ func (r SignupResponse) StatusCode() int {
 	return 0
 }
 
+type UsersMeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UserInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersMeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersMeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 // LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
 func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
 	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
@@ -369,6 +547,23 @@ func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJ
 		return nil, err
 	}
 	return ParseLoginResponse(rsp)
+}
+
+// RefreshWithBodyWithResponse request with arbitrary body returning *RefreshResponse
+func (c *ClientWithResponses) RefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshResponse, error) {
+	rsp, err := c.RefreshWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRefreshResponse(rsp)
+}
+
+func (c *ClientWithResponses) RefreshWithResponse(ctx context.Context, body RefreshJSONRequestBody, reqEditors ...RequestEditorFn) (*RefreshResponse, error) {
+	rsp, err := c.Refresh(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRefreshResponse(rsp)
 }
 
 // SignupWithBodyWithResponse request with arbitrary body returning *SignupResponse
@@ -388,6 +583,15 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 	return ParseSignupResponse(rsp)
 }
 
+// UsersMeWithResponse request returning *UsersMeResponse
+func (c *ClientWithResponses) UsersMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeResponse, error) {
+	rsp, err := c.UsersMe(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersMeResponse(rsp)
+}
+
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
 func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -397,6 +601,32 @@ func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
 	}
 
 	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Tokens
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRefreshResponse parses an HTTP response from a RefreshWithResponse call
+func ParseRefreshResponse(rsp *http.Response) (*RefreshResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RefreshResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -434,6 +664,32 @@ func ParseSignupResponse(rsp *http.Response) (*SignupResponse, error) {
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUsersMeResponse parses an HTTP response from a UsersMeWithResponse call
+func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersMeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 

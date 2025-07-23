@@ -1,6 +1,6 @@
 package http
 
-const swaggerUIVersion = "5.11.0"
+const swaggerUIVersion = "5.27.0"
 
 // nolint:unused
 const (

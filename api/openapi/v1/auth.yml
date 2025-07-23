@@ -5,6 +5,8 @@ info:
 servers:
   - url: 'http://localhost:8080/api/v1'
     description: local
+security:
+  - jwt: []
 paths:
   /auth/signup:
     post:
@@ -52,8 +54,52 @@ paths:
           description: Invalid request
         '403':
           description: User inactive
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh user token
+      operationId: refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tokens'
+        '400':
+          description: Invalid request
+        '403':
+          description: User inactive
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Retrieve current user information
+      operationId: users.me
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Unauthorized
 # ---
 components:
+  securitySchemes:
+    jwt:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "JWT token in Authorization header (format: Bearer <token>)"
   schemas:
     User:
       type: object
@@ -93,5 +139,15 @@ components:
         password:
           type: string
           default: "1234567890"
+    RefreshRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          default: ""
     CreateFruitResponse:
+      $ref: '#/components/schemas/User'
+    UserInfo:
       $ref: '#/components/schemas/User'

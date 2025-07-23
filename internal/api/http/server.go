@@ -82,7 +82,7 @@ func New(opts ...Option) *Server {
 	).Writer())
 
 	// all panics and explicit errors are handled here
-	s.e.HTTPErrorHandler = func(err error, c echo.Context) {
+	s.e.HTTPErrorHandler = func(err error, ctx echo.Context) {
 		var (
 			httpStatus  = http.StatusInternalServerError
 			httpMessage = "Internal HTTPServer Error"
@@ -110,24 +110,24 @@ func New(opts ...Option) *Server {
 			slogAttrs := []interface{}{
 				slog.String("error", err.Error()),
 				slog.Int("status", httpStatus),
-				slog.String("method", c.Request().Method),
-				slog.String("uri", c.Request().RequestURI),
+				slog.String("method", ctx.Request().Method),
+				slog.String("uri", ctx.Request().RequestURI),
 				slog.String("who", "echo.HTTPErrorHandler"),
 			}
 			if len(panicStack) > 0 {
 				slogAttrs = append(slogAttrs, slog.String("stack", string(panicStack)))
 			}
-			s.l.ErrorContext(c.Request().Context(), logMessage, slogAttrs...)
+			s.l.ErrorContext(ctx.Request().Context(), logMessage, slogAttrs...)
 		}
 
 		// if response is not commited, something unexpected happened
-		if c.Response().Committed {
+		if ctx.Response().Committed {
 			return
 		}
 
-		if err := SendJSONError(c, httpStatus, httpMessage); err != nil {
+		if err := SendJSONError(ctx, httpStatus, httpMessage); err != nil {
 			s.l.ErrorContext(
-				c.Request().Context(),
+				ctx.Request().Context(),
 				"failed to send json error response", slog.Any("error", err))
 		}
 	}
@@ -135,7 +135,7 @@ func New(opts ...Option) *Server {
 	// panics are handled and passed to the HTTPErrorHandler
 	// this middleware should be always the first one in the chain
 	s.e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+		LogErrorFunc: func(ctx echo.Context, err error, stack []byte) error {
 			return &PanicError{BaseErr: err, Stack: stack}
 		},
 	}))
