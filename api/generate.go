@@ -16,8 +16,8 @@ package api
 
 //go:generate mkdir -p gen/http/v1
 
-//go:generate oapi-codegen -package client -o gen/http/v1/auth.gen.go -generate models,client openapi/v1/auth.yml
-//go:generate mockgen -source gen/http/v1/auth.gen.go -package mocks -destination gen/http/v1/mocks/auth.gen.go
+//go:generate oapi-codegen -package client -o gen/http/v1/auth/auth.gen.go -generate models,client openapi/v1/auth.yml
+//go:generate mockgen -source gen/http/v1/auth/auth.gen.go -package mocks -destination gen/http/v1/auth/mocks/auth.gen.go
 
-//go:generate oapi-codegen -package client -o gen/http/v1/example.gen.go -generate models,client openapi/v1/example.yml
-//go:generate mockgen -source gen/http/v1/example.gen.go -package mocks -destination gen/http/v1/mocks/example.gen.go
+//go:generate oapi-codegen -package client -o gen/http/v1/example/example.gen.go -generate models,client openapi/v1/example.yml
+//go:generate mockgen -source gen/http/v1/example/example.gen.go -package mocks -destination gen/http/v1/example/mocks/example.gen.go
