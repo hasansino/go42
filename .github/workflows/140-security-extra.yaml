@@ -108,12 +108,9 @@ jobs:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
       - uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
+        continue-on-error: true
         with:
-          scan-args: |-
-            --output=results.json
-            --format=json
-            -r 
-            ./
+          scan-args: --output=results.json --format=json -r ./
       - uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
         with:
           scan-args: |-
