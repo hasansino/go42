@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
+	"strings"
 	"sync/atomic"
 
 	"github.com/labstack/echo/v4"
@@ -172,33 +174,29 @@ func New(opts ...Option) *Server {
 	s.e.Use(customMiddleware.NewMetricsCollector())
 	s.e.Use(customMiddleware.NewRequestID())
 
-	root := s.e.Group("")
-	root.Static("/", s.staticRoot)
+	s.root = s.e.Group("")
+	s.root.Static("/", s.staticRoot)
 
-	root.GET("/health", s.health)
-	root.GET("/ready", s.ready)
+	s.root.GET("/health", s.health)
+	s.root.GET("/ready", s.ready)
 	s.readyStatus.Store(true)
 
-	apiV1 := s.e.Group("/api/v1")
+	{
+		s.v1 = s.e.Group("/api/v1")
 
-	// serve openapi specification files
-	apiV1.Static("", s.swaggerRoot+"/v1")
+		// serve openapi specification files
+		s.v1.Static("", s.swaggerRoot+"/v1")
 
-	// embed swagger html template itself
-	tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
-	apiV1.GET("/", func(c echo.Context) error {
-		return tmpl.Execute(c.Response(), swaggerTemplateData{
-			SpecURLs: map[string]string{
-				"auth":    "/api/v1/auth.yml",
-				"example": "/api/v1/example.yml",
-			},
-			CDN:     swaggerCDNjsdelivr,
-			Version: swaggerUIVersion,
+		// embed swagger html template itself
+		tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
+		s.v1.GET("/", func(c echo.Context) error {
+			return tmpl.Execute(c.Response(), swaggerTemplateData{
+				SpecURLs: s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
+				CDN:      swaggerCDNjsdelivr,
+				Version:  swaggerUIVersion,
+			})
 		})
-	})
-
-	s.root = root
-	s.v1 = apiV1
+	}
 
 	return s
 }
@@ -234,4 +232,35 @@ func (s *Server) ready(ctx echo.Context) error {
 		return ctx.NoContent(http.StatusServiceUnavailable)
 	}
 	return ctx.NoContent(http.StatusOK)
+}
+
+// parseSpecDir Reads the directory with OpenAPI spec files and returns a map.
+// Ignores `.combined.yaml`"` file, which should be generated.
+func (s *Server) parseSpecDir(dir string, prefix string) map[string]string {
+	specURLs := make(map[string]string)
+	specDir, err := os.ReadDir(dir)
+	if err != nil {
+		s.l.Error(
+			"failed to read spec directory",
+			slog.String("dir", dir),
+			slog.Any("error", err),
+		)
+		return specURLs
+	}
+	for _, file := range specDir {
+		// ignore .combined.yaml - it should be generated with `make generate`
+		if file.IsDir() || file.Name() == ".combined.yaml" {
+			continue
+		}
+		parts := strings.Split(file.Name(), ".")
+		if len(parts) != 2 {
+			s.l.Warn(
+				"unexpected spec file name format",
+				slog.String("file", file.Name()),
+			)
+			continue
+		}
+		specURLs[parts[0]] = prefix + file.Name()
+	}
+	return specURLs
 }
