@@ -7,7 +7,7 @@ require (
 	buf.build/go/protovalidate v0.13.1
 	github.com/IBM/sarama v1.45.2
 	github.com/KimMachineGun/automemlimit v0.7.3
-	github.com/ThreeDotsLabs/watermill v1.4.6
+	github.com/ThreeDotsLabs/watermill v1.4.7
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
