@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS auth_users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    uid char(36) NOT NULL,
+    uuid char(36) NOT NULL,
     password VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL,
     status VARCHAR(255) NOT NULL DEFAULT 'active',
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS auth_users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
-    UNIQUE KEY idx_auth_users_uid (uid),
+    UNIQUE KEY idx_auth_users_uid (uuid),
     UNIQUE KEY idx_auth_users_email (email),
     KEY idx_auth_users_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

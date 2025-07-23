@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS auth_users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid text NOT NULL UNIQUE,
+    uuid text NOT NULL UNIQUE,
     password TEXT,
     email TEXT NOT NULL UNIQUE,
     status TEXT NOT NULL DEFAULT 'active',
@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS auth_users (
     deleted_at DATETIME
 );
 
+CREATE INDEX IF NOT EXISTS idx_auth_users_uuid ON auth_users(uuid);
+CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
 CREATE INDEX IF NOT EXISTS idx_auth_users_deleted_at ON auth_users(deleted_at);
 
 CREATE TABLE IF NOT EXISTS auth_roles (

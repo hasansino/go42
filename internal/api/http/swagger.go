@@ -13,9 +13,9 @@ const (
 )
 
 type swaggerTemplateData struct {
-	SpecURL string
-	CDN     string
-	Version string
+	SpecURLs map[string]string
+	CDN      string
+	Version  string
 }
 
 const swaggerTemplate = `
@@ -35,7 +35,15 @@ const swaggerTemplate = `
 <script>
     window.onload = () => {
         window.ui = SwaggerUIBundle({
-            url: '{{.SpecURL}}',
+			urls: [
+                  {{range $name, $url := .SpecURLs}}
+                  {
+                      url: "{{$url}}",
+                      name: "{{$name}}"
+                  },
+                  {{end}}
+            ],
+			'urls.primaryName': 'Spec 1',
             dom_id: '#swagger-ui',
             presets: [
                 SwaggerUIBundle.presets.apis,
@@ -46,7 +54,13 @@ const swaggerTemplate = `
             ],
             layout: "StandaloneLayout",
             deepLinking: true,
-            filter: true,
+			displayRequestDuration: true,
+			syntaxHighlight: {
+				activated: true,
+				theme: "obsidian"
+			},
+			withCredentials: true,
+			persistAuthorization: true
         });
     };
 </script>

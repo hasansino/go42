@@ -19,14 +19,26 @@ func WithJWTSecret(secret string) Option {
 	}
 }
 
-func WithAccessTokenTTL(ttl time.Duration) Option {
+func WithJWTAccessTokenTTL(ttl time.Duration) Option {
 	return func(s *Service) {
 		s.accessTokenTTL = ttl
 	}
 }
 
-func WithRefreshTokenTTL(ttl time.Duration) Option {
+func WithJWTRefreshTokenTTL(ttl time.Duration) Option {
 	return func(s *Service) {
 		s.refreshTokenTTL = ttl
+	}
+}
+
+func WithJWTIssuer(issuer string) Option {
+	return func(s *Service) {
+		s.jwtIssuer = issuer
+	}
+}
+
+func WithJWTAudience(audience []string) Option {
+	return func(s *Service) {
+		s.jwtAudience = audience
 	}
 }

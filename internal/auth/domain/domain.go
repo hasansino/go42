@@ -2,8 +2,6 @@ package domain
 
 import (
 	"errors"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -25,15 +23,44 @@ type Tokens struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
-type JWTClaims struct {
-	jwt.RegisteredClaims
-	UserID int      `json:"uid"`
-	Email  string   `json:"email"`
-	Roles  []string `json:"roles"`
+type ContextAuthInfo struct {
+	ID            int
+	UUID          string
+	Email         string
+	roles         []string
+	roleMap       map[string]struct{}
+	permissions   []string
+	permissionMap map[string]struct{}
 }
 
-type ContextAuthInfo struct {
-	UserID int      `json:"user_id"`
-	Email  string   `json:"email"`
-	Roles  []string `json:"roles"`
+func (ctx *ContextAuthInfo) SetRoles(roles []string) {
+	ctx.roles = roles
+	ctx.roleMap = make(map[string]struct{}, len(roles))
+	for _, role := range roles {
+		ctx.roleMap[role] = struct{}{}
+	}
+}
+
+func (ctx *ContextAuthInfo) SetPermissions(permissions []string) {
+	ctx.permissions = permissions
+	ctx.permissionMap = make(map[string]struct{}, len(permissions))
+	for _, permission := range permissions {
+		ctx.permissionMap[permission] = struct{}{}
+	}
+}
+
+func (ctx *ContextAuthInfo) HasRole(role string) bool {
+	if ctx.roleMap == nil {
+		return false
+	}
+	_, exists := ctx.roleMap[role]
+	return exists
+}
+
+func (ctx *ContextAuthInfo) HasPermission(permission string) bool {
+	if ctx.permissionMap == nil {
+		return false
+	}
+	_, exists := ctx.permissionMap[permission]
+	return exists
 }

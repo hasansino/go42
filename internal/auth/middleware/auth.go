@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
@@ -13,11 +15,9 @@ import (
 	"github.com/hasansino/go42/internal/tools"
 )
 
-//go:generate mockgen -destination=./mocks/mocks.go -package=mocks .
-
 type authServiceAccessor interface {
-	GetUserByID(ctx context.Context, userID int) (*models.User, error)
-	ValidateToken(token string) (*domain.JWTClaims, error)
+	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
+	ValidateToken(token string) (*jwt.RegisteredClaims, error)
 }
 
 func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -35,22 +35,25 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
-			user, err := svc.GetUserByID(c.Request().Context(), claims.UserID)
+			err = uuid.Validate(claims.Subject)
 			if err != nil {
 				return httpAPI.SendJSONError(c,
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
-			roles := make([]string, len(user.Roles))
-			for i, role := range user.Roles {
-				roles[i] = role.Name
+			user, err := svc.GetUserByUUID(c.Request().Context(), claims.Subject)
+			if err != nil {
+				return httpAPI.SendJSONError(c,
+					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
 			authInfo := &domain.ContextAuthInfo{
-				UserID: user.ID,
-				Email:  user.Email,
-				Roles:  roles,
+				ID:    user.ID,
+				UUID:  user.UUID.String(),
+				Email: user.Email,
 			}
+			authInfo.SetRoles(user.RoleList())
+			authInfo.SetPermissions(user.PermissionList())
 
 			ctx := auth.SetAuthToContext(c.Request().Context(), authInfo)
 			c.SetRequest(c.Request().WithContext(ctx))

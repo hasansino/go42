@@ -478,8 +478,10 @@ func main() {
 			authRepository,
 			auth.WithLogger(authLogger),
 			auth.WithJWTSecret(cfg.Auth.JWTSecret),
-			auth.WithAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
-			auth.WithRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
+			auth.WithJWTAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
+			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
+			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),
+			auth.WithJWTAudience(cfg.Auth.JWTAudience),
 		)
 		authHttpAdapter := authHttpAdapterV1.New(authService)
 		httpServer.RegisterV1(authHttpAdapter)

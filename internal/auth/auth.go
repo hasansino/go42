@@ -20,7 +20,8 @@ import (
 
 type repository interface {
 	CreateUser(ctx context.Context, user *models.User) error
-	GetUserByID(ctx context.Context, userID int) (*models.User, error)
+	GetUserByID(ctx context.Context, id int) (*models.User, error)
+	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
@@ -30,6 +31,8 @@ type Service struct {
 	jwtSecret       string
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
+	jwtIssuer       string
+	jwtAudience     []string
 }
 
 func NewService(repository repository, opts ...Option) *Service {
@@ -55,7 +58,7 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 	}
 
 	user := &models.User{
-		UID:      uuid.New().String(),
+		UUID:     uuid.New(),
 		Email:    email,
 		Password: sql.Null[string]{Valid: true, V: string(hash)},
 		Status:   domain.UserStatusActive,
@@ -90,16 +93,12 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		roleNames[i] = role.Name
 	}
 
-	tokens, err := s.generateTokens(user.ID, user.Email, roleNames)
+	tokens, err := s.generateTokens(user.UUID.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
 	return tokens, nil
-}
-
-func (s *Service) Logout(_ context.Context, token string) error {
-	return nil
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
@@ -108,7 +107,7 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		return nil, domain.ErrInvalidToken
 	}
 
-	user, err := s.repository.GetUserByID(ctx, claims.UserID)
+	user, err := s.repository.GetUserByUUID(ctx, claims.Subject)
 	if err != nil {
 		return nil, err
 	}
@@ -122,43 +121,47 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		roleNames[i] = role.Name
 	}
 
-	return s.generateTokens(user.ID, user.Email, roleNames)
+	return s.generateTokens(user.UUID.String())
 }
 
-func (s *Service) GetUserByID(ctx context.Context, userID int) (*models.User, error) {
-	return s.repository.GetUserByID(ctx, userID)
+func (s *Service) GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	return s.repository.GetUserByID(ctx, id)
 }
 
-func (s *Service) ValidateToken(token string) (*domain.JWTClaims, error) {
-	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User, error) {
+	return s.repository.GetUserByUUID(ctx, uuid)
+}
+
+func (s *Service) ValidateToken(token string) (*jwt.RegisteredClaims, error) {
+	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return s.jwtSecret, nil
+		return []byte(s.jwtSecret), nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	claims, ok := t.Claims.(*domain.JWTClaims)
+	claims, ok := t.Claims.(*jwt.RegisteredClaims)
 	if !ok || !t.Valid {
 		return nil, domain.ErrInvalidToken
 	}
 
-	if claims.ExpiresAt.Time.Before(time.Now()) {
+	if claims.ExpiresAt.Before(time.Now()) {
 		return nil, domain.ErrTokenExpired
 	}
 
 	return claims, nil
 }
 
-func (s *Service) generateTokens(userID int, email string, roles []string) (*domain.Tokens, error) {
-	accessToken, err := s.generateAccessToken(userID, email, roles)
+func (s *Service) generateTokens(userUUID string) (*domain.Tokens, error) {
+	accessToken, err := s.generateAccessToken(userUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := s.generateRefreshToken(userID)
+	refreshToken, err := s.generateRefreshToken(userUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,22 +173,23 @@ func (s *Service) generateTokens(userID int, email string, roles []string) (*dom
 	}, nil
 }
 
-func (s *Service) generateAccessToken(userID int, email string, roles []string) (string, error) {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, domain.JWTClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   fmt.Sprintf("%d", userID),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
-		},
-		UserID: userID,
-		Email:  email,
-		Roles:  roles,
+func (s *Service) generateAccessToken(userUUID string) (string, error) {
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ID:        uuid.New().String(),
+		Audience:  s.jwtAudience,
+		Issuer:    s.jwtIssuer,
+		Subject:   userUUID,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
 	}).SignedString([]byte(s.jwtSecret))
 }
 
-func (s *Service) generateRefreshToken(userID int) (string, error) {
+func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   fmt.Sprintf("%d", userID),
+		ID:        uuid.New().String(),
+		Audience:  s.jwtAudience,
+		Issuer:    s.jwtIssuer,
+		Subject:   userUUID,
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
 	}).SignedString([]byte(s.jwtSecret))

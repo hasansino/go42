@@ -188,7 +188,10 @@ func New(opts ...Option) *Server {
 	tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
 	apiV1.GET("/", func(c echo.Context) error {
 		return tmpl.Execute(c.Response(), swaggerTemplateData{
-			SpecURL: "/api/v1/openapi.yml",
+			SpecURLs: map[string]string{
+				"auth":    "/api/v1/auth.yml",
+				"example": "/api/v1/example.yml",
+			},
 			CDN:     swaggerCDNjsdelivr,
 			Version: swaggerUIVersion,
 		})

@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS auth_users (
     id BIGSERIAL PRIMARY KEY,
-    uid uuid NOT NULL,
+    uuid uuid NOT NULL,
     password VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL,
     status VARCHAR(255) NOT NULL DEFAULT 'active',
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS auth_users (
     deleted_at TIMESTAMP NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_uid ON auth_users(uid);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_uuid ON auth_users(uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
 CREATE INDEX IF NOT EXISTS idx_auth_users_deleted_at ON auth_users(deleted_at);
 

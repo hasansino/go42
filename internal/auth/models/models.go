@@ -3,47 +3,69 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
+	"slices"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        int              `json:"-"`
-	UID       string           `json:"uid"`
-	Email     string           `json:"email"`
-	Password  sql.Null[string] `json:"-"`
-	Status    string           `json:"status"`
-	Metadata  json.RawMessage  `json:"-"`
-	CreatedAt time.Time        `json:"-"`
-	UpdatedAt time.Time        `json:"-"`
-	DeletedAt gorm.DeletedAt   `json:"-"`
+	ID        int
+	UUID      uuid.UUID
+	Email     string
+	Password  sql.Null[string]
+	Status    string
+	Metadata  json.RawMessage
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
 
-	Roles []Role `gorm:"many2many:auth_user_roles" json:"roles,omitempty"`
+	Roles []Role `gorm:"many2many:auth_user_roles"`
 }
 
-func (User) TableName() string { return "auth_users" }
+func (u *User) RoleList() []string {
+	roles := make([]string, len(u.Roles))
+	for i, role := range u.Roles {
+		roles[i] = role.Name
+	}
+	return roles
+}
+
+func (u *User) PermissionList() []string {
+	permissions := make([]string, 0)
+	for _, role := range u.Roles {
+		for _, permission := range role.Permissions {
+			if !slices.Contains(permissions, permission.Resource+":"+permission.Action) {
+				permissions = append(permissions, permission.Resource+":"+permission.Action)
+			}
+		}
+	}
+	return permissions
+}
+
+func (*User) TableName() string { return "auth_users" }
 
 type Role struct {
-	ID          int            `json:"-"`
-	Name        string         `json:"name"`
-	Description string         `json:"-"`
-	IsSystem    bool           `json:"-"`
-	CreatedAt   time.Time      `json:"-"`
-	UpdatedAt   time.Time      `json:"-"`
-	DeletedAt   gorm.DeletedAt `json:"-"`
+	ID          int
+	Name        string
+	Description string
+	IsSystem    bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_role_permissions;" json:"permissions,omitempty"`
+	Permissions []Permission `gorm:"many2many:auth_role_permissions;"`
 }
 
 func (Role) TableName() string { return "auth_roles" }
 
 type Permission struct {
-	ID        int              `json:"-"`
-	Resource  string           `json:"resource"`
-	Action    string           `json:"action"`
-	Scope     sql.Null[string] `json:"scope"`
-	CreatedAt time.Time        `json:"-"`
+	ID        int
+	Resource  string
+	Action    string
+	Scope     sql.Null[string]
+	CreatedAt time.Time
 }
 
 func (Permission) TableName() string { return "auth_permissions" }
