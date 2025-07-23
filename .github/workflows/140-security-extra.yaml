@@ -1,8 +1,9 @@
-name: zap-api-scan
+name: security-extra
 
-# API vulnerability scan.
-# Runs application and performs attacks against it.
+# Vulnerability scan of final artifacts.
+# @see https://trivy.dev/latest/
 # @see https://www.zaproxy.org/
+# @see https://github.com/google/osv-scanner
 
 on:
   workflow_dispatch:
@@ -46,8 +47,26 @@ on:
 
 permissions:
   contents: read
+  packages: read
+  actions: read
+  security-events: write
 
 jobs:
+  docker-security:
+    name: docker-security
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: aquasecurity/trivy-action@0.32.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
   zap-api-scan:
     name: zap-api-scan
     runs-on: ${{ inputs.runs_on }}
@@ -77,3 +96,14 @@ jobs:
           target: 'http://localhost:44441/api/v1/.combined.yml'
           format: openapi
           allow_issue_writing: false
+
+  osv-scanner:
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.1.0"
+    with:
+      scan-args: |
+        -r
+        ./
+      results-file-name: osv-scanner-results.sarif
+      upload-sarif: true
+      fail-on-vuln: false
+      download-artifact: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json

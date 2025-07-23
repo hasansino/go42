@@ -36,7 +36,7 @@ permissions:
   actions: read
 
 jobs:
-  # Stage 1: Linting
+  # stage 1: linting
   git-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -100,21 +100,21 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
-  # Stage 2: Unit tests
+  # stage 2: unit tests
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
     needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint, writing-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
-  # Stage 3: Vulnerability Scanning
+  # stage 3: pre-build security scans
   security:
     uses: ./.github/workflows/130-security.yaml
     needs: [ unit-tests ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
-  # Stage 4: Build
+  # stage 4: build artifacts
   docker-build:
     uses: ./.github/workflows/140-docker-build.yaml
     needs: [ security ]
@@ -131,8 +131,9 @@ jobs:
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
       attestation_sbom: false
-  docker-security:
-    uses: ./.github/workflows/140-docker-security.yaml
+  # stage 5: post-build security scans
+  security-extra:
+    uses: ./.github/workflows/140-security-extra.yaml
     needs: [ docker-build ]
     with:
       runs_on: ubuntu-latest
@@ -142,10 +143,10 @@ jobs:
         ${{
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
-  # Stage 5: Actions with running application
+  # stage 6: integration & load tests
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ docker-build ]
+    needs: [ security-extra ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -156,7 +157,7 @@ jobs:
         }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ docker-build ]
+    needs: [ security-extra ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -165,21 +166,10 @@ jobs:
         ${{
           github.event_name == 'pull_request' && github.head_ref || github.ref_name
         }}-${{ github.run_id }}
-  zap-api-scan:
-    uses: ./.github/workflows/150-zap-api-scan.yaml
-    needs: [ docker-build ]
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: true
-      service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
-  # Stage 6: Cleanup
+  # Stage 7: cleanup
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
-    needs: [ docker-security, integration-tests, load-tests, zap-api-scan ]
+    needs: [ security-extra, integration-tests, load-tests ]
     with:
       runs_on: ubuntu-latest
       service_name: "go42"
