@@ -82,4 +82,7 @@ Golang project operation blueprint.
 + Try https://github.com/hypermodeinc/badger
 + Lock tools version and sync with CI
 + Try asyncapi (again)
-+ register echo validator -> simplify adapter
++ Register echo validator -> simplify adapters
++ Release notifications to slack (https://github.com/8398a7/action-slack)
++ Workflow running on schedule to cleanup docker registry
++ Swagger annotations in adapters + generation of specs
