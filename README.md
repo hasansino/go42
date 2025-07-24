@@ -19,7 +19,6 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 <img src="https://goreportcard.com/badge/github.com/hasansino/go42">
 <img src="https://img.shields.io/github/v/release/hasansino/go42">
 <img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg">
-<img src="https://check.255bugs.com/Oa2Wj3R7">
 </div>
 <!-- markdownlint-enable MD033 MD041 -->
 
