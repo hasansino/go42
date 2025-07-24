@@ -21,10 +21,26 @@ Golang project operation blueprint.
 
 ### 1
 
-+ auth0
-+ casbin
 + api tokens
 + security headers
+  - Strict-Transport-Security (HSTS)
+  - Content-Security-Policy (CSP) with configurable policies
+  - X-Frame-Options (clickjacking protection)
+  - X-Content-Type-Options (MIME sniffing protection)
+  - X-XSS-Protection (XSS filtering)
+  - Referrer-Policy
+  - Permissions-Policy
++ CORS -> https://echo.labstack.com/docs/middleware/cors
++ CSRF -> https://echo.labstack.com/docs/middleware/csrf
++ https://echo.labstack.com/docs/middleware/secure
++ Try -> https://echo.labstack.com/docs/middleware/body-limit
++ auth pkg metrics
++ jwt token revocation
+
+### 2
+
++ auth0
++ casbin
 
 ### 3
 
@@ -86,3 +102,14 @@ Golang project operation blueprint.
 + Release notifications to slack (https://github.com/8398a7/action-slack)
 + Workflow running on schedule to cleanup docker registry
 + Swagger annotations in adapters + generation of specs
++ Try https://sqlc.dev/
++ k8 hpa/vpa configurations
++ Capacity planning and resource management
++ Compliance research -> SOC2, ISO 27001, PCI-DSS
++ Research sso -> saml/oidc
++ Audit package implementation and guidelines
++ Try https://echo.labstack.com/docs/middleware/gzip
++ Distributed rate limiter
++ Research jwt RS256
++ Research doc builders like mkdocs / sphinx-doc
++ Deploy docs to private gh-pages (gh enterprise)
