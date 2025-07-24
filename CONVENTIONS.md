@@ -2,10 +2,11 @@
 
 This document is a repository of conventions and rules used by this project.
 
-## Guides
+## Foundation
 
 * https://google.github.io/eng-practices/
 * https://google.github.io/styleguide/go/decisions.html
+* https://sre.google/sre-book/table-of-contents/
 
 ## Review
 

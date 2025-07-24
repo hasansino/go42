@@ -141,6 +141,12 @@ generate-migration-id:
 generate-dep-graph:
 	@goda graph "github.com/hasansino/go42/..." | dot -Tsvg -o dep-graph.svg
 
+## preview-docs | preview openapi generated documentation
+# Dependencies:
+#   * brew install redocly-cli
+preview-docs:
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly preview-docs --config etc/redocly.yaml --port 8181 api/openapi/v1/.combined.yaml
+
 ## show-asm | visualise assembly
 # Dependencies:
 #   * go install loov.dev/lensm@main
