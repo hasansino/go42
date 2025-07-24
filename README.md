@@ -7,15 +7,25 @@
 ╚██████╔╝╚█████╔╝╚════██║███████║░
 ░╚═════╝░░╚════╝░░░░░░╚═╝╚══════╝░
 <br>
+G0LANG PR0JECT 0PERATION BLUEPRINT
+<br>
 01101111 01101110 01100101 01110100 01101111 01100110
 01101111 01110010 01100101 01100111 01101111 01100110
 01101111 01110010 01101101 01100001 01101110 01111001
 </pre></div>
+<div align="center">
+<img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+<img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go">
+<img src="https://goreportcard.com/badge/github.com/hasansino/go42">
+<img src="https://img.shields.io/github/v/release/hasansino/go42">
+<img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg">
+<img src="https://check.255bugs.com/Oa2Wj3R7">
+</div>
 <!-- markdownlint-enable MD033 MD041 -->
 
 # go42
 
-Golang project operation blueprint.
+TBD
 
 ## Backlog
 
