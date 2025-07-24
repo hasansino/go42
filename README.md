@@ -82,6 +82,8 @@ Golang project operation blueprint.
 
 - govulncheck warnings and availability
 - same-line imports fixes from linters
+- fix 3rd party protobuf generation (protovalidate)
+- tint log handler does nto support nested fields
 
 ## 100% after v1.0.0 release
 
@@ -117,4 +119,6 @@ Golang project operation blueprint.
 - Run make generate in CI/CD to check for changes in generated files
 - Try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
 - Release rollback automation
-- fix 3rd party protobuf generation (protovalidate)
+- Try https://github.com/veqryn/slog-context
+- Logging conventions
+- slog contextual values (like request id etc.) propogation

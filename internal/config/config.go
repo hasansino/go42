@@ -59,9 +59,10 @@ type Limits struct {
 // ╰──────────────────────────────╯
 
 type Logger struct {
-	LogLevel  string `env:"LOG_LEVEL"  default:"info"   v:"oneof=debug info warn error"`
-	LogOutput string `env:"LOG_OUTPUT" default:"stdout" v:"oneof=none stdout stderr file"`
-	LogFormat string `env:"LOG_FORMAT" default:"json"   v:"oneof=json text tint"`
+	LogLevel  string `env:"LOG_LEVEL"      default:"info"   v:"oneof=debug info warn error"`
+	LogOutput string `env:"LOG_OUTPUT"     default:"stdout" v:"oneof=none stdout stderr file"`
+	LogFormat string `env:"LOG_FORMAT"     default:"json"   v:"oneof=json text tint"`
+	AddSource bool   `env:"LOG_ADD_SOURCE" default:"true"`
 }
 
 func (l *Logger) Level() slog.Level {

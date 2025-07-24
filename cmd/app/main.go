@@ -568,16 +568,19 @@ func initLogging(cfg *config.Config) {
 	switch cfg.Logger.LogFormat {
 	case "text":
 		loggerOpts := &slog.HandlerOptions{
-			Level: cfg.Logger.Level(),
+			AddSource: cfg.Logger.AddSource,
+			Level:     cfg.Logger.Level(),
 		}
 		slogHandler = slog.NewTextHandler(slogOutput, loggerOpts)
 	case "json":
 		loggerOpts := &slog.HandlerOptions{
-			Level: cfg.Logger.Level(),
+			AddSource: cfg.Logger.AddSource,
+			Level:     cfg.Logger.Level(),
 		}
 		slogHandler = slog.NewJSONHandler(slogOutput, loggerOpts)
 	case "tint":
 		loggerOpts := &tint.Options{
+			AddSource:  cfg.Logger.AddSource,
 			Level:      cfg.Logger.Level(),
 			TimeFormat: time.Kitchen,
 		}
