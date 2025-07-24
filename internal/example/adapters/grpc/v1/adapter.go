@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/hasansino/go42/api/gen/grpc/example/v1"
+	pb "github.com/hasansino/go42/api/gen/sdk/grpc/example/v1"
 	"github.com/hasansino/go42/internal/example/domain"
 	"github.com/hasansino/go42/internal/example/models"
 )

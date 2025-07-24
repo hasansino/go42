@@ -61,3 +61,4 @@ This document is a repository of conventions and rules used by this project.
 * migrations should be idempotent
 * sql lowercase -> it is a choice
 * always leave empty lines at the end of files
+* usage of `// ---``

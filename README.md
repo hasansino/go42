@@ -117,3 +117,4 @@ Golang project operation blueprint.
 - Run make generate in CI/CD to check for changes in generated files
 - Try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
 - Release rollback automation
+- fix 3rd party protobuf generation (protovalidate)
