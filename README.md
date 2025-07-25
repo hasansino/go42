@@ -14,23 +14,22 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 01101111 01110010 01101101 01100001 01101110 01111001
 </pre></div>
 <div align="center">
-<img src="https://img.shields.io/badge/License-MIT-yellow.svg">
-<img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go">
-<img src="https://goreportcard.com/badge/github.com/hasansino/go42">
-<img src="https://img.shields.io/github/v/release/hasansino/go42">
-<img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg">
+<img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence">
+<img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go" alt="goversion">
+<img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport">
+<img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release">
+<img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status">
 </div>
 <!-- markdownlint-enable MD033 MD041 -->
 
 # go42
 
-TBD
+ദ്ദി( •̀ ᴗ - )
 
 ## Backlog
 
 ### 1
 
-- api tokens
 - security headers
   - Strict-Transport-Security (HSTS)
   - Content-Security-Policy (CSP) with configurable policies
@@ -42,9 +41,9 @@ TBD
 - CORS -> https://echo.labstack.com/docs/middleware/cors
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
-- Try -> https://echo.labstack.com/docs/middleware/body-limit
-- auth pkg metrics
+- api tokens
 - jwt token revocation
+- auth pkg metrics
 
 ### 2
 
@@ -131,3 +130,4 @@ TBD
 - Try https://github.com/veqryn/slog-context
 - Logging conventions
 - slog contextual values (like request id etc.) propogation
+- move all echo middleware to middleware package

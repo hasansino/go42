@@ -50,6 +50,8 @@ type Server struct {
 	readyStatus    atomic.Bool
 
 	rateLimiter rateLimiterAccessor
+
+	bodyLimit string
 }
 
 func New(opts ...Option) *Server {
@@ -120,7 +122,7 @@ func New(opts ...Option) *Server {
 			s.l.ErrorContext(ctx.Request().Context(), logMessage, slogAttrs...)
 		}
 
-		// if response is not commited, something unexpected happened
+		// if response is not committed, something unexpected happened
 		if ctx.Response().Committed {
 			return
 		}
@@ -140,11 +142,14 @@ func New(opts ...Option) *Server {
 		},
 	}))
 
-	if s.tracingEnabled {
-		s.e.Use(otelecho.Middleware("http-server"))
-	}
-
 	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
+
+	if s.tracingEnabled {
+		s.e.Use(otelecho.Middleware(
+			"http-server",
+			otelecho.WithSkipper(customMiddleware.DefaultSkipper),
+		))
+	}
 
 	// normal operation logging (http 100-499)
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -173,6 +178,11 @@ func New(opts ...Option) *Server {
 
 	s.e.Use(customMiddleware.NewMetricsCollector())
 	s.e.Use(customMiddleware.NewRequestID())
+
+	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
+		Skipper: customMiddleware.DefaultSkipper,
+		Limit:   "10M",
+	}))
 
 	s.root = s.e.Group("")
 	s.root.Static("/", s.staticRoot)

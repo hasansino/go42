@@ -12,6 +12,9 @@ import (
 func NewMetricsCollector() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (returnErr error) {
+			if DefaultSkipper(c) {
+				return next(c)
+			}
 
 			start := time.Now()
 

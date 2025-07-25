@@ -13,10 +13,10 @@ type rateLimiterAcessor interface {
 func NewRateLimiter(limiter rateLimiterAcessor) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if limiter == nil {
+			if DefaultSkipper(c) {
 				return next(c)
 			}
-			if DefaultSkipper(c) {
+			if limiter == nil {
 				return next(c)
 			}
 			if !limiter.Limit(extractRateLimitKeyFromCtx(c)) {

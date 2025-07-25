@@ -70,3 +70,11 @@ func WithRateLimiter(rate int, burst int) Option {
 		s.rateLimiter = tools.NewRateLimiter(rate, burst)
 	}
 }
+
+// WithBodyLimit sets the maximum allowed size of the request body.
+// Limit can be specified as 4x or 4xB, where x is one of the multiple from K, M, G, T or P.
+func WithBodyLimit(limit string) Option {
+	return func(s *Server) {
+		s.bodyLimit = limit
+	}
+}

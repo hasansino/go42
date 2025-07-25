@@ -436,6 +436,7 @@ type HTTP struct {
 	WriteTimeout time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_HTTP_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_HTTP_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+	BodyLimitKB  int           `env:"SERVER_HTTP_BODY_LIMIT_KB" default:"1024"`
 	RateLimiter  HTTPRateLimiter
 }
 
