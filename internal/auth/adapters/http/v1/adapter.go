@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
+	"github.com/hasansino/go42/internal/api/http/middleware"
 	"github.com/hasansino/go42/internal/auth"
 	"github.com/hasansino/go42/internal/auth/domain"
 	authMiddleware "github.com/hasansino/go42/internal/auth/middleware"
@@ -21,21 +23,40 @@ type serviceAccessor interface {
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
 	Logout(ctx context.Context, accessToken, refreshToken string) error
+	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
+	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
+	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
+	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
+}
+
+type cache interface {
+	Get(ctx context.Context, key string) (string, error)
+	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
 type Adapter struct {
-	service serviceAccessor
+	service  serviceAccessor
+	cache    cache
+	cacheTTL time.Duration
 }
 
-func New(service serviceAccessor) *Adapter {
-	return &Adapter{
+func New(service serviceAccessor, opts ...Option) *Adapter {
+	a := &Adapter{
 		service: service,
 	}
+	for _, opt := range opts {
+		opt(a)
+	}
+	return a
 }
 
 func (a *Adapter) Register(g *echo.Group) {
+	var cacheMiddleware echo.MiddlewareFunc
+	if a.cache != nil && a.cacheTTL > 0 {
+		cacheMiddleware = middleware.CacheMiddleware(a.cache, a.cacheTTL)
+	}
+
 	authGroup := g.Group("/auth")
 	authGroup.POST("/signup", a.signup)
 	authGroup.POST("/login", a.login)
@@ -43,7 +64,9 @@ func (a *Adapter) Register(g *echo.Group) {
 	authGroup.POST("/logout", a.logout)
 
 	userGroup := g.Group("/users", authMiddleware.NewAuthMiddleware(a.service))
-	userGroup.GET("/me", a.currentUser, authMiddleware.NewAccessMiddleware(domain.RBACPermissionUserReadSelf))
+	userGroup.GET("/me", a.currentUser,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUserReadSelf), cacheMiddleware,
+	)
 }
 
 type SignupRequest struct {
@@ -78,7 +101,7 @@ func (a *Adapter) signup(ctx echo.Context) error {
 
 type LoginRequest struct {
 	Email    string `json:"email"    v:"required,email"`
-	Password string `json:"password" v:"required"`
+	Password string `json:"password" v:"required,min=8,max=24"`
 }
 
 func (a *Adapter) login(ctx echo.Context) error {
@@ -168,7 +191,7 @@ func (a *Adapter) currentUser(ctx echo.Context) error {
 			http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 	}
 
-	user, err := a.service.GetUserByUUID(ctx.Request().Context(), authInfo.UUID)
+	user, err := a.service.GetUserByID(ctx.Request().Context(), authInfo.ID)
 	if err != nil {
 		return a.processError(ctx, err)
 	}

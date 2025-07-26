@@ -9,7 +9,7 @@ help: Makefile
 ## setup | install dependencies
 # Prerequisites: brew, go
 setup:
-	@go mod tidy && go mod download
+	@go mod tidy -e && go mod download
 	@brew install yq
 	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 	@vale --config etc/.vale.ini sync
@@ -118,7 +118,8 @@ lint:
 # Dependencies:
 #   * brew install buf
 generate:
-	@go mod tidy
+	@go mod tidy -e
+	@rm -rf api/gen
 	@buf generate api --template api/buf.gen.yaml
 	@go generate ./...
 	@go run cmd/cfg2env/main.go

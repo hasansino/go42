@@ -3,5 +3,4 @@ extends:
 rules:
   info-license: off            # warn
   no-server-example.com: off   # warn
-  security-defined: off        # error
   operation-4xx-response: off  # warn

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
@@ -68,18 +69,59 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	return &user, err
 }
 
-func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, role string) error {
-	var roleID int
-	err := r.GetTx(ctx).Raw("SELECT id FROM auth_roles WHERE name = ?", role).Scan(&roleID).Error
+func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName string) error {
+	var role models.Role
+	err := r.GetTx(ctx).
+		Where("name = ?", roleName).
+		First(&role).Error
 	if err != nil {
-		return fmt.Errorf("error finding role: %w", err)
+		return fmt.Errorf("error retrieving role: %w", err)
 	}
-	err = r.GetTx(ctx).Exec(
-		"INSERT INTO auth_user_roles (user_id, role_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
-		userID, roleID,
-	).Error
+
+	userRole := models.UserRole{
+		UserID: userID,
+		RoleID: role.ID,
+	}
+
+	err = r.GetTx(ctx).
+		Clauses(clause.Insert{Modifier: "IGNORE"}).
+		Create(&userRole).Error
 	if err != nil {
 		return fmt.Errorf("error assigning role to user: %w", err)
 	}
+
 	return nil
+}
+
+func (r *Repository) GetToken(ctx context.Context, token string) (*models.Token, error) {
+	var apiToken models.Token
+	err := r.GetReadDB(ctx).
+		Preload("Permissions").
+		Where("token = ?", token).
+		First(&apiToken).Error
+
+	if r.IsNotFoundError(err) {
+		return nil, domain.ErrEntityNotFound
+	}
+
+	return &apiToken, err
+}
+
+func (r *Repository) UpdateTokenLastUsed(ctx context.Context, tokenID int, when time.Time) error {
+	result := r.GetTx(ctx).
+		Model(&models.Token{}).
+		Where("id = ?", tokenID).
+		Update("last_used_at", when)
+
+	if r.IsNotFoundError(result.Error) || result.RowsAffected == 0 {
+		return domain.ErrEntityNotFound
+	}
+	if result.Error != nil {
+		return fmt.Errorf("error updating api token: %w", result.Error)
+	}
+	return nil
+}
+
+func (r *Repository) SaveUserHistoryRecord(ctx context.Context, record *models.UserHistoryRecord) error {
+	return r.GetTx(ctx).Create(record).Error
 }

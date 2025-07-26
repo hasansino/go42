@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"log/slog"
@@ -36,8 +37,10 @@ import (
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth"
+	authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1"
 	authHttpAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/http/v1"
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
+	authWorkers "github.com/hasansino/go42/internal/auth/workers"
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/cache/aerospike"
 	"github.com/hasansino/go42/internal/cache/memcached"
@@ -56,11 +59,6 @@ import (
 	"github.com/hasansino/go42/internal/events/kafka"
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
-	"github.com/hasansino/go42/internal/example"
-	exampleGrpcAdapterV1 "github.com/hasansino/go42/internal/example/adapters/grpc/v1"
-	exampleHttpAdapterV1 "github.com/hasansino/go42/internal/example/adapters/http/v1"
-	exampleRepositoryPkg "github.com/hasansino/go42/internal/example/repository"
-	exampleWorkers "github.com/hasansino/go42/internal/example/workers"
 	"github.com/hasansino/go42/internal/metrics"
 	metricsAdapterV1 "github.com/hasansino/go42/internal/metrics/adapters/http"
 	"github.com/hasansino/go42/internal/metrics/observers"
@@ -114,6 +112,8 @@ func main() {
 		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
 		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
+		httpAPI.WithBodyLimit(fmt.Sprintf("%dK", cfg.Server.HTTP.BodyLimitKB)),
+		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {
@@ -469,13 +469,14 @@ func main() {
 			),
 		)
 
-		go outboxPublisher.Run(ctx, 5*time.Second, 100)
+		go outboxPublisher.Run(ctx, cfg.Outbox.WorkerRunInterval, cfg.Outbox.WorkerBatchSize)
 
 		// auth domain
 		authLogger := slog.Default().With(slog.String("component", "auth-service"))
 		authRepository := authRepositoryPkg.New(database.NewBaseRepository(dbEngine))
 		authService := auth.NewService(
 			authRepository,
+			outboxService,
 			cacheEngine,
 			auth.WithLogger(authLogger),
 			auth.WithJWTSecret(cfg.Auth.JWTSecret),
@@ -484,40 +485,37 @@ func main() {
 			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),
 			auth.WithJWTAudience(cfg.Auth.JWTAudience),
 		)
-		authHttpAdapter := authHttpAdapterV1.New(authService)
-		httpServer.RegisterV1(authHttpAdapter)
 
-		// example domain
-		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
-		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
-		exampleService := example.NewService(
-			exampleRepository,
-			outboxService,
-			example.WithLogger(exampleLogger),
-		)
-
-		fruitEventSubscriber := exampleWorkers.NewFruitEventSubscriber(
-			exampleRepository,
-			eventsEngine,
-			exampleWorkers.FruitEventSubscriberWithLogger(
-				slog.Default().With(slog.String("component", "example-subscriber")),
+		authTokenLastUsedUpdater := authWorkers.NewTokenLastUsedUpdater(
+			authRepository,
+			authService,
+			authWorkers.TokenLastUsedUpdaterWithLogger(
+				slog.Default().With(slog.String("component", "auth-token-updater")),
 			),
 		)
-		err := fruitEventSubscriber.Subscribe(ctx, eventsEngine)
+		go authTokenLastUsedUpdater.Run(ctx, cfg.Auth.TokenUpdaterInterval)
+
+		authEventsSubscriber := authWorkers.NewAuthEventSubscriber(
+			authRepository,
+			authWorkers.AuthEventSubscriberWithLogger(
+				slog.Default().With(slog.String("component", "auth-events-subscriber")),
+			),
+		)
+		err := authEventsSubscriber.Subscribe(ctx, eventsEngine)
 		if err != nil {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
 
 		// http server
-		exampleHttp := exampleHttpAdapterV1.New(
-			exampleService, cacheEngine,
-			exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
+		authHttpAdapter := authHttpAdapterV1.New(
+			authService,
+			authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
 		)
-		httpServer.RegisterV1(exampleHttp)
+		httpServer.RegisterV1(authHttpAdapter)
 
 		// grpc server
-		exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
-		grpcServer.Register(exampleGrpc)
+		authGrpc := authGrpcAdapterV1.New(authService)
+		grpcServer.Register(authGrpc)
 	}
 
 	// ---

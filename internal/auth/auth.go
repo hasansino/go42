@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
+	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
 )
 
 const (
@@ -25,12 +27,13 @@ const (
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type repository interface {
+	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
-	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
+	GetToken(ctx context.Context, token string) (*models.Token, error)
 }
 
 type cache interface {
@@ -38,31 +41,44 @@ type cache interface {
 	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
+type outboxService interface {
+	NewOutboxMessage(ctx context.Context, topic string, msg *outboxDomain.Message) error
+}
+
 type Service struct {
-	logger          *slog.Logger
-	repository      repository
-	cache           cache
+	logger        *slog.Logger
+	repository    repository
+	cache         cache
+	outboxService outboxService
+
 	jwtSecret       string
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
 	jwtIssuer       string
 	jwtAudience     []string
+
+	lastUsedTokens   map[int]time.Time
+	lastUsedTokensMu sync.Mutex
 }
 
-func NewService(repository repository, cache cache, opts ...Option) *Service {
+func NewService(
+	repository repository,
+	outboxService outboxService,
+	cache cache,
+	opts ...Option,
+) *Service {
 	s := &Service{
-		repository: repository,
-		cache:      cache,
+		repository:     repository,
+		outboxService:  outboxService,
+		cache:          cache,
+		lastUsedTokens: make(map[int]time.Time),
 	}
-
 	for _, opt := range opts {
 		opt(s)
 	}
-
 	if s.logger == nil {
 		s.logger = slog.New(slog.DiscardHandler)
 	}
-
 	return s
 }
 
@@ -92,6 +108,18 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		return nil, err
 	}
 
+	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, outboxDomain.Message{
+		AggregateID:   user.ID,
+		AggregateType: domain.EventTypeSignUp,
+	}); err != nil {
+		s.logger.ErrorContext(
+			ctx, "failed to send event: %w",
+			slog.String("topic", domain.TopicNameAuthEvents),
+			slog.String("event", domain.TopicNameAuthEvents),
+			slog.Any("error", err),
+		)
+	}
+
 	return user, nil
 }
 
@@ -104,17 +132,12 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	if user.Status != domain.UserStatusActive {
-		return nil, domain.ErrUserInactive
+	if !user.IsActive() {
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.Password.V), []byte(password)) != nil {
 		return nil, domain.ErrInvalidCredentials
-	}
-
-	roleNames := make([]string, len(user.Roles))
-	for i, role := range user.Roles {
-		roleNames[i] = role.Name
 	}
 
 	tokens, err := s.generateTokens(user.UUID.String())
@@ -122,11 +145,23 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
+	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, outboxDomain.Message{
+		AggregateID:   user.ID,
+		AggregateType: domain.EventTypeLogin,
+	}); err != nil {
+		s.logger.ErrorContext(
+			ctx, "failed to send event: %w",
+			slog.String("topic", domain.TopicNameAuthEvents),
+			slog.String("event", domain.TopicNameAuthEvents),
+			slog.Any("error", err),
+		)
+	}
+
 	return tokens, nil
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.ValidateToken(ctx, token)
+	claims, err := s.ValidateJWTToken(ctx, token)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -136,42 +171,34 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		return nil, err
 	}
 
-	if user.Status != domain.UserStatusActive {
-		return nil, domain.ErrUserInactive
-	}
-
-	roleNames := make([]string, len(user.Roles))
-	for i, role := range user.Roles {
-		roleNames[i] = role.Name
+	if !user.IsActive() {
+		if err := s.InvalidateJWTToken(ctx, token, claims.ExpiresAt.Time); err != nil {
+			s.logger.ErrorContext(
+				ctx, "failed to invalidate token",
+				slog.Any("err", err),
+			)
+		}
+		return nil, domain.ErrInvalidToken
 	}
 
 	return s.generateTokens(user.UUID.String())
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.ValidateToken(ctx, accessToken)
+	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.ValidateToken(ctx, refreshToken)
+	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	accessTokenHash := sha256.New().Sum([]byte(accessToken))
-	refreshTokenHash := sha256.New().Sum([]byte(refreshToken))
-
-	if err := s.cache.SetTTL(
-		ctx, cacheKeyInvalidatedToken+string(accessTokenHash), cacheValueInvalidatedToken,
-		time.Until(accessTokenClaims.ExpiresAt.Time)+1,
-	); err != nil {
+	if err := s.InvalidateJWTToken(ctx, accessToken, accessTokenClaims.ExpiresAt.Time); err != nil {
 		return fmt.Errorf("failed to invalidate access token: %w", err)
 	}
 
-	if err := s.cache.SetTTL(
-		ctx, cacheKeyInvalidatedToken+string(refreshTokenHash), cacheValueInvalidatedToken,
-		time.Until(refreshTokenClaims.ExpiresAt.Time)+1,
-	); err != nil {
+	if err := s.InvalidateJWTToken(ctx, refreshToken, refreshTokenClaims.ExpiresAt.Time); err != nil {
 		return fmt.Errorf("failed to invalidate refresh token: %w", err)
 	}
 
@@ -186,7 +213,11 @@ func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User,
 	return s.repository.GetUserByUUID(ctx, uuid)
 }
 
-func (s *Service) ValidateToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+func (s *Service) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	return s.repository.GetUserByEmail(ctx, email)
+}
+
+func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -203,7 +234,7 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (*jwt.Registe
 	}
 
 	if claims.ExpiresAt.Before(time.Now()) {
-		return nil, domain.ErrTokenExpired
+		return nil, domain.ErrInvalidToken
 	}
 
 	tokenHash := sha256.New().Sum([]byte(token))
@@ -217,6 +248,15 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (*jwt.Registe
 	}
 
 	return claims, nil
+}
+
+func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
+	return s.cache.SetTTL(
+		ctx,
+		cacheKeyInvalidatedToken+string(sha256.New().Sum([]byte(token))),
+		cacheValueInvalidatedToken,
+		time.Until(until)+1,
+	)
 }
 
 func (s *Service) generateTokens(userUUID string) (*domain.Tokens, error) {
@@ -257,4 +297,42 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
 	}).SignedString([]byte(s.jwtSecret))
+}
+
+func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
+	apiToken, err := s.repository.GetToken(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid api token: %w", err)
+	}
+
+	if apiToken.ExpiresAt.Valid && apiToken.ExpiresAt.V.Before(time.Now()) {
+		return nil, fmt.Errorf("expired api token: %w", err)
+	}
+
+	// a little sacrifice for the sake of ux
+	go s.markTokenAsRecentlyUsed(apiToken.ID)
+
+	return apiToken, nil
+}
+
+func (s *Service) markTokenAsRecentlyUsed(tokenID int) {
+	s.lastUsedTokensMu.Lock()
+	defer s.lastUsedTokensMu.Unlock()
+	s.lastUsedTokens[tokenID] = time.Now()
+}
+
+func (s *Service) RecentlyUsedTokens() map[int]time.Time {
+	s.lastUsedTokensMu.Lock()
+	defer s.lastUsedTokensMu.Unlock()
+	tokens := s.lastUsedTokens
+	s.lastUsedTokens = make(map[int]time.Time)
+	return tokens
+}
+
+func (s *Service) sendEvent(ctx context.Context, topic string, outboxMessage outboxDomain.Message) error {
+	err := s.outboxService.NewOutboxMessage(ctx, topic, &outboxMessage)
+	if err != nil {
+		return fmt.Errorf("failed to send outbox message: %w", err)
+	}
+	return nil
 }

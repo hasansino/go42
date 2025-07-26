@@ -21,13 +21,7 @@ func (a *Adapter) processError(ctx echo.Context, err error) error {
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
-	case errors.Is(err, domain.ErrUserInactive):
-		return httpAPI.SendJSONError(ctx,
-			http.StatusForbidden, http.StatusText(http.StatusForbidden))
 	case errors.Is(err, domain.ErrInvalidToken):
-		return httpAPI.SendJSONError(ctx,
-			http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
-	case errors.Is(err, domain.ErrTokenExpired):
 		return httpAPI.SendJSONError(ctx,
 			http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 	default:

@@ -50,9 +50,9 @@ func NewOutboxMessagePublisher(
 }
 
 func (p *OutboxMessagePublisher) Run(
-	ctx context.Context, duration time.Duration, batchSize int,
+	ctx context.Context, interval time.Duration, batchSize int,
 ) {
-	ticker := time.NewTicker(duration)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {

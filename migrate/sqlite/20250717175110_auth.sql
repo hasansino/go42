@@ -17,8 +17,19 @@ create index if not exists idx_auth_users_uuid on auth_users(uuid);
 create index if not exists idx_auth_users_email on auth_users(email);
 create index if not exists idx_auth_users_deleted_at on auth_users(deleted_at);
 
-insert or ignore into auth_users (uuid, password, email, is_system) values
-('00000000-0000-0000-0000-000000000000', null, 'admin@system.local', 1);
+create table if not exists auth_users_history
+(
+    id          text primary key,
+    occurred_at datetime not null,
+    created_at  datetime default (datetime('now')) not null,
+    user_id     integer not null,
+    event_type  varchar(255) not null,
+    data        varchar(255),
+    metadata    varchar(1000),
+    foreign key (user_id) references auth_users(id) on delete cascade
+);
+
+create index if not exists idx_auth_users_history_occurred_at on auth_users_history(occurred_at);
 
 create table if not exists auth_roles (
     id integer primary key autoincrement,
@@ -32,9 +43,6 @@ create table if not exists auth_roles (
 
 create index if not exists idx_auth_roles_deleted_at on auth_roles(deleted_at);
 
-insert or ignore into auth_roles (name, description, is_system) values
-('user', 'standard user role with limited access', 0);
-
 create table if not exists auth_permissions (
     id integer primary key autoincrement,
     resource text not null,
@@ -44,9 +52,6 @@ create table if not exists auth_permissions (
     unique(resource, action, scope)
 );
 
-insert or ignore into auth_permissions (resource, action, scope) values
-    ('user', 'read_self', null);
-
 create table if not exists auth_role_permissions (
     role_id integer not null,
     permission_id integer not null,
@@ -54,9 +59,6 @@ create table if not exists auth_role_permissions (
     foreign key (role_id) references auth_roles(id) on delete cascade,
     foreign key (permission_id) references auth_permissions(id) on delete cascade
 );
-
-insert or ignore into auth_role_permissions (role_id, permission_id) values
-((select id from auth_roles where name = 'user'), (select id from auth_permissions where resource = 'user' and action = 'read_self'));
 
 create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions(permission_id);
 
@@ -75,27 +77,39 @@ create table if not exists auth_user_roles (
 create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);
 create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(expires_at);
 
-CREATE TABLE IF NOT EXISTS auth_api_tokens (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
-    scopes TEXT DEFAULT NULL,
-    last_used_at DATETIME DEFAULT NULL,
-    expires_at DATETIME DEFAULT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME DEFAULT NULL,
-    CONSTRAINT fk_api_tokens_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+create table if not exists auth_api_tokens (
+     id integer primary key autoincrement,
+     user_id integer not null,
+     token text not null unique,
+     name text not null,
+     last_used_at datetime default null,
+     expires_at datetime default null,
+     created_at datetime default current_timestamp,
+     updated_at datetime default current_timestamp,
+     deleted_at datetime default null,
+     constraint fk_api_tokens_user foreign key (user_id) references auth_users(id) on delete cascade
 );
 
-CREATE INDEX idx_token_lookup ON auth_api_tokens(token, deleted_at, expires_at);
+create index idx_token_lookup on auth_api_tokens(token, deleted_at, expires_at);
+
+create table if not exists auth_api_tokens_permissions (
+    token_id integer not null,
+    permission_id integer not null,
+    primary key (token_id, permission_id),
+    foreign key (token_id) references auth_api_tokens(id) on delete cascade,
+    foreign key (permission_id) references auth_permissions(id) on delete cascade
+);
+
+create index if not exists idx_token_permissions_token_id on auth_api_tokens_permissions(token_id);
+create index if not exists idx_token_permissions_permission_id on auth_api_tokens_permissions(permission_id);
 
 -- +goose Down
 
+drop table if exists auth_api_tokens_permissions;
 drop table if exists auth_api_tokens;
 drop table if exists auth_user_roles;
 drop table if exists auth_role_permissions;
 drop table if exists auth_permissions;
 drop table if exists auth_roles;
+drop table if exists auth_users_history;
 drop table if exists auth_users;

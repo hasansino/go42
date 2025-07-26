@@ -28,6 +28,7 @@ type Config struct {
 	Events   Events
 	Pprof    Pprof
 	Server   Server
+	Outbox   Outbox
 	Auth     Auth
 }
 
@@ -436,6 +437,7 @@ type HTTP struct {
 	WriteTimeout time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT" default:"5s"`
 	StaticRoot   string        `env:"SERVER_HTTP_STATIC_ROOT"   default:"/usr/share/www"`
 	SwaggerRoot  string        `env:"SERVER_HTTP_SWAGGER_ROOT"  default:"/usr/share/www/api"`
+	SwaggerDark  bool          `env:"SERVER_HTTP_SWAGGER_DARK"  default:"true"`
 	BodyLimitKB  int           `env:"SERVER_HTTP_BODY_LIMIT_KB" default:"1024"`
 	RateLimiter  HTTPRateLimiter
 }
@@ -461,15 +463,26 @@ type GRPCRateLimiter struct {
 }
 
 // ╭──────────────────────────────╮
+// │            OUTBOX            │
+// ╰──────────────────────────────╯
+
+type Outbox struct {
+	WorkerRunInterval time.Duration `env:"OUTBOX_WORKER_INTERVAL"   default:"5s"`
+	WorkerBatchSize   int           `env:"OUTBOX_WORKER_BATCH_SIZE" default:"1000"`
+}
+
+// ╭──────────────────────────────╮
 // │             AUTH             │
 // ╰──────────────────────────────╯
 
 type Auth struct {
-	JWTSecret          string        `env:"AUTH_JWT_SECRET"            default:"0128899"`
-	JWTAccessTokenTTL  time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"  default:"15m"`
-	JWTRefreshTokenTTL time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL" default:"168h"`
-	JWTIssuer          string        `env:"AUTH_JWT_ISSUER"            default:"go42"`
-	JWTAudience        []string      `env:"AUTH_JWT_AUDIENCE"          default:"go42"`
+	JWTSecret            string        `env:"AUTH_JWT_SECRET"             default:"0128899"`
+	JWTAccessTokenTTL    time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"   default:"15m"`
+	JWTRefreshTokenTTL   time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"  default:"168h"`
+	JWTIssuer            string        `env:"AUTH_JWT_ISSUER"             default:"go42"`
+	JWTAudience          []string      `env:"AUTH_JWT_AUDIENCE"           default:"go42"`
+	APICacheTTL          time.Duration `env:"AUTH_API_CACHE_TTL"          default:"60m"`
+	TokenUpdaterInterval time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL" default:"5m"`
 }
 
 // ---

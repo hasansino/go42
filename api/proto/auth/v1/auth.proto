@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package auth.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/hasansino/go42/api/auth/v1";
+
+message User {
+  int64 id = 1;
+  string uuid = 2;
+  string email = 3;
+  string status = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  bool is_system = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message GetUserByIDRequest {
+  int64 id = 1 [(buf.validate.field).required = true];
+}
+
+message GetUserByIDResponse {
+  User user = 1;
+}
+
+message GetUserByUUIDRequest {
+  string uuid = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.len = 36
+  ];
+}
+
+message GetUserByUUIDResponse {
+  User user = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 5,
+    (buf.validate.field).string.max_len = 255
+  ];
+}
+
+message GetUserByEmailResponse {
+  User user = 1;
+}
+
+service AuthService {
+  rpc GetUserByID(GetUserByIDRequest) returns (GetUserByIDResponse);
+  rpc GetUserByUUID(GetUserByUUIDRequest) returns (GetUserByUUIDResponse);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
+}

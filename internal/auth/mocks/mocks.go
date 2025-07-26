@@ -15,6 +15,7 @@ import (
 	time "time"
 
 	models "github.com/hasansino/go42/internal/auth/models"
+	domain "github.com/hasansino/go42/internal/outbox/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -68,6 +69,21 @@ func (m *Mockrepository) CreateUser(ctx context.Context, user *models.User) erro
 func (mr *MockrepositoryMockRecorder) CreateUser(ctx, user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*Mockrepository)(nil).CreateUser), ctx, user)
+}
+
+// GetToken mocks base method.
+func (m *Mockrepository) GetToken(ctx context.Context, token string) (*models.Token, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetToken", ctx, token)
+	ret0, _ := ret[0].(*models.Token)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetToken indicates an expected call of GetToken.
+func (mr *MockrepositoryMockRecorder) GetToken(ctx, token any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*Mockrepository)(nil).GetToken), ctx, token)
 }
 
 // GetUserByEmail mocks base method.
@@ -180,4 +196,42 @@ func (m *Mockcache) SetTTL(ctx context.Context, key, value string, ttl time.Dura
 func (mr *MockcacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*Mockcache)(nil).SetTTL), ctx, key, value, ttl)
+}
+
+// MockoutboxService is a mock of outboxService interface.
+type MockoutboxService struct {
+	ctrl     *gomock.Controller
+	recorder *MockoutboxServiceMockRecorder
+	isgomock struct{}
+}
+
+// MockoutboxServiceMockRecorder is the mock recorder for MockoutboxService.
+type MockoutboxServiceMockRecorder struct {
+	mock *MockoutboxService
+}
+
+// NewMockoutboxService creates a new mock instance.
+func NewMockoutboxService(ctrl *gomock.Controller) *MockoutboxService {
+	mock := &MockoutboxService{ctrl: ctrl}
+	mock.recorder = &MockoutboxServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockoutboxService) EXPECT() *MockoutboxServiceMockRecorder {
+	return m.recorder
+}
+
+// NewOutboxMessage mocks base method.
+func (m *MockoutboxService) NewOutboxMessage(ctx context.Context, topic string, msg *domain.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewOutboxMessage", ctx, topic, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewOutboxMessage indicates an expected call of NewOutboxMessage.
+func (mr *MockoutboxServiceMockRecorder) NewOutboxMessage(ctx, topic, msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewOutboxMessage", reflect.TypeOf((*MockoutboxService)(nil).NewOutboxMessage), ctx, topic, msg)
 }

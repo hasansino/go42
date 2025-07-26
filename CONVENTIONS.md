@@ -50,6 +50,7 @@ This document is a repository of conventions and rules used by this project.
 * use `any` instead of `interface{}` in function signatures
 * `context.Context` -> ctx but `echo.Context` -> c
 * put technical phrases in backticks in comments to avoid linting issues
+* `fmt.Errorf` vs `errors.Wrap` (collides vs std errors)
 
 ## Code Review
 

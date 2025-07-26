@@ -46,10 +46,11 @@ type Server struct {
 	staticRoot  string
 	swaggerRoot string
 
-	tracingEnabled bool
-	readyStatus    atomic.Bool
-
+	readyStatus atomic.Bool
 	rateLimiter rateLimiterAccessor
+
+	tracingEnabled   bool
+	swaggerDarkStyle bool
 
 	bodyLimit string
 }
@@ -185,7 +186,7 @@ func New(opts ...Option) *Server {
 	}))
 
 	s.root = s.e.Group("")
-	s.root.Static("/", s.staticRoot)
+	s.root.Static("/static", s.staticRoot)
 
 	s.root.GET("/health", s.health)
 	s.root.GET("/ready", s.ready)
@@ -201,9 +202,10 @@ func New(opts ...Option) *Server {
 		tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
 		s.v1.GET("/", func(c echo.Context) error {
 			return tmpl.Execute(c.Response(), swaggerTemplateData{
-				SpecURLs: s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
-				CDN:      swaggerCDNjsdelivr,
-				Version:  swaggerUIVersion,
+				SpecURLs:  s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
+				CDN:       swaggerCDNjsdelivr,
+				Version:   swaggerUIVersion,
+				DarkTheme: true,
 			})
 		})
 	}

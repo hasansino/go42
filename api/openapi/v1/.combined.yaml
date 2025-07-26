@@ -10,8 +10,8 @@ tags:
     x-displayName: auth
   - name: users
     x-displayName: users
-  - name: fruits
-    x-displayName: fruits
+  - name: tmp_other
+    x-displayName: other
 paths:
   /auth/signup:
     post:
@@ -36,8 +36,7 @@ paths:
           description: Invalid request
         '409':
           description: User already exists
-      security:
-        - jwt: []
+      security: []
   /auth/login:
     post:
       tags:
@@ -61,8 +60,7 @@ paths:
           description: Invalid request
         '403':
           description: User inactive
-      security:
-        - jwt: []
+      security: []
   /auth/refresh:
     post:
       tags:
@@ -86,8 +84,7 @@ paths:
           description: Invalid request
         '403':
           description: User inactive
-      security:
-        - jwt: []
+      security: []
   /auth/logout:
     post:
       tags:
@@ -105,14 +102,16 @@ paths:
           description: Tokens invalidated successfully
         '400':
           description: Invalid request
-      security:
-        - jwt: []
+      security: []
   /users/me:
     get:
       tags:
         - users
       summary: Retrieve current user information
       operationId: users.me
+      security:
+        - jwt:
+            - user:read_self
       responses:
         '200':
           description: User information retrieved successfully
@@ -122,121 +121,13 @@ paths:
                 $ref: '#/components/schemas/UserInfo'
         '401':
           description: Unauthorized
-      security:
-        - jwt: []
-  /fruits:
+  /:
     get:
+      summary: root of all evil
+      operationId: root
       tags:
-        - fruits
-      summary: Get all fruits
-      operationId: getFruits
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 10
-        - name: offset
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 0
-      responses:
-        '200':
-          description: A list of fruits
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Fruit'
-    post:
-      tags:
-        - fruits
-      summary: Create a new fruit
-      operationId: createFruit
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateFruitRequest'
-      responses:
-        '201':
-          description: Fruit created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Fruit'
-        '400':
-          description: Invalid input
-  /fruits/{id}:
-    get:
-      tags:
-        - fruits
-      summary: Get a fruit by ID
-      operationId: getFruitById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: The requested fruit
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Fruit'
-        '404':
-          description: Fruit not found
-    put:
-      tags:
-        - fruits
-      summary: Update a fruit by ID
-      operationId: updateFruitById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateFruitRequest'
-      responses:
-        '200':
-          description: Fruit updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Fruit'
-        '400':
-          description: Invalid input
-        '404':
-          description: Fruit not found
-    delete:
-      tags:
-        - fruits
-      summary: Delete a fruit by ID
-      operationId: deleteFruitById
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Fruit deleted
-        '404':
-          description: Fruit not found
+        - tmp_other
+      security: []
 components:
   securitySchemes:
     jwt:
@@ -250,15 +141,19 @@ components:
       properties:
         uuid:
           type: string
+          default: ''
     Tokens:
       type: object
       properties:
         access_token:
           type: string
+          default: ''
         refresh_token:
           type: string
+          default: ''
         expires_in:
           type: integer
+          default: 0
     CreateUserRequest:
       type: object
       required:
@@ -298,42 +193,19 @@ components:
       properties:
         access_token:
           type: string
+          default: ''
         refresh_token:
           type: string
+          default: ''
     CreateFruitResponse:
       $ref: '#/components/schemas/User'
     UserInfo:
       $ref: '#/components/schemas/User'
-    Fruit:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-    CreateFruitRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          minLength: 3
-          maxLength: 20
-    UpdateFruitRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          minLength: 3
-          maxLength: 20
 x-tagGroups:
   - name: auth
     tags:
       - auth
       - users
-  - name: example
+  - name: tmp
     tags:
-      - fruits
+      - tmp_other

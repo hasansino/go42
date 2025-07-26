@@ -13,9 +13,10 @@ const (
 )
 
 type swaggerTemplateData struct {
-	SpecURLs map[string]string
-	CDN      string
-	Version  string
+	SpecURLs  map[string]string
+	CDN       string
+	Version   string
+	DarkTheme bool
 }
 
 const swaggerTemplate = `
@@ -26,7 +27,12 @@ const swaggerTemplate = `
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="SwaggerUI" />
     <Title>SwaggerUI</Title>
+	<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" sizes="any">
     <link rel="stylesheet" href="{{.CDN}}{{.Version}}/swagger-ui.css" />
+	{{ if .DarkTheme }}
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-themes@1.4.3/themes/dark.min.css" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-themes@1.4.3/themes/one-dark.min.css" />
+	{{ end }}
 </head>
 <body>
 <div id="swagger-ui"></div>
@@ -43,7 +49,6 @@ const swaggerTemplate = `
                   },
                   {{end}}
             ],
-			'urls.primaryName': 'Spec 1',
             dom_id: '#swagger-ui',
             presets: [
                 SwaggerUIBundle.presets.apis,
@@ -60,7 +65,8 @@ const swaggerTemplate = `
 				theme: "obsidian"
 			},
 			withCredentials: true,
-			persistAuthorization: true
+			persistAuthorization: true,
+			defaultModelsExpandDepth: -1
         });
     };
 </script>

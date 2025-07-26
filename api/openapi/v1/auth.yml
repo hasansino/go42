@@ -5,8 +5,7 @@ info:
 servers:
   - url: 'http://localhost:8080/api/v1'
     description: local
-security:
-  - jwt: []
+security: []
 paths:
   /auth/signup:
     post:
@@ -100,6 +99,8 @@ paths:
         - users
       summary: Retrieve current user information
       operationId: users.me
+      security:
+        - jwt: [user:read_self]
       responses:
         '200':
           description: User information retrieved successfully
@@ -123,15 +124,19 @@ components:
       properties:
         uuid:
           type: string
+          default: ""
     Tokens:
       type: object
       properties:
         access_token:
           type: string
+          default: ""
         refresh_token:
           type: string
+          default: ""
         expires_in:
           type: integer
+          default: 0
     CreateUserRequest:
       type: object
       required:
@@ -171,8 +176,10 @@ components:
       properties:
         access_token:
           type: string
+          default: ""
         refresh_token:
           type: string
+          default: ""
     CreateFruitResponse:
       $ref: '#/components/schemas/User'
     UserInfo:

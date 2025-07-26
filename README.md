@@ -41,8 +41,6 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - CORS -> https://echo.labstack.com/docs/middleware/cors
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
-- api tokens
-- jwt token revocation
 - auth pkg metrics
 
 ### 2
@@ -134,3 +132,6 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - move all echo middleware to middleware package
 - grpc transport credentials
 - Try https://github.com/tursodatabase/turso
+- make cache generic where possible
+- nosql -> `clickhouse` + `duckdb`
+- graceful connection recovery

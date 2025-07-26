@@ -14,18 +14,18 @@ const (
 )
 
 type Message struct {
-	ID            uuid.UUID    `json:"id"`
-	AggregateID   int          `json:"aggregate_id"`
-	AggregateType string       `json:"aggregate_type"`
-	Topic         string       `json:"topic"`
-	Payload       []byte       `json:"payload"`
-	CreatedAt     time.Time    `json:"created_at"`
-	ProcessedAt   sql.NullTime `json:"processed_at"`
-	Status        string       `json:"status"`
-	RetryCount    int          `json:"retry_count"`
-	MaxRetries    int          `json:"max_retries"`
-	LastError     string       `json:"last_error"`
-	Metadata      string       `json:"metadata"`
+	ID            uuid.UUID
+	AggregateID   int
+	AggregateType string
+	Topic         string
+	Payload       []byte
+	CreatedAt     time.Time
+	ProcessedAt   sql.NullTime
+	Status        string
+	RetryCount    int
+	MaxRetries    int
+	LastError     string
+	Metadata      string
 }
 
 func (m *Message) TableName() string {

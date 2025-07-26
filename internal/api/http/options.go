@@ -78,3 +78,10 @@ func WithBodyLimit(limit string) Option {
 		s.bodyLimit = limit
 	}
 }
+
+// WithSwaggerDarkStyle enabled dark theme for swagger UI page
+func WithSwaggerDarkStyle(enabled bool) Option {
+	return func(s *Server) {
+		s.swaggerDarkStyle = enabled
+	}
+}

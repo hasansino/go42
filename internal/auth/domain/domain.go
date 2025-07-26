@@ -4,9 +4,15 @@ import (
 	"errors"
 )
 
+// RBAC roles.
+// MUST reflect state of table `auth_roles`.
+
 const (
 	RBACRoleUser = "user"
 )
+
+// RBAC permissions.
+// MUST reflect state of table `auth_permissions`.
 
 const (
 	RBACPermissionUserReadSelf = "user:read_self"
@@ -16,13 +22,17 @@ const (
 	UserStatusActive = "active"
 )
 
+const (
+	TopicNameAuthEvents = "auth_events_topic"
+	EventTypeSignUp     = "auth.signup"
+	EventTypeLogin      = "auth.login"
+)
+
 var (
 	ErrEntityNotFound     = errors.New("entity not found")
 	ErrUserAlreadyExists  = errors.New("user already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserInactive       = errors.New("user is not active")
 	ErrInvalidToken       = errors.New("invalid token")
-	ErrTokenExpired       = errors.New("token expired")
 )
 
 // Tokens represents the structure of JWT authentication tokens.
@@ -32,23 +42,20 @@ type Tokens struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+type AuthenticationType string
+
+const (
+	AuthenticationTypeCredentials = "user"
+	AuthenticationTypeApiToken    = "api_token"
+)
+
 // ContextAuthInfo holds authentication information in the request context.
+// ID field stores authenticated subject id which is described by Type field.
 type ContextAuthInfo struct {
 	ID            int
-	UUID          string
-	Email         string
-	roles         []string
-	roleMap       map[string]struct{}
+	Type          AuthenticationType
 	permissions   []string
 	permissionMap map[string]struct{}
-}
-
-func (ctx *ContextAuthInfo) SetRoles(roles []string) {
-	ctx.roles = roles
-	ctx.roleMap = make(map[string]struct{}, len(roles))
-	for _, role := range roles {
-		ctx.roleMap[role] = struct{}{}
-	}
 }
 
 func (ctx *ContextAuthInfo) SetPermissions(permissions []string) {
@@ -57,14 +64,6 @@ func (ctx *ContextAuthInfo) SetPermissions(permissions []string) {
 	for _, permission := range permissions {
 		ctx.permissionMap[permission] = struct{}{}
 	}
-}
-
-func (ctx *ContextAuthInfo) HasRole(role string) bool {
-	if ctx.roleMap == nil {
-		return false
-	}
-	_, exists := ctx.roleMap[role]
-	return exists
 }
 
 func (ctx *ContextAuthInfo) HasPermission(permission string) bool {

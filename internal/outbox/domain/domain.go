@@ -11,7 +11,7 @@ const MaxRetries = 3
 type Message struct {
 	AggregateID   int    `v:"required,gte=1"`
 	AggregateType string `v:"required,min=3,max=100"`
-	Payload       []byte `v:"required,min=2"`
+	Payload       []byte `v:"omitzero,min=2"`
 	Metadata      string `v:"omitzero,max=1000"`
 }
 
