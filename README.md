@@ -13,13 +13,13 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 01101111 01110010 01100101 01100111 01101111 01100110
 01101111 01110010 01101101 01100001 01101110 01111001
 </pre></div>
-<div align="center">
+<p align="center">
 <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence">
 <img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go" alt="goversion">
 <img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport">
 <img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release">
 <img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status">
-</div>
+</p>
 <!-- markdownlint-enable MD033 MD041 -->
 
 # go42
@@ -135,3 +135,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - nosql -> `clickhouse` + `duckdb`
 - graceful connection recovery
 - outbox table cleanup worker
+- Try https://github.com/tconbeer/sqlfmt
