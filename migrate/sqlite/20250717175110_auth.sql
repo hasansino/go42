@@ -65,13 +65,11 @@ create index if not exists idx_auth_role_permissions_permission_id on auth_role_
 create table if not exists auth_user_roles (
     user_id integer not null,
     role_id integer not null,
-    granted_at datetime not null default current_timestamp,
-    granted_by integer,
+    created_at datetime not null default current_timestamp,
     expires_at datetime,
     primary key (user_id, role_id),
     foreign key (user_id) references auth_users(id) on delete cascade,
-    foreign key (role_id) references auth_roles(id) on delete cascade,
-    foreign key (granted_by) references auth_users(id) on delete set null
+    foreign key (role_id) references auth_roles(id) on delete cascade
 );
 
 create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);

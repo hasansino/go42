@@ -59,6 +59,11 @@ import (
 	"github.com/hasansino/go42/internal/events/kafka"
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
+	"github.com/hasansino/go42/internal/example"
+	exampleGrpcAdapterV1 "github.com/hasansino/go42/internal/example/adapters/grpc/v1"
+	exampleHttpAdapterV1 "github.com/hasansino/go42/internal/example/adapters/http/v1"
+	exampleRepositoryPkg "github.com/hasansino/go42/internal/example/repository"
+	exampleWorkers "github.com/hasansino/go42/internal/example/workers"
 	"github.com/hasansino/go42/internal/metrics"
 	metricsAdapterV1 "github.com/hasansino/go42/internal/metrics/adapters/http"
 	"github.com/hasansino/go42/internal/metrics/observers"
@@ -506,16 +511,44 @@ func main() {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
 
-		// http server
 		authHttpAdapter := authHttpAdapterV1.New(
 			authService,
 			authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
 		)
 		httpServer.RegisterV1(authHttpAdapter)
 
-		// grpc server
 		authGrpc := authGrpcAdapterV1.New(authService)
 		grpcServer.Register(authGrpc)
+
+		// example domain
+		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
+		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
+		exampleService := example.NewService(
+			exampleRepository,
+			outboxService,
+			example.WithLogger(exampleLogger),
+		)
+
+		fruitEventSubscriber := exampleWorkers.NewFruitEventSubscriber(
+			exampleRepository,
+			eventsEngine,
+			exampleWorkers.FruitEventSubscriberWithLogger(
+				slog.Default().With(slog.String("component", "example-subscriber")),
+			),
+		)
+		err = fruitEventSubscriber.Subscribe(ctx, eventsEngine)
+		if err != nil {
+			log.Fatalf("failed to subscribe to events: %v\n", err)
+		}
+
+		exampleHttp := exampleHttpAdapterV1.New(
+			exampleService, cacheEngine,
+			exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
+		)
+		httpServer.RegisterV1(exampleHttp)
+
+		exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
+		grpcServer.Register(exampleGrpc)
 	}
 
 	// ---

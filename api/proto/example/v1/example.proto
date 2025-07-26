@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/hasansino/go42/api/example/v1";
+
+message Fruit {
+  int64 id = 1;
+  string name = 2;
+}
+
+message GetFruitResponse {
+  Fruit fruit = 1;
+}
+
+message ListFruitsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListFruitsResponse {
+  repeated Fruit fruits = 1;
+}
+
+message GetFruitRequest {
+  int64 id = 1;
+}
+
+message CreateFruitRequest {
+  string name = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 255
+  ];
+}
+
+message CreateFruitResponse {
+  Fruit fruit = 1;
+}
+
+message UpdateFruitRequest {
+  int64 id = 1;
+  string name = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 255
+  ];
+}
+
+message UpdateFruitResponse {
+  Fruit fruit = 1;
+}
+
+message DeleteFruitRequest {
+  int64 id = 1;
+}
+
+message DeleteFruitResponse {
+  bool success = 1;
+}
+
+service ExampleService {
+  rpc ListFruits(ListFruitsRequest) returns (ListFruitsResponse);
+  rpc GetFruit(GetFruitRequest) returns (GetFruitResponse);
+  rpc CreateFruit(CreateFruitRequest) returns (CreateFruitResponse);
+  rpc UpdateFruit(UpdateFruitRequest) returns (UpdateFruitResponse);
+  rpc DeleteFruit(DeleteFruitRequest) returns (DeleteFruitResponse);
+}

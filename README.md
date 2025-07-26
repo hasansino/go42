@@ -126,7 +126,6 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - Run make generate in CI/CD to check for changes in generated files
 - Try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
 - Release rollback automation
-- Try https://github.com/veqryn/slog-context
 - Logging conventions
 - slog contextual values (like request id etc.) propogation
 - move all echo middleware to middleware package
@@ -135,3 +134,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - make cache generic where possible
 - nosql -> `clickhouse` + `duckdb`
 - graceful connection recovery
+- outbox table cleanup worker

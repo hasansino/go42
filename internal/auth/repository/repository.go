@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
@@ -51,7 +50,7 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	tx := r.GetReadDB(ctx).
 		Preload("Roles", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Joins("JOIN auth_user_roles ON auth_user_roles.user_id = id").
+				Joins("JOIN auth_user_roles ON auth_user_roles.role_id = auth_roles.id").
 				Where("auth_user_roles.expires_at IS NULL OR auth_user_roles.expires_at > ?", time.Now())
 		}).
 		Preload("Roles.Permissions")
@@ -83,9 +82,7 @@ func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName 
 		RoleID: role.ID,
 	}
 
-	err = r.GetTx(ctx).
-		Clauses(clause.Insert{Modifier: "IGNORE"}).
-		Create(&userRole).Error
+	err = r.GetTx(ctx).Create(&userRole).Error
 	if err != nil {
 		return fmt.Errorf("error assigning role to user: %w", err)
 	}

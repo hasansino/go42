@@ -74,7 +74,7 @@ type Role struct {
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_role_permissions;"`
+	Permissions []Permission `gorm:"many2many:auth_role_permissions;association_autoupdate:false"`
 }
 
 func (Role) TableName() string { return "auth_roles" }
@@ -92,8 +92,7 @@ func (Permission) TableName() string { return "auth_permissions" }
 type UserRole struct {
 	UserID    int
 	RoleID    int
-	GrantedAt time.Time
-	GrantedBy sql.Null[int]
+	CreatedAt time.Time
 	ExpiresAt sql.Null[time.Time]
 }
 

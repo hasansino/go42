@@ -10,8 +10,8 @@ tags:
     x-displayName: auth
   - name: users
     x-displayName: users
-  - name: tmp_other
-    x-displayName: other
+  - name: fruits
+    x-displayName: fruits
 paths:
   /auth/signup:
     post:
@@ -118,15 +118,126 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInfo'
+                $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
-  /:
+  /fruits:
     get:
-      summary: root of all evil
-      operationId: root
       tags:
-        - tmp_other
+        - fruits
+      summary: Get all fruits
+      operationId: getFruits
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: A list of fruits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fruit'
+      security: []
+    post:
+      tags:
+        - fruits
+      summary: Create a new fruit
+      operationId: createFruit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFruitRequest'
+      responses:
+        '201':
+          description: Fruit created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fruit'
+        '400':
+          description: Invalid input
+      security: []
+  /fruits/{id}:
+    get:
+      tags:
+        - fruits
+      summary: Get a fruit by ID
+      operationId: getFruitById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The requested fruit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fruit'
+        '404':
+          description: Fruit not found
+      security: []
+    put:
+      tags:
+        - fruits
+      summary: Update a fruit by ID
+      operationId: updateFruitById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFruitRequest'
+      responses:
+        '200':
+          description: Fruit updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fruit'
+        '400':
+          description: Invalid input
+        '404':
+          description: Fruit not found
+      security: []
+    delete:
+      tags:
+        - fruits
+      summary: Delete a fruit by ID
+      operationId: deleteFruitById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Fruit deleted
+        '404':
+          description: Fruit not found
       security: []
 components:
   securitySchemes:
@@ -142,6 +253,20 @@ components:
         uuid:
           type: string
           default: ''
+        email:
+          type: string
+          default: ''
+        created_at:
+          type: string
+          default: ''
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
     Tokens:
       type: object
       properties:
@@ -197,15 +322,36 @@ components:
         refresh_token:
           type: string
           default: ''
-    CreateFruitResponse:
-      $ref: '#/components/schemas/User'
-    UserInfo:
-      $ref: '#/components/schemas/User'
+    Fruit:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    CreateFruitRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 20
+    UpdateFruitRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 20
 x-tagGroups:
   - name: auth
     tags:
       - auth
       - users
-  - name: tmp
+  - name: example
     tags:
-      - tmp_other
+      - fruits

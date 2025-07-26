@@ -62,15 +62,13 @@ create table if not exists auth_role_permissions (
 create table if not exists auth_user_roles (
     user_id bigint unsigned not null,
     role_id bigint unsigned not null,
-    granted_at timestamp not null default current_timestamp,
-    granted_by bigint unsigned null,
-    expires_at timestamp null,
+    created_at timestamp not null default current_timestamp,
+    expires_at timestamp null default null,
     primary key (user_id, role_id),
     key idx_auth_user_roles_role_id (role_id),
     key idx_auth_user_roles_expires_at (expires_at),
     constraint fk_auth_user_roles_user_id foreign key (user_id) references auth_users(id) on delete cascade,
-    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade,
-    constraint fk_auth_user_roles_granted_by foreign key (granted_by) references auth_users(id) on delete set null
+    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
 create table if not exists auth_api_tokens (

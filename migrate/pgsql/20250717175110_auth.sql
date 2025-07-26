@@ -65,13 +65,11 @@ create table if not exists auth_role_permissions (
 create table if not exists auth_user_roles (
     user_id bigint not null,
     role_id bigint not null,
-    granted_at timestamp not null default current_timestamp,
-    granted_by bigint null,
+    created_at timestamp not null default current_timestamp,
     expires_at timestamp null,
     primary key (user_id, role_id),
     constraint fk_auth_user_roles_user_id foreign key (user_id) references auth_users(id) on delete cascade,
-    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade,
-    constraint fk_auth_user_roles_granted_by foreign key (granted_by) references auth_users(id) on delete set null
+    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade
 );
 
 create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);

@@ -55,11 +55,12 @@ type Tokens struct {
 
 // User defines model for User.
 type User struct {
-	Uuid *string `json:"uuid,omitempty"`
+	CreatedAt   *string   `json:"created_at,omitempty"`
+	Email       *string   `json:"email,omitempty"`
+	Permissions *[]string `json:"permissions,omitempty"`
+	Roles       *[]string `json:"roles,omitempty"`
+	Uuid        *string   `json:"uuid,omitempty"`
 }
-
-// UserInfo defines model for UserInfo.
-type UserInfo = User
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
@@ -622,7 +623,7 @@ func (r SignupResponse) StatusCode() int {
 type UsersMeResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *UserInfo
+	JSON200      *User
 }
 
 // Status returns HTTPResponse.Status
@@ -827,7 +828,7 @@ func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UserInfo
+		var dest User
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -841,20 +842,21 @@ func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AP//RtY+9mENAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
