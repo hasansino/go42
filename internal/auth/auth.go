@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -16,6 +17,11 @@ import (
 	"github.com/hasansino/go42/internal/auth/models"
 )
 
+const (
+	cacheKeyInvalidatedToken   = "auth_token_logout_"
+	cacheValueInvalidatedToken = "_"
+)
+
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type repository interface {
@@ -27,9 +33,15 @@ type repository interface {
 	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 }
 
+type cache interface {
+	Get(ctx context.Context, key string) (string, error)
+	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+}
+
 type Service struct {
 	logger          *slog.Logger
 	repository      repository
+	cache           cache
 	jwtSecret       string
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
@@ -37,9 +49,10 @@ type Service struct {
 	jwtAudience     []string
 }
 
-func NewService(repository repository, opts ...Option) *Service {
+func NewService(repository repository, cache cache, opts ...Option) *Service {
 	s := &Service{
 		repository: repository,
+		cache:      cache,
 	}
 
 	for _, opt := range opts {
@@ -113,7 +126,7 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.ValidateToken(token)
+	claims, err := s.ValidateToken(ctx, token)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -135,6 +148,36 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 	return s.generateTokens(user.UUID.String())
 }
 
+func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
+	accessTokenClaims, err := s.ValidateToken(ctx, accessToken)
+	if err != nil {
+		return fmt.Errorf("invalid access token: %w", err)
+	}
+	refreshTokenClaims, err := s.ValidateToken(ctx, refreshToken)
+	if err != nil {
+		return fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	accessTokenHash := sha256.New().Sum([]byte(accessToken))
+	refreshTokenHash := sha256.New().Sum([]byte(refreshToken))
+
+	if err := s.cache.SetTTL(
+		ctx, cacheKeyInvalidatedToken+string(accessTokenHash), cacheValueInvalidatedToken,
+		time.Until(accessTokenClaims.ExpiresAt.Time)+1,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate access token: %w", err)
+	}
+
+	if err := s.cache.SetTTL(
+		ctx, cacheKeyInvalidatedToken+string(refreshTokenHash), cacheValueInvalidatedToken,
+		time.Until(refreshTokenClaims.ExpiresAt.Time)+1,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate refresh token: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	return s.repository.GetUserByID(ctx, id)
 }
@@ -143,7 +186,7 @@ func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User,
 	return s.repository.GetUserByUUID(ctx, uuid)
 }
 
-func (s *Service) ValidateToken(token string) (*jwt.RegisteredClaims, error) {
+func (s *Service) ValidateToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -161,6 +204,16 @@ func (s *Service) ValidateToken(token string) (*jwt.RegisteredClaims, error) {
 
 	if claims.ExpiresAt.Before(time.Now()) {
 		return nil, domain.ErrTokenExpired
+	}
+
+	tokenHash := sha256.New().Sum([]byte(token))
+	v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+string(tokenHash))
+	if err != nil {
+		return nil, fmt.Errorf("failed to access cache: %w", err)
+	}
+
+	if v == cacheValueInvalidatedToken {
+		return nil, domain.ErrInvalidToken
 	}
 
 	return claims, nil

@@ -20,8 +20,9 @@ type serviceAccessor interface {
 	SignUp(ctx context.Context, email string, password string) (*models.User, error)
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
+	Logout(ctx context.Context, accessToken, refreshToken string) error
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateToken(token string) (*jwt.RegisteredClaims, error)
+	ValidateToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 }
 
 type Adapter struct {
@@ -39,6 +40,7 @@ func (a *Adapter) Register(g *echo.Group) {
 	authGroup.POST("/signup", a.signup)
 	authGroup.POST("/login", a.login)
 	authGroup.POST("/refresh", a.refresh)
+	authGroup.POST("/logout", a.logout)
 
 	userGroup := g.Group("/users", authMiddleware.NewAuthMiddleware(a.service))
 	userGroup.GET("/me", a.currentUser, authMiddleware.NewAccessMiddleware(domain.RBACPermissionUserReadSelf))
@@ -129,6 +131,34 @@ func (a *Adapter) refresh(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, tokens)
+}
+
+type LogoutTokenRequest struct {
+	AccessToken  string `json:"access_token"  v:"required"`
+	RefreshToken string `json:"refresh_token" v:"required"`
+}
+
+func (a *Adapter) logout(ctx echo.Context) error {
+	req := new(LogoutTokenRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := tools.ValidateStruct(req)
+	if vErrs != nil {
+		return httpAPI.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
+		)
+	}
+
+	err := a.service.Logout(ctx.Request().Context(), req.AccessToken, req.RefreshToken)
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+	return ctx.NoContent(http.StatusOK)
 }
 
 func (a *Adapter) currentUser(ctx echo.Context) error {

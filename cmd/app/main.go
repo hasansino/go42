@@ -476,6 +476,7 @@ func main() {
 		authRepository := authRepositoryPkg.New(database.NewBaseRepository(dbEngine))
 		authService := auth.NewService(
 			authRepository,
+			cacheEngine,
 			auth.WithLogger(authLogger),
 			auth.WithJWTSecret(cfg.Auth.JWTSecret),
 			auth.WithJWTAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),

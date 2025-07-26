@@ -90,8 +90,9 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 - govulncheck warnings and availability
 - same-line imports fixes from linters
-- fix 3rd party protobuf generation (protovalidate)
+- fix third party protobuf generation (protovalidate)
 - tint log handler does nto support nested fields
+- osv-scanner re-uploads CVEs to codeql
 
 ## 100% after v1.0.0 release
 
@@ -99,7 +100,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - Try https://testcontainers.com/
 - Try https://backstage.io/
 - Feature flags system
-- GoLand / VSCode configuration
+- GoLand / VSCode configuration + goenv-scp
 - Scaling and organizing multiple projects
 - Try https://github.com/docker/bake-action
 - Try https://github.com/mvdan/gofumpt (again)
@@ -131,3 +132,5 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - Logging conventions
 - slog contextual values (like request id etc.) propogation
 - move all echo middleware to middleware package
+- grpc transport credentials
+- Try https://github.com/tursodatabase/turso

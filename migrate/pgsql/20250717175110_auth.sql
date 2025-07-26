@@ -6,6 +6,7 @@ create table if not exists auth_users (
     password varchar(255) null,
     email varchar(255) not null,
     status varchar(255) not null default 'active',
+    is_system boolean not null default false,
     metadata jsonb null,
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp,
@@ -15,6 +16,10 @@ create table if not exists auth_users (
 create unique index if not exists idx_auth_users_uuid on auth_users(uuid);
 create unique index if not exists idx_auth_users_email on auth_users(email);
 create index if not exists idx_auth_users_deleted_at on auth_users(deleted_at);
+
+insert into auth_users (uuid, password, email, is_system) values
+('00000000-0000-0000-0000-000000000000', null, 'admin@system.local', true)
+on conflict do nothing;
 
 create table if not exists auth_roles (
     id bigserial primary key,
@@ -27,7 +32,6 @@ create table if not exists auth_roles (
 );
 
 insert into auth_roles (name, description, is_system) values
-('admin', 'administrator role with full access', true),
 ('user', 'standard user role with limited access', false)
 on conflict do nothing;
 
@@ -57,7 +61,6 @@ create table if not exists auth_role_permissions (
 );
 
 insert into auth_role_permissions (role_id, permission_id) values
-((select id from auth_roles where name = 'admin'), (select id from auth_permissions)),
 ((select id from auth_roles where name = 'user'), (select id from auth_permissions where resource = 'user' and action = 'read_self'))
 on conflict do nothing;
 
@@ -77,8 +80,26 @@ create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_i
 create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(expires_at);
 create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions(permission_id);
 
+CREATE TABLE IF NOT EXISTS auth_api_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    scopes JSONB DEFAULT NULL,
+    last_used_at TIMESTAMP DEFAULT NULL,
+    expires_at TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL,
+    CONSTRAINT fk_api_tokens_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX idx_token ON auth_api_tokens(token);
+CREATE INDEX idx_token_lookup ON auth_api_tokens(token, deleted_at, expires_at);
+
 -- +goose Down
 
+drop table if exists auth_api_tokens;
 drop table if exists auth_user_roles;
 drop table if exists auth_role_permissions;
 drop table if exists auth_permissions;

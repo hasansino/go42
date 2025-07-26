@@ -35,6 +35,12 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// LogoutRequest defines model for LogoutRequest.
+type LogoutRequest struct {
+	AccessToken  *string `json:"access_token,omitempty"`
+	RefreshToken *string `json:"refresh_token,omitempty"`
+}
+
 // RefreshRequest defines model for RefreshRequest.
 type RefreshRequest struct {
 	Token string `json:"token"`
@@ -57,6 +63,9 @@ type UserInfo = User
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
+
+// LogoutJSONRequestBody defines body for Logout for application/json ContentType.
+type LogoutJSONRequestBody = LogoutRequest
 
 // RefreshJSONRequestBody defines body for Refresh for application/json ContentType.
 type RefreshJSONRequestBody = RefreshRequest
@@ -142,6 +151,11 @@ type ClientInterface interface {
 
 	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// LogoutWithBody request with any body
+	LogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Logout(ctx context.Context, body LogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// RefreshWithBody request with any body
 	RefreshWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -170,6 +184,30 @@ func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.
 
 func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) LogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Logout(ctx context.Context, body LogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +299,46 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 	}
 
 	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLogoutRequest calls the generic Logout builder with application/json body
+func NewLogoutRequest(server string, body LogoutJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLogoutRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLogoutRequestWithBody generates requests for Logout with any type of body
+func NewLogoutRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/logout")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -435,6 +513,11 @@ type ClientWithResponsesInterface interface {
 
 	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
+	// LogoutWithBodyWithResponse request with any body
+	LogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+
+	LogoutWithResponse(ctx context.Context, body LogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+
 	// RefreshWithBodyWithResponse request with any body
 	RefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshResponse, error)
 
@@ -465,6 +548,27 @@ func (r LoginResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type LogoutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r LogoutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LogoutResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -554,6 +658,23 @@ func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJ
 	return ParseLoginResponse(rsp)
 }
 
+// LogoutWithBodyWithResponse request with arbitrary body returning *LogoutResponse
+func (c *ClientWithResponses) LogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
+	rsp, err := c.LogoutWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLogoutResponse(rsp)
+}
+
+func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, body LogoutJSONRequestBody, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
+	rsp, err := c.Logout(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLogoutResponse(rsp)
+}
+
 // RefreshWithBodyWithResponse request with arbitrary body returning *RefreshResponse
 func (c *ClientWithResponses) RefreshWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RefreshResponse, error) {
 	rsp, err := c.RefreshWithBody(ctx, contentType, body, reqEditors...)
@@ -618,6 +739,22 @@ func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseLogoutResponse parses an HTTP response from a LogoutWithResponse call
+func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -704,19 +841,20 @@ func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

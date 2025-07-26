@@ -77,6 +77,23 @@ paths:
           description: Invalid request
         '403':
           description: User inactive
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Invalidate user tokens
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Tokens invalidated successfully
+        '400':
+          description: Invalid request
   /users/me:
     get:
       tags:
@@ -147,6 +164,15 @@ components:
         token:
           type: string
           default: ""
+    LogoutRequest:
+      type: object
+      required:
+        - token
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
     CreateFruitResponse:
       $ref: '#/components/schemas/User'
     UserInfo:

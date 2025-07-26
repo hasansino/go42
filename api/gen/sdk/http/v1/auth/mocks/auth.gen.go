@@ -122,6 +122,46 @@ func (mr *MockClientInterfaceMockRecorder) LoginWithBody(ctx, contentType, body 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginWithBody", reflect.TypeOf((*MockClientInterface)(nil).LoginWithBody), varargs...)
 }
 
+// Logout mocks base method.
+func (m *MockClientInterface) Logout(ctx context.Context, body auth.LogoutJSONRequestBody, reqEditors ...auth.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Logout", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Logout indicates an expected call of Logout.
+func (mr *MockClientInterfaceMockRecorder) Logout(ctx, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockClientInterface)(nil).Logout), varargs...)
+}
+
+// LogoutWithBody mocks base method.
+func (m *MockClientInterface) LogoutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...auth.RequestEditorFn) (*http.Response, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LogoutWithBody", varargs...)
+	ret0, _ := ret[0].(*http.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LogoutWithBody indicates an expected call of LogoutWithBody.
+func (mr *MockClientInterfaceMockRecorder) LogoutWithBody(ctx, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutWithBody", reflect.TypeOf((*MockClientInterface)(nil).LogoutWithBody), varargs...)
+}
+
 // Refresh mocks base method.
 func (m *MockClientInterface) Refresh(ctx context.Context, body auth.RefreshJSONRequestBody, reqEditors ...auth.RequestEditorFn) (*http.Response, error) {
 	m.ctrl.T.Helper()
@@ -284,6 +324,46 @@ func (mr *MockClientWithResponsesInterfaceMockRecorder) LoginWithResponse(ctx, b
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, body}, reqEditors...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).LoginWithResponse), varargs...)
+}
+
+// LogoutWithBodyWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) LogoutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...auth.RequestEditorFn) (*auth.LogoutResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, contentType, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LogoutWithBodyWithResponse", varargs...)
+	ret0, _ := ret[0].(*auth.LogoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LogoutWithBodyWithResponse indicates an expected call of LogoutWithBodyWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) LogoutWithBodyWithResponse(ctx, contentType, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, contentType, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutWithBodyWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).LogoutWithBodyWithResponse), varargs...)
+}
+
+// LogoutWithResponse mocks base method.
+func (m *MockClientWithResponsesInterface) LogoutWithResponse(ctx context.Context, body auth.LogoutJSONRequestBody, reqEditors ...auth.RequestEditorFn) (*auth.LogoutResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, body}
+	for _, a := range reqEditors {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LogoutWithResponse", varargs...)
+	ret0, _ := ret[0].(*auth.LogoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LogoutWithResponse indicates an expected call of LogoutWithResponse.
+func (mr *MockClientWithResponsesInterfaceMockRecorder) LogoutWithResponse(ctx, body any, reqEditors ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, body}, reqEditors...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LogoutWithResponse", reflect.TypeOf((*MockClientWithResponsesInterface)(nil).LogoutWithResponse), varargs...)
 }
 
 // RefreshWithBodyWithResponse mocks base method.

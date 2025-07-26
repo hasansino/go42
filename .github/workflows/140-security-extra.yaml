@@ -110,14 +110,15 @@ jobs:
       - uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
         continue-on-error: true
         with:
-          scan-args: --output=results.json --all-vulns --format=json -r ./
+          scan-args: --output=results.json --all-vulns --format=json --recursive ./
       - uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
+        continue-on-error: true
         with:
           scan-args: |-
             --output=osv-scanner-results.sarif
             --new=results.json
             --gh-annotations=true
-            --fail-on-vuln=false
+            --fail-on-vuln=true
             --all-vulns
       - uses: actions/upload-artifact@v4
         with:

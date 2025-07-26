@@ -6,6 +6,7 @@ create table if not exists auth_users (
     password varchar(255) null,
     email varchar(255) not null,
     status varchar(255) not null default 'active',
+    is_system boolean not null default false,
     metadata json null,
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp,
@@ -14,6 +15,9 @@ create table if not exists auth_users (
     unique key idx_auth_users_email (email),
     key idx_auth_users_deleted_at (deleted_at)
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
+
+insert ignore into auth_users (uuid, password, email, is_system) values
+('00000000-0000-0000-0000-000000000000', null, 'admin@system.local', true);
 
 create table if not exists auth_roles (
     id bigint unsigned not null auto_increment primary key,
@@ -28,7 +32,6 @@ create table if not exists auth_roles (
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
 insert ignore into auth_roles (name, description, is_system) values
-('admin', 'administrator role with full access', 1),
 ('user', 'standard user role with limited access', 0);
 
 create table if not exists auth_permissions (
@@ -53,7 +56,6 @@ create table if not exists auth_role_permissions (
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
 insert ignore into auth_role_permissions (role_id, permission_id) values
-((select id from auth_roles where name = 'admin'), (select id from auth_permissions)),
 ((select id from auth_roles where name = 'user'), (select id from auth_permissions where resource = 'user' and action = 'read_self'));
 
 create table if not exists auth_user_roles (
@@ -70,8 +72,24 @@ create table if not exists auth_user_roles (
     constraint fk_auth_user_roles_granted_by foreign key (granted_by) references auth_users(id) on delete set null
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS auth_api_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token VARCHAR(255) NOT NULL    scopes JSON DEFAULT NULL,
+    last_used_at TIMESTAMP NULL DEFAULT NULL,
+    expires_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
+    UNIQUE KEY idx_token (token),
+    CONSTRAINT fk_api_tokens_user FOREIGN KEY (user_id) REFERENCES auth_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_token_lookup ON auth_api_tokens(token, deleted_at, expires_at);
+
 -- +goose Down
 
+drop table if exists auth_api_tokens;
 drop table if exists auth_user_roles;
 drop table if exists auth_role_permissions;
 drop table if exists auth_permissions;

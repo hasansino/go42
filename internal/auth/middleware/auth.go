@@ -17,7 +17,7 @@ import (
 
 type authServiceAccessor interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateToken(token string) (*jwt.RegisteredClaims, error)
+	ValidateToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 }
 
 func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -29,7 +29,7 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
-			claims, err := svc.ValidateToken(token)
+			claims, err := svc.ValidateToken(c.Request().Context(), token)
 			if err != nil {
 				return httpAPI.SendJSONError(c,
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
