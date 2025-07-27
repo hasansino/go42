@@ -45,9 +45,8 @@ create table if not exists auth_permissions (
     id bigint unsigned not null auto_increment primary key,
     resource varchar(255) not null,
     action varchar(255) not null,
-    scope varchar(255) null,
     created_at timestamp not null default current_timestamp,
-    unique key idx_auth_permissions_resource_action_scope (resource, action, scope)
+    unique key idx_auth_permissions_resource_action (resource, action)
 ) engine=innodb default charset=utf8mb4 collate=utf8mb4_unicode_ci;
 
 create table if not exists auth_role_permissions (

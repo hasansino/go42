@@ -52,8 +52,6 @@ This document is a repository of conventions and rules used by this project.
 * put technical phrases in backticks in comments to avoid linting issues
 * `fmt.Errorf` vs `errors.Wrap` (collides vs std errors)
 
-## Code Review
-
 ## Miscellaneous
 
 * yaml vs yml
@@ -64,3 +62,4 @@ This document is a repository of conventions and rules used by this project.
 * sql lowercase -> it is a choice
 * always leave empty lines at the end of files
 * usage of `// ---``
+* never expose IDs -> expose UUIDs

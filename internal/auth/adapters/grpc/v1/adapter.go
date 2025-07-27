@@ -13,9 +13,7 @@ import (
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type serviceAccessor interface {
-	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
 type Adapter struct {
@@ -31,34 +29,19 @@ func (a *Adapter) Register(grpcServer *grpc.Server) {
 	pb.RegisterAuthServiceServer(grpcServer, a)
 }
 
-func (a *Adapter) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.GetUserByIDResponse, error) {
-	user, err := a.service.GetUserByID(ctx, int(req.Id))
-	if err != nil {
-		return nil, a.processError(err)
-	}
-	resp := &pb.GetUserByIDResponse{
-		User: &pb.User{
-			Id:          int64(user.ID),
-			Uuid:        user.UUID.String(),
-			Email:       user.Email,
-			Status:      user.Status,
-			Roles:       user.RoleList(),
-			Permissions: user.PermissionList(),
-			IsSystem:    user.IsSystem,
-			CreatedAt:   timestamppb.New(user.CreatedAt),
-		},
-	}
-	return resp, nil
+func (a *Adapter) ListUsers(context.Context, *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	return &pb.ListUsersResponse{}, nil
 }
 
-func (a *Adapter) GetUserByUUID(ctx context.Context, req *pb.GetUserByUUIDRequest) (*pb.GetUserByUUIDResponse, error) {
+func (a *Adapter) GetUserByUUID(
+	ctx context.Context, req *pb.GetUserByUUIDRequest,
+) (*pb.GetUserByUUIDResponse, error) {
 	user, err := a.service.GetUserByUUID(ctx, req.Uuid)
 	if err != nil {
 		return nil, a.processError(err)
 	}
 	resp := &pb.GetUserByUUIDResponse{
 		User: &pb.User{
-			Id:          int64(user.ID),
 			Uuid:        user.UUID.String(),
 			Email:       user.Email,
 			Status:      user.Status,
@@ -71,25 +54,14 @@ func (a *Adapter) GetUserByUUID(ctx context.Context, req *pb.GetUserByUUIDReques
 	return resp, nil
 }
 
-func (a *Adapter) GetUserByEmail(
-	ctx context.Context,
-	req *pb.GetUserByEmailRequest,
-) (*pb.GetUserByEmailResponse, error) {
-	user, err := a.service.GetUserByEmail(ctx, req.Email)
-	if err != nil {
-		return nil, a.processError(err)
-	}
-	resp := &pb.GetUserByEmailResponse{
-		User: &pb.User{
-			Id:          int64(user.ID),
-			Uuid:        user.UUID.String(),
-			Email:       user.Email,
-			Status:      user.Status,
-			Roles:       user.RoleList(),
-			Permissions: user.PermissionList(),
-			IsSystem:    user.IsSystem,
-			CreatedAt:   timestamppb.New(user.CreatedAt),
-		},
-	}
-	return resp, nil
+func (a *Adapter) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	return &pb.CreateUserResponse{}, nil
+}
+
+func (a *Adapter) UpdateUser(ctx context.Context, in *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	return &pb.UpdateUserResponse{}, nil
+}
+
+func (a *Adapter) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	return &pb.DeleteUserResponse{}, nil
 }

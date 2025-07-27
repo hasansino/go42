@@ -48,11 +48,10 @@ create table if not exists auth_permissions (
     id bigserial primary key,
     resource varchar(255) not null,
     action varchar(255) not null,
-    scope varchar(255) null,
     created_at timestamp not null default current_timestamp
 );
 
-create unique index if not exists idx_auth_permissions_resource_action_scope on auth_permissions(resource, action, scope);
+create unique index if not exists idx_auth_permissions_resource_action on auth_permissions(resource, action);
 
 create table if not exists auth_role_permissions (
     role_id bigint not null,

@@ -18,7 +18,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+              $ref: '#/components/schemas/SignUpRequest'
       responses:
         '201':
           description: User created
@@ -98,7 +98,7 @@ paths:
       tags:
         - users
       summary: Retrieve current user information
-      operationId: users.me
+      operationId: users.me.read
       security:
         - jwt: [user:read_self]
       responses:
@@ -108,6 +108,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+    put:
+      tags:
+        - users
+      summary: Update current user
+      operationId: users.me.update
+      security:
+        - jwt: [ user:update_self ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSelfRequest'
+      responses:
+        '200':
+          description: User updated
+        '400':
+          description: Invalid request
         '401':
           description: Unauthorized
 # ---
@@ -151,7 +171,7 @@ components:
         expires_in:
           type: integer
           default: 0
-    CreateUserRequest:
+    SignUpRequest:
       type: object
       required:
         - email
@@ -194,3 +214,15 @@ components:
         refresh_token:
           type: string
           default: ""
+    UpdateSelfRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          default: "user@example.com"
+        password:
+          type: string
+          default: "1234567890"

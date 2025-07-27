@@ -23,12 +23,6 @@ const (
 	JwtScopes = "jwt.Scopes"
 )
 
-// CreateUserRequest defines model for CreateUserRequest.
-type CreateUserRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
 	Email    string `json:"email"`
@@ -46,11 +40,23 @@ type RefreshRequest struct {
 	Token string `json:"token"`
 }
 
+// SignUpRequest defines model for SignUpRequest.
+type SignUpRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 // Tokens defines model for Tokens.
 type Tokens struct {
 	AccessToken  *string `json:"access_token,omitempty"`
 	ExpiresIn    *int    `json:"expires_in,omitempty"`
 	RefreshToken *string `json:"refresh_token,omitempty"`
+}
+
+// UpdateSelfRequest defines model for UpdateSelfRequest.
+type UpdateSelfRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // User defines model for User.
@@ -72,7 +78,10 @@ type LogoutJSONRequestBody = LogoutRequest
 type RefreshJSONRequestBody = RefreshRequest
 
 // SignupJSONRequestBody defines body for Signup for application/json ContentType.
-type SignupJSONRequestBody = CreateUserRequest
+type SignupJSONRequestBody = SignUpRequest
+
+// UsersMeUpdateJSONRequestBody defines body for UsersMeUpdate for application/json ContentType.
+type UsersMeUpdateJSONRequestBody = UpdateSelfRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -167,8 +176,13 @@ type ClientInterface interface {
 
 	Signup(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// UsersMe request
-	UsersMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// UsersMeRead request
+	UsersMeRead(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersMeUpdateWithBody request with any body
+	UsersMeUpdateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UsersMeUpdate(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -267,8 +281,32 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 	return c.Client.Do(req)
 }
 
-func (c *Client) UsersMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUsersMeRequest(c.Server)
+func (c *Client) UsersMeRead(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersMeReadRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersMeUpdateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersMeUpdateRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersMeUpdate(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersMeUpdateRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -439,8 +477,8 @@ func NewSignupRequestWithBody(server string, contentType string, body io.Reader)
 	return req, nil
 }
 
-// NewUsersMeRequest generates requests for UsersMe
-func NewUsersMeRequest(server string) (*http.Request, error) {
+// NewUsersMeReadRequest generates requests for UsersMeRead
+func NewUsersMeReadRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -462,6 +500,46 @@ func NewUsersMeRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewUsersMeUpdateRequest calls the generic UsersMeUpdate builder with application/json body
+func NewUsersMeUpdateRequest(server string, body UsersMeUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUsersMeUpdateRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUsersMeUpdateRequestWithBody generates requests for UsersMeUpdate with any type of body
+func NewUsersMeUpdateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -529,8 +607,13 @@ type ClientWithResponsesInterface interface {
 
 	SignupWithResponse(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*SignupResponse, error)
 
-	// UsersMeWithResponse request
-	UsersMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeResponse, error)
+	// UsersMeReadWithResponse request
+	UsersMeReadWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeReadResponse, error)
+
+	// UsersMeUpdateWithBodyWithResponse request with any body
+	UsersMeUpdateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error)
+
+	UsersMeUpdateWithResponse(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error)
 }
 
 type LoginResponse struct {
@@ -620,14 +703,14 @@ func (r SignupResponse) StatusCode() int {
 	return 0
 }
 
-type UsersMeResponse struct {
+type UsersMeReadResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *User
 }
 
 // Status returns HTTPResponse.Status
-func (r UsersMeResponse) Status() string {
+func (r UsersMeReadResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -635,7 +718,28 @@ func (r UsersMeResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r UsersMeResponse) StatusCode() int {
+func (r UsersMeReadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UsersMeUpdateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersMeUpdateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersMeUpdateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -710,13 +814,30 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 	return ParseSignupResponse(rsp)
 }
 
-// UsersMeWithResponse request returning *UsersMeResponse
-func (c *ClientWithResponses) UsersMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeResponse, error) {
-	rsp, err := c.UsersMe(ctx, reqEditors...)
+// UsersMeReadWithResponse request returning *UsersMeReadResponse
+func (c *ClientWithResponses) UsersMeReadWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeReadResponse, error) {
+	rsp, err := c.UsersMeRead(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseUsersMeResponse(rsp)
+	return ParseUsersMeReadResponse(rsp)
+}
+
+// UsersMeUpdateWithBodyWithResponse request with arbitrary body returning *UsersMeUpdateResponse
+func (c *ClientWithResponses) UsersMeUpdateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error) {
+	rsp, err := c.UsersMeUpdateWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersMeUpdateResponse(rsp)
+}
+
+func (c *ClientWithResponses) UsersMeUpdateWithResponse(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error) {
+	rsp, err := c.UsersMeUpdate(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersMeUpdateResponse(rsp)
 }
 
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
@@ -813,15 +934,15 @@ func ParseSignupResponse(rsp *http.Response) (*SignupResponse, error) {
 	return response, nil
 }
 
-// ParseUsersMeResponse parses an HTTP response from a UsersMeWithResponse call
-func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
+// ParseUsersMeReadResponse parses an HTTP response from a UsersMeReadWithResponse call
+func ParseUsersMeReadResponse(rsp *http.Response) (*UsersMeReadResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &UsersMeResponse{
+	response := &UsersMeReadResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -839,24 +960,41 @@ func ParseUsersMeResponse(rsp *http.Response) (*UsersMeResponse, error) {
 	return response, nil
 }
 
+// ParseUsersMeUpdateResponse parses an HTTP response from a UsersMeUpdateWithResponse call
+func ParseUsersMeUpdateResponse(rsp *http.Response) (*UsersMeUpdateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersMeUpdateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RWS2/jNhD+K8S0hxYwLHmzbbM6tdtT+rhstughNQJWGstMJZI7JJ2ogf57MaTWsfyC",
-	"k8ZAexM4M5xP3zcPPkJpWms0au+geARXLrGV8fNHQunxN4f0AT8FdJ4PLRmL5BVGF2ylavijwoUMjYcC",
-	"gkP6Hh9kaxuclqaFCfjOIhTgPCldQz8BK527N1SNI2dvLt5+8+13l+/y3Zh+AoSfgiKsoLgZ8m5cNF9H",
-	"mD/vsPSc5RdTK/2/hW6CP4hdliU6d+vNX6jHQPZBJlwQuuVp7ltoU8w+iB/SrQcxvm62j2xx/5YJfLCK",
-	"0N2qsW++dlXaY430EtZ2IHPj7AIuY1NVt9KfAHe3RPeWJFKrnFMmEaQ8tkmBbcfhQBLJLv6iafCZISGo",
-	"6vlk9BNwWAZSvrvm+ZKy3t0PHLiSlPXKaCjgp98/iki5UFr8EPzSkPpbslEsUVZI4quFoVb6QrxHSUji",
-	"j5DnF2WMiZ/4NUyAFYYUABPQsmU4o+uecEurfsYOeoap9MJEIpRvoi34JUxgheQSvtk0n+bMhLGopVVQ",
-	"wMV0Ns1jR/tl/LGMo7KGx08sAJP6g8sgpr6qoEjTCVL9o/PvTdXF+jDao47+0tpGlTEiu3NGP41n/vqS",
-	"cAEFfJE9ze9sGN7ZaPL14y7zFDAeOGu0S0q8yfNXyz10asw6lvY6xGZdhKbpRGPqGiuhNHP5NuUfu1/p",
-	"lWxUJejzf7Dfxa4f95lQWpZerTDVWmhbSd1nkoXUAh+U80rXgmc8Sy9rxxMn6jvnoLVoJvijqrH9bLJt",
-	"TP3TdRvzkQQQKtHHw0a4DeZP53vE5NX6ukhh6lF3hMlhfh6mclggZ+Jyaz39Z5ogWsRAzouleUErDIRs",
-	"qHdEPKdqHexh7a6T/TzS7b47T1Jv9moA4ubeo12kd1jgz9Pq3QGtZEMoqy6NJ7elWOJBSKHx/sjcYovL",
-	"eME9Qo17xOJM7leEM9b7UcZ4p/LG5h1O6Enham/hz/aQpOWws5nxjWcEFDfDA+ImPtsL5vHWYbOAeT8f",
-	"133KKMpAhNqnBtjAtMFqpJJpjZmIt35MNAbVmFLyCz5Qw48M722RZfFwaZwvLvPLPJNWZasZ9PP+nwAA",
-	"AP//RtY+9mENAAA=",
+	"H4sIAAAAAAAC/9RWUW/jNgz+KwK3hw0IYud623p+2m5P3W4vzRV76IJCsxlHnS3pKCltVuS/D5R8bdw4",
+	"QZprgN2bbJEi9X2fSD5AaVprNGrvoHgAVy6wlXH5wdRKX+KngM7ztyVjkbzCuIutVA0vKpzL0HgoIDik",
+	"n/FetrbBcWlaGIFfWYQCnCela1iPwErn7gxVfc/Jm7O3P/z40/m7fNtnPQLCT0ERVlBcd3E3Dpo9epi/",
+	"b7H0HOWDqU3wO3OXZYnO3XjzD+p+IkMpE84J3eIw82fZJp+hFC/TqTtzfN1oU1XrK/t1kvmRb+W+lEW8",
+	"t4rQ3ai+bf5oqrTHGukYxrdSvrKV9DjFZv51Qn7lkLZTLgmlx+pG+gPg3r7e4HWQWuWcMolg5bFN6n9u",
+	"2P2QRHIVKTINvtAlBFW9nMz1CByWgZRfTbk2pqi3dx0GriRlvTIaCvjtz48iSkYoLX4JfmFI/St5UyxQ",
+	"Vkjiu7mhVvpCvEdJSOKvkOdnZfSJS/weRsAKheQAI9Cy5XR6xz3lLa36HVew5jSVnpsIhPJN3At+ASNY",
+	"IrmU32Scj3NGwljU0ioo4Gw8GedRDX4RL5axV9Zw6Y8CMEm7LIMY+qKCInUGSLpC59+bahX1YbRHHe2l",
+	"tY0qo0d264x+ai28+pZwDgV8kz31nqxrPFmv66z76vUUMP5w1miXmHiT568Wu6s0MWqf2mmIxWYemmYl",
+	"GlPXWAmlGcu3KX7f/EIvZaMqQZ/vwXZn23b8zoTSsvRqiUlroW0lrT6DLKQWeK+cV7oWXB+Yelk7fsmR",
+	"3xk7PZJmgt/LGu+fjLaNjns4b308EgFCJfi42Ai3gfzhePeQvHg8LkKY3qjbg2RX/3dD2TXvE2H5bDT4",
+	"3zyCuCM6cI6m5oin0AGywd4e8pyqdbC7uZum/dNQ15+zDmJu8mrBY9ce4C1C2zXvl/H0bgdPsiGU1SqV",
+	"JveMrV9jJCGFxrs9NYt3XMbN7QFqHCCKI7k/8BJlBSfU+17UuKdyx+YeTuhJ4XJQ+JMBoLTsejajvjFG",
+	"QHHdDRDXceQrGMsbh80cZutZX/cpoigDEWqfHsBGThvIRjhhxjNV2A1mGkxPJP7tqffYPhCxD/G4Fyr2",
+	"i4hIEQepSHfrETEAfjqdeOSKh/cTaUwpefQO1PCE570tsiz+XBjni/P8PM+kVdlyAuvZ+r8AAAD//1xw",
+	"gIGaDwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -29,6 +29,7 @@ const (
 type repository interface {
 	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
 	CreateUser(ctx context.Context, user *models.User) error
+	UpdateUser(ctx context.Context, user *models.User) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
@@ -83,41 +84,39 @@ func NewService(
 }
 
 func (s *Service) SignUp(ctx context.Context, email string, password string) (*models.User, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
 	user := &models.User{
-		UUID:     uuid.New(),
-		Email:    email,
-		Password: sql.Null[string]{Valid: true, V: string(hash)},
-		Status:   domain.UserStatusActive,
+		UUID:   uuid.New(),
+		Email:  email,
+		Status: domain.UserStatusActive,
+	}
+	if err := user.SetPassword(password); err != nil {
+		return nil, fmt.Errorf("failed to set password: %w", err)
 	}
 
-	err = s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		if err := s.repository.CreateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
 		if err := s.repository.AssignRoleToUser(txCtx, user.ID, domain.RBACRoleUser); err != nil {
 			return fmt.Errorf("failed to assign user role: %w", err)
 		}
+		event := outboxDomain.Message{
+			AggregateID:   user.ID,
+			AggregateType: domain.EventTypeAuthSignUp,
+		}
+		if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
+			s.logger.ErrorContext(
+				ctx, "failed to send event: %w",
+				slog.String("topic", domain.TopicNameAuthEvents),
+				slog.Any("event", event),
+				slog.Any("error", err),
+			)
+			// assuming events are non-critical, do not fail transaction
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, outboxDomain.Message{
-		AggregateID:   user.ID,
-		AggregateType: domain.EventTypeSignUp,
-	}); err != nil {
-		s.logger.ErrorContext(
-			ctx, "failed to send event: %w",
-			slog.String("topic", domain.TopicNameAuthEvents),
-			slog.String("event", domain.TopicNameAuthEvents),
-			slog.Any("error", err),
-		)
 	}
 
 	return user, nil
@@ -145,14 +144,15 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
-	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, outboxDomain.Message{
+	event := outboxDomain.Message{
 		AggregateID:   user.ID,
-		AggregateType: domain.EventTypeLogin,
-	}); err != nil {
+		AggregateType: domain.EventTypeAuthLogin,
+	}
+	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
 		s.logger.ErrorContext(
 			ctx, "failed to send event: %w",
 			slog.String("topic", domain.TopicNameAuthEvents),
-			slog.String("event", domain.TopicNameAuthEvents),
+			slog.Any("event", event),
 			slog.Any("error", err),
 		)
 	}
@@ -202,7 +202,59 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 		return fmt.Errorf("failed to invalidate refresh token: %w", err)
 	}
 
+	user, err := s.repository.GetUserByUUID(ctx, accessTokenClaims.Subject)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	event := outboxDomain.Message{
+		AggregateID:   user.ID,
+		AggregateType: domain.EventTypeAuthLogout,
+	}
+	if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
+		s.logger.ErrorContext(
+			ctx, "failed to send event: %w",
+			slog.String("topic", domain.TopicNameAuthEvents),
+			slog.Any("event", event),
+			slog.Any("error", err),
+		)
+	}
+
 	return nil
+}
+
+// ----
+
+func (s *Service) UpdateUser(ctx context.Context, id int, fn func(*models.User) error) error {
+	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+		user, err := s.repository.GetUserByID(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to get user: %w", err)
+		}
+		if err := fn(user); err != nil {
+			if errors.Is(err, domain.ErrNothingToUpdate) {
+				return nil
+			}
+			return fmt.Errorf("updateFn failed: %w", err)
+		}
+		if err := s.repository.UpdateUser(ctx, user); err != nil {
+			return fmt.Errorf("failed to update user: %w", err)
+		}
+		event := outboxDomain.Message{
+			AggregateID:   user.ID,
+			AggregateType: domain.EventTypeUserUpdate,
+		}
+		if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
+			s.logger.ErrorContext(
+				ctx, "failed to send event: %w",
+				slog.String("topic", domain.TopicNameAuthEvents),
+				slog.Any("event", event),
+				slog.Any("error", err),
+			)
+			// assuming events are non-critical, do not fail transaction
+		}
+		return nil
+	})
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id int) (*models.User, error) {
@@ -213,9 +265,7 @@ func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User,
 	return s.repository.GetUserByUUID(ctx, uuid)
 }
 
-func (s *Service) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return s.repository.GetUserByEmail(ctx, email)
-}
+// ----
 
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -299,6 +349,8 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 	}).SignedString([]byte(s.jwtSecret))
 }
 
+// ----
+
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
 	apiToken, err := s.repository.GetToken(ctx, token)
 	if err != nil {
@@ -310,15 +362,13 @@ func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.T
 	}
 
 	// a little sacrifice for the sake of ux
-	go s.markTokenAsRecentlyUsed(apiToken.ID)
+	go func() {
+		s.lastUsedTokensMu.Lock()
+		defer s.lastUsedTokensMu.Unlock()
+		s.lastUsedTokens[apiToken.ID] = time.Now()
+	}()
 
 	return apiToken, nil
-}
-
-func (s *Service) markTokenAsRecentlyUsed(tokenID int) {
-	s.lastUsedTokensMu.Lock()
-	defer s.lastUsedTokensMu.Unlock()
-	s.lastUsedTokens[tokenID] = time.Now()
 }
 
 func (s *Service) RecentlyUsedTokens() map[int]time.Time {
@@ -328,6 +378,8 @@ func (s *Service) RecentlyUsedTokens() map[int]time.Time {
 	s.lastUsedTokens = make(map[int]time.Time)
 	return tokens
 }
+
+// ----
 
 func (s *Service) sendEvent(ctx context.Context, topic string, outboxMessage outboxDomain.Message) error {
 	err := s.outboxService.NewOutboxMessage(ctx, topic, &outboxMessage)

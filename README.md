@@ -28,7 +28,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 ## Backlog
 
-### 1
+### >
 
 - security headers
   - Strict-Transport-Security (HSTS)
@@ -43,12 +43,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
 
-### 2
-
-- auth0
-- casbin
-
-### 3
+### >>
 
 - service discovery
   - consul - consul kv for config
@@ -58,7 +53,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
   - https://echo.labstack.com/docs/middleware/jaeger
 - circuit breaker (https://github.com/sony/gobreaker)
 
-### 4
+### >>>
 
 - datadog integration
 - release annotations
@@ -68,18 +63,18 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - using AI agents to complete tasks
 - arch/business/feature documentation generation
 
-### 5
+### >>>>
 
 - working with private repositories, .netrc, GOPRIVATE, modules
 - go42-cli (round-kick, fist-punch ASCII)
 - go42-runner
 
-### 6
+### >>>>>
 
 - support hetzner, aws, gcp, azure
 - cost analysis for different scales
 
-### 7
+### >>>>>>
 
 - Documentation
 - Conventions - validation
@@ -94,6 +89,8 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 ## 100% after v1.0.0 release
 
+- auth0
+- casbin
 - TLS connections and certificate management
 - Try https://testcontainers.com/
 - Try https://backstage.io/

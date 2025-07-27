@@ -11,21 +11,51 @@ const (
 	RBACRoleUser = "user"
 )
 
+var RBACAllRoles = []string{
+	RBACRoleUser,
+}
+
 // RBAC permissions.
 // MUST reflect state of table `auth_permissions`.
 
 const (
-	RBACPermissionUserReadSelf = "user:read_self"
+	RBACPermissionUsersReadSelf   = "users:read_self"
+	RBACPermissionUsersUpdateSelf = "users:update_self"
+	RBACPermissionUsersList       = "users:list"
+	RBACPermissionUsersReadOthers = "users:read_others"
+	RBACPermissionUsersCreate     = "users:create"
+	RBACPermissionUsersUpdate     = "users:update"
+	RBACPermissionUsersDelete     = "users:delete"
 )
 
+var RBACAllPermissions = []string{
+	RBACPermissionUsersReadSelf,
+	RBACPermissionUsersUpdateSelf,
+	RBACPermissionUsersList,
+	RBACPermissionUsersReadOthers,
+	RBACPermissionUsersCreate,
+	RBACPermissionUsersUpdate,
+	RBACPermissionUsersDelete,
+}
+
+// ---- RBAC END
+
 const (
-	UserStatusActive = "active"
+	UserStatusActive   = "active"
+	UserStatusInactive = "inactive"
 )
+
+var UserStatuses = []string{
+	UserStatusActive,
+	UserStatusInactive,
+}
 
 const (
 	TopicNameAuthEvents = "auth_events_topic"
-	EventTypeSignUp     = "auth.signup"
-	EventTypeLogin      = "auth.login"
+	EventTypeAuthSignUp = "auth.signup"
+	EventTypeAuthLogin  = "auth.login"
+	EventTypeAuthLogout = "auth.logout"
+	EventTypeUserUpdate = "user.update"
 )
 
 var (
@@ -33,7 +63,10 @@ var (
 	ErrUserAlreadyExists  = errors.New("user already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrInvalidToken       = errors.New("invalid token")
+	ErrNothingToUpdate    = errors.New("nothing to update")
 )
+
+// ----
 
 // Tokens represents the structure of JWT authentication tokens.
 type Tokens struct {
@@ -42,10 +75,12 @@ type Tokens struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+// ----
+
 type AuthenticationType string
 
 const (
-	AuthenticationTypeCredentials = "user"
+	AuthenticationTypeCredentials = "credentials"
 	AuthenticationTypeApiToken    = "api_token"
 )
 

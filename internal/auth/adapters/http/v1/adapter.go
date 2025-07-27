@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type serviceAccessor interface {
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
 	Logout(ctx context.Context, accessToken, refreshToken string) error
+	UpdateUser(ctx context.Context, id int, fn func(*models.User) error) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
@@ -58,15 +60,29 @@ func (a *Adapter) Register(g *echo.Group) {
 	}
 
 	authGroup := g.Group("/auth")
+
 	authGroup.POST("/signup", a.signup)
 	authGroup.POST("/login", a.login)
 	authGroup.POST("/refresh", a.refresh)
 	authGroup.POST("/logout", a.logout)
 
 	userGroup := g.Group("/users", authMiddleware.NewAuthMiddleware(a.service))
-	userGroup.GET("/me", a.currentUser,
-		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUserReadSelf), cacheMiddleware,
-	)
+
+	userGroup.GET("/me", a.readSelf,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersReadSelf), cacheMiddleware)
+	userGroup.PUT("/me", a.updateSelf,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersUpdateSelf))
+
+	userGroup.GET("/", a.listUsers,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersList))
+	userGroup.GET("/:uuid", a.userByUUID,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersReadOthers))
+	userGroup.POST("/", a.createUser,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersCreate))
+	userGroup.PUT("/:uuid", a.updateUser,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersUpdate))
+	userGroup.DELETE("/:uuid", a.deleteUser,
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersDelete))
 }
 
 type SignupRequest struct {
@@ -181,10 +197,13 @@ func (a *Adapter) logout(ctx echo.Context) error {
 	if err != nil {
 		return a.processError(ctx, err)
 	}
+
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (a *Adapter) currentUser(ctx echo.Context) error {
+// ----
+
+func (a *Adapter) readSelf(ctx echo.Context) error {
 	authInfo := auth.RetrieveAuthFromContext(ctx.Request().Context())
 	if authInfo == nil {
 		return httpAPI.SendJSONError(ctx,
@@ -197,4 +216,83 @@ func (a *Adapter) currentUser(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, UserResponseFromModel(user))
+}
+
+type UpdateSelfRequest struct {
+	Email    string `json:"email"    v:"omitempty,email"`
+	Password string `json:"password" v:"omitempty,min=8,max=24"`
+}
+
+func (a *Adapter) updateSelf(ctx echo.Context) error {
+	authInfo := auth.RetrieveAuthFromContext(ctx.Request().Context())
+	if authInfo == nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+	}
+
+	req := new(UpdateSelfRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := tools.ValidateStruct(req)
+	if vErrs != nil {
+		return httpAPI.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
+		)
+	}
+
+	err := a.service.UpdateUser(
+		ctx.Request().Context(), authInfo.ID,
+		func(user *models.User) error {
+			var doUpdate bool
+			if req.Email != "" && req.Email != user.Email {
+				doUpdate = true
+				user.Email = req.Email
+			}
+			if req.Password != "" {
+				doUpdate = true
+				oldHash := user.Password.V
+				if err := user.SetPassword(req.Password); err != nil {
+					return err
+				}
+				if oldHash == user.Password.V {
+					return errors.New("new password should be different")
+				}
+			}
+			if !doUpdate {
+				return domain.ErrNothingToUpdate
+			}
+			return nil
+		})
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+
+	return ctx.NoContent(http.StatusOK)
+}
+
+// ----
+
+func (a *Adapter) listUsers(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusNotImplemented)
+}
+
+func (a *Adapter) userByUUID(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusNotImplemented)
+}
+
+func (a *Adapter) createUser(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusNotImplemented)
+}
+
+func (a *Adapter) updateUser(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusNotImplemented)
+}
+
+func (a *Adapter) deleteUser(ctx echo.Context) error {
+	return ctx.NoContent(http.StatusNotImplemented)
 }

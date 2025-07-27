@@ -42,44 +42,44 @@ func (m *MockAuthServiceClient) EXPECT() *MockAuthServiceClientMockRecorder {
 	return m.recorder
 }
 
-// GetUserByEmail mocks base method.
-func (m *MockAuthServiceClient) GetUserByEmail(ctx context.Context, in *v1.GetUserByEmailRequest, opts ...grpc.CallOption) (*v1.GetUserByEmailResponse, error) {
+// CreateUser mocks base method.
+func (m *MockAuthServiceClient) CreateUser(ctx context.Context, in *v1.CreateUserRequest, opts ...grpc.CallOption) (*v1.CreateUserResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetUserByEmail", varargs...)
-	ret0, _ := ret[0].(*v1.GetUserByEmailResponse)
+	ret := m.ctrl.Call(m, "CreateUser", varargs...)
+	ret0, _ := ret[0].(*v1.CreateUserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockAuthServiceClientMockRecorder) GetUserByEmail(ctx, in any, opts ...any) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockAuthServiceClientMockRecorder) CreateUser(ctx, in any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockAuthServiceClient)(nil).GetUserByEmail), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthServiceClient)(nil).CreateUser), varargs...)
 }
 
-// GetUserByID mocks base method.
-func (m *MockAuthServiceClient) GetUserByID(ctx context.Context, in *v1.GetUserByIDRequest, opts ...grpc.CallOption) (*v1.GetUserByIDResponse, error) {
+// DeleteUser mocks base method.
+func (m *MockAuthServiceClient) DeleteUser(ctx context.Context, in *v1.DeleteUserRequest, opts ...grpc.CallOption) (*v1.DeleteUserResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetUserByID", varargs...)
-	ret0, _ := ret[0].(*v1.GetUserByIDResponse)
+	ret := m.ctrl.Call(m, "DeleteUser", varargs...)
+	ret0, _ := ret[0].(*v1.DeleteUserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByID indicates an expected call of GetUserByID.
-func (mr *MockAuthServiceClientMockRecorder) GetUserByID(ctx, in any, opts ...any) *gomock.Call {
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockAuthServiceClientMockRecorder) DeleteUser(ctx, in any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockAuthServiceClient)(nil).GetUserByID), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockAuthServiceClient)(nil).DeleteUser), varargs...)
 }
 
 // GetUserByUUID mocks base method.
@@ -100,6 +100,46 @@ func (mr *MockAuthServiceClientMockRecorder) GetUserByUUID(ctx, in any, opts ...
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*MockAuthServiceClient)(nil).GetUserByUUID), varargs...)
+}
+
+// ListUsers mocks base method.
+func (m *MockAuthServiceClient) ListUsers(ctx context.Context, in *v1.ListUsersRequest, opts ...grpc.CallOption) (*v1.ListUsersResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListUsers", varargs...)
+	ret0, _ := ret[0].(*v1.ListUsersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockAuthServiceClientMockRecorder) ListUsers(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockAuthServiceClient)(nil).ListUsers), varargs...)
+}
+
+// UpdateUser mocks base method.
+func (m *MockAuthServiceClient) UpdateUser(ctx context.Context, in *v1.UpdateUserRequest, opts ...grpc.CallOption) (*v1.UpdateUserResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateUser", varargs...)
+	ret0, _ := ret[0].(*v1.UpdateUserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockAuthServiceClientMockRecorder) UpdateUser(ctx, in any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockAuthServiceClient)(nil).UpdateUser), varargs...)
 }
 
 // MockAuthServiceServer is a mock of AuthServiceServer interface.
@@ -126,34 +166,34 @@ func (m *MockAuthServiceServer) EXPECT() *MockAuthServiceServerMockRecorder {
 	return m.recorder
 }
 
-// GetUserByEmail mocks base method.
-func (m *MockAuthServiceServer) GetUserByEmail(arg0 context.Context, arg1 *v1.GetUserByEmailRequest) (*v1.GetUserByEmailResponse, error) {
+// CreateUser mocks base method.
+func (m *MockAuthServiceServer) CreateUser(arg0 context.Context, arg1 *v1.CreateUserRequest) (*v1.CreateUserResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByEmail", arg0, arg1)
-	ret0, _ := ret[0].(*v1.GetUserByEmailResponse)
+	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1)
+	ret0, _ := ret[0].(*v1.CreateUserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockAuthServiceServerMockRecorder) GetUserByEmail(arg0, arg1 any) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockAuthServiceServerMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockAuthServiceServer)(nil).GetUserByEmail), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthServiceServer)(nil).CreateUser), arg0, arg1)
 }
 
-// GetUserByID mocks base method.
-func (m *MockAuthServiceServer) GetUserByID(arg0 context.Context, arg1 *v1.GetUserByIDRequest) (*v1.GetUserByIDResponse, error) {
+// DeleteUser mocks base method.
+func (m *MockAuthServiceServer) DeleteUser(arg0 context.Context, arg1 *v1.DeleteUserRequest) (*v1.DeleteUserResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByID", arg0, arg1)
-	ret0, _ := ret[0].(*v1.GetUserByIDResponse)
+	ret := m.ctrl.Call(m, "DeleteUser", arg0, arg1)
+	ret0, _ := ret[0].(*v1.DeleteUserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByID indicates an expected call of GetUserByID.
-func (mr *MockAuthServiceServerMockRecorder) GetUserByID(arg0, arg1 any) *gomock.Call {
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockAuthServiceServerMockRecorder) DeleteUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockAuthServiceServer)(nil).GetUserByID), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockAuthServiceServer)(nil).DeleteUser), arg0, arg1)
 }
 
 // GetUserByUUID mocks base method.
@@ -169,6 +209,36 @@ func (m *MockAuthServiceServer) GetUserByUUID(arg0 context.Context, arg1 *v1.Get
 func (mr *MockAuthServiceServerMockRecorder) GetUserByUUID(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*MockAuthServiceServer)(nil).GetUserByUUID), arg0, arg1)
+}
+
+// ListUsers mocks base method.
+func (m *MockAuthServiceServer) ListUsers(arg0 context.Context, arg1 *v1.ListUsersRequest) (*v1.ListUsersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUsers", arg0, arg1)
+	ret0, _ := ret[0].(*v1.ListUsersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockAuthServiceServerMockRecorder) ListUsers(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockAuthServiceServer)(nil).ListUsers), arg0, arg1)
+}
+
+// UpdateUser mocks base method.
+func (m *MockAuthServiceServer) UpdateUser(arg0 context.Context, arg1 *v1.UpdateUserRequest) (*v1.UpdateUserResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUser", arg0, arg1)
+	ret0, _ := ret[0].(*v1.UpdateUserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockAuthServiceServerMockRecorder) UpdateUser(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockAuthServiceServer)(nil).UpdateUser), arg0, arg1)
 }
 
 // mustEmbedUnimplementedAuthServiceServer mocks base method.

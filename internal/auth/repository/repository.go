@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,6 +30,20 @@ func (r *Repository) CreateUser(ctx context.Context, user *models.User) error {
 			return domain.ErrUserAlreadyExists
 		}
 		return fmt.Errorf("error creating user: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) UpdateUser(ctx context.Context, user *models.User) error {
+	result := r.GetTx(ctx).Model(user).Updates(user)
+	if result.Error != nil {
+		if r.IsDuplicateKeyError(result.Error) {
+			return domain.ErrUserAlreadyExists
+		}
+		return fmt.Errorf("error updating user: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("error updating user: no rows affected")
 	}
 	return nil
 }

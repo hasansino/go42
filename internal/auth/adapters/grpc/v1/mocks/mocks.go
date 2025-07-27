@@ -41,36 +41,6 @@ func (m *MockserviceAccessor) EXPECT() *MockserviceAccessorMockRecorder {
 	return m.recorder
 }
 
-// GetUserByEmail mocks base method.
-func (m *MockserviceAccessor) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUserByEmail indicates an expected call of GetUserByEmail.
-func (mr *MockserviceAccessorMockRecorder) GetUserByEmail(ctx, email any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockserviceAccessor)(nil).GetUserByEmail), ctx, email)
-}
-
-// GetUserByID mocks base method.
-func (m *MockserviceAccessor) GetUserByID(ctx context.Context, id int) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUserByID indicates an expected call of GetUserByID.
-func (mr *MockserviceAccessorMockRecorder) GetUserByID(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockserviceAccessor)(nil).GetUserByID), ctx, id)
-}
-
 // GetUserByUUID mocks base method.
 func (m *MockserviceAccessor) GetUserByUUID(ctx context.Context, uuid string) (*models.User, error) {
 	m.ctrl.T.Helper()

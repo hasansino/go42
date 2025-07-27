@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"github.com/hasansino/go42/internal/auth/domain"
@@ -24,10 +25,19 @@ type User struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt
 
-	Roles []Role `gorm:"many2many:auth_user_roles;association_autoupdate:false"`
+	Roles []Role `gorm:"many2many:auth_user_roles;c"`
 }
 
 func (*User) TableName() string { return "auth_users" }
+
+func (u *User) SetPassword(password string) (err error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = sql.Null[string]{V: string(hash), Valid: true}
+	return
+}
 
 func (u *User) IsActive() bool {
 	return u.Status == domain.UserStatusActive
@@ -74,7 +84,7 @@ type Role struct {
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_role_permissions;association_autoupdate:false"`
+	Permissions []Permission `gorm:"many2many:auth_role_permissions;association_autocreate:false;association_autoupdate:false;"`
 }
 
 func (Role) TableName() string { return "auth_roles" }
@@ -83,7 +93,6 @@ type Permission struct {
 	ID        int
 	Resource  string
 	Action    string
-	Scope     sql.Null[string]
 	CreatedAt time.Time
 }
 
@@ -109,7 +118,7 @@ type Token struct {
 	UpdatedAt  time.Time
 	DeletedAt  gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_api_tokens_permissions;"`
+	Permissions []Permission `gorm:"many2many:auth_api_tokens_permissions;association_autocreate:false;association_autoupdate:false;"`
 }
 
 func (*Token) TableName() string { return "auth_api_tokens" }

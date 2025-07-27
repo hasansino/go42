@@ -131,6 +131,20 @@ func (mr *MockrepositoryMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*Mockrepository)(nil).GetUserByUUID), ctx, uuid)
 }
 
+// UpdateUser mocks base method.
+func (m *Mockrepository) UpdateUser(ctx context.Context, user *models.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUser", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockrepositoryMockRecorder) UpdateUser(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*Mockrepository)(nil).UpdateUser), ctx, user)
+}
+
 // WithTransaction mocks base method.
 func (m *Mockrepository) WithTransaction(ctx context.Context, fn func(context.Context) error) error {
 	m.ctrl.T.Helper()

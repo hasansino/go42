@@ -47,9 +47,8 @@ create table if not exists auth_permissions (
     id integer primary key autoincrement,
     resource text not null,
     action text not null,
-    scope text,
     created_at datetime not null default current_timestamp,
-    unique(resource, action, scope)
+    unique(resource, action)
 );
 
 create table if not exists auth_role_permissions (
