@@ -133,3 +133,5 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - graceful connection recovery
 - outbox table cleanup worker
 - Try https://github.com/tconbeer/sqlfmt
+- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
+- `main.go` -> move init functions out of file and make them modular

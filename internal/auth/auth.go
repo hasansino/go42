@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	cacheKeyInvalidatedToken   = "auth_token_logout_"
+	cacheKeyInvalidatedToken   = "auth_invalidated_"
 	cacheValueInvalidatedToken = "_"
 )
 
