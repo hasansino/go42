@@ -16,7 +16,7 @@ require (
 	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
-	github.com/bytedance/sonic v1.13.3
+	github.com/bytedance/sonic v1.14.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/getsentry/sentry-go v0.34.1
@@ -69,7 +69,7 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
-	github.com/bytedance/sonic/loader v0.2.4 // indirect
+	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
