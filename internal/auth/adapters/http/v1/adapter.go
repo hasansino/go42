@@ -23,9 +23,14 @@ type serviceAccessor interface {
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
 	Logout(ctx context.Context, accessToken, refreshToken string) error
+
+	CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error)
 	UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error
+	DeleteUser(ctx context.Context, id int) error
+	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
+
 	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
 	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)

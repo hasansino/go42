@@ -7,12 +7,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
+	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type serviceAccessor interface {
+	CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error)
+	UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error
+	DeleteUser(ctx context.Context, id int) error
+	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 }
 

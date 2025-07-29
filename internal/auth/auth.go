@@ -27,12 +27,17 @@ const (
 
 type repository interface {
 	WithTransaction(ctx context.Context, fn func(txCtx context.Context) error) error
+
 	CreateUser(ctx context.Context, user *models.User) error
 	UpdateUser(ctx context.Context, user *models.User) error
+	DeleteUser(ctx context.Context, user *models.User) error
+	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
+
 	GetToken(ctx context.Context, token string) (*models.Token, error)
 }
 
@@ -223,6 +228,10 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 
 // ----
 
+func (s *Service) CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error) {
+	return nil, nil
+}
+
 func (s *Service) UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error {
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByID(ctx, id)
@@ -269,6 +278,14 @@ func (s *Service) UpdateUser(ctx context.Context, id int, data domain.UpdateUser
 
 		return nil
 	})
+}
+
+func (s *Service) DeleteUser(ctx context.Context, id int) error {
+	return nil
+}
+
+func (s *Service) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	return nil, nil
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id int) (*models.User, error) {

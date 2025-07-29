@@ -48,6 +48,14 @@ func (r *Repository) UpdateUser(ctx context.Context, user *models.User) error {
 	return nil
 }
 
+func (r *Repository) DeleteUser(ctx context.Context, user *models.User) error {
+	return nil
+}
+
+func (r *Repository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	return nil, nil
+}
+
 func (r *Repository) GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	return r.getUser(ctx, map[string]any{"id": id})
 }
