@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 )
 
@@ -16,7 +17,7 @@ type repository interface {
 }
 
 type authService interface {
-	RecentlyUsedTokens() map[int]time.Time
+	RecentlyUsedTokensChan() <-chan domain.TokenWasUsed
 }
 
 type subscriber interface {

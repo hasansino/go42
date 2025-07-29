@@ -14,11 +14,11 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 01101111 01110010 01101101 01100001 01101110 01111001
 </pre></div>
 <p align="center">
-<img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence">
-<img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go" alt="goversion">
-<img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport">
-<img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release">
-<img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status">
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence"></a>
+<a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.24.4-00ADD8?style=flat&logo=go" alt="goversion"></a>
+<a href="https://goreportcard.com/report/github.com/hasansino/go42"><img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport"></a>
+<a href="https://github.com/hasansino/go42/releases"><img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release"></a>
+<a href="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml"><img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status"></a>
 </p>
 <!-- markdownlint-enable MD033 MD041 -->
 
@@ -135,3 +135,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - Try https://github.com/tconbeer/sqlfmt
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
+- slog smart sampling of duplicates

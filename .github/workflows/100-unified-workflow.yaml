@@ -4,8 +4,9 @@ name: unified-workflow
 # This workflow is designed for development and testing stages.
 #
 # Actions are executed by `runners` that are provided by GitHub.
-# They are not free and billed per minute, although 2000 minutes per month are included in the free tier.
-# @note macos runners are 10x more expensive than Linux runners.
+# They are not free and billed per minute, 2000 minutes per month are free for private repositories.
+# For public repositories, actions are free without limits. (common sense still applies)
+# Besides actions, there are also storage limits for packages (like docker images).
 #
 # Running this workflow too often can ramp-up actions costs significantly.
 # One way to mitigate this, is to use a self-hosted runners.

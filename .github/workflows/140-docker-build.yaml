@@ -154,6 +154,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           annotations: ${{ steps.meta.outputs.annotations }}
         env:
+          # This also will make images to show as created `55 years ago`.
           # @see https://reproducible-builds.org/docs/source-date-epoch/
           SOURCE_DATE_EPOCH: 0
           # @see https://github.com/orgs/community/discussions/45969

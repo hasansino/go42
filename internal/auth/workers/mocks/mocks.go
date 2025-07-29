@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	domain "github.com/hasansino/go42/internal/auth/domain"
 	models "github.com/hasansino/go42/internal/auth/models"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -108,18 +109,18 @@ func (m *MockauthService) EXPECT() *MockauthServiceMockRecorder {
 	return m.recorder
 }
 
-// RecentlyUsedTokens mocks base method.
-func (m *MockauthService) RecentlyUsedTokens() map[int]time.Time {
+// RecentlyUsedTokensChan mocks base method.
+func (m *MockauthService) RecentlyUsedTokensChan() <-chan domain.TokenWasUsed {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecentlyUsedTokens")
-	ret0, _ := ret[0].(map[int]time.Time)
+	ret := m.ctrl.Call(m, "RecentlyUsedTokensChan")
+	ret0, _ := ret[0].(<-chan domain.TokenWasUsed)
 	return ret0
 }
 
-// RecentlyUsedTokens indicates an expected call of RecentlyUsedTokens.
-func (mr *MockauthServiceMockRecorder) RecentlyUsedTokens() *gomock.Call {
+// RecentlyUsedTokensChan indicates an expected call of RecentlyUsedTokensChan.
+func (mr *MockauthServiceMockRecorder) RecentlyUsedTokensChan() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecentlyUsedTokens", reflect.TypeOf((*MockauthService)(nil).RecentlyUsedTokens))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecentlyUsedTokensChan", reflect.TypeOf((*MockauthService)(nil).RecentlyUsedTokensChan))
 }
 
 // Mocksubscriber is a mock of subscriber interface.

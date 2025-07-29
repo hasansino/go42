@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -58,8 +57,7 @@ type Service struct {
 	jwtIssuer       string
 	jwtAudience     []string
 
-	lastUsedTokens   map[int]time.Time
-	lastUsedTokensMu sync.Mutex
+	tokensUsedChan chan domain.TokenWasUsed
 }
 
 func NewService(
@@ -72,7 +70,7 @@ func NewService(
 		repository:     repository,
 		outboxService:  outboxService,
 		cache:          cache,
-		lastUsedTokens: make(map[int]time.Time),
+		tokensUsedChan: make(chan domain.TokenWasUsed, 2^12),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -361,22 +359,18 @@ func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.T
 		return nil, fmt.Errorf("expired api token: %w", err)
 	}
 
-	// a little sacrifice for the sake of ux
-	go func() {
-		s.lastUsedTokensMu.Lock()
-		defer s.lastUsedTokensMu.Unlock()
-		s.lastUsedTokens[apiToken.ID] = time.Now()
-	}()
+	select {
+	case s.tokensUsedChan <- domain.TokenWasUsed{ID: apiToken.ID, When: time.Now()}:
+	default:
+		// if channel is full, we discard payload and record warning
+		s.logger.WarnContext(ctx, "auth.tokensUsedChan overflow")
+	}
 
 	return apiToken, nil
 }
 
-func (s *Service) RecentlyUsedTokens() map[int]time.Time {
-	s.lastUsedTokensMu.Lock()
-	defer s.lastUsedTokensMu.Unlock()
-	tokens := s.lastUsedTokens
-	s.lastUsedTokens = make(map[int]time.Time)
-	return tokens
+func (s *Service) RecentlyUsedTokensChan() <-chan domain.TokenWasUsed {
+	return s.tokensUsedChan
 }
 
 // ----

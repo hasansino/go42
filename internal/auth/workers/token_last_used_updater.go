@@ -1,15 +1,28 @@
 package workers
 
+// @warn this will not work with multiple instances of the service
+// @todo consider using a distributed lock or a message queue to handle updates across multiple instances
+
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
+
+	"github.com/hasansino/go42/internal/tools"
 )
 
+type buffer struct {
+	data map[int]time.Time
+}
+
 type TokenLastUsedUpdater struct {
-	logger      *slog.Logger
-	repository  repository
-	authService authService
+	sync.Mutex
+	logger        *slog.Logger
+	repository    repository
+	authService   authService
+	activeBuffer  *buffer
+	sleeperBuffer *buffer
 }
 
 func NewTokenLastUsedUpdater(
@@ -20,6 +33,12 @@ func NewTokenLastUsedUpdater(
 	updater := &TokenLastUsedUpdater{
 		repository:  repository,
 		authService: authService,
+		activeBuffer: &buffer{
+			data: make(map[int]time.Time, tools.BufferSize4096),
+		},
+		sleeperBuffer: &buffer{
+			data: make(map[int]time.Time, tools.BufferSize4096),
+		},
 	}
 	for _, o := range opts {
 		o(updater)
@@ -31,6 +50,19 @@ func NewTokenLastUsedUpdater(
 }
 
 func (u *TokenLastUsedUpdater) Run(ctx context.Context, interval time.Duration) {
+	go func() {
+		c := u.authService.RecentlyUsedTokensChan()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e := <-c:
+				u.Lock()
+				u.activeBuffer.data[e.ID] = e.When
+				u.Unlock()
+			}
+		}
+	}()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -44,8 +76,16 @@ func (u *TokenLastUsedUpdater) Run(ctx context.Context, interval time.Duration) 
 }
 
 func (u *TokenLastUsedUpdater) run(ctx context.Context) {
-	tokens := u.authService.RecentlyUsedTokens()
-	for id, when := range tokens {
+	// swap buffers, so that we can process the active buffer
+	// while new tokens are being added to the sleeper buffer
+	u.Lock()
+	u.activeBuffer, u.sleeperBuffer = u.sleeperBuffer, u.activeBuffer
+	u.Unlock()
+
+	// before finishing, clear the sleeper buffer
+	defer clear(u.sleeperBuffer.data)
+
+	for id, when := range u.sleeperBuffer.data {
 		err := u.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 			return u.repository.UpdateTokenLastUsed(txCtx, id, when)
 		})

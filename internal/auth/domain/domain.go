@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"time"
 )
 
 // RBAC roles.
@@ -73,6 +74,12 @@ type Tokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+}
+
+// TokenWasUsed is a message passed to channel for outside consumers.
+type TokenWasUsed struct {
+	ID   int
+	When time.Time
 }
 
 // ----
