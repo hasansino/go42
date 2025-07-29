@@ -64,7 +64,6 @@ var (
 	ErrUserAlreadyExists  = errors.New("user already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrInvalidToken       = errors.New("invalid token")
-	ErrNothingToUpdate    = errors.New("nothing to update")
 )
 
 // ----
@@ -114,4 +113,11 @@ func (ctx *ContextAuthInfo) HasPermission(permission string) bool {
 	}
 	_, exists := ctx.permissionMap[permission]
 	return exists
+}
+
+// ----
+
+type UpdateUserData struct {
+	Email    *string
+	Password *string
 }

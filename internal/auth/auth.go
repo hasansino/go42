@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
+	"github.com/hasansino/go42/internal/tools"
 )
 
 const (
@@ -70,7 +70,7 @@ func NewService(
 		repository:     repository,
 		outboxService:  outboxService,
 		cache:          cache,
-		tokensUsedChan: make(chan domain.TokenWasUsed, 2^12),
+		tokensUsedChan: make(chan domain.TokenWasUsed, tools.BufferSize4096),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -223,21 +223,36 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 
 // ----
 
-func (s *Service) UpdateUser(ctx context.Context, id int, fn func(*models.User) error) error {
+func (s *Service) UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error {
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByID(ctx, id)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
-		if err := fn(user); err != nil {
-			if errors.Is(err, domain.ErrNothingToUpdate) {
-				return nil
+
+		var doUpdate bool
+
+		if data.Email != nil {
+			if *data.Email != user.Email {
+				doUpdate = true
+				user.Email = *data.Email
 			}
-			return fmt.Errorf("updateFn failed: %w", err)
 		}
+		if data.Password != nil {
+			doUpdate = true
+			if err := user.SetPassword(*data.Password); err != nil {
+				return fmt.Errorf("failed to set password: %w", err)
+			}
+		}
+
+		if !doUpdate {
+			return nil
+		}
+
 		if err := s.repository.UpdateUser(ctx, user); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
+
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeUserUpdate,
@@ -251,6 +266,7 @@ func (s *Service) UpdateUser(ctx context.Context, id int, fn func(*models.User) 
 			)
 			// assuming events are non-critical, do not fail transaction
 		}
+
 		return nil
 	})
 }

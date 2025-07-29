@@ -96,6 +96,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - run: go list -json -m all > go.list
       - uses: sonatype-nexus-community/nancy-github-action@main
 
@@ -125,3 +133,45 @@ jobs:
           # some packages may miss license files, or they are linked to outside libraries
           # for stricter checks, add `unknown` to this list
           disallowed-types: "forbidden,restricted"
+
+  scorecard:
+    name: scorecard
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ossf/scorecard-action@v2.4.2
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-results
+          path: scorecard-results.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scorecard-results.sarif
+
+  capslock:
+    name: capslock
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      # ---
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - run: go install github.com/google/capslock/cmd/capslock@latest
+      - run: capslock ./...

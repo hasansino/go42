@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -24,7 +23,7 @@ type serviceAccessor interface {
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
 	Logout(ctx context.Context, accessToken, refreshToken string) error
-	UpdateUser(ctx context.Context, id int, fn func(*models.User) error) error
+	UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
@@ -245,29 +244,18 @@ func (a *Adapter) updateSelf(ctx echo.Context) error {
 		)
 	}
 
-	err := a.service.UpdateUser(
-		ctx.Request().Context(), authInfo.ID,
-		func(user *models.User) error {
-			var doUpdate bool
-			if req.Email != "" && req.Email != user.Email {
-				doUpdate = true
-				user.Email = req.Email
-			}
-			if req.Password != "" {
-				doUpdate = true
-				oldHash := user.Password.V
-				if err := user.SetPassword(req.Password); err != nil {
-					return err
-				}
-				if oldHash == user.Password.V {
-					return errors.New("new password should be different")
-				}
-			}
-			if !doUpdate {
-				return domain.ErrNothingToUpdate
-			}
-			return nil
-		})
+	var updateData domain.UpdateUserData
+
+	if req.Email != "" {
+		email := strings.ToLower(strings.TrimSpace(req.Email))
+		updateData.Email = &email
+	}
+	if req.Password != "" {
+		password := strings.TrimSpace(req.Password)
+		updateData.Password = &password
+	}
+
+	err := a.service.UpdateUser(ctx.Request().Context(), authInfo.ID, updateData)
 	if err != nil {
 		return a.processError(ctx, err)
 	}
