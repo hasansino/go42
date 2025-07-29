@@ -36,7 +36,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lmittmann/tint v1.1.2
-	github.com/maypok86/otter/v2 v2.2.0
+	github.com/maypok86/otter/v2 v2.2.1
 	github.com/nats-io/nats.go v1.43.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/onsi/ginkgo/v2 v2.23.4
