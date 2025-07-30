@@ -10,10 +10,9 @@ help: Makefile
 # Prerequisites: brew, go
 setup:
 	@go mod tidy -e && go mod download
-	@brew install yq
+	@brew install yq grpcui k6
 	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 	@vale --config etc/.vale.ini sync
-	@brew install k6
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@go install github.com/go-delve/delve/cmd/dlv@latest
@@ -147,6 +146,12 @@ generate-dep-graph:
 #   * brew install redocly-cli
 preview-docs:
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly preview-docs --config etc/redocly.yaml --port 8181 api/openapi/v1/.combined.yaml
+
+## grpcui | run grpcui for debugging gRPC services
+# Dependencies:
+#   * brew install grpcui
+grpcui:
+	@grpcui -plaintext localhost:50051
 
 ## show-asm | visualise assembly
 # Dependencies:

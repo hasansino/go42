@@ -565,18 +565,20 @@ func main() {
 
 	grpcPermissionRegistry := grpcAPI.NewPermissionRegistry()
 
-	grpcAPI.WithUnaryInterceptor(
-		grpcAPI.InterceptorPriorityBusinessLogic,
-		authInterceptors.NewUnaryAuthInterceptor(authService))
-	grpcAPI.WithUnaryInterceptor(
-		grpcAPI.InterceptorPriorityBusinessLogic,
-		authInterceptors.NewUnaryAccessInterceptor(grpcPermissionRegistry))
-	grpcAPI.WithStreamInterceptor(
-		grpcAPI.InterceptorPriorityBusinessLogic,
-		authInterceptors.NewStreamAuthInterceptor(authService))
-	grpcAPI.WithStreamInterceptor(
-		grpcAPI.InterceptorPriorityBusinessLogic,
-		authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry))
+	grpcServerOpts = append(grpcServerOpts,
+		grpcAPI.WithUnaryInterceptor(
+			grpcAPI.InterceptorPriorityBusinessLogic,
+			authInterceptors.NewUnaryAuthInterceptor(authService)),
+		grpcAPI.WithUnaryInterceptor(
+			grpcAPI.InterceptorPriorityBusinessLogic,
+			authInterceptors.NewUnaryAccessInterceptor(grpcPermissionRegistry)),
+		grpcAPI.WithStreamInterceptor(
+			grpcAPI.InterceptorPriorityBusinessLogic,
+			authInterceptors.NewStreamAuthInterceptor(authService)),
+		grpcAPI.WithStreamInterceptor(
+			grpcAPI.InterceptorPriorityBusinessLogic,
+			authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry)),
+	)
 
 	grpcServer := grpcAPI.New(grpcServerOpts...)
 

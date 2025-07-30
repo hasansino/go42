@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -367,12 +368,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 		return nil, domain.ErrInvalidToken
 	}
 
-	tokenHash, err := tokenSHA256(token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash token: %w", err)
-	}
-
-	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+string(tokenHash)); err != nil {
+	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+tokenSHA256(token)); err != nil {
 		s.logger.ErrorContext(
 			ctx, "failed to fetch cache: %w",
 			slog.Any("error", err))
@@ -384,13 +380,9 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
-	tokenHash, err := tokenSHA256(token)
-	if err != nil {
-		return fmt.Errorf("failed to hash token: %w", err)
-	}
 	return s.cache.SetTTL(
 		ctx,
-		cacheKeyInvalidatedToken+string(tokenHash),
+		cacheKeyInvalidatedToken+tokenSHA256(token),
 		cacheValueInvalidatedToken,
 		time.Until(until)+1,
 	)
@@ -439,12 +431,7 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 // ----
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
-	hashedToken, err := tokenSHA256(token)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash api token: %w", err)
-	}
-
-	apiToken, err := s.repository.GetToken(ctx, hashedToken)
+	apiToken, err := s.repository.GetToken(ctx, tokenSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
 	}
@@ -477,12 +464,7 @@ func (s *Service) sendEvent(ctx context.Context, topic string, outboxMessage out
 	return nil
 }
 
-func tokenSHA256(token string) (string, error) {
-	h := sha256.New()
-	_, err := h.Write([]byte(token))
-	if err != nil {
-		return "", err
-	}
-	tokenHash := h.Sum(nil)
-	return string(tokenHash), nil
+func tokenSHA256(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }

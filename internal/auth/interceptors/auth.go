@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	"github.com/hasansino/go42/internal/auth"
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
@@ -26,6 +27,9 @@ func NewUnaryAuthInterceptor(authService authServiceAccessor) grpc.UnaryServerIn
 	return func(
 		ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
 	) (interface{}, error) {
+		if interceptors.DefaultSkipper(info.FullMethod) {
+			return handler(ctx, req)
+		}
 		authCtx, err := authenticateRequest(ctx, authService)
 		if err != nil {
 			return nil, err
@@ -36,6 +40,9 @@ func NewUnaryAuthInterceptor(authService authServiceAccessor) grpc.UnaryServerIn
 
 func NewStreamAuthInterceptor(authService authServiceAccessor) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if interceptors.DefaultSkipper(info.FullMethod) {
+			return handler(srv, ss)
+		}
 		authCtx, err := authenticateRequest(ss.Context(), authService)
 		if err != nil {
 			return err

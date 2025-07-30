@@ -27,12 +27,12 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 Go42 is opinionated approach to develop cloud native golang services. 
 
-# Project Goals
+# Goals
 
-* Provide SDLC framework which will scale with project, team and organization growth.
-* Reduce operational overhead by enforcing conventions and practices from beginning.
-* Incorporate security fundamentals from the day zero.
-* Make it easy to integrate AI tooling into the development process.
+- Provide SDLC framework which will scale with project, team and organization growth.
+- Reduce operational overhead by enforcing conventions and practices.
+- Incorporate security fundamentals from the day zero.
+- Make it easy to integrate AI tooling into the development process.
 
 ## Backlog
 
@@ -91,14 +91,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - working with private repositories, .netrc, GOPRIVATE, modules
 - go42-cli (round-kick, fist-punch ASCII)
 - go42-runner
-
-### >>>>>
-
 - support hetzner, aws, gcp, azure
 - cost analysis for different scales
-
-### >>>>>>
-
 - Documentation
 - Conventions - validation
 
