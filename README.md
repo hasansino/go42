@@ -19,6 +19,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 <a href="https://goreportcard.com/report/github.com/hasansino/go42"><img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport"></a>
 <a href="https://github.com/hasansino/go42/releases"><img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release"></a>
 <a href="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml"><img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status"></a>
+<a href="https://scorecard.dev/viewer/?uri=github.com/hasansino/go42"><img src="https://img.shields.io/ossf-scorecard/github.com/hasansino/go42?label=openssf+scorecard&style=flat" alt="ossf"></a>
 </p>
 <!-- markdownlint-enable MD013 MD033 MD041 -->
 
@@ -137,3 +138,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - `main.go` -> move init functions out of file and make them modular
 - slog smart sampling of duplicates
 - Try https://github.com/google/capslock
+- CUstom GitHub runner hardening
