@@ -53,7 +53,7 @@ func GRPCServerAddress() string {
 
 const randomStringDefaultLength = 8
 
-// GenerateRandomString returns a unique fruit name with given prefix.
+// GenerateRandomString returns a string with given prefix.
 func GenerateRandomString(prefix string) string {
 	const letters = "abcdefghijklmnopqrstuvwxyz"
 	b := make([]byte, randomStringDefaultLength)

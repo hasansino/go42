@@ -65,7 +65,7 @@ func (s *AuthEventSubscriber) handleEvent(ctx context.Context, eventData []byte)
 			metrics.Counter("application_errors", map[string]interface{}{
 				"type": "auth_event_subscriber_error",
 			}).Inc()
-			return fmt.Errorf("failed to create fruit: %w", err)
+			return fmt.Errorf("failed to save log: %w", err)
 		}
 		s.logger.Debug("event saved", slog.Any("event", eventLog))
 		metrics.Counter("application_auth_event_subscriber_processed", nil).Inc()
