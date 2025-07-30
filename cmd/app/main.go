@@ -60,11 +60,6 @@ import (
 	"github.com/hasansino/go42/internal/events/kafka"
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
-	"github.com/hasansino/go42/internal/example"
-	exampleGrpcAdapterV1 "github.com/hasansino/go42/internal/example/adapters/grpc/v1"
-	exampleHttpAdapterV1 "github.com/hasansino/go42/internal/example/adapters/http/v1"
-	exampleRepositoryPkg "github.com/hasansino/go42/internal/example/repository"
-	exampleWorkers "github.com/hasansino/go42/internal/example/workers"
 	"github.com/hasansino/go42/internal/metrics"
 	metricsAdapterV1 "github.com/hasansino/go42/internal/metrics/adapters/http"
 	"github.com/hasansino/go42/internal/metrics/observers"
@@ -417,11 +412,9 @@ func main() {
 	// service layer
 
 	var (
-		outboxService  *outbox.Service
-		authService    *auth.Service
-		exampleService *example.Service
+		outboxService *outbox.Service
+		authService   *auth.Service
 	)
-
 	{
 		// outbox domain
 		outboxLogger := slog.Default().With(slog.String("component", "outbox-service"))
@@ -475,27 +468,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
-
-		// example domain
-		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
-		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
-		exampleService = example.NewService(
-			exampleRepository,
-			outboxService,
-			example.WithLogger(exampleLogger),
-		)
-
-		fruitEventSubscriber := exampleWorkers.NewFruitEventSubscriber(
-			exampleRepository,
-			eventsEngine,
-			exampleWorkers.FruitEventSubscriberWithLogger(
-				slog.Default().With(slog.String("component", "example-subscriber")),
-			),
-		)
-		err = fruitEventSubscriber.Subscribe(ctx, eventsEngine)
-		if err != nil {
-			log.Fatalf("failed to subscribe to events: %v\n", err)
-		}
 	}
 
 	// http server
@@ -529,12 +501,6 @@ func main() {
 	)
 	httpServer.RegisterV1(authHttpAdapter)
 
-	exampleHttp := exampleHttpAdapterV1.New(
-		exampleService, cacheEngine,
-		exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
-	)
-	httpServer.RegisterV1(exampleHttp)
-
 	// run server
 
 	go func() {
@@ -565,20 +531,22 @@ func main() {
 
 	grpcPermissionRegistry := grpcAPI.NewPermissionRegistry()
 
-	grpcServerOpts = append(grpcServerOpts,
-		grpcAPI.WithUnaryInterceptor(
-			grpcAPI.InterceptorPriorityBusinessLogic,
-			authInterceptors.NewUnaryAuthInterceptor(authService)),
-		grpcAPI.WithUnaryInterceptor(
-			grpcAPI.InterceptorPriorityBusinessLogic,
-			authInterceptors.NewUnaryAccessInterceptor(grpcPermissionRegistry)),
-		grpcAPI.WithStreamInterceptor(
-			grpcAPI.InterceptorPriorityBusinessLogic,
-			authInterceptors.NewStreamAuthInterceptor(authService)),
-		grpcAPI.WithStreamInterceptor(
-			grpcAPI.InterceptorPriorityBusinessLogic,
-			authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry)),
-	)
+	if cfg.Server.GRPC.AuthorisationEnabled {
+		grpcServerOpts = append(grpcServerOpts,
+			grpcAPI.WithUnaryInterceptor(
+				grpcAPI.InterceptorPriorityAuthentication,
+				authInterceptors.NewUnaryAuthInterceptor(authService)),
+			grpcAPI.WithUnaryInterceptor(
+				grpcAPI.InterceptorPriorityAuthentication,
+				authInterceptors.NewUnaryAccessInterceptor(grpcPermissionRegistry)),
+			grpcAPI.WithStreamInterceptor(
+				grpcAPI.InterceptorPriorityAuthentication,
+				authInterceptors.NewStreamAuthInterceptor(authService)),
+			grpcAPI.WithStreamInterceptor(
+				grpcAPI.InterceptorPriorityAuthentication,
+				authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry)),
+		)
+	}
 
 	grpcServer := grpcAPI.New(grpcServerOpts...)
 
@@ -590,9 +558,6 @@ func main() {
 		authGrpcAdapterV1.WithPermissionRegistry(grpcPermissionRegistry),
 	)
 	grpcServer.Register(authGrpc)
-
-	exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
-	grpcServer.Register(exampleGrpc)
 
 	// run server
 

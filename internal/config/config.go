@@ -449,11 +449,12 @@ type HTTPRateLimiter struct {
 }
 
 type GRPC struct {
-	Listen            string `env:"SERVER_GRPC_LISTEN"                  default:":50051"`
-	MaxRecvMsgSize    int    `env:"SERVER_GRPC_MAX_RECV_MSG_SIZE_BYTES" default:"4194304"`
-	MaxSendMsgSize    int    `env:"SERVER_GRPC_MAX_SEND_MSG_SIZE_BYTES" default:"2147483647"`
-	ReflectionEnabled bool   `env:"SERVER_GRPC_REFLECTION_ENABLED"      default:"false"`
-	RateLimiter       GRPCRateLimiter
+	Listen               string `env:"SERVER_GRPC_LISTEN"                  default:":50051"`
+	MaxRecvMsgSize       int    `env:"SERVER_GRPC_MAX_RECV_MSG_SIZE_BYTES" default:"4194304"`
+	MaxSendMsgSize       int    `env:"SERVER_GRPC_MAX_SEND_MSG_SIZE_BYTES" default:"2147483647"`
+	ReflectionEnabled    bool   `env:"SERVER_GRPC_REFLECTION_ENABLED"      default:"false"`
+	AuthorisationEnabled bool   `env:"SERVER_GRPC_AUTHORIZATION_ENABLED"   default:"true"`
+	RateLimiter          GRPCRateLimiter
 }
 
 type GRPCRateLimiter struct {

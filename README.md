@@ -55,6 +55,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - caching for user/permission lookups
 - slog smart sampling of duplicates
 - password complexity rules
+- gorm returns roles from all users for single user - bug with join conditions
+- Try https://sqlc.dev/
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -123,7 +125,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Register echo validator -> simplify adapters
 - Release notifications to slack (https://github.com/8398a7/action-slack)
 - Swagger annotations in adapters - generation of specs
-- Try https://sqlc.dev/
 - k8 hpa/vpa configurations
 - Capacity planning and resource management
 - Compliance research -> SOC2, ISO 27001, PCI-DSS

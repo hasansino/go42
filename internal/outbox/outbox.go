@@ -20,13 +20,11 @@ type repository interface {
 	NewOutboxMessage(ctx context.Context, msg *models.Message) error
 }
 
-// Service layer of example domain
 type Service struct {
 	logger     *slog.Logger
 	repository repository
 }
 
-// NewService creates service with given repository
 func NewService(repository repository, opts ...Option) *Service {
 	svc := &Service{
 		repository: repository,

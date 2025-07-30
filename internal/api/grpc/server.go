@@ -24,9 +24,10 @@ import (
 )
 
 const (
-	InterceptorPriorityPreprocess    = 0
-	InterceptorPriorityObservability = 1
-	InterceptorPriorityBusinessLogic = 2
+	InterceptorPriorityPreprocess     = 1
+	InterceptorPriorityObservability  = 2
+	InterceptorPriorityAuthentication = 3
+	InterceptorPriorityBusinessLogic  = 4
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

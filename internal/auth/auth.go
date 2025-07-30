@@ -109,7 +109,7 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeAuthSignUp,
 		}
-		if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
+		if err := s.sendEvent(txCtx, domain.TopicNameAuthEvents, event); err != nil {
 			s.logger.ErrorContext(
 				ctx, "failed to send event: %w",
 				slog.String("topic", domain.TopicNameAuthEvents),

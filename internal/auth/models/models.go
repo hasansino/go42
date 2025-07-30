@@ -25,7 +25,7 @@ type User struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt
 
-	Roles []Role `gorm:"many2many:auth_user_roles;c"`
+	Roles []Role `gorm:"many2many:auth_user_roles;association_autocreate:false;association_autoupdate:false;"`
 }
 
 func (*User) TableName() string { return "auth_users" }
@@ -73,7 +73,7 @@ type UserHistoryRecord struct {
 	Metadata   string
 }
 
-func (*UserHistoryRecord) TableName() string { return "auth_users_history" }
+func (UserHistoryRecord) TableName() string { return "auth_users_history" }
 
 type Role struct {
 	ID          int
