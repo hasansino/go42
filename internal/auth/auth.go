@@ -229,7 +229,7 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 
 // ----
 
-func (s *Service) CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error) {
+func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (*models.User, error) {
 	user := &models.User{
 		UUID:   uuid.New(),
 		Email:  *data.Email,
@@ -262,7 +262,7 @@ func (s *Service) CreateUser(ctx context.Context, data domain.CreateUserData) (*
 	return user, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, uuid string, data domain.UpdateUserData) error {
+func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByUUID(ctx, uuid)
 		if err != nil {

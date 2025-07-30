@@ -121,8 +121,8 @@ func (ctx *ContextAuthInfo) HasPermission(permission string) bool {
 // ----
 
 type CreateUserData struct {
-	Email    *string
-	Password *string
+	Email    string
+	Password string
 }
 
 type UpdateUserData struct {

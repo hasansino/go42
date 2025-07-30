@@ -25,7 +25,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 # go42
 
-ദ്ദി( •̀ ᴗ - )
+ദ്ദി( •̀ ᴗ - ) ( ´• ω •)  ദ്ദി( •̀ ᴗ •́ )و 💪(•̀_•́💪)
 
 ## Backlog
 
@@ -138,4 +138,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - `main.go` -> move init functions out of file and make them modular
 - slog smart sampling of duplicates
 - Try https://github.com/google/capslock
-- CUstom GitHub runner hardening
+- Custom GitHub runner hardening

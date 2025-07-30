@@ -26,8 +26,8 @@ type serviceAccessor interface {
 	Refresh(ctx context.Context, token string) (*domain.Tokens, error)
 	Logout(ctx context.Context, accessToken, refreshToken string) error
 
-	CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error)
-	UpdateUser(ctx context.Context, uuid string, data domain.UpdateUserData) error
+	CreateUser(ctx context.Context, data *domain.CreateUserData) (*models.User, error)
+	UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error
 	DeleteUser(ctx context.Context, uuid string) error
 	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
@@ -251,7 +251,7 @@ func (a *Adapter) updateSelf(ctx echo.Context) error {
 		)
 	}
 
-	var updateData domain.UpdateUserData
+	updateData := new(domain.UpdateUserData)
 
 	if req.Email != "" {
 		email := strings.ToLower(strings.TrimSpace(req.Email))
@@ -301,8 +301,43 @@ func (a *Adapter) userByUUID(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, r)
 }
 
+type CreateUserRequest struct {
+	Email    string `json:"email"    v:"required,email"`
+	Password string `json:"password" v:"required,min=8,max=24"`
+}
+
 func (a *Adapter) createUser(ctx echo.Context) error {
-	return ctx.NoContent(http.StatusNotImplemented)
+	req := new(CreateUserRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := tools.ValidateStruct(req)
+	if vErrs != nil {
+		return httpAPI.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
+		)
+	}
+
+	data := new(domain.CreateUserData)
+
+	data.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	data.Password = strings.TrimSpace(req.Password)
+
+	user, err := a.service.CreateUser(ctx.Request().Context(), data)
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+
+	return ctx.JSON(http.StatusCreated, UserResponseFromModel(user))
+}
+
+type UpdateUserRequest struct {
+	Email    string `json:"email"    v:"omitempty,email"`
+	Password string `json:"password" v:"omitempty,min=8,max=24"`
 }
 
 func (a *Adapter) updateUser(ctx echo.Context) error {
@@ -311,7 +346,39 @@ func (a *Adapter) updateUser(ctx echo.Context) error {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 	}
-	return ctx.NoContent(http.StatusNotImplemented)
+
+	req := new(UpdateUserRequest)
+
+	if err := ctx.Bind(req); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+
+	vErrs := tools.ValidateStruct(req)
+	if vErrs != nil {
+		return httpAPI.SendJSONError(
+			ctx, http.StatusBadRequest, http.StatusText(http.StatusBadRequest),
+			httpAPI.WithValidationErrors(vErrs...),
+		)
+	}
+
+	data := new(domain.UpdateUserData)
+
+	if req.Email != "" {
+		email := strings.ToLower(strings.TrimSpace(req.Email))
+		data.Email = &email
+	}
+	if req.Password != "" {
+		password := strings.TrimSpace(req.Password)
+		data.Password = &password
+	}
+
+	err := a.service.UpdateUser(ctx.Request().Context(), userUUID, data)
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+
+	return ctx.NoContent(http.StatusOK)
 }
 
 func (a *Adapter) deleteUser(ctx echo.Context) error {
