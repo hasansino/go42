@@ -139,6 +139,10 @@ jobs:
     name: scorecard
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      security-events: none
+      id-token: write
     # ---
     steps:
       - uses: actions/checkout@v4

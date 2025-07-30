@@ -15,8 +15,8 @@ import (
 
 type serviceAccessor interface {
 	CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error)
-	UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error
-	DeleteUser(ctx context.Context, id int) error
+	UpdateUser(ctx context.Context, uuid string, data domain.UpdateUserData) error
+	DeleteUser(ctx context.Context, uuid string) error
 	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 }

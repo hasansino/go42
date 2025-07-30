@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD033 MD041 -->
+<!-- markdownlint-disable MD013 MD033 MD041 -->
 <div align="center"><pre>
 ░██████╗░░█████╗░░░██╗██╗░█████═╗░
 ██╔════╝░██╔══██╗░██╔╝╚█║█════██║░
@@ -20,7 +20,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 <a href="https://github.com/hasansino/go42/releases"><img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release"></a>
 <a href="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml"><img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status"></a>
 </p>
-<!-- markdownlint-enable MD033 MD041 -->
+<!-- markdownlint-enable MD013 MD033 MD041 -->
 
 # go42
 
