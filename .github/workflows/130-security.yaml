@@ -32,16 +32,16 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
-  security-events: write
-  id-token: write
+# Remove global permissions
+permissions: {}
 
 jobs:
   gitleaks:
     name: gitleaks
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +56,9 @@ jobs:
     name: gosec
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      security-events: write  # gosec can upload SARIF results
     env:
       GO111MODULE: on
     # ---
@@ -69,6 +72,8 @@ jobs:
     name: govulncheck
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +95,8 @@ jobs:
     name: nancy
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +119,10 @@ jobs:
     name: codeql
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      security-events: write  # Required for CodeQL to upload results
+      actions: read  # Required for CodeQL
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -126,6 +137,8 @@ jobs:
     name: licenses
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -141,8 +154,8 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-      security-events: none
-      id-token: write
+      id-token: write  # Required for OSSF Scorecard publishing
+      security-events: write  # Required for uploading SARIF results
     # ---
     steps:
       - uses: actions/checkout@v4
