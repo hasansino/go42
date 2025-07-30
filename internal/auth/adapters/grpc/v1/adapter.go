@@ -2,6 +2,8 @@ package adapter
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -10,6 +12,14 @@ import (
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 )
+
+var adapterPermissionMapping = map[string]string{
+	"/auth.v1.AuthService/ListUsers":     domain.RBACPermissionUsersList,
+	"/auth.v1.AuthService/GetUserByUUID": domain.RBACPermissionUsersReadOthers,
+	"/auth.v1.AuthService/CreateUser":    domain.RBACPermissionUsersCreate,
+	"/auth.v1.AuthService/UpdateUser":    domain.RBACPermissionUsersUpdate,
+	"/auth.v1.AuthService/DeleteUser":    domain.RBACPermissionUsersDelete,
+}
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
@@ -21,21 +31,64 @@ type serviceAccessor interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 }
 
-type Adapter struct {
-	pb.UnimplementedAuthServiceServer
-	service serviceAccessor
+type cache interface {
+	Get(ctx context.Context, key string) (string, error)
+	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
-func New(svc serviceAccessor) *Adapter {
-	return &Adapter{service: svc}
+type permissionRegistry interface {
+	Register(method string, permissions ...string)
+}
+
+type Adapter struct {
+	pb.UnimplementedAuthServiceServer
+	service  serviceAccessor
+	cache    cache
+	cacheTTL time.Duration
+
+	permissionRegistry permissionRegistry
+}
+
+func New(svc serviceAccessor, opts ...Option) *Adapter {
+	a := &Adapter{service: svc}
+	for _, opt := range opts {
+		opt(a)
+	}
+	if a.permissionRegistry != nil {
+		for method, permission := range adapterPermissionMapping {
+			a.permissionRegistry.Register(method, permission)
+		}
+	}
+	return a
 }
 
 func (a *Adapter) Register(grpcServer *grpc.Server) {
 	pb.RegisterAuthServiceServer(grpcServer, a)
 }
 
-func (a *Adapter) ListUsers(context.Context, *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	return &pb.ListUsersResponse{}, nil
+func (a *Adapter) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
+	limit := int(req.Limit)
+	if limit <= 0 {
+		limit = 10
+	}
+	offset := int(req.Offset)
+	if offset < 0 {
+		offset = 0
+	}
+
+	users, err := a.service.ListUsers(ctx, limit, offset)
+	if err != nil {
+		return nil, a.processError(err)
+	}
+
+	pbUsers := make([]*pb.User, 0, len(users))
+	for _, user := range users {
+		pbUsers = append(pbUsers, userToProto(user))
+	}
+
+	return &pb.ListUsersResponse{
+		Users: pbUsers,
+	}, nil
 }
 
 func (a *Adapter) GetUserByUUID(
@@ -45,28 +98,63 @@ func (a *Adapter) GetUserByUUID(
 	if err != nil {
 		return nil, a.processError(err)
 	}
-	resp := &pb.GetUserByUUIDResponse{
-		User: &pb.User{
-			Uuid:        user.UUID.String(),
-			Email:       user.Email,
-			Status:      user.Status,
-			Roles:       user.RoleList(),
-			Permissions: user.PermissionList(),
-			IsSystem:    user.IsSystem,
-			CreatedAt:   timestamppb.New(user.CreatedAt),
-		},
+	return &pb.GetUserByUUIDResponse{
+		User: userToProto(user),
+	}, nil
+}
+
+func (a *Adapter) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	data := &domain.CreateUserData{
+		Email:    strings.ToLower(strings.TrimSpace(req.Email)),
+		Password: strings.TrimSpace(req.Password),
 	}
-	return resp, nil
+
+	user, err := a.service.CreateUser(ctx, data)
+	if err != nil {
+		return nil, a.processError(err)
+	}
+
+	return &pb.CreateUserResponse{
+		User: userToProto(user),
+	}, nil
 }
 
-func (a *Adapter) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	return &pb.CreateUserResponse{}, nil
-}
+func (a *Adapter) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	data := &domain.UpdateUserData{}
 
-func (a *Adapter) UpdateUser(ctx context.Context, in *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	if req.Email != nil {
+		email := strings.ToLower(strings.TrimSpace(*req.Email))
+		data.Email = &email
+	}
+	if req.Password != nil {
+		password := strings.TrimSpace(*req.Password)
+		data.Password = &password
+	}
+
+	err := a.service.UpdateUser(ctx, req.Uuid, data)
+	if err != nil {
+		return nil, a.processError(err)
+	}
+
 	return &pb.UpdateUserResponse{}, nil
 }
 
-func (a *Adapter) DeleteUser(ctx context.Context, in *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+func (a *Adapter) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	err := a.service.DeleteUser(ctx, req.Uuid)
+	if err != nil {
+		return nil, a.processError(err)
+	}
 	return &pb.DeleteUserResponse{}, nil
+}
+
+func userToProto(user *models.User) *pb.User {
+	return &pb.User{
+		Uuid:        user.UUID.String(),
+		Email:       user.Email,
+		Status:      user.Status,
+		Roles:       user.RoleList(),
+		Permissions: user.PermissionList(),
+		IsSystem:    user.IsSystem,
+		CreatedAt:   timestamppb.New(user.CreatedAt),
+	}
 }

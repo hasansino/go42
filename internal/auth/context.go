@@ -20,6 +20,7 @@ func RetrieveAuthFromContext(ctx context.Context) *domain.ContextAuthInfo {
 	return &authInfo
 }
 
+// SetAuthToContext sets auth state to context.
 func SetAuthToContext(ctx context.Context, authInfo domain.ContextAuthInfo) context.Context {
 	return context.WithValue(ctx, contextKeyAuthInfo, authInfo)
 }

@@ -39,6 +39,7 @@ import (
 	"github.com/hasansino/go42/internal/auth"
 	authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1"
 	authHttpAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/http/v1"
+	authInterceptors "github.com/hasansino/go42/internal/auth/interceptors"
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
 	authWorkers "github.com/hasansino/go42/internal/auth/workers"
 	"github.com/hasansino/go42/internal/cache"
@@ -107,48 +108,6 @@ func main() {
 	pprofCloser := initProfiling(cfg)
 	metricsHandler := initMetrics(cfg)
 	tracingCloser := initTracing(cfg)
-
-	// http server
-	httpServerOpts := []httpAPI.Option{
-		httpAPI.WitHealthCheckCtx(ctx),
-		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
-		httpAPI.WithTracing(cfg.Tracing.Enable),
-		httpAPI.WithReadTimeout(cfg.Server.HTTP.ReadTimeout),
-		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
-		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
-		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
-		httpAPI.WithBodyLimit(fmt.Sprintf("%dK", cfg.Server.HTTP.BodyLimitKB)),
-		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
-	}
-
-	if cfg.Server.HTTP.RateLimiter.Enabled {
-		httpServerOpts = append(httpServerOpts, httpAPI.WithRateLimiter(
-			cfg.Server.HTTP.RateLimiter.Rate,
-			cfg.Server.HTTP.RateLimiter.Burst,
-		))
-	}
-
-	httpServer := httpAPI.New(httpServerOpts...)
-	httpServer.Register(metricsAdapterV1.New(metricsHandler))
-
-	// grpc server
-	grpcServerOpts := []grpcAPI.Option{
-		grpcAPI.WitHealthCheckCtx(ctx),
-		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
-		grpcAPI.WithTracing(cfg.Tracing.Enable),
-		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
-		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),
-		grpcAPI.WithReflection(cfg.Server.GRPC.ReflectionEnabled),
-	}
-
-	if cfg.Server.GRPC.RateLimiter.Enabled {
-		grpcServerOpts = append(grpcServerOpts, grpcAPI.WithRateLimiter(
-			cfg.Server.GRPC.RateLimiter.Rate,
-			cfg.Server.GRPC.RateLimiter.Burst,
-		))
-	}
-
-	grpcServer := grpcAPI.New(grpcServerOpts...)
 
 	// database engine
 	var (
@@ -453,15 +412,21 @@ func main() {
 		slog.Info("kafka event engine initialized")
 	}
 
-	// ---
+	// ----
 
 	// service layer
+
+	var (
+		outboxService  *outbox.Service
+		authService    *auth.Service
+		exampleService *example.Service
+	)
 
 	{
 		// outbox domain
 		outboxLogger := slog.Default().With(slog.String("component", "outbox-service"))
 		outboxRepository := outboxRepositoryPkg.New(database.NewBaseRepository(dbEngine))
-		outboxService := outbox.NewService(
+		outboxService = outbox.NewService(
 			outboxRepository,
 			outbox.WithLogger(outboxLogger),
 		)
@@ -479,7 +444,7 @@ func main() {
 		// auth domain
 		authLogger := slog.Default().With(slog.String("component", "auth-service"))
 		authRepository := authRepositoryPkg.New(database.NewBaseRepository(dbEngine))
-		authService := auth.NewService(
+		authService = auth.NewService(
 			authRepository,
 			outboxService,
 			cacheEngine,
@@ -511,19 +476,10 @@ func main() {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
 
-		authHttpAdapter := authHttpAdapterV1.New(
-			authService,
-			authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
-		)
-		httpServer.RegisterV1(authHttpAdapter)
-
-		authGrpc := authGrpcAdapterV1.New(authService)
-		grpcServer.Register(authGrpc)
-
 		// example domain
 		exampleLogger := slog.Default().With(slog.String("component", "example-service"))
 		exampleRepository := exampleRepositoryPkg.New(database.NewBaseRepository(dbEngine))
-		exampleService := example.NewService(
+		exampleService = example.NewService(
 			exampleRepository,
 			outboxService,
 			example.WithLogger(exampleLogger),
@@ -540,18 +496,46 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
-
-		exampleHttp := exampleHttpAdapterV1.New(
-			exampleService, cacheEngine,
-			exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
-		)
-		httpServer.RegisterV1(exampleHttp)
-
-		exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
-		grpcServer.Register(exampleGrpc)
 	}
 
-	// ---
+	// http server
+
+	httpServerOpts := []httpAPI.Option{
+		httpAPI.WitHealthCheckCtx(ctx),
+		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
+		httpAPI.WithTracing(cfg.Tracing.Enable),
+		httpAPI.WithReadTimeout(cfg.Server.HTTP.ReadTimeout),
+		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
+		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
+		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
+		httpAPI.WithBodyLimit(fmt.Sprintf("%dK", cfg.Server.HTTP.BodyLimitKB)),
+		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
+	}
+
+	if cfg.Server.HTTP.RateLimiter.Enabled {
+		httpServerOpts = append(httpServerOpts, httpAPI.WithRateLimiter(
+			cfg.Server.HTTP.RateLimiter.Rate,
+			cfg.Server.HTTP.RateLimiter.Burst,
+		))
+	}
+
+	// register http services
+	httpServer := httpAPI.New(httpServerOpts...)
+	httpServer.Register(metricsAdapterV1.New(metricsHandler))
+
+	authHttpAdapter := authHttpAdapterV1.New(
+		authService,
+		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
+	)
+	httpServer.RegisterV1(authHttpAdapter)
+
+	exampleHttp := exampleHttpAdapterV1.New(
+		exampleService, cacheEngine,
+		exampleHttpAdapterV1.WithCache(cacheEngine, 1*time.Second),
+	)
+	httpServer.RegisterV1(exampleHttp)
+
+	// run server
 
 	go func() {
 		slog.Info("starting http server...", slog.String("port", cfg.Server.HTTP.Listen))
@@ -560,6 +544,55 @@ func main() {
 			log.Fatalf("failed to start http server: %v\n", err)
 		}
 	}()
+
+	// grpc server
+
+	grpcServerOpts := []grpcAPI.Option{
+		grpcAPI.WitHealthCheckCtx(ctx),
+		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
+		grpcAPI.WithTracing(cfg.Tracing.Enable),
+		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
+		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),
+		grpcAPI.WithReflection(cfg.Server.GRPC.ReflectionEnabled),
+	}
+
+	if cfg.Server.GRPC.RateLimiter.Enabled {
+		grpcServerOpts = append(grpcServerOpts, grpcAPI.WithRateLimiter(
+			cfg.Server.GRPC.RateLimiter.Rate,
+			cfg.Server.GRPC.RateLimiter.Burst,
+		))
+	}
+
+	grpcPermissionRegistry := grpcAPI.NewPermissionRegistry()
+
+	grpcAPI.WithUnaryInterceptor(
+		grpcAPI.InterceptorPriorityBusinessLogic,
+		authInterceptors.NewUnaryAuthInterceptor(authService))
+	grpcAPI.WithUnaryInterceptor(
+		grpcAPI.InterceptorPriorityBusinessLogic,
+		authInterceptors.NewUnaryAccessInterceptor(grpcPermissionRegistry))
+	grpcAPI.WithStreamInterceptor(
+		grpcAPI.InterceptorPriorityBusinessLogic,
+		authInterceptors.NewStreamAuthInterceptor(authService))
+	grpcAPI.WithStreamInterceptor(
+		grpcAPI.InterceptorPriorityBusinessLogic,
+		authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry))
+
+	grpcServer := grpcAPI.New(grpcServerOpts...)
+
+	// register grpc services
+
+	authGrpc := authGrpcAdapterV1.New(
+		authService,
+		authGrpcAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
+		authGrpcAdapterV1.WithPermissionRegistry(grpcPermissionRegistry),
+	)
+	grpcServer.Register(authGrpc)
+
+	exampleGrpc := exampleGrpcAdapterV1.New(exampleService)
+	grpcServer.Register(exampleGrpc)
+
+	// run server
 
 	go func() {
 		slog.Info("starting grpc server...", slog.String("port", cfg.Server.GRPC.Listen))

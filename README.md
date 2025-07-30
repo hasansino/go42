@@ -139,3 +139,4 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - slog smart sampling of duplicates
 - Try https://github.com/google/capslock
 - Custom GitHub runner hardening
+- Custom & simple DI container for main.go

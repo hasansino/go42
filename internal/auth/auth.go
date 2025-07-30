@@ -232,10 +232,10 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (*models.User, error) {
 	user := &models.User{
 		UUID:   uuid.New(),
-		Email:  *data.Email,
+		Email:  data.Email,
 		Status: domain.UserStatusActive,
 	}
-	if err := user.SetPassword(*data.Password); err != nil {
+	if err := user.SetPassword(data.Password); err != nil {
 		return nil, fmt.Errorf("failed to set password: %w", err)
 	}
 	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {

@@ -12,7 +12,9 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
+	domain "github.com/hasansino/go42/internal/auth/domain"
 	models "github.com/hasansino/go42/internal/auth/models"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,6 +43,35 @@ func (m *MockserviceAccessor) EXPECT() *MockserviceAccessorMockRecorder {
 	return m.recorder
 }
 
+// CreateUser mocks base method.
+func (m *MockserviceAccessor) CreateUser(ctx context.Context, data *domain.CreateUserData) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, data)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockserviceAccessorMockRecorder) CreateUser(ctx, data any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockserviceAccessor)(nil).CreateUser), ctx, data)
+}
+
+// DeleteUser mocks base method.
+func (m *MockserviceAccessor) DeleteUser(ctx context.Context, uuid string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, uuid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockserviceAccessorMockRecorder) DeleteUser(ctx, uuid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockserviceAccessor)(nil).DeleteUser), ctx, uuid)
+}
+
 // GetUserByUUID mocks base method.
 func (m *MockserviceAccessor) GetUserByUUID(ctx context.Context, uuid string) (*models.User, error) {
 	m.ctrl.T.Helper()
@@ -54,4 +85,127 @@ func (m *MockserviceAccessor) GetUserByUUID(ctx context.Context, uuid string) (*
 func (mr *MockserviceAccessorMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*MockserviceAccessor)(nil).GetUserByUUID), ctx, uuid)
+}
+
+// ListUsers mocks base method.
+func (m *MockserviceAccessor) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUsers", ctx, limit, offset)
+	ret0, _ := ret[0].([]*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockserviceAccessorMockRecorder) ListUsers(ctx, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*MockserviceAccessor)(nil).ListUsers), ctx, limit, offset)
+}
+
+// UpdateUser mocks base method.
+func (m *MockserviceAccessor) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUser", ctx, uuid, data)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockserviceAccessorMockRecorder) UpdateUser(ctx, uuid, data any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockserviceAccessor)(nil).UpdateUser), ctx, uuid, data)
+}
+
+// Mockcache is a mock of cache interface.
+type Mockcache struct {
+	ctrl     *gomock.Controller
+	recorder *MockcacheMockRecorder
+	isgomock struct{}
+}
+
+// MockcacheMockRecorder is the mock recorder for Mockcache.
+type MockcacheMockRecorder struct {
+	mock *Mockcache
+}
+
+// NewMockcache creates a new mock instance.
+func NewMockcache(ctrl *gomock.Controller) *Mockcache {
+	mock := &Mockcache{ctrl: ctrl}
+	mock.recorder = &MockcacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *Mockcache) EXPECT() *MockcacheMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *Mockcache) Get(ctx context.Context, key string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, key)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockcacheMockRecorder) Get(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*Mockcache)(nil).Get), ctx, key)
+}
+
+// SetTTL mocks base method.
+func (m *Mockcache) SetTTL(ctx context.Context, key, value string, ttl time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetTTL", ctx, key, value, ttl)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetTTL indicates an expected call of SetTTL.
+func (mr *MockcacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*Mockcache)(nil).SetTTL), ctx, key, value, ttl)
+}
+
+// MockpermissionRegistry is a mock of permissionRegistry interface.
+type MockpermissionRegistry struct {
+	ctrl     *gomock.Controller
+	recorder *MockpermissionRegistryMockRecorder
+	isgomock struct{}
+}
+
+// MockpermissionRegistryMockRecorder is the mock recorder for MockpermissionRegistry.
+type MockpermissionRegistryMockRecorder struct {
+	mock *MockpermissionRegistry
+}
+
+// NewMockpermissionRegistry creates a new mock instance.
+func NewMockpermissionRegistry(ctrl *gomock.Controller) *MockpermissionRegistry {
+	mock := &MockpermissionRegistry{ctrl: ctrl}
+	mock.recorder = &MockpermissionRegistryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockpermissionRegistry) EXPECT() *MockpermissionRegistryMockRecorder {
+	return m.recorder
+}
+
+// Register mocks base method.
+func (m *MockpermissionRegistry) Register(method string, permissions ...string) {
+	m.ctrl.T.Helper()
+	varargs := []any{method}
+	for _, a := range permissions {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Register", varargs...)
+}
+
+// Register indicates an expected call of Register.
+func (mr *MockpermissionRegistryMockRecorder) Register(method any, permissions ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{method}, permissions...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockpermissionRegistry)(nil).Register), varargs...)
 }

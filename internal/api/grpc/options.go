@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"google.golang.org/grpc"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/hasansino/go42/internal/tools"
@@ -61,5 +62,19 @@ func WithReflection(enabled bool) Option {
 func WithRateLimiter(rate int, burst int) Option {
 	return func(s *Server) {
 		s.rateLimiter = tools.NewRateLimiter(rate, burst)
+	}
+}
+
+// WithUnaryInterceptor adds a unary interceptor with a specific priority.
+func WithUnaryInterceptor(priority int, interceptor grpc.UnaryServerInterceptor) Option {
+	return func(s *Server) {
+		s.extraUnaryInterceptors[priority] = append(s.extraUnaryInterceptors[priority], interceptor)
+	}
+}
+
+// WithStreamInterceptor adds a stream interceptor with a specific priority.
+func WithStreamInterceptor(priority int, interceptor grpc.StreamServerInterceptor) Option {
+	return func(s *Server) {
+		s.extraStreamInterceptors[priority] = append(s.extraStreamInterceptors[priority], interceptor)
 	}
 }

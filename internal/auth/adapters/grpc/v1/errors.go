@@ -9,16 +9,17 @@ import (
 	"github.com/hasansino/go42/internal/auth/domain"
 )
 
-var (
-	rpcErrorNotFound = status.New(codes.NotFound, "not found")
-	rpcErrorInternal = status.New(codes.Internal, "internal error")
-)
-
 func (a *Adapter) processError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrEntityNotFound):
-		return rpcErrorNotFound.Err()
+		return status.Error(codes.NotFound, "not found")
+	case errors.Is(err, domain.ErrUserAlreadyExists):
+		return status.Error(codes.AlreadyExists, "user already exists")
+	case errors.Is(err, domain.ErrInvalidCredentials):
+		return status.Error(codes.InvalidArgument, "invalid credentials")
+	case errors.Is(err, domain.ErrInvalidToken):
+		return status.Error(codes.Unauthenticated, "invalid token")
 	default:
-		return rpcErrorInternal.Err()
+		return status.Error(codes.Internal, "internal error")
 	}
 }

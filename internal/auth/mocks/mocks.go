@@ -71,6 +71,20 @@ func (mr *MockrepositoryMockRecorder) CreateUser(ctx, user any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*Mockrepository)(nil).CreateUser), ctx, user)
 }
 
+// DeleteUser mocks base method.
+func (m *Mockrepository) DeleteUser(ctx context.Context, user *models.User) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, user)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockrepositoryMockRecorder) DeleteUser(ctx, user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*Mockrepository)(nil).DeleteUser), ctx, user)
+}
+
 // GetToken mocks base method.
 func (m *Mockrepository) GetToken(ctx context.Context, token string) (*models.Token, error) {
 	m.ctrl.T.Helper()
@@ -129,6 +143,21 @@ func (m *Mockrepository) GetUserByUUID(ctx context.Context, uuid string) (*model
 func (mr *MockrepositoryMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*Mockrepository)(nil).GetUserByUUID), ctx, uuid)
+}
+
+// ListUsers mocks base method.
+func (m *Mockrepository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListUsers", ctx, limit, offset)
+	ret0, _ := ret[0].([]*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListUsers indicates an expected call of ListUsers.
+func (mr *MockrepositoryMockRecorder) ListUsers(ctx, limit, offset any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUsers", reflect.TypeOf((*Mockrepository)(nil).ListUsers), ctx, limit, offset)
 }
 
 // UpdateUser mocks base method.

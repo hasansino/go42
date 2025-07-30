@@ -117,6 +117,8 @@ func (x *User) GetCreatedAt() *timestamppb.Timestamp {
 
 type ListUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -151,8 +153,23 @@ func (*ListUsersRequest) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{1}
 }
 
+func (x *ListUsersRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListUsersRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
 type ListUsersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,6 +202,13 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ListUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
 }
 
 type GetUserByUUIDRequest struct {
@@ -277,6 +301,8 @@ func (x *GetUserByUUIDResponse) GetUser() *User {
 
 type CreateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,8 +337,23 @@ func (*CreateUserRequest) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{5}
 }
 
+func (x *CreateUserRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *CreateUserRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
 type CreateUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -347,8 +388,18 @@ func (*CreateUserResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
+func (x *CreateUserResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
 type UpdateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	Email         *string                `protobuf:"bytes,2,opt,name=email,proto3,oneof" json:"email,omitempty"`
+	Password      *string                `protobuf:"bytes,3,opt,name=password,proto3,oneof" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -381,6 +432,27 @@ func (x *UpdateUserRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UpdateUserRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserRequest) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpdateUserRequest) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
+}
+
+func (x *UpdateUserRequest) GetEmail() string {
+	if x != nil && x.Email != nil {
+		return *x.Email
+	}
+	return ""
+}
+
+func (x *UpdateUserRequest) GetPassword() string {
+	if x != nil && x.Password != nil {
+		return *x.Password
+	}
+	return ""
 }
 
 type UpdateUserResponse struct {
@@ -421,6 +493,7 @@ func (*UpdateUserResponse) Descriptor() ([]byte, []int) {
 
 type DeleteUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Uuid          string                 `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -453,6 +526,13 @@ func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use DeleteUserRequest.ProtoReflect.Descriptor instead.
 func (*DeleteUserRequest) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteUserRequest) GetUuid() string {
+	if x != nil {
+		return x.Uuid
+	}
+	return ""
 }
 
 type DeleteUserResponse struct {
@@ -504,18 +584,31 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\vpermissions\x18\x06 \x03(\tR\vpermissions\x12\x1b\n" +
 	"\tis_system\x18\a \x01(\bR\bisSystem\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x12\n" +
-	"\x10ListUsersRequest\"\x13\n" +
-	"\x11ListUsersResponse\"7\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"@\n" +
+	"\x10ListUsersRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"8\n" +
+	"\x11ListUsersResponse\x12#\n" +
+	"\x05users\x18\x01 \x03(\v2\r.auth.v1.UserR\x05users\"7\n" +
 	"\x14GetUserByUUIDRequest\x12\x1f\n" +
 	"\x04uuid\x18\x01 \x01(\tB\v\xbaH\b\xc8\x01\x01r\x03\x98\x01$R\x04uuid\":\n" +
 	"\x15GetUserByUUIDResponse\x12!\n" +
-	"\x04user\x18\x01 \x01(\v2\r.auth.v1.UserR\x04user\"\x13\n" +
-	"\x11CreateUserRequest\"\x14\n" +
-	"\x12CreateUserResponse\"\x13\n" +
-	"\x11UpdateUserRequest\"\x14\n" +
-	"\x12UpdateUserResponse\"\x13\n" +
-	"\x11DeleteUserRequest\"\x14\n" +
+	"\x04user\x18\x01 \x01(\v2\r.auth.v1.UserR\x04user\"_\n" +
+	"\x11CreateUserRequest\x12 \n" +
+	"\x05email\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02`\x01R\x05email\x12(\n" +
+	"\bpassword\x18\x02 \x01(\tB\f\xbaH\t\xc8\x01\x01r\x04\x10\b\x18\x18R\bpassword\"7\n" +
+	"\x12CreateUserResponse\x12!\n" +
+	"\x04user\x18\x01 \x01(\v2\r.auth.v1.UserR\x04user\"\x9b\x01\n" +
+	"\x11UpdateUserRequest\x12\x1f\n" +
+	"\x04uuid\x18\x01 \x01(\tB\v\xbaH\b\xc8\x01\x01r\x03\x98\x01$R\x04uuid\x12\"\n" +
+	"\x05email\x18\x02 \x01(\tB\a\xbaH\x04r\x02`\x01H\x00R\x05email\x88\x01\x01\x12*\n" +
+	"\bpassword\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\b\x18\x18H\x01R\bpassword\x88\x01\x01B\b\n" +
+	"\x06_emailB\v\n" +
+	"\t_password\"\x14\n" +
+	"\x12UpdateUserResponse\"4\n" +
+	"\x11DeleteUserRequest\x12\x1f\n" +
+	"\x04uuid\x18\x01 \x01(\tB\v\xbaH\b\xc8\x01\x01r\x03\x98\x01$R\x04uuid\"\x14\n" +
 	"\x12DeleteUserResponse2\xf6\x02\n" +
 	"\vAuthService\x12B\n" +
 	"\tListUsers\x12\x19.auth.v1.ListUsersRequest\x1a\x1a.auth.v1.ListUsersResponse\x12N\n" +
@@ -557,22 +650,24 @@ var file_auth_v1_auth_proto_goTypes = []any{
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
 	11, // 0: auth.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 1: auth.v1.GetUserByUUIDResponse.user:type_name -> auth.v1.User
-	1,  // 2: auth.v1.AuthService.ListUsers:input_type -> auth.v1.ListUsersRequest
-	3,  // 3: auth.v1.AuthService.GetUserByUUID:input_type -> auth.v1.GetUserByUUIDRequest
-	5,  // 4: auth.v1.AuthService.CreateUser:input_type -> auth.v1.CreateUserRequest
-	7,  // 5: auth.v1.AuthService.UpdateUser:input_type -> auth.v1.UpdateUserRequest
-	9,  // 6: auth.v1.AuthService.DeleteUser:input_type -> auth.v1.DeleteUserRequest
-	2,  // 7: auth.v1.AuthService.ListUsers:output_type -> auth.v1.ListUsersResponse
-	4,  // 8: auth.v1.AuthService.GetUserByUUID:output_type -> auth.v1.GetUserByUUIDResponse
-	6,  // 9: auth.v1.AuthService.CreateUser:output_type -> auth.v1.CreateUserResponse
-	8,  // 10: auth.v1.AuthService.UpdateUser:output_type -> auth.v1.UpdateUserResponse
-	10, // 11: auth.v1.AuthService.DeleteUser:output_type -> auth.v1.DeleteUserResponse
-	7,  // [7:12] is the sub-list for method output_type
-	2,  // [2:7] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	0,  // 1: auth.v1.ListUsersResponse.users:type_name -> auth.v1.User
+	0,  // 2: auth.v1.GetUserByUUIDResponse.user:type_name -> auth.v1.User
+	0,  // 3: auth.v1.CreateUserResponse.user:type_name -> auth.v1.User
+	1,  // 4: auth.v1.AuthService.ListUsers:input_type -> auth.v1.ListUsersRequest
+	3,  // 5: auth.v1.AuthService.GetUserByUUID:input_type -> auth.v1.GetUserByUUIDRequest
+	5,  // 6: auth.v1.AuthService.CreateUser:input_type -> auth.v1.CreateUserRequest
+	7,  // 7: auth.v1.AuthService.UpdateUser:input_type -> auth.v1.UpdateUserRequest
+	9,  // 8: auth.v1.AuthService.DeleteUser:input_type -> auth.v1.DeleteUserRequest
+	2,  // 9: auth.v1.AuthService.ListUsers:output_type -> auth.v1.ListUsersResponse
+	4,  // 10: auth.v1.AuthService.GetUserByUUID:output_type -> auth.v1.GetUserByUUIDResponse
+	6,  // 11: auth.v1.AuthService.CreateUser:output_type -> auth.v1.CreateUserResponse
+	8,  // 12: auth.v1.AuthService.UpdateUser:output_type -> auth.v1.UpdateUserResponse
+	10, // 13: auth.v1.AuthService.DeleteUser:output_type -> auth.v1.DeleteUserResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_auth_v1_auth_proto_init() }
@@ -580,6 +675,7 @@ func file_auth_v1_auth_proto_init() {
 	if File_auth_v1_auth_proto != nil {
 		return
 	}
+	file_auth_v1_auth_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

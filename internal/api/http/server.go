@@ -145,6 +145,11 @@ func New(opts ...Option) *Server {
 
 	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
 
+	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
+		Skipper: customMiddleware.DefaultSkipper,
+		Limit:   "10M",
+	}))
+
 	if s.tracingEnabled {
 		s.e.Use(otelecho.Middleware(
 			"http-server",
@@ -179,11 +184,6 @@ func New(opts ...Option) *Server {
 
 	s.e.Use(customMiddleware.NewMetricsCollector())
 	s.e.Use(customMiddleware.NewRequestID())
-
-	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
-		Skipper: customMiddleware.DefaultSkipper,
-		Limit:   "10M",
-	}))
 
 	s.root = s.e.Group("")
 	s.root.Static("/static", s.staticRoot)

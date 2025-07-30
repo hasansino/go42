@@ -23,6 +23,12 @@ import (
 	"github.com/hasansino/go42/internal/tools"
 )
 
+const (
+	InterceptorPriorityPreprocess    = 0
+	InterceptorPriorityObservability = 1
+	InterceptorPriorityBusinessLogic = 2
+)
+
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type adapterAccessor interface {
@@ -42,11 +48,18 @@ type Server struct {
 	tracingEnabled bool
 	withReflection bool
 	healthServer   *health.Server
-	rateLimiter    rateLimiterAccessor
+
+	rateLimiter rateLimiterAccessor
+
+	extraUnaryInterceptors  map[int][]grpc.UnaryServerInterceptor
+	extraStreamInterceptors map[int][]grpc.StreamServerInterceptor
 }
 
 func New(opts ...Option) *Server {
-	s := new(Server)
+	s := &Server{
+		extraUnaryInterceptors:  make(map[int][]grpc.UnaryServerInterceptor),
+		extraStreamInterceptors: make(map[int][]grpc.StreamServerInterceptor),
+	}
 	for _, o := range opts {
 		o(s)
 	}
@@ -65,26 +78,60 @@ func New(opts ...Option) *Server {
 		return status.Errorf(codes.Internal, "%s", p)
 	}
 
-	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
-		interceptors.UnaryServerRateLimiterInterceptor(s.rateLimiter),
-		logging.UnaryServerInterceptor(interceptorLogger(s.logger)),
-		interceptors.UnaryMetricsInterceptor(),
-		interceptors.UnaryRequestIDInterceptor(),
-		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator),
+	unaryPriorityQueue := tools.NewPriorityQueue[grpc.UnaryServerInterceptor]()
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityPreprocess,
+		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityPreprocess, interceptors.UnaryServerRateLimiterInterceptor(s.rateLimiter))
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		logging.UnaryServerInterceptor(interceptorLogger(s.logger)))
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		interceptors.UnaryMetricsInterceptor())
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		interceptors.UnaryRequestIDInterceptor())
+	unaryPriorityQueue.Enqueue(
+		InterceptorPriorityBusinessLogic,
+		protovalidateInterceptor.UnaryServerInterceptor(protovalidate.GlobalValidator))
+
+	streamPriorityQueue := tools.NewPriorityQueue[grpc.StreamServerInterceptor]()
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityPreprocess,
+		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityPreprocess,
+		interceptors.StreamServerRateLimiterInterceptor(s.rateLimiter))
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		logging.StreamServerInterceptor(interceptorLogger(s.logger)))
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		interceptors.StreamMetricsInterceptor())
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityObservability,
+		interceptors.StreamRequestIDInterceptor())
+	streamPriorityQueue.Enqueue(
+		InterceptorPriorityBusinessLogic,
+		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator))
+
+	// add extra interceptors from options
+	for priority, items := range s.extraUnaryInterceptors {
+		for _, interceptor := range items {
+			unaryPriorityQueue.Enqueue(priority, interceptor)
+		}
 	}
-	streamInterceptors := []grpc.StreamServerInterceptor{
-		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
-		interceptors.StreamServerRateLimiterInterceptor(s.rateLimiter),
-		logging.StreamServerInterceptor(interceptorLogger(s.logger)),
-		interceptors.StreamMetricsInterceptor(),
-		interceptors.StreamRequestIDInterceptor(),
-		protovalidateInterceptor.StreamServerInterceptor(protovalidate.GlobalValidator),
+	for priority, items := range s.extraStreamInterceptors {
+		for _, interceptor := range items {
+			streamPriorityQueue.Enqueue(priority, interceptor)
+		}
 	}
 
 	serverOptions := []grpc.ServerOption{
-		grpc.ChainUnaryInterceptor(unaryInterceptors...),
-		grpc.ChainStreamInterceptor(streamInterceptors...),
+		grpc.ChainUnaryInterceptor(unaryPriorityQueue.Extract()...),
+		grpc.ChainStreamInterceptor(streamPriorityQueue.Extract()...),
 	}
 
 	if s.maxRecvMsgSize > 0 {
