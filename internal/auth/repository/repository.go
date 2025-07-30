@@ -125,11 +125,11 @@ func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName 
 	return nil
 }
 
-func (r *Repository) GetToken(ctx context.Context, token string) (*models.Token, error) {
+func (r *Repository) GetToken(ctx context.Context, hashedToken string) (*models.Token, error) {
 	var apiToken models.Token
 	err := r.GetReadDB(ctx).
 		Preload("Permissions").
-		Where("token = ?", token).
+		Where("token = ?", hashedToken).
 		First(&apiToken).Error
 
 	if r.IsNotFoundError(err) {

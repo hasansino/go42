@@ -38,7 +38,7 @@ type repository interface {
 
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
 
-	GetToken(ctx context.Context, token string) (*models.Token, error)
+	GetToken(ctx context.Context, hashedToken string) (*models.Token, error)
 }
 
 type cache interface {
@@ -264,7 +264,7 @@ func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (
 
 func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
-		user, err := s.repository.GetUserByUUID(ctx, uuid)
+		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
@@ -288,7 +288,7 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 			return nil
 		}
 
-		if err := s.repository.UpdateUser(ctx, user); err != nil {
+		if err := s.repository.UpdateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
 
@@ -296,9 +296,9 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeUserUpdate,
 		}
-		if err := s.sendEvent(ctx, domain.TopicNameAuthEvents, event); err != nil {
+		if err := s.sendEvent(txCtx, domain.TopicNameAuthEvents, event); err != nil {
 			s.logger.ErrorContext(
-				ctx, "failed to send event: %w",
+				txCtx, "failed to send event: %w",
 				slog.String("topic", domain.TopicNameAuthEvents),
 				slog.Any("event", event),
 				slog.Any("error", err),
@@ -367,13 +367,14 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 		return nil, domain.ErrInvalidToken
 	}
 
-	tokenHash := sha256.New().Sum([]byte(token))
-	v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+string(tokenHash))
+	tokenHash, err := tokenSHA256(token)
 	if err != nil {
-		return nil, fmt.Errorf("failed to access cache: %w", err)
+		return nil, fmt.Errorf("failed to hash token: %w", err)
 	}
 
-	if v == cacheValueInvalidatedToken {
+	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+string(tokenHash)); err != nil {
+		s.logger.ErrorContext(ctx, "failed to fetch cache: %w", err)
+	} else if v == cacheValueInvalidatedToken {
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -381,9 +382,13 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
+	tokenHash, err := tokenSHA256(token)
+	if err != nil {
+		return fmt.Errorf("failed to hash token: %w", err)
+	}
 	return s.cache.SetTTL(
 		ctx,
-		cacheKeyInvalidatedToken+string(sha256.New().Sum([]byte(token))),
+		cacheKeyInvalidatedToken+string(tokenHash),
 		cacheValueInvalidatedToken,
 		time.Until(until)+1,
 	)
@@ -432,7 +437,12 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 // ----
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
-	apiToken, err := s.repository.GetToken(ctx, token)
+	hashedToken, err := tokenSHA256(token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash api token: %w", err)
+	}
+
+	apiToken, err := s.repository.GetToken(ctx, hashedToken)
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
 	}
@@ -463,4 +473,14 @@ func (s *Service) sendEvent(ctx context.Context, topic string, outboxMessage out
 		return fmt.Errorf("failed to send outbox message: %w", err)
 	}
 	return nil
+}
+
+func tokenSHA256(token string) (string, error) {
+	h := sha256.New()
+	_, err := h.Write([]byte(token))
+	if err != nil {
+		return "", err
+	}
+	tokenHash := h.Sum(nil)
+	return string(tokenHash), nil
 }

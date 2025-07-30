@@ -43,6 +43,8 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
+- jwt secret rotation
+- HMAC -> more secure method
 
 ### >>
 

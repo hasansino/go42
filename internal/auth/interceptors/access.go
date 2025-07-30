@@ -46,6 +46,9 @@ func NewStreamAccessInterceptor(r permissionsRegistryAccessor) grpc.StreamServer
 		if wrapper, wrapperPresent = ss.(*wrappedServerStream); !wrapperPresent {
 			return status.Errorf(codes.Unauthenticated, "unauthenticated request")
 		}
+		if wrapper == nil {
+			return status.Errorf(codes.Unauthenticated, "unauthenticated request")
+		}
 		authInfo := auth.RetrieveAuthFromContext(wrapper.Context())
 		if authInfo == nil {
 			return status.Errorf(codes.Unauthenticated, "unauthenticated request")
