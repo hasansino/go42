@@ -107,6 +107,7 @@ func processUserAuth(ctx echo.Context, svc authServiceAccessor, token string) er
 
 	authInfo := domain.ContextAuthInfo{
 		ID:   user.ID,
+		UUID: user.UUID.String(),
 		Type: domain.AuthenticationTypeCredentials,
 	}
 	authInfo.SetPermissions(user.PermissionList())
@@ -134,6 +135,7 @@ func processTokenAuth(ctx echo.Context, svc authServiceAccessor, token string) e
 
 	authInfo := domain.ContextAuthInfo{
 		ID:   apiToken.ID,
+		UUID: apiToken.UUID.String(),
 		Type: domain.AuthenticationTypeApiToken,
 	}
 

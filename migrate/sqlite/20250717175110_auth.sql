@@ -76,6 +76,7 @@ create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(exp
 
 create table if not exists auth_api_tokens (
      id integer primary key autoincrement,
+     uuid text not null unique,
      user_id integer not null,
      token text not null unique,
      name text not null,

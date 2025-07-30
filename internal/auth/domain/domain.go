@@ -56,7 +56,9 @@ const (
 	EventTypeAuthSignUp = "auth.signup"
 	EventTypeAuthLogin  = "auth.login"
 	EventTypeAuthLogout = "auth.logout"
+	EventTypeUserCreate = "user.create"
 	EventTypeUserUpdate = "user.update"
+	EventTypeUserDelete = "user.delete"
 )
 
 var (
@@ -94,6 +96,7 @@ const (
 // ID field stores authenticated subject id which is described by Type field.
 type ContextAuthInfo struct {
 	ID            int
+	UUID          string
 	Type          AuthenticationType
 	permissions   []string
 	permissionMap map[string]struct{}

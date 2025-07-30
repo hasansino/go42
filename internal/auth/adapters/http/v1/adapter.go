@@ -3,10 +3,12 @@ package adapter
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
@@ -25,8 +27,8 @@ type serviceAccessor interface {
 	Logout(ctx context.Context, accessToken, refreshToken string) error
 
 	CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error)
-	UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error
-	DeleteUser(ctx context.Context, id int) error
+	UpdateUser(ctx context.Context, uuid string, data domain.UpdateUserData) error
+	DeleteUser(ctx context.Context, uuid string) error
 	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
@@ -260,7 +262,7 @@ func (a *Adapter) updateSelf(ctx echo.Context) error {
 		updateData.Password = &password
 	}
 
-	err := a.service.UpdateUser(ctx.Request().Context(), authInfo.ID, updateData)
+	err := a.service.UpdateUser(ctx.Request().Context(), authInfo.UUID, updateData)
 	if err != nil {
 		return a.processError(ctx, err)
 	}
@@ -271,11 +273,32 @@ func (a *Adapter) updateSelf(ctx echo.Context) error {
 // ----
 
 func (a *Adapter) listUsers(ctx echo.Context) error {
-	return ctx.NoContent(http.StatusNotImplemented)
+	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
+	if err != nil || limit < 0 {
+		limit = 10
+	}
+	offSet, err := strconv.Atoi(ctx.QueryParam("offset"))
+	if err != nil || offSet < 0 {
+		offSet = 0
+	}
+	r, err := a.service.ListUsers(ctx.Request().Context(), limit, offSet)
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+	return ctx.JSON(http.StatusOK, r)
 }
 
 func (a *Adapter) userByUUID(ctx echo.Context) error {
-	return ctx.NoContent(http.StatusNotImplemented)
+	userUUID := ctx.Param("uuid")
+	if err := uuid.Validate(userUUID); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+	r, err := a.service.GetUserByUUID(ctx.Request().Context(), userUUID)
+	if err != nil {
+		return a.processError(ctx, err)
+	}
+	return ctx.JSON(http.StatusOK, r)
 }
 
 func (a *Adapter) createUser(ctx echo.Context) error {
@@ -283,9 +306,22 @@ func (a *Adapter) createUser(ctx echo.Context) error {
 }
 
 func (a *Adapter) updateUser(ctx echo.Context) error {
+	userUUID := ctx.Param("uuid")
+	if err := uuid.Validate(userUUID); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
 	return ctx.NoContent(http.StatusNotImplemented)
 }
 
 func (a *Adapter) deleteUser(ctx echo.Context) error {
-	return ctx.NoContent(http.StatusNotImplemented)
+	userUUID := ctx.Param("uuid")
+	if err := uuid.Validate(userUUID); err != nil {
+		return httpAPI.SendJSONError(ctx,
+			http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+	}
+	if err := a.service.DeleteUser(ctx.Request().Context(), userUUID); err != nil {
+		return a.processError(ctx, err)
+	}
+	return ctx.NoContent(http.StatusOK)
 }

@@ -77,6 +77,7 @@ create index if not exists idx_auth_role_permissions_permission_id on auth_role_
 
 create table if not exists auth_api_tokens (
     id bigserial primary key,
+    uuid uuid not null unique,
     user_id bigint not null,
     token varchar(255) not null,
     name varchar(100) not null,

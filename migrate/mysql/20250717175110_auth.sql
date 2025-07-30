@@ -72,6 +72,7 @@ create table if not exists auth_user_roles (
 
 create table if not exists auth_api_tokens (
     id bigint unsigned auto_increment primary key,
+    uuid char(36) not null,
     user_id bigint unsigned not null,
     token varchar(255) not null,
     last_used_at timestamp null default null,

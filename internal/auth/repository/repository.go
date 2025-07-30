@@ -49,11 +49,23 @@ func (r *Repository) UpdateUser(ctx context.Context, user *models.User) error {
 }
 
 func (r *Repository) DeleteUser(ctx context.Context, user *models.User) error {
+	result := r.GetTx(ctx).Delete(user)
+	if result.RowsAffected == 0 {
+		return domain.ErrEntityNotFound
+	}
+	if result.Error != nil {
+		return fmt.Errorf("error deleting user: %w", result.Error)
+	}
 	return nil
 }
 
 func (r *Repository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	return nil, nil
+	var users []*models.User
+	result := r.GetReadDB(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&users)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error listing users: %w", result.Error)
+	}
+	return users, nil
 }
 
 func (r *Repository) GetUserByID(ctx context.Context, id int) (*models.User, error) {

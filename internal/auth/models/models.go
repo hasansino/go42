@@ -109,6 +109,7 @@ func (UserRole) TableName() string { return "auth_user_roles" }
 
 type Token struct {
 	ID         int
+	UUID       uuid.UUID
 	UserID     int
 	Token      string
 	Name       string

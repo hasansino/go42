@@ -92,6 +92,7 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		Email:  email,
 		Status: domain.UserStatusActive,
 	}
+
 	if err := user.SetPassword(password); err != nil {
 		return nil, fmt.Errorf("failed to set password: %w", err)
 	}
@@ -229,12 +230,41 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 // ----
 
 func (s *Service) CreateUser(ctx context.Context, data domain.CreateUserData) (*models.User, error) {
-	return nil, nil
+	user := &models.User{
+		UUID:   uuid.New(),
+		Email:  *data.Email,
+		Status: domain.UserStatusActive,
+	}
+	if err := user.SetPassword(*data.Password); err != nil {
+		return nil, fmt.Errorf("failed to set password: %w", err)
+	}
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+		err := s.repository.CreateUser(txCtx, user)
+		if err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+		if err := s.repository.AssignRoleToUser(txCtx, user.ID, domain.RBACRoleUser); err != nil {
+			return fmt.Errorf("failed to assign user role: %w", err)
+		}
+		event := outboxDomain.Message{
+			AggregateID:   user.ID,
+			AggregateType: domain.EventTypeUserCreate,
+		}
+		err = s.sendEvent(txCtx, domain.TopicNameAuthEvents, event)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, id int, data domain.UpdateUserData) error {
+func (s *Service) UpdateUser(ctx context.Context, uuid string, data domain.UpdateUserData) error {
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
-		user, err := s.repository.GetUserByID(ctx, id)
+		user, err := s.repository.GetUserByUUID(ctx, uuid)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
@@ -280,12 +310,31 @@ func (s *Service) UpdateUser(ctx context.Context, id int, data domain.UpdateUser
 	})
 }
 
-func (s *Service) DeleteUser(ctx context.Context, id int) error {
-	return nil
+func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
+	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+		var err error
+		user, err := s.repository.GetUserByUUID(txCtx, uuid)
+		if err != nil {
+			return fmt.Errorf("failed to get user by id: %w", err)
+		}
+		err = s.repository.DeleteUser(txCtx, user)
+		if err != nil {
+			return fmt.Errorf("failed to delete user: %w", err)
+		}
+		event := outboxDomain.Message{
+			AggregateID:   user.ID,
+			AggregateType: domain.EventTypeUserDelete,
+		}
+		err = s.sendEvent(txCtx, domain.TopicNameAuthEvents, event)
+		if err != nil {
+			return fmt.Errorf("failed to send event: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *Service) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	return nil, nil
+	return s.repository.ListUsers(ctx, limit, offset)
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id int) (*models.User, error) {
