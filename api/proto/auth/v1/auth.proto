@@ -10,11 +10,16 @@ option go_package = "github.com/hasansino/go42/api/auth/v1";
 message User {
   string uuid = 2;
   string email = 3;
-  string status = 4;
+  UserStatus status = 4;
   repeated string roles = 5;
   repeated string permissions = 6;
   bool is_system = 7;
   google.protobuf.Timestamp created_at = 8;
+}
+
+enum UserStatus {
+  USER_STATUS_ACTIVE = 0;
+  USER_STATUS_INACTIVE = 1;
 }
 
 message ListUsersRequest {

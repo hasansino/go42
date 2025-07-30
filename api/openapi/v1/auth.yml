@@ -100,7 +100,7 @@ paths:
       summary: Retrieve current user information
       operationId: users.me.read
       security:
-        - jwt: [user:read_self]
+        - jwt: [users:read_self]
       responses:
         '200':
           description: User information retrieved successfully
@@ -116,7 +116,7 @@ paths:
       summary: Update current user
       operationId: users.me.update
       security:
-        - jwt: [ user:update_self ]
+        - jwt: [users:update_self]
       requestBody:
         required: true
         content:
@@ -130,6 +130,140 @@ paths:
           description: Invalid request
         '401':
           description: Unauthorized
+  /users:
+    get:
+      tags:
+        - users
+      summary: List users
+      operationId: users.list
+      security:
+        - jwt: [users:list]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+    post:
+      tags:
+        - users
+      summary: Create a new user
+      operationId: users.create
+      security:
+        - jwt: [users:create]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+  /users/{uuid}:
+    get:
+      tags:
+        - users
+      summary: Get user by UUID
+      operationId: users.get
+      security:
+        - jwt: [users:read_others]
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid UUID
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+    put:
+      tags:
+        - users
+      summary: Update user
+      operationId: users.update
+      security:
+        - jwt: [users:update]
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      operationId: users.delete
+      security:
+        - jwt: [users:delete]
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted
+        '400':
+          description: Invalid UUID
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
 # ---
 components:
   securitySchemes:
@@ -206,7 +340,8 @@ components:
     LogoutRequest:
       type: object
       required:
-        - token
+        - access_token
+        - refresh_token
       properties:
         access_token:
           type: string
@@ -214,11 +349,29 @@ components:
         refresh_token:
           type: string
           default: ""
-    UpdateSelfRequest:
+    CreateUserRequest:
       type: object
       required:
         - email
         - password
+      properties:
+        email:
+          type: string
+          default: "user@example.com"
+        password:
+          type: string
+          default: "1234567890"
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          default: "user@example.com"
+        password:
+          type: string
+          default: "1234567890"
+    UpdateSelfRequest:
+      type: object
       properties:
         email:
           type: string

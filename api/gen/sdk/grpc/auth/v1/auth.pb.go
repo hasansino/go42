@@ -23,11 +23,57 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type UserStatus int32
+
+const (
+	UserStatus_USER_STATUS_ACTIVE   UserStatus = 0
+	UserStatus_USER_STATUS_INACTIVE UserStatus = 1
+)
+
+// Enum value maps for UserStatus.
+var (
+	UserStatus_name = map[int32]string{
+		0: "USER_STATUS_ACTIVE",
+		1: "USER_STATUS_INACTIVE",
+	}
+	UserStatus_value = map[string]int32{
+		"USER_STATUS_ACTIVE":   0,
+		"USER_STATUS_INACTIVE": 1,
+	}
+)
+
+func (x UserStatus) Enum() *UserStatus {
+	p := new(UserStatus)
+	*p = x
+	return p
+}
+
+func (x UserStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UserStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_auth_v1_auth_proto_enumTypes[0].Descriptor()
+}
+
+func (UserStatus) Type() protoreflect.EnumType {
+	return &file_auth_v1_auth_proto_enumTypes[0]
+}
+
+func (x UserStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use UserStatus.Descriptor instead.
+func (UserStatus) EnumDescriptor() ([]byte, []int) {
+	return file_auth_v1_auth_proto_rawDescGZIP(), []int{0}
+}
+
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Uuid          string                 `protobuf:"bytes,2,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Status        UserStatus             `protobuf:"varint,4,opt,name=status,proto3,enum=auth.v1.UserStatus" json:"status,omitempty"`
 	Roles         []string               `protobuf:"bytes,5,rep,name=roles,proto3" json:"roles,omitempty"`
 	Permissions   []string               `protobuf:"bytes,6,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	IsSystem      bool                   `protobuf:"varint,7,opt,name=is_system,json=isSystem,proto3" json:"is_system,omitempty"`
@@ -80,11 +126,11 @@ func (x *User) GetEmail() string {
 	return ""
 }
 
-func (x *User) GetStatus() string {
+func (x *User) GetStatus() UserStatus {
 	if x != nil {
 		return x.Status
 	}
-	return ""
+	return UserStatus_USER_STATUS_ACTIVE
 }
 
 func (x *User) GetRoles() []string {
@@ -575,11 +621,11 @@ var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd8\x01\n" +
+	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xed\x01\n" +
 	"\x04User\x12\x12\n" +
 	"\x04uuid\x18\x02 \x01(\tR\x04uuid\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12+\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x13.auth.v1.UserStatusR\x06status\x12\x14\n" +
 	"\x05roles\x18\x05 \x03(\tR\x05roles\x12 \n" +
 	"\vpermissions\x18\x06 \x03(\tR\vpermissions\x12\x1b\n" +
 	"\tis_system\x18\a \x01(\bR\bisSystem\x129\n" +
@@ -609,7 +655,11 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x12UpdateUserResponse\"4\n" +
 	"\x11DeleteUserRequest\x12\x1f\n" +
 	"\x04uuid\x18\x01 \x01(\tB\v\xbaH\b\xc8\x01\x01r\x03\x98\x01$R\x04uuid\"\x14\n" +
-	"\x12DeleteUserResponse2\xf6\x02\n" +
+	"\x12DeleteUserResponse*>\n" +
+	"\n" +
+	"UserStatus\x12\x16\n" +
+	"\x12USER_STATUS_ACTIVE\x10\x00\x12\x18\n" +
+	"\x14USER_STATUS_INACTIVE\x10\x012\xf6\x02\n" +
 	"\vAuthService\x12B\n" +
 	"\tListUsers\x12\x19.auth.v1.ListUsersRequest\x1a\x1a.auth.v1.ListUsersResponse\x12N\n" +
 	"\rGetUserByUUID\x12\x1d.auth.v1.GetUserByUUIDRequest\x1a\x1e.auth.v1.GetUserByUUIDResponse\x12E\n" +
@@ -633,41 +683,44 @@ func file_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_auth_v1_auth_proto_rawDescData
 }
 
+var file_auth_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_auth_v1_auth_proto_goTypes = []any{
-	(*User)(nil),                  // 0: auth.v1.User
-	(*ListUsersRequest)(nil),      // 1: auth.v1.ListUsersRequest
-	(*ListUsersResponse)(nil),     // 2: auth.v1.ListUsersResponse
-	(*GetUserByUUIDRequest)(nil),  // 3: auth.v1.GetUserByUUIDRequest
-	(*GetUserByUUIDResponse)(nil), // 4: auth.v1.GetUserByUUIDResponse
-	(*CreateUserRequest)(nil),     // 5: auth.v1.CreateUserRequest
-	(*CreateUserResponse)(nil),    // 6: auth.v1.CreateUserResponse
-	(*UpdateUserRequest)(nil),     // 7: auth.v1.UpdateUserRequest
-	(*UpdateUserResponse)(nil),    // 8: auth.v1.UpdateUserResponse
-	(*DeleteUserRequest)(nil),     // 9: auth.v1.DeleteUserRequest
-	(*DeleteUserResponse)(nil),    // 10: auth.v1.DeleteUserResponse
-	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(UserStatus)(0),               // 0: auth.v1.UserStatus
+	(*User)(nil),                  // 1: auth.v1.User
+	(*ListUsersRequest)(nil),      // 2: auth.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),     // 3: auth.v1.ListUsersResponse
+	(*GetUserByUUIDRequest)(nil),  // 4: auth.v1.GetUserByUUIDRequest
+	(*GetUserByUUIDResponse)(nil), // 5: auth.v1.GetUserByUUIDResponse
+	(*CreateUserRequest)(nil),     // 6: auth.v1.CreateUserRequest
+	(*CreateUserResponse)(nil),    // 7: auth.v1.CreateUserResponse
+	(*UpdateUserRequest)(nil),     // 8: auth.v1.UpdateUserRequest
+	(*UpdateUserResponse)(nil),    // 9: auth.v1.UpdateUserResponse
+	(*DeleteUserRequest)(nil),     // 10: auth.v1.DeleteUserRequest
+	(*DeleteUserResponse)(nil),    // 11: auth.v1.DeleteUserResponse
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
-	11, // 0: auth.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 1: auth.v1.ListUsersResponse.users:type_name -> auth.v1.User
-	0,  // 2: auth.v1.GetUserByUUIDResponse.user:type_name -> auth.v1.User
-	0,  // 3: auth.v1.CreateUserResponse.user:type_name -> auth.v1.User
-	1,  // 4: auth.v1.AuthService.ListUsers:input_type -> auth.v1.ListUsersRequest
-	3,  // 5: auth.v1.AuthService.GetUserByUUID:input_type -> auth.v1.GetUserByUUIDRequest
-	5,  // 6: auth.v1.AuthService.CreateUser:input_type -> auth.v1.CreateUserRequest
-	7,  // 7: auth.v1.AuthService.UpdateUser:input_type -> auth.v1.UpdateUserRequest
-	9,  // 8: auth.v1.AuthService.DeleteUser:input_type -> auth.v1.DeleteUserRequest
-	2,  // 9: auth.v1.AuthService.ListUsers:output_type -> auth.v1.ListUsersResponse
-	4,  // 10: auth.v1.AuthService.GetUserByUUID:output_type -> auth.v1.GetUserByUUIDResponse
-	6,  // 11: auth.v1.AuthService.CreateUser:output_type -> auth.v1.CreateUserResponse
-	8,  // 12: auth.v1.AuthService.UpdateUser:output_type -> auth.v1.UpdateUserResponse
-	10, // 13: auth.v1.AuthService.DeleteUser:output_type -> auth.v1.DeleteUserResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	0,  // 0: auth.v1.User.status:type_name -> auth.v1.UserStatus
+	12, // 1: auth.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	1,  // 2: auth.v1.ListUsersResponse.users:type_name -> auth.v1.User
+	1,  // 3: auth.v1.GetUserByUUIDResponse.user:type_name -> auth.v1.User
+	1,  // 4: auth.v1.CreateUserResponse.user:type_name -> auth.v1.User
+	2,  // 5: auth.v1.AuthService.ListUsers:input_type -> auth.v1.ListUsersRequest
+	4,  // 6: auth.v1.AuthService.GetUserByUUID:input_type -> auth.v1.GetUserByUUIDRequest
+	6,  // 7: auth.v1.AuthService.CreateUser:input_type -> auth.v1.CreateUserRequest
+	8,  // 8: auth.v1.AuthService.UpdateUser:input_type -> auth.v1.UpdateUserRequest
+	10, // 9: auth.v1.AuthService.DeleteUser:input_type -> auth.v1.DeleteUserRequest
+	3,  // 10: auth.v1.AuthService.ListUsers:output_type -> auth.v1.ListUsersResponse
+	5,  // 11: auth.v1.AuthService.GetUserByUUID:output_type -> auth.v1.GetUserByUUIDResponse
+	7,  // 12: auth.v1.AuthService.CreateUser:output_type -> auth.v1.CreateUserResponse
+	9,  // 13: auth.v1.AuthService.UpdateUser:output_type -> auth.v1.UpdateUserResponse
+	11, // 14: auth.v1.AuthService.DeleteUser:output_type -> auth.v1.DeleteUserResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_auth_v1_auth_proto_init() }
@@ -681,13 +734,14 @@ func file_auth_v1_auth_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_v1_auth_proto_rawDesc), len(file_auth_v1_auth_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_auth_v1_auth_proto_goTypes,
 		DependencyIndexes: file_auth_v1_auth_proto_depIdxs,
+		EnumInfos:         file_auth_v1_auth_proto_enumTypes,
 		MessageInfos:      file_auth_v1_auth_proto_msgTypes,
 	}.Build()
 	File_auth_v1_auth_proto = out.File

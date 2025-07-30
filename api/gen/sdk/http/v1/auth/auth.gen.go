@@ -17,11 +17,19 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
 	JwtScopes = "jwt.Scopes"
 )
+
+// CreateUserRequest defines model for CreateUserRequest.
+type CreateUserRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -31,8 +39,8 @@ type LoginRequest struct {
 
 // LogoutRequest defines model for LogoutRequest.
 type LogoutRequest struct {
-	AccessToken  *string `json:"access_token,omitempty"`
-	RefreshToken *string `json:"refresh_token,omitempty"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 // RefreshRequest defines model for RefreshRequest.
@@ -55,8 +63,14 @@ type Tokens struct {
 
 // UpdateSelfRequest defines model for UpdateSelfRequest.
 type UpdateSelfRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    *string `json:"email,omitempty"`
+	Password *string `json:"password,omitempty"`
+}
+
+// UpdateUserRequest defines model for UpdateUserRequest.
+type UpdateUserRequest struct {
+	Email    *string `json:"email,omitempty"`
+	Password *string `json:"password,omitempty"`
 }
 
 // User defines model for User.
@@ -66,6 +80,12 @@ type User struct {
 	Permissions *[]string `json:"permissions,omitempty"`
 	Roles       *[]string `json:"roles,omitempty"`
 	Uuid        *string   `json:"uuid,omitempty"`
+}
+
+// UsersListParams defines parameters for UsersList.
+type UsersListParams struct {
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
@@ -80,8 +100,14 @@ type RefreshJSONRequestBody = RefreshRequest
 // SignupJSONRequestBody defines body for Signup for application/json ContentType.
 type SignupJSONRequestBody = SignUpRequest
 
+// UsersCreateJSONRequestBody defines body for UsersCreate for application/json ContentType.
+type UsersCreateJSONRequestBody = CreateUserRequest
+
 // UsersMeUpdateJSONRequestBody defines body for UsersMeUpdate for application/json ContentType.
 type UsersMeUpdateJSONRequestBody = UpdateSelfRequest
+
+// UsersUpdateJSONRequestBody defines body for UsersUpdate for application/json ContentType.
+type UsersUpdateJSONRequestBody = UpdateUserRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -176,6 +202,14 @@ type ClientInterface interface {
 
 	Signup(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UsersList request
+	UsersList(ctx context.Context, params *UsersListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersCreateWithBody request with any body
+	UsersCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UsersCreate(ctx context.Context, body UsersCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UsersMeRead request
 	UsersMeRead(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -183,6 +217,17 @@ type ClientInterface interface {
 	UsersMeUpdateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UsersMeUpdate(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersDelete request
+	UsersDelete(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersGet request
+	UsersGet(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UsersUpdateWithBody request with any body
+	UsersUpdateWithBody(ctx context.Context, uuid openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UsersUpdate(ctx context.Context, uuid openapi_types.UUID, body UsersUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -281,6 +326,42 @@ func (c *Client) Signup(ctx context.Context, body SignupJSONRequestBody, reqEdit
 	return c.Client.Do(req)
 }
 
+func (c *Client) UsersList(ctx context.Context, params *UsersListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersCreateRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersCreate(ctx context.Context, body UsersCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersCreateRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) UsersMeRead(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUsersMeReadRequest(c.Server)
 	if err != nil {
@@ -307,6 +388,54 @@ func (c *Client) UsersMeUpdateWithBody(ctx context.Context, contentType string, 
 
 func (c *Client) UsersMeUpdate(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUsersMeUpdateRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersDelete(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersDeleteRequest(c.Server, uuid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersGet(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersGetRequest(c.Server, uuid)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersUpdateWithBody(ctx context.Context, uuid openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersUpdateRequestWithBody(c.Server, uuid, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UsersUpdate(ctx context.Context, uuid openapi_types.UUID, body UsersUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUsersUpdateRequest(c.Server, uuid, body)
 	if err != nil {
 		return nil, err
 	}
@@ -477,6 +606,111 @@ func NewSignupRequestWithBody(server string, contentType string, body io.Reader)
 	return req, nil
 }
 
+// NewUsersListRequest generates requests for UsersList
+func NewUsersListRequest(server string, params *UsersListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Offset != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "offset", runtime.ParamLocationQuery, *params.Offset); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUsersCreateRequest calls the generic UsersCreate builder with application/json body
+func NewUsersCreateRequest(server string, body UsersCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUsersCreateRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUsersCreateRequestWithBody generates requests for UsersCreate with any type of body
+func NewUsersCreateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUsersMeReadRequest generates requests for UsersMeRead
 func NewUsersMeReadRequest(server string) (*http.Request, error) {
 	var err error
@@ -525,6 +759,121 @@ func NewUsersMeUpdateRequestWithBody(server string, contentType string, body io.
 	}
 
 	operationPath := fmt.Sprintf("/users/me")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUsersDeleteRequest generates requests for UsersDelete
+func NewUsersDeleteRequest(server string, uuid openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uuid", runtime.ParamLocationPath, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUsersGetRequest generates requests for UsersGet
+func NewUsersGetRequest(server string, uuid openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uuid", runtime.ParamLocationPath, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUsersUpdateRequest calls the generic UsersUpdate builder with application/json body
+func NewUsersUpdateRequest(server string, uuid openapi_types.UUID, body UsersUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUsersUpdateRequestWithBody(server, uuid, "application/json", bodyReader)
+}
+
+// NewUsersUpdateRequestWithBody generates requests for UsersUpdate with any type of body
+func NewUsersUpdateRequestWithBody(server string, uuid openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "uuid", runtime.ParamLocationPath, uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -607,6 +956,14 @@ type ClientWithResponsesInterface interface {
 
 	SignupWithResponse(ctx context.Context, body SignupJSONRequestBody, reqEditors ...RequestEditorFn) (*SignupResponse, error)
 
+	// UsersListWithResponse request
+	UsersListWithResponse(ctx context.Context, params *UsersListParams, reqEditors ...RequestEditorFn) (*UsersListResponse, error)
+
+	// UsersCreateWithBodyWithResponse request with any body
+	UsersCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersCreateResponse, error)
+
+	UsersCreateWithResponse(ctx context.Context, body UsersCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersCreateResponse, error)
+
 	// UsersMeReadWithResponse request
 	UsersMeReadWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeReadResponse, error)
 
@@ -614,6 +971,17 @@ type ClientWithResponsesInterface interface {
 	UsersMeUpdateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error)
 
 	UsersMeUpdateWithResponse(ctx context.Context, body UsersMeUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersMeUpdateResponse, error)
+
+	// UsersDeleteWithResponse request
+	UsersDeleteWithResponse(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*UsersDeleteResponse, error)
+
+	// UsersGetWithResponse request
+	UsersGetWithResponse(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*UsersGetResponse, error)
+
+	// UsersUpdateWithBodyWithResponse request with any body
+	UsersUpdateWithBodyWithResponse(ctx context.Context, uuid openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersUpdateResponse, error)
+
+	UsersUpdateWithResponse(ctx context.Context, uuid openapi_types.UUID, body UsersUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersUpdateResponse, error)
 }
 
 type LoginResponse struct {
@@ -703,6 +1071,50 @@ func (r SignupResponse) StatusCode() int {
 	return 0
 }
 
+type UsersListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]User
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UsersCreateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *User
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersCreateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersCreateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UsersMeReadResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -740,6 +1152,70 @@ func (r UsersMeUpdateResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UsersMeUpdateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UsersDeleteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersDeleteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersDeleteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UsersGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UsersUpdateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UsersUpdateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UsersUpdateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -814,6 +1290,32 @@ func (c *ClientWithResponses) SignupWithResponse(ctx context.Context, body Signu
 	return ParseSignupResponse(rsp)
 }
 
+// UsersListWithResponse request returning *UsersListResponse
+func (c *ClientWithResponses) UsersListWithResponse(ctx context.Context, params *UsersListParams, reqEditors ...RequestEditorFn) (*UsersListResponse, error) {
+	rsp, err := c.UsersList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersListResponse(rsp)
+}
+
+// UsersCreateWithBodyWithResponse request with arbitrary body returning *UsersCreateResponse
+func (c *ClientWithResponses) UsersCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersCreateResponse, error) {
+	rsp, err := c.UsersCreateWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersCreateResponse(rsp)
+}
+
+func (c *ClientWithResponses) UsersCreateWithResponse(ctx context.Context, body UsersCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersCreateResponse, error) {
+	rsp, err := c.UsersCreate(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersCreateResponse(rsp)
+}
+
 // UsersMeReadWithResponse request returning *UsersMeReadResponse
 func (c *ClientWithResponses) UsersMeReadWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*UsersMeReadResponse, error) {
 	rsp, err := c.UsersMeRead(ctx, reqEditors...)
@@ -838,6 +1340,41 @@ func (c *ClientWithResponses) UsersMeUpdateWithResponse(ctx context.Context, bod
 		return nil, err
 	}
 	return ParseUsersMeUpdateResponse(rsp)
+}
+
+// UsersDeleteWithResponse request returning *UsersDeleteResponse
+func (c *ClientWithResponses) UsersDeleteWithResponse(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*UsersDeleteResponse, error) {
+	rsp, err := c.UsersDelete(ctx, uuid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersDeleteResponse(rsp)
+}
+
+// UsersGetWithResponse request returning *UsersGetResponse
+func (c *ClientWithResponses) UsersGetWithResponse(ctx context.Context, uuid openapi_types.UUID, reqEditors ...RequestEditorFn) (*UsersGetResponse, error) {
+	rsp, err := c.UsersGet(ctx, uuid, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersGetResponse(rsp)
+}
+
+// UsersUpdateWithBodyWithResponse request with arbitrary body returning *UsersUpdateResponse
+func (c *ClientWithResponses) UsersUpdateWithBodyWithResponse(ctx context.Context, uuid openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UsersUpdateResponse, error) {
+	rsp, err := c.UsersUpdateWithBody(ctx, uuid, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersUpdateResponse(rsp)
+}
+
+func (c *ClientWithResponses) UsersUpdateWithResponse(ctx context.Context, uuid openapi_types.UUID, body UsersUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*UsersUpdateResponse, error) {
+	rsp, err := c.UsersUpdate(ctx, uuid, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUsersUpdateResponse(rsp)
 }
 
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
@@ -934,6 +1471,58 @@ func ParseSignupResponse(rsp *http.Response) (*SignupResponse, error) {
 	return response, nil
 }
 
+// ParseUsersListResponse parses an HTTP response from a UsersListWithResponse call
+func ParseUsersListResponse(rsp *http.Response) (*UsersListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUsersCreateResponse parses an HTTP response from a UsersCreateWithResponse call
+func ParseUsersCreateResponse(rsp *http.Response) (*UsersCreateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersCreateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseUsersMeReadResponse parses an HTTP response from a UsersMeReadWithResponse call
 func ParseUsersMeReadResponse(rsp *http.Response) (*UsersMeReadResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -976,25 +1565,87 @@ func ParseUsersMeUpdateResponse(rsp *http.Response) (*UsersMeUpdateResponse, err
 	return response, nil
 }
 
+// ParseUsersDeleteResponse parses an HTTP response from a UsersDeleteWithResponse call
+func ParseUsersDeleteResponse(rsp *http.Response) (*UsersDeleteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersDeleteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUsersGetResponse parses an HTTP response from a UsersGetWithResponse call
+func ParseUsersGetResponse(rsp *http.Response) (*UsersGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUsersUpdateResponse parses an HTTP response from a UsersUpdateWithResponse call
+func ParseUsersUpdateResponse(rsp *http.Response) (*UsersUpdateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UsersUpdateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RWUW/jNgz+KwK3hw0IYud623p+2m5P3W4vzRV76IJCsxlHnS3pKCltVuS/D5R8bdw4",
-	"QZprgN2bbJEi9X2fSD5AaVprNGrvoHgAVy6wlXH5wdRKX+KngM7ztyVjkbzCuIutVA0vKpzL0HgoIDik",
-	"n/FetrbBcWlaGIFfWYQCnCela1iPwErn7gxVfc/Jm7O3P/z40/m7fNtnPQLCT0ERVlBcd3E3Dpo9epi/",
-	"b7H0HOWDqU3wO3OXZYnO3XjzD+p+IkMpE84J3eIw82fZJp+hFC/TqTtzfN1oU1XrK/t1kvmRb+W+lEW8",
-	"t4rQ3ai+bf5oqrTHGukYxrdSvrKV9DjFZv51Qn7lkLZTLgmlx+pG+gPg3r7e4HWQWuWcMolg5bFN6n9u",
-	"2P2QRHIVKTINvtAlBFW9nMz1CByWgZRfTbk2pqi3dx0GriRlvTIaCvjtz48iSkYoLX4JfmFI/St5UyxQ",
-	"Vkjiu7mhVvpCvEdJSOKvkOdnZfSJS/weRsAKheQAI9Cy5XR6xz3lLa36HVew5jSVnpsIhPJN3At+ASNY",
-	"IrmU32Scj3NGwljU0ioo4Gw8GedRDX4RL5axV9Zw6Y8CMEm7LIMY+qKCInUGSLpC59+bahX1YbRHHe2l",
-	"tY0qo0d264x+ai28+pZwDgV8kz31nqxrPFmv66z76vUUMP5w1miXmHiT568Wu6s0MWqf2mmIxWYemmYl",
-	"GlPXWAmlGcu3KX7f/EIvZaMqQZ/vwXZn23b8zoTSsvRqiUlroW0lrT6DLKQWeK+cV7oWXB+Yelk7fsmR",
-	"3xk7PZJmgt/LGu+fjLaNjns4b308EgFCJfi42Ai3gfzhePeQvHg8LkKY3qjbg2RX/3dD2TXvE2H5bDT4",
-	"3zyCuCM6cI6m5oin0AGywd4e8pyqdbC7uZum/dNQ15+zDmJu8mrBY9ce4C1C2zXvl/H0bgdPsiGU1SqV",
-	"JveMrV9jJCGFxrs9NYt3XMbN7QFqHCCKI7k/8BJlBSfU+17UuKdyx+YeTuhJ4XJQ+JMBoLTsejajvjFG",
-	"QHHdDRDXceQrGMsbh80cZutZX/cpoigDEWqfHsBGThvIRjhhxjNV2A1mGkxPJP7tqffYPhCxD/G4Fyr2",
-	"i4hIEQepSHfrETEAfjqdeOSKh/cTaUwpefQO1PCE570tsiz+XBjni/P8PM+kVdlyAuvZ+r8AAAD//1xw",
-	"gIGaDwAA",
+	"H4sIAAAAAAAC/9RYXVPjNhT9Kxq1D+1MBjsLbVk/tdud2aHdvsAyfaAZRmtfO6KyZPQRcJn8986VTBI7",
+	"dgiBsPDmWFe6x+fcL+WOpqqslARpDU3uqEmnUDL/+LsGZuHcgD6FawfG4stKqwq05eBNoGRc4EMGOXPC",
+	"0oQ6A/pXuGVlJeAgVSUdUVtXQBNqrOayoPMRrZgxN0pn7Z3jd4dHP/38y/H7eH3PfEQ1XDuuIaPJReN3",
+	"5aDJYof6egWpRS+fVcHlm4WunB3EztIUjLm06l+QbSB9kDXkGsx0O/MO2pan7lF9yE+DxSD0XUAMezvj",
+	"hTyv3qbGX/CrzFPFhduKazCXvG0bL0y5tFCA3iUQ1iCfVxmzcAYifxWUD+B7NRVrHZ8BvQ4p9XU2u2R2",
+	"C7nX4ffCBV1yY7gKAcYtlCH7uobNC6Y1q32IKAGP3OIczx4fTPMRNZA6zW19hi0neL26aTgwqeaV5UrS",
+	"hP7x9xfiQ5ZwSX5zdqo0/4/hIpkCy0CTH3KlS2YT8gGYBk3+cXF8mPo9/hF+pCOKGULDBjqikpUIp3Xc",
+	"Ejer+J9Q0znC5DJXnghuhV9zdkpHdAbaBHzjg/ggRiZUBZJVnCb08GB8EPsCYKf+wyLcFQnsSD4AVIhN",
+	"DAPv+iSjSWhYNJQSMPaDymofH0pakN6eVZXgqd8RXRkllx0bn77XkNOEfhctW3rU9POo1Qzn7YJltQP/",
+	"wlRKmqDEuzh+Nt9NpfNe29KeOV/scidETYQqCsgIl8jlUfDfNj+RMyZ4RvT9d6Dd4bod5hnhkqWWzyDE",
+	"mitLput7kgmTBG65sVwWBPMfpWeF8S0P9Z3gpoVoytmNquH63mRbGQS2163NRxCA8EAfFhtiVpjfnu8W",
+	"kyeL4zyFIUfNBiab/jNMZTM87InLzmjyapLAr5CGnJ2l2SEVGkJW1NsgnuGFdNWwdmdhfT/Stee8rZQb",
+	"P5tz37V7dPPUNs37cTq9H9CJCQ0sq0NpMh21wnWMMCLhZkPNwhVPQQE9KqEb85kb65uTZiVYb35xF/rj",
+	"tQNdL9uj4CVH0yVRiy4/7hkx56P+Y1SeGxg4p++YyRPzcDG8PCxrd55ZlxnZIiongViv37hHP8maUQKD",
+	"YWW68dz6uebCT5omEUj/BD9ypSuhk+BhqWr4PcF5rjflvJghLPaUd+t/Abz53HuadsFlV71NqXkv4iI3",
+	"I0yJTen5F5wCy+gee9FGVnHexWka52sNVnOY9TalpxGJhe7SgMi7XJ42LknqtAYZsmIVVH+CuGE2w61w",
+	"TxmyfiXedUjz5Dt/3IuGdHDZq0X4uJYSGyP7Du+C84BGgIUBST6Gxf4OhFemZefwl8sunat9JITF0rJ7",
+	"8ZxsTX2A/DD15+cnH7fkHY2OBtxJZUmunHxInobJjjKBwiFFRhuqyyew35T5Fy1gr01MX/WUnQaZWop+",
+	"gqbUfa0DqseVuUWReyll91VKHz1svGwpfY4oCMgGiu1QkfUn6tm9rm33QqVM0BF1WtCETq2tkijyL6fK",
+	"2OQ4Po4jVvFoNqbzyfz/AAAA//9CEAZP9BkAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

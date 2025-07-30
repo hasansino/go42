@@ -148,10 +148,17 @@ func (a *Adapter) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*p
 }
 
 func userToProto(user *models.User) *pb.User {
+	var status pb.UserStatus
+	switch user.Status {
+	case domain.UserStatusActive:
+		status = pb.UserStatus_USER_STATUS_ACTIVE
+	case domain.UserStatusInactive:
+		status = pb.UserStatus_USER_STATUS_INACTIVE
+	}
 	return &pb.User{
 		Uuid:        user.UUID.String(),
 		Email:       user.Email,
-		Status:      user.Status,
+		Status:      status,
 		Roles:       user.RoleList(),
 		Permissions: user.PermissionList(),
 		IsSystem:    user.IsSystem,
