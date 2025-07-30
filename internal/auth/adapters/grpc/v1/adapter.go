@@ -154,6 +154,8 @@ func userToProto(user *models.User) *pb.User {
 		status = pb.UserStatus_USER_STATUS_ACTIVE
 	case domain.UserStatusInactive:
 		status = pb.UserStatus_USER_STATUS_INACTIVE
+	default:
+		status = pb.UserStatus_USER_STATUS_UNSPECIFIED
 	}
 	return &pb.User{
 		Uuid:        user.UUID.String(),

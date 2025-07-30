@@ -26,19 +26,22 @@ const (
 type UserStatus int32
 
 const (
-	UserStatus_USER_STATUS_ACTIVE   UserStatus = 0
-	UserStatus_USER_STATUS_INACTIVE UserStatus = 1
+	UserStatus_USER_STATUS_UNSPECIFIED UserStatus = 0
+	UserStatus_USER_STATUS_ACTIVE      UserStatus = 1
+	UserStatus_USER_STATUS_INACTIVE    UserStatus = 2
 )
 
 // Enum value maps for UserStatus.
 var (
 	UserStatus_name = map[int32]string{
-		0: "USER_STATUS_ACTIVE",
-		1: "USER_STATUS_INACTIVE",
+		0: "USER_STATUS_UNSPECIFIED",
+		1: "USER_STATUS_ACTIVE",
+		2: "USER_STATUS_INACTIVE",
 	}
 	UserStatus_value = map[string]int32{
-		"USER_STATUS_ACTIVE":   0,
-		"USER_STATUS_INACTIVE": 1,
+		"USER_STATUS_UNSPECIFIED": 0,
+		"USER_STATUS_ACTIVE":      1,
+		"USER_STATUS_INACTIVE":    2,
 	}
 )
 
@@ -130,7 +133,7 @@ func (x *User) GetStatus() UserStatus {
 	if x != nil {
 		return x.Status
 	}
-	return UserStatus_USER_STATUS_ACTIVE
+	return UserStatus_USER_STATUS_UNSPECIFIED
 }
 
 func (x *User) GetRoles() []string {
@@ -655,11 +658,12 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\x12UpdateUserResponse\"4\n" +
 	"\x11DeleteUserRequest\x12\x1f\n" +
 	"\x04uuid\x18\x01 \x01(\tB\v\xbaH\b\xc8\x01\x01r\x03\x98\x01$R\x04uuid\"\x14\n" +
-	"\x12DeleteUserResponse*>\n" +
+	"\x12DeleteUserResponse*[\n" +
 	"\n" +
-	"UserStatus\x12\x16\n" +
-	"\x12USER_STATUS_ACTIVE\x10\x00\x12\x18\n" +
-	"\x14USER_STATUS_INACTIVE\x10\x012\xf6\x02\n" +
+	"UserStatus\x12\x1b\n" +
+	"\x17USER_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12USER_STATUS_ACTIVE\x10\x01\x12\x18\n" +
+	"\x14USER_STATUS_INACTIVE\x10\x022\xf6\x02\n" +
 	"\vAuthService\x12B\n" +
 	"\tListUsers\x12\x19.auth.v1.ListUsersRequest\x1a\x1a.auth.v1.ListUsersResponse\x12N\n" +
 	"\rGetUserByUUID\x12\x1d.auth.v1.GetUserByUUIDRequest\x1a\x1e.auth.v1.GetUserByUUIDResponse\x12E\n" +

@@ -25,7 +25,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 # go42
 
-Go42 is opinionated approach to develop cloud native golang services. 
+Go42 is opinionated approach to develop cloud native golang services.
 
 # Goals
 
@@ -33,6 +33,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Reduce operational overhead by enforcing conventions and practices.
 - Incorporate security fundamentals from the day zero.
 - Make it easy to integrate AI tooling into the development process.
+- Fastest possible operational deployment bootstrapping.
 
 ## Backlog
 
