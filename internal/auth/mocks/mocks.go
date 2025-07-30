@@ -86,18 +86,18 @@ func (mr *MockrepositoryMockRecorder) DeleteUser(ctx, user any) *gomock.Call {
 }
 
 // GetToken mocks base method.
-func (m *Mockrepository) GetToken(ctx context.Context, token string) (*models.Token, error) {
+func (m *Mockrepository) GetToken(ctx context.Context, hashedToken string) (*models.Token, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToken", ctx, token)
+	ret := m.ctrl.Call(m, "GetToken", ctx, hashedToken)
 	ret0, _ := ret[0].(*models.Token)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetToken indicates an expected call of GetToken.
-func (mr *MockrepositoryMockRecorder) GetToken(ctx, token any) *gomock.Call {
+func (mr *MockrepositoryMockRecorder) GetToken(ctx, hashedToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*Mockrepository)(nil).GetToken), ctx, token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*Mockrepository)(nil).GetToken), ctx, hashedToken)
 }
 
 // GetUserByEmail mocks base method.

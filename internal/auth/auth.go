@@ -373,7 +373,9 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 	}
 
 	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+string(tokenHash)); err != nil {
-		s.logger.ErrorContext(ctx, "failed to fetch cache: %w", err)
+		s.logger.ErrorContext(
+			ctx, "failed to fetch cache: %w",
+			slog.Any("error", err))
 	} else if v == cacheValueInvalidatedToken {
 		return nil, domain.ErrInvalidToken
 	}

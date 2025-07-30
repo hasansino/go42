@@ -25,7 +25,14 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 # go42
 
-Go42 is opinionated approach to develop cloud native golang services.
+Go42 is opinionated approach to develop cloud native golang services. 
+
+# Project Goals
+
+* Provide SDLC framework which will scale with project, team and organization growth.
+* Reduce operational overhead by enforcing conventions and practices from beginning.
+* Incorporate security fundamentals from the day zero.
+* Make it easy to integrate AI tooling into the development process.
 
 ## Backlog
 
@@ -143,3 +150,5 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Try https://github.com/google/capslock
 - Custom GitHub runner hardening
 - Custom & simple DI container for main.go
+- graphql support
+- event sourcing - cqrs
