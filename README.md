@@ -25,11 +25,11 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 # go42
 
-ദ്ദി( •̀ ᴗ - ) ( ´• ω •)  ദ്ദി( •̀ ᴗ •́ )و 💪(•̀_•́💪)
+Go42 is opinionated approach to develop cloud native golang services.
 
 ## Backlog
 
-### >
+### 💪(•̀_•́💪)
 
 - security headers
   - Strict-Transport-Security (HSTS)
@@ -45,8 +45,11 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - auth pkg metrics
 - jwt secret rotation
 - HMAC -> more secure method
+- caching for user/permission lookups
+- slog smart sampling of duplicates
+- password complexity rules
 
-### >>
+### ദ്ദി( •̀ ᴗ •́ )و
 
 - service discovery
   - consul - consul kv for config
@@ -56,7 +59,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
   - https://echo.labstack.com/docs/middleware/jaeger
 - circuit breaker (https://github.com/sony/gobreaker)
 
-### >>>
+### ദ്ദി( •̀ ᴗ - )
 
 - datadog integration
 - release annotations
@@ -65,9 +68,19 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - integration with project management tools
 - using AI agents to complete tasks
 - arch/business/feature documentation generation
+- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
+- `main.go` -> move init functions out of file and make them modular
+- graceful connection recovery
+- outbox table cleanup worker
+- logging conventions
+- slog contextual values (like request id etc.) propogation
+- run make generate in CI/CD to check for changes in generated files
+- distributed rate limiter
+- workflow running on schedule to cleanup docker registry
 
-### >>>>
+### ( ´• ω •)
 
+- lock tools version and sync with CI
 - working with private repositories, .netrc, GOPRIVATE, modules
 - go42-cli (round-kick, fist-punch ASCII)
 - go42-runner
@@ -105,11 +118,9 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
 - migration linting and change management
 - Try https://github.com/hypermodeinc/badger
-- Lock tools version and sync with CI
 - Try asyncapi (again)
 - Register echo validator -> simplify adapters
 - Release notifications to slack (https://github.com/8398a7/action-slack)
-- Workflow running on schedule to cleanup docker registry
 - Swagger annotations in adapters - generation of specs
 - Try https://sqlc.dev/
 - k8 hpa/vpa configurations
@@ -118,27 +129,17 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 - Research sso -> saml/oidc
 - Audit package implementation and guidelines
 - Try https://echo.labstack.com/docs/middleware/gzip
-- Distributed rate limiter
-- Research jwt RS256
 - Research doc builders like mkdocs / sphinx-doc
 - Deploy docs to private gh-pages (gh enterprise)
 - Check current branch (except master) for commit naming violations
-- Run make generate in CI/CD to check for changes in generated files
 - Try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
 - Release rollback automation
-- Logging conventions
-- slog contextual values (like request id etc.) propogation
 - move all echo middleware to middleware package
 - grpc transport credentials
 - Try https://github.com/tursodatabase/turso
 - make cache generic where possible
 - nosql -> `clickhouse` + `duckdb`
-- graceful connection recovery
-- outbox table cleanup worker
 - Try https://github.com/tconbeer/sqlfmt
-- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
-- `main.go` -> move init functions out of file and make them modular
-- slog smart sampling of duplicates
 - Try https://github.com/google/capslock
 - Custom GitHub runner hardening
 - Custom & simple DI container for main.go
