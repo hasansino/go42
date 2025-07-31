@@ -521,6 +521,7 @@ func main() {
 	if cfg.Chat.Enabled && chatService != nil {
 		chatWebSocketAdapter := chatWebSocketAdapterV1.New(
 			chatService,
+			authService,
 			chatWebSocketAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
 			chatWebSocketAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
 			chatWebSocketAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),

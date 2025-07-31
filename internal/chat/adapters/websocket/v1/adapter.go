@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/hasansino/go42/internal/auth/domain"
+	authModels "github.com/hasansino/go42/internal/auth/models"
 	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 )
 
@@ -28,12 +29,17 @@ type serviceAccessor interface {
 	UnregisterClient(ctx context.Context, clientID string)
 }
 
+type authServiceAccessor interface {
+	GetUserByID(ctx context.Context, id int) (*authModels.User, error)
+}
+
 // Adapter handles websocket connections for chat
 type Adapter struct {
-	service  serviceAccessor
-	upgrader websocket.Upgrader
-	logger   *slog.Logger
-	options  adapterOptions
+	service     serviceAccessor
+	authService authServiceAccessor
+	upgrader    websocket.Upgrader
+	logger      *slog.Logger
+	options     adapterOptions
 }
 
 type adapterOptions struct {
@@ -45,7 +51,7 @@ type adapterOptions struct {
 }
 
 // New creates a new websocket adapter
-func New(service serviceAccessor, opts ...Option) *Adapter {
+func New(service serviceAccessor, authService authServiceAccessor, opts ...Option) *Adapter {
 	options := adapterOptions{
 		logger:       slog.Default(),
 		readTimeout:  60 * time.Second,
@@ -68,10 +74,11 @@ func New(service serviceAccessor, opts ...Option) *Adapter {
 	}
 
 	return &Adapter{
-		service:  service,
-		upgrader: upgrader,
-		logger:   options.logger,
-		options:  options,
+		service:     service,
+		authService: authService,
+		upgrader:    upgrader,
+		logger:      options.logger,
+		options:     options,
 	}
 }
 
@@ -96,12 +103,19 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		return err
 	}
 
+	// Get user information from auth service
+	user, err := a.authService.GetUserByID(c.Request().Context(), authInfo.ID)
+	if err != nil {
+		a.logger.ErrorContext(c.Request().Context(), "failed to get user info", slog.Any("error", err))
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user info")
+	}
+
 	// Create client
 	client := &chatDomain.Client{
 		ID:        uuid.New().String(),
 		UserID:    authInfo.ID,
 		UserUUID:  authInfo.UUID,
-		UserEmail: "user@example.com", // TODO: Get from auth service
+		UserEmail: user.Email,
 		Send:      make(chan []byte, 256),
 		JoinedAt:  time.Now(),
 	}
