@@ -477,13 +477,14 @@ type Outbox struct {
 // ╰──────────────────────────────╯
 
 type Auth struct {
-	JWTSecret            string        `env:"AUTH_JWT_SECRET"             default:"0128899"`
-	JWTAccessTokenTTL    time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"   default:"15m"`
-	JWTRefreshTokenTTL   time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"  default:"168h"`
-	JWTIssuer            string        `env:"AUTH_JWT_ISSUER"             default:"go42"`
-	JWTAudience          []string      `env:"AUTH_JWT_AUDIENCE"           default:"go42"`
-	APICacheTTL          time.Duration `env:"AUTH_API_CACHE_TTL"          default:"60m"`
-	TokenUpdaterInterval time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL" default:"5m"`
+	JWTSecret              string        `env:"AUTH_JWT_SECRET"                default:"0128899"`
+	JWTAccessTokenTTL      time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"      default:"15m"`
+	JWTRefreshTokenTTL     time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
+	JWTIssuer              string        `env:"AUTH_JWT_ISSUER"                default:"go42"`
+	JWTAudience            []string      `env:"AUTH_JWT_AUDIENCE"              default:"go42"`
+	APICacheTTL            time.Duration `env:"AUTH_API_CACHE_TTL"             default:"60m"`
+	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
+	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
 }
 
 // ---

@@ -55,9 +55,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - HMAC -> more secure method
 - caching for user/permission lookups
 - slog smart sampling of duplicates
-- password complexity rules
-- gorm returns roles from all users for single user - bug with join conditions
-- Try https://sqlc.dev/
+- Try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 

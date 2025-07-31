@@ -42,3 +42,9 @@ func WithJWTAudience(audience []string) Option {
 		s.jwtAudience = audience
 	}
 }
+
+func WithMinPasswordEntropyBits(bits int) Option {
+	return func(s *Service) {
+		s.minPasswordEntropyBits = bits
+	}
+}

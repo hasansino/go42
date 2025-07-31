@@ -447,6 +447,7 @@ func main() {
 			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
 			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),
 			auth.WithJWTAudience(cfg.Auth.JWTAudience),
+			auth.WithMinPasswordEntropyBits(cfg.Auth.MinPasswordEntropyBits),
 		)
 
 		authTokenLastUsedUpdater := authWorkers.NewTokenLastUsedUpdater(

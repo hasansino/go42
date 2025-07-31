@@ -46,6 +46,7 @@ require (
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/samber/slog-multi v1.4.1
 	github.com/stretchr/testify v1.10.0
+	github.com/wagslane/go-password-validator v0.3.0
 	go.etcd.io/etcd/client/v3 v3.6.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.62.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0

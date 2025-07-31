@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	passwordvalidator "github.com/wagslane/go-password-validator"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/hasansino/go42/internal/auth/domain"
@@ -63,6 +64,8 @@ type Service struct {
 	jwtIssuer       string
 	jwtAudience     []string
 
+	minPasswordEntropyBits int
+
 	tokensUsedChan chan domain.TokenWasUsed
 }
 
@@ -88,6 +91,10 @@ func NewService(
 }
 
 func (s *Service) SignUp(ctx context.Context, email string, password string) (*models.User, error) {
+	if err := s.CheckPasswordStrength(password); err != nil {
+		return nil, domain.ErrPasswordWeak
+	}
+
 	user := &models.User{
 		UUID:   uuid.New(),
 		Email:  email,
@@ -231,14 +238,20 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 // ----
 
 func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (*models.User, error) {
+	if err := s.CheckPasswordStrength(data.Password); err != nil {
+		return nil, domain.ErrPasswordWeak
+	}
+
 	user := &models.User{
 		UUID:   uuid.New(),
 		Email:  data.Email,
 		Status: domain.UserStatusActive,
 	}
+
 	if err := user.SetPassword(data.Password); err != nil {
 		return nil, fmt.Errorf("failed to set password: %w", err)
 	}
+
 	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		err := s.repository.CreateUser(txCtx, user)
 		if err != nil {
@@ -260,6 +273,7 @@ func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (
 	if err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
@@ -280,6 +294,9 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 		}
 		if data.Password != nil {
 			doUpdate = true
+			if err := s.CheckPasswordStrength(*data.Password); err != nil {
+				return domain.ErrPasswordWeak
+			}
 			if err := user.SetPassword(*data.Password); err != nil {
 				return fmt.Errorf("failed to set password: %w", err)
 			}
@@ -462,6 +479,10 @@ func (s *Service) sendEvent(ctx context.Context, topic string, outboxMessage out
 		return fmt.Errorf("failed to send outbox message: %w", err)
 	}
 	return nil
+}
+
+func (s *Service) CheckPasswordStrength(password string) error {
+	return passwordvalidator.Validate(password, float64(s.minPasswordEntropyBits))
 }
 
 func tokenSHA256(token string) string {

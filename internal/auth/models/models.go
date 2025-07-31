@@ -25,7 +25,7 @@ type User struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt
 
-	Roles []Role `gorm:"many2many:auth_user_roles;association_autocreate:false;association_autoupdate:false;"`
+	Roles []Role `gorm:"-"`
 }
 
 func (*User) TableName() string { return "auth_users" }
@@ -84,7 +84,7 @@ type Role struct {
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_role_permissions;association_autocreate:false;association_autoupdate:false;"`
+	Permissions []Permission `gorm:"-"`
 }
 
 func (Role) TableName() string { return "auth_roles" }
@@ -119,7 +119,7 @@ type Token struct {
 	UpdatedAt  time.Time
 	DeletedAt  gorm.DeletedAt
 
-	Permissions []Permission `gorm:"many2many:auth_api_tokens_permissions;association_autocreate:false;association_autoupdate:false;"`
+	Permissions []Permission `gorm:"-"`
 }
 
 func (*Token) TableName() string { return "auth_api_tokens" }

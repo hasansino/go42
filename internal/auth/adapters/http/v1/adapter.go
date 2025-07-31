@@ -79,11 +79,11 @@ func (a *Adapter) Register(g *echo.Group) {
 	userGroup.PUT("/me", a.updateSelf,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersUpdateSelf))
 
-	userGroup.GET("/", a.listUsers,
+	userGroup.GET("", a.listUsers,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersList))
 	userGroup.GET("/:uuid", a.userByUUID,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersReadOthers))
-	userGroup.POST("/", a.createUser,
+	userGroup.POST("", a.createUser,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersCreate))
 	userGroup.PUT("/:uuid", a.updateUser,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersUpdate))
@@ -285,7 +285,11 @@ func (a *Adapter) listUsers(ctx echo.Context) error {
 	if err != nil {
 		return a.processError(ctx, err)
 	}
-	return ctx.JSON(http.StatusOK, r)
+	resp := make([]UserResponse, len(r))
+	for i, user := range r {
+		resp[i] = UserResponseFromModel(user)
+	}
+	return ctx.JSON(http.StatusOK, resp)
 }
 
 func (a *Adapter) userByUUID(ctx echo.Context) error {
@@ -298,7 +302,7 @@ func (a *Adapter) userByUUID(ctx echo.Context) error {
 	if err != nil {
 		return a.processError(ctx, err)
 	}
-	return ctx.JSON(http.StatusOK, r)
+	return ctx.JSON(http.StatusOK, UserResponseFromModel(r))
 }
 
 type CreateUserRequest struct {

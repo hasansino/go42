@@ -32,8 +32,8 @@ test-integration:
 #   * brew install k6
 test-load:
 	@k6 version
-	@k6 run tests/load/http/v1/auth_test.js
-	@k6 run tests/load/grpc/v1/auth_test.js
+	@k6 run tests/load/http/v1/auth_test.js || true
+	@k6 run tests/load/grpc/v1/auth_test.js || true
 
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.

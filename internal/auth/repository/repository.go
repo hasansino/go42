@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
-
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 	"github.com/hasansino/go42/internal/database"
@@ -61,10 +59,82 @@ func (r *Repository) DeleteUser(ctx context.Context, user *models.User) error {
 
 func (r *Repository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	var users []*models.User
+
 	result := r.GetReadDB(ctx).Limit(limit).Offset(offset).Order("id ASC").Find(&users)
 	if result.Error != nil {
 		return nil, fmt.Errorf("error listing users: %w", result.Error)
 	}
+
+	if len(users) == 0 {
+		return users, nil
+	}
+
+	userIDs := make([]int, len(users))
+	userMap := make(map[int]*models.User)
+	for i, user := range users {
+		userIDs[i] = user.ID
+		userMap[user.ID] = users[i]
+	}
+
+	var userRoles []struct {
+		UserID int
+		Role   models.Role `gorm:"embedded;embeddedPrefix:role_"`
+	}
+
+	err := r.GetReadDB(ctx).
+		Table("auth_user_roles").
+		Select("auth_user_roles.user_id, auth_roles.id as role_id, auth_roles.name as role_name, auth_roles.description as role_description, auth_roles.is_system as role_is_system, auth_roles.created_at as role_created_at, auth_roles.updated_at as role_updated_at").
+		Joins("JOIN auth_roles ON auth_roles.id = auth_user_roles.role_id").
+		Where("auth_user_roles.user_id IN ?", userIDs).
+		Where("auth_user_roles.expires_at IS NULL OR auth_user_roles.expires_at > ?", time.Now()).
+		Where("auth_roles.deleted_at IS NULL").
+		Scan(&userRoles).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching user roles: %w", err)
+	}
+
+	roleIDs := make([]int, 0)
+	roleMap := make(map[int]*models.Role)
+	for _, ur := range userRoles {
+		if _, exists := roleMap[ur.Role.ID]; !exists {
+			roleIDs = append(roleIDs, ur.Role.ID)
+			roleMap[ur.Role.ID] = &ur.Role
+		}
+	}
+
+	if len(roleIDs) > 0 {
+		var rolePermissions []struct {
+			RoleID     int
+			Permission models.Permission `gorm:"embedded"`
+		}
+
+		err = r.GetReadDB(ctx).
+			Table("auth_permissions").
+			Select("auth_role_permissions.role_id, auth_permissions.*").
+			Joins("JOIN auth_role_permissions ON auth_role_permissions.permission_id = auth_permissions.id").
+			Where("auth_role_permissions.role_id IN ?", roleIDs).
+			Scan(&rolePermissions).Error
+
+		if err != nil {
+			return nil, fmt.Errorf("error fetching permissions: %w", err)
+		}
+
+		for _, rp := range rolePermissions {
+			if role, exists := roleMap[rp.RoleID]; exists {
+				role.Permissions = append(role.Permissions, rp.Permission)
+			}
+		}
+	}
+
+	for _, ur := range userRoles {
+		if user, exists := userMap[ur.UserID]; exists {
+			if role, exists := roleMap[ur.Role.ID]; exists {
+				user.Roles = append(user.Roles, *role)
+			}
+		}
+	}
+
 	return users, nil
 }
 
@@ -82,25 +152,66 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*models.
 
 func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*models.User, error) {
 	var user models.User
-	tx := r.GetReadDB(ctx).
-		Preload("Roles", func(db *gorm.DB) *gorm.DB {
-			return db.
-				Joins("JOIN auth_user_roles ON auth_user_roles.role_id = auth_roles.id").
-				Where("auth_user_roles.expires_at IS NULL OR auth_user_roles.expires_at > ?", time.Now())
-		}).
-		Preload("Roles.Permissions")
 
+	tx := r.GetReadDB(ctx)
 	for key, value := range filter {
 		tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 	}
 
 	err := tx.First(&user).Error
-
 	if r.IsNotFoundError(err) {
 		return nil, domain.ErrEntityNotFound
 	}
+	if err != nil {
+		return nil, err
+	}
 
-	return &user, err
+	var roles []models.Role
+	err = r.GetReadDB(ctx).
+		Distinct().
+		Select("auth_roles.*").
+		Joins("JOIN auth_user_roles ON auth_user_roles.role_id = auth_roles.id").
+		Where("auth_user_roles.user_id = ?", user.ID).
+		Where("auth_user_roles.expires_at IS NULL OR auth_user_roles.expires_at > ?", time.Now()).
+		Find(&roles).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching roles: %w", err)
+	}
+	if len(roles) > 0 {
+		roleIDs := make([]int, len(roles))
+		for i, role := range roles {
+			roleIDs[i] = role.ID
+		}
+
+		var permissions []struct {
+			RoleID     int
+			Permission models.Permission `gorm:"embedded"`
+		}
+
+		err = r.GetReadDB(ctx).
+			Table("auth_permissions").
+			Select("auth_role_permissions.role_id, auth_permissions.*").
+			Joins("JOIN auth_role_permissions ON auth_role_permissions.permission_id = auth_permissions.id").
+			Where("auth_role_permissions.role_id IN ?", roleIDs).
+			Scan(&permissions).Error
+
+		if err != nil {
+			return nil, fmt.Errorf("error fetching permissions: %w", err)
+		}
+
+		permissionMap := make(map[int][]models.Permission)
+		for _, p := range permissions {
+			permissionMap[p.RoleID] = append(permissionMap[p.RoleID], p.Permission)
+		}
+
+		for i := range roles {
+			roles[i].Permissions = permissionMap[roles[i].ID]
+		}
+	}
+
+	user.Roles = roles
+	return &user, nil
 }
 
 func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName string) error {
