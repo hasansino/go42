@@ -49,6 +49,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
+
   golangci-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -58,6 +59,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   docker-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -67,6 +69,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   proto-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -76,6 +79,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   openapi-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -85,6 +89,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   markdown-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -94,6 +99,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   writing-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -126,7 +132,6 @@ jobs:
 
   docker-prepare-tag:
     runs-on: ubuntu-latest
-    needs: [ security ]
     outputs:
       tag: ${{ steps.docker-prepare-tag.outputs.tag }}
     steps:
@@ -137,6 +142,7 @@ jobs:
           IMAGE_TAG="${IMAGE_TAG:0:60}-${GITHUB_RUN_ID}"
           echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "$IMAGE_TAG"
+
   docker-build:
     uses: ./.github/workflows/140-docker-build.yaml
     needs: [ docker-prepare-tag ]
@@ -154,7 +160,7 @@ jobs:
 
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
-    needs: [ docker-build ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -165,15 +171,16 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ security-extra ]
+    needs: [ docker-prepare-tag, security-extra ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ security-extra ]
+    needs: [ docker-prepare-tag, security-extra ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -184,7 +191,7 @@ jobs:
 
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
-    needs: [ security-extra, integration-tests, load-tests ]
+    needs: [ docker-prepare-tag, security-extra, integration-tests, load-tests ]
     with:
       runs_on: ubuntu-latest
       service_name: "go42"
