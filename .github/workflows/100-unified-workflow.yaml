@@ -15,6 +15,8 @@ name: unified-workflow
 # @note `with` arguments are repeated because `with` does not support context
 # @see https://github.com/orgs/community/discussions/25246
 # May be fixed with https://github.com/marketplace/actions/dynamic-uses
+#
+# @tip to use output from job X in job Y, use `needs: [X]` in job Y
 
 on:
   # manual trigger
