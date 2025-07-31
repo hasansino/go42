@@ -47,6 +47,9 @@ import (
 	"github.com/hasansino/go42/internal/cache/memcached"
 	"github.com/hasansino/go42/internal/cache/otter"
 	"github.com/hasansino/go42/internal/cache/redis"
+	"github.com/hasansino/go42/internal/chat"
+	chatHTTPAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/http/v1"
+	chatWebSocketAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/websocket/v1"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
 	"github.com/hasansino/go42/internal/database/mysql"
@@ -414,6 +417,7 @@ func main() {
 	var (
 		outboxService *outbox.Service
 		authService   *auth.Service
+		chatService   *chat.Service
 	)
 	{
 		// outbox domain
@@ -469,6 +473,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
+
+		// chat domain (only if enabled)
+		if cfg.Chat.Enabled {
+			chatLogger := slog.Default().With(slog.String("component", "chat-service"))
+			chatService = chat.NewService(
+				chat.WithLogger(chatLogger),
+				chat.WithMaxRoomsPerUser(cfg.Chat.MaxRoomsPerUser),
+				chat.WithMaxMessagesPerMin(cfg.Chat.MaxMessagesPerMin),
+				chat.WithDefaultMaxUsers(cfg.Chat.DefaultMaxUsers),
+			)
+		}
 	}
 
 	// http server
@@ -501,6 +516,26 @@ func main() {
 		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
 	)
 	httpServer.RegisterV1(authHttpAdapter)
+
+	// register chat websocket if enabled
+	if cfg.Chat.Enabled && chatService != nil {
+		chatWebSocketAdapter := chatWebSocketAdapterV1.New(
+			chatService,
+			chatWebSocketAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
+			chatWebSocketAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
+			chatWebSocketAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
+			chatWebSocketAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),
+			chatWebSocketAdapterV1.WithPongWait(cfg.Chat.PongWait),
+		)
+
+		chatHTTPAdapter := chatHTTPAdapterV1.NewHTTPAdapter(
+			chatWebSocketAdapter,
+			authService,
+			cfg.Chat.WebSocketPath,
+		)
+
+		httpServer.Register(chatHTTPAdapter)
+	}
 
 	// run server
 

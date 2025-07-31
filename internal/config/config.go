@@ -30,6 +30,7 @@ type Config struct {
 	Server   Server
 	Outbox   Outbox
 	Auth     Auth
+	Chat     Chat
 }
 
 // ╭──────────────────────────────╮
@@ -485,6 +486,22 @@ type Auth struct {
 	APICacheTTL            time.Duration `env:"AUTH_API_CACHE_TTL"             default:"60m"`
 	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
+}
+
+// ╭──────────────────────────────╮
+// │             CHAT             │
+// ╰──────────────────────────────╯
+
+type Chat struct {
+	Enabled             bool          `env:"CHAT_ENABLED"                 default:"false"`
+	MaxRoomsPerUser     int           `env:"CHAT_MAX_ROOMS_PER_USER"      default:"10"`
+	MaxMessagesPerMin   int           `env:"CHAT_MAX_MESSAGES_PER_MIN"    default:"30"`
+	DefaultMaxUsers     int           `env:"CHAT_DEFAULT_MAX_USERS"       default:"100"`
+	WebSocketPath       string        `env:"CHAT_WEBSOCKET_PATH"          default:"/ws/chat"`
+	ReadTimeout         time.Duration `env:"CHAT_READ_TIMEOUT"            default:"60s"`
+	WriteTimeout        time.Duration `env:"CHAT_WRITE_TIMEOUT"           default:"10s"`
+	PingPeriod          time.Duration `env:"CHAT_PING_PERIOD"             default:"54s"`
+	PongWait            time.Duration `env:"CHAT_PONG_WAIT"               default:"60s"`
 }
 
 // ---
