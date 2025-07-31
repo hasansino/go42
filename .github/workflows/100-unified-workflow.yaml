@@ -124,13 +124,18 @@ jobs:
       continue_on_error: false
       service_name: "go42"
       image_tag: >-
-        ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | replace('/', '-')
-          | replace('@', '-')
-          | replace(' ', '-')
-          | toLowerCase
-        }}-${{ github.run_id }}
+        ${{ toLowerCase(
+            replace(
+              replace(
+                replace(
+                  github.event_name == 'pull_request' && github.head_ref || github.ref_name,
+                  '/', '-'
+                ),
+                '@', '-'
+              ),
+              ' ', '-'
+            )
+          ) }}-${{ github.run_id }}
       platforms: "linux/amd64,linux/arm64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
@@ -144,13 +149,18 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: >-
-        ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | replace('/', '-')
-          | replace('@', '-')
-          | replace(' ', '-')
-          | toLowerCase
-        }}-${{ github.run_id }}
+        ${{ toLowerCase(
+            replace(
+              replace(
+                replace(
+                  github.event_name == 'pull_request' && github.head_ref || github.ref_name,
+                  '/', '-'
+                ),
+                '@', '-'
+              ),
+              ' ', '-'
+            )
+          ) }}-${{ github.run_id }}
   # stage 6: integration & load tests
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
@@ -160,13 +170,18 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: >-
-        ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | replace('/', '-')
-          | replace('@', '-')
-          | replace(' ', '-')
-          | toLowerCase
-        }}-${{ github.run_id }}
+        ${{ toLowerCase(
+            replace(
+              replace(
+                replace(
+                  github.event_name == 'pull_request' && github.head_ref || github.ref_name,
+                  '/', '-'
+                ),
+                '@', '-'
+              ),
+              ' ', '-'
+            )
+          ) }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
     needs: [ security-extra ]
@@ -175,13 +190,18 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: >-
-        ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | replace('/', '-')
-          | replace('@', '-')
-          | replace(' ', '-')
-          | toLowerCase
-        }}-${{ github.run_id }}
+        ${{ toLowerCase(
+            replace(
+              replace(
+                replace(
+                  github.event_name == 'pull_request' && github.head_ref || github.ref_name,
+                  '/', '-'
+                ),
+                '@', '-'
+              ),
+              ' ', '-'
+            )
+          ) }}-${{ github.run_id }}
   # Stage 7: cleanup
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
@@ -190,10 +210,15 @@ jobs:
       runs_on: ubuntu-latest
       service_name: "go42"
       image_tag: >-
-        ${{
-          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
-          | replace('/', '-')
-          | replace('@', '-')
-          | replace(' ', '-')
-          | toLowerCase
-        }}-${{ github.run_id }}
+        ${{ toLowerCase(
+            replace(
+              replace(
+                replace(
+                  github.event_name == 'pull_request' && github.head_ref || github.ref_name,
+                  '/', '-'
+                ),
+                '@', '-'
+              ),
+              ' ', '-'
+            )
+          ) }}-${{ github.run_id }}
