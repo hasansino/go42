@@ -150,3 +150,4 @@ go42 idea is `move fast, break things`, and any project bootstrapped with specif
 - Custom & simple DI container for main.go
 - graphql support
 - event sourcing - cqrs
+- Try https://valkey.io/

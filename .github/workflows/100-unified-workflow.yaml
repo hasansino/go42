@@ -125,7 +125,11 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
+          | replace('/', '-')
+          | replace('@', '-')
+          | replace(' ', '-')
+          | toLowerCase
         }}-${{ github.run_id }}
       platforms: "linux/amd64,linux/arm64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
@@ -141,7 +145,11 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
+          | replace('/', '-')
+          | replace('@', '-')
+          | replace(' ', '-')
+          | toLowerCase
         }}-${{ github.run_id }}
   # stage 6: integration & load tests
   integration-tests:
@@ -153,7 +161,11 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
+          | replace('/', '-')
+          | replace('@', '-')
+          | replace(' ', '-')
+          | toLowerCase
         }}-${{ github.run_id }}
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
@@ -164,7 +176,11 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
+          | replace('/', '-')
+          | replace('@', '-')
+          | replace(' ', '-')
+          | toLowerCase
         }}-${{ github.run_id }}
   # Stage 7: cleanup
   cleanup:
@@ -175,5 +191,9 @@ jobs:
       service_name: "go42"
       image_tag: >-
         ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
+          (github.event_name == 'pull_request' && github.head_ref || github.ref_name)
+          | replace('/', '-')
+          | replace('@', '-')
+          | replace(' ', '-')
+          | toLowerCase
         }}-${{ github.run_id }}
