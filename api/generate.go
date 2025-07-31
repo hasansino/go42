@@ -18,3 +18,6 @@ package api
 
 //go:generate oapi-codegen -package auth -o gen/sdk/http/v1/auth/auth.gen.go -generate types,client,spec openapi/v1/auth.yaml
 //go:generate mockgen -source gen/sdk/http/v1/auth/auth.gen.go -package mocks -destination gen/sdk/http/v1/auth/mocks/auth.gen.go
+
+//go:generate oapi-codegen -package chat -o gen/sdk/http/v1/chat/chat.gen.go -generate types,client,spec openapi/v1/chat.yaml
+//go:generate mockgen -source gen/sdk/http/v1/chat/chat.gen.go -package mocks -destination gen/sdk/http/v1/chat/mocks/chat.gen.go

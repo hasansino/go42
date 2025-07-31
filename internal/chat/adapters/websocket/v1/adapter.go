@@ -137,7 +137,6 @@ func (a *Adapter) readPump(conn *websocket.Conn, client *chatDomain.Client, ctx 
 		conn.Close()
 	}()
 
-	// Set read deadline and pong handler
 	conn.SetReadDeadline(time.Now().Add(a.options.pongWait))
 	conn.SetPongHandler(func(string) error {
 		conn.SetReadDeadline(time.Now().Add(a.options.pongWait))

@@ -1,0 +1,443 @@
+openapi: 3.1.0
+info:
+  title: 'chat'
+  version: 1.0.0
+  description: 'WebSocket-based real-time chat system with room management'
+servers:
+  - url: 'http://localhost:8080/api/v1'
+    description: local
+security: []
+paths:
+  # WebSocket endpoints are not standard in OpenAPI, but we document them
+  # for reference and to show the authentication requirements
+  /ws/chat:
+    get:
+      tags:
+        - chat
+      summary: Establish WebSocket connection for real-time chat
+      operationId: chat.websocket.connect
+      description: |
+        Establishes a WebSocket connection for real-time chat communication.
+        
+        **WebSocket URL Pattern:**
+        - `ws://localhost:8080/ws/chat` (development)
+        - `wss://yourdomain.com/ws/chat` (production)
+        
+        **Authentication:**
+        - JWT token required in Authorization header during handshake
+        - Format: `Authorization: Bearer <token>`
+        
+        **Message Format:**
+        All WebSocket messages use JSON format with the structure:
+        ```json
+        {
+          "type": "message_type",
+          "data": { /* type-specific data */ }
+        }
+        ```
+        
+        **Available Message Types:**
+        
+        **Client to Server:**
+        - `create_room` - Create a new chat room
+        - `list_rooms` - List available chat rooms
+        - `join_room` - Join an existing room
+        - `leave_room` - Leave a room
+        - `send_message` - Send a message to a room
+        
+        **Server to Client:**
+        - `room_created` - Room creation confirmation
+        - `rooms_list` - List of available rooms
+        - `room_joined` - Room join confirmation
+        - `room_left` - Room leave confirmation
+        - `message` - Incoming chat message
+        - `user_joined` - User joined room notification
+        - `user_left` - User left room notification
+        - `error` - Error notification
+        
+        **Connection Management:**
+        - Automatic ping/pong keepalive
+        - Graceful disconnection handling
+        - Rate limiting: 30 messages per minute (configurable)
+      security:
+        - jwt: []
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '403':
+          description: Forbidden - Insufficient permissions
+        '426':
+          description: Upgrade Required - WebSocket upgrade failed
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^Bearer .+'
+          description: JWT authentication token
+          example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+components:
+  securitySchemes:
+    jwt:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "JWT token in Authorization header (format: Bearer <token>)"
+  schemas:
+    # WebSocket Message Schemas
+    
+    # Base message structure
+    WebSocketMessage:
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          description: Message type identifier
+        data:
+          type: object
+          description: Type-specific message data
+    
+    # Client to Server Messages
+    CreateRoomRequest:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['create_room']
+            data:
+              type: object
+              required:
+                - name
+                - type
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Room name
+                  example: "General Discussion"
+                type:
+                  type: string
+                  enum: ['public', 'private']
+                  description: Room visibility type
+                  example: "public"
+                max_users:
+                  type: integer
+                  minimum: 2
+                  maximum: 1000
+                  default: 100
+                  description: Maximum number of users allowed in the room
+                  example: 50
+    
+    ListRoomsRequest:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['list_rooms']
+            data:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: ['public', 'private', 'all']
+                  description: Filter rooms by type
+                  example: "public"
+    
+    JoinRoomRequest:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['join_room']
+            data:
+              type: object
+              required:
+                - room_id
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the room to join
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+    
+    LeaveRoomRequest:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['leave_room']
+            data:
+              type: object
+              required:
+                - room_id
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the room to leave
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+    
+    SendMessageRequest:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['send_message']
+            data:
+              type: object
+              required:
+                - room_id
+                - content
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the room to send message to
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: Message content
+                  example: "Hello everyone!"
+    
+    # Server to Client Messages
+    RoomCreatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['room_created']
+            data:
+              $ref: '#/components/schemas/Room'
+    
+    RoomsListResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['rooms_list']
+            data:
+              type: object
+              properties:
+                rooms:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Room'
+    
+    RoomJoinedResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['room_joined']
+            data:
+              type: object
+              properties:
+                room:
+                  $ref: '#/components/schemas/Room'
+                members:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/User'
+    
+    RoomLeftResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['room_left']
+            data:
+              type: object
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+    
+    MessageResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['message']
+            data:
+              $ref: '#/components/schemas/Message'
+    
+    UserJoinedResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['user_joined']
+            data:
+              type: object
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                user:
+                  $ref: '#/components/schemas/User'
+    
+    UserLeftResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['user_left']
+            data:
+              type: object
+              properties:
+                room_id:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                user:
+                  $ref: '#/components/schemas/User'
+    
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/WebSocketMessage'
+        - type: object
+          properties:
+            type:
+              enum: ['error']
+            data:
+              type: object
+              required:
+                - code
+                - message
+              properties:
+                code:
+                  type: string
+                  description: Error code identifier
+                  example: "ROOM_NOT_FOUND"
+                message:
+                  type: string
+                  description: Human-readable error message
+                  example: "The specified room was not found"
+                details:
+                  type: object
+                  description: Additional error details
+    
+    # Domain Models
+    Room:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - max_users
+        - member_count
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique room identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: Room display name
+          example: "General Discussion"
+        type:
+          type: string
+          enum: ['public', 'private']
+          description: Room visibility type
+          example: "public"
+        max_users:
+          type: integer
+          minimum: 2
+          maximum: 1000
+          description: Maximum number of users allowed
+          example: 100
+        member_count:
+          type: integer
+          minimum: 0
+          description: Current number of members
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+          description: Room creation timestamp
+          example: "2025-01-31T16:05:00Z"
+        created_by:
+          $ref: '#/components/schemas/User'
+    
+    Message:
+      type: object
+      required:
+        - id
+        - type
+        - content
+        - user
+        - room_id
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique message identifier
+          example: "456e7890-e89b-12d3-a456-426614174001"
+        type:
+          type: string
+          enum: ['text', 'join', 'leave', 'system']
+          description: Message type
+          example: "text"
+        content:
+          type: string
+          description: Message content
+          example: "Hello everyone!"
+        user:
+          $ref: '#/components/schemas/User'
+        room_id:
+          type: string
+          format: uuid
+          description: Room where message was sent
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        created_at:
+          type: string
+          format: date-time
+          description: Message timestamp
+          example: "2025-01-31T16:05:30Z"
+    
+    User:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "789e0123-e89b-12d3-a456-426614174002"
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: "user@example.com"
+        display_name:
+          type: string
+          description: User display name (if available)
+          example: "John Doe"
