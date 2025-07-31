@@ -493,7 +493,6 @@ type Auth struct {
 // ╰──────────────────────────────╯
 
 type Chat struct {
-	Enabled             bool          `env:"CHAT_ENABLED"                 default:"false"`
 	MaxRoomsPerUser     int           `env:"CHAT_MAX_ROOMS_PER_USER"      default:"10"`
 	MaxMessagesPerMin   int           `env:"CHAT_MAX_MESSAGES_PER_MIN"    default:"30"`
 	DefaultMaxUsers     int           `env:"CHAT_DEFAULT_MAX_USERS"       default:"100"`

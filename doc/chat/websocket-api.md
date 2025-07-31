@@ -230,7 +230,6 @@ The chat system can be configured using environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CHAT_ENABLED` | `false` | Enable/disable chat system |
 | `CHAT_MAX_ROOMS_PER_USER` | `10` | Maximum rooms a user can create |
 | `CHAT_MAX_MESSAGES_PER_MIN` | `30` | Rate limit for messages per minute |
 | `CHAT_DEFAULT_MAX_USERS` | `100` | Default maximum users per room |

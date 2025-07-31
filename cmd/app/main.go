@@ -474,16 +474,14 @@ func main() {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
 
-		// chat domain (only if enabled)
-		if cfg.Chat.Enabled {
-			chatLogger := slog.Default().With(slog.String("component", "chat-service"))
-			chatService = chat.NewService(
-				chat.WithLogger(chatLogger),
-				chat.WithMaxRoomsPerUser(cfg.Chat.MaxRoomsPerUser),
-				chat.WithMaxMessagesPerMin(cfg.Chat.MaxMessagesPerMin),
-				chat.WithDefaultMaxUsers(cfg.Chat.DefaultMaxUsers),
-			)
-		}
+		// chat domain
+		chatLogger := slog.Default().With(slog.String("component", "chat-service"))
+		chatService = chat.NewService(
+			chat.WithLogger(chatLogger),
+			chat.WithMaxRoomsPerUser(cfg.Chat.MaxRoomsPerUser),
+			chat.WithMaxMessagesPerMin(cfg.Chat.MaxMessagesPerMin),
+			chat.WithDefaultMaxUsers(cfg.Chat.DefaultMaxUsers),
+		)
 	}
 
 	// http server
@@ -517,26 +515,24 @@ func main() {
 	)
 	httpServer.RegisterV1(authHttpAdapter)
 
-	// register chat websocket if enabled
-	if cfg.Chat.Enabled && chatService != nil {
-		chatWebSocketAdapter := chatWebSocketAdapterV1.New(
-			chatService,
-			authService,
-			chatWebSocketAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
-			chatWebSocketAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
-			chatWebSocketAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
-			chatWebSocketAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),
-			chatWebSocketAdapterV1.WithPongWait(cfg.Chat.PongWait),
-		)
+	// register chat websocket
+	chatWebSocketAdapter := chatWebSocketAdapterV1.New(
+		chatService,
+		authService,
+		chatWebSocketAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
+		chatWebSocketAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
+		chatWebSocketAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
+		chatWebSocketAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),
+		chatWebSocketAdapterV1.WithPongWait(cfg.Chat.PongWait),
+	)
 
-		chatHTTPAdapter := chatHTTPAdapterV1.NewHTTPAdapter(
-			chatWebSocketAdapter,
-			authService,
-			cfg.Chat.WebSocketPath,
-		)
+	chatHTTPAdapter := chatHTTPAdapterV1.NewHTTPAdapter(
+		chatWebSocketAdapter,
+		authService,
+		cfg.Chat.WebSocketPath,
+	)
 
-		httpServer.Register(chatHTTPAdapter)
-	}
+	httpServer.Register(chatHTTPAdapter)
 
 	// run server
 
