@@ -114,6 +114,8 @@ jobs:
 #            ${{ runner.os }}-go-
       - run: go list -json -m all > go.list
       - uses: sonatype-nexus-community/nancy-github-action@main
+        with:
+          nancyVersion: v1.0.51
 
   codeql:
     name: codeql
