@@ -37,7 +37,9 @@ permissions:
   actions: read
 
 jobs:
+
   # stage 1: linting
+
   git-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -47,6 +49,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
+
   golangci-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -56,6 +59,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   docker-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -65,6 +69,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   proto-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -74,6 +79,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   openapi-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -83,6 +89,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   markdown-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -92,6 +99,7 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   writing-lint:
     if: |
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
@@ -101,79 +109,91 @@ jobs:
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   # stage 2: unit tests
+
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
     needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint, writing-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   # stage 3: pre-build security scans
+
   security:
     uses: ./.github/workflows/130-security.yaml
     needs: [ unit-tests ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
+
   # stage 4: build artifacts
+
+  docker-prepare-tag:
+    runs-on: ubuntu-latest
+    needs: [ unit-tests ]
+    outputs:
+      tag: ${{ steps.docker-prepare-tag.outputs.tag }}
+    steps:
+      - id:  docker-prepare-tag
+        run: |
+          REF_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[\/ @]/-/g')
+          IMAGE_TAG="${IMAGE_TAG:0:60}-${GITHUB_RUN_ID}"
+          echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "$IMAGE_TAG"
+
   docker-build:
     uses: ./.github/workflows/140-docker-build.yaml
-    needs: [ security ]
+    needs: [ docker-prepare-tag ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
       service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
       platforms: "linux/amd64,linux/arm64"
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
       attestation_sbom: false
+
   # stage 5: post-build security scans
+
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
-    needs: [ docker-build ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+
   # stage 6: integration & load tests
+
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ security-extra ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ security-extra ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
       service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+
   # Stage 7: cleanup
+
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
-    needs: [ security-extra, integration-tests, load-tests ]
+    needs: [ docker-prepare-tag, security-extra, integration-tests, load-tests ]
     with:
       runs_on: ubuntu-latest
       service_name: "go42"
-      image_tag: >-
-        ${{
-          github.event_name == 'pull_request' && github.head_ref || github.ref_name
-        }}-${{ github.run_id }}
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}

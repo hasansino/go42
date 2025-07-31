@@ -85,6 +85,7 @@ permissions:
   actions: read
 
 jobs:
+  # build image, pushes to ghcr.io and generates metadata
   docker-build:
     name: docker-build
     runs-on: ${{ inputs.runs_on }}
