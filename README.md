@@ -56,6 +56,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - caching for user/permission lookups
 - slog smart sampling of duplicates
 - Try https://sqlc.dev/ or https://github.com/stephenafamo/bob
+- Try https://github.com/tconbeer/sqlfmt
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -99,7 +100,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## Bugs
 
-- govulncheck warnings and availability
+- govulncheck warnings and availability (it's a cache!)
 - same-line imports fixes from linters
 - fix third party protobuf generation (protovalidate)
 - tint log handler does nto support nested fields
@@ -140,8 +141,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Try https://github.com/tursodatabase/turso
 - make cache generic where possible
 - nosql -> `clickhouse` + `duckdb`
-- Try https://github.com/tconbeer/sqlfmt
-- Try https://github.com/google/capslock
 - Custom GitHub runner hardening
 - Custom & simple DI container for main.go
 - graphql support
