@@ -124,7 +124,7 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	a.service.RegisterClient(c.Request().Context(), client)
 
 	// Start goroutines for reading and writing
-	go a.writePump(conn, client)
+	go a.writePump(c.Request().Context(), conn, client)
 	go a.readPump(conn, client, c.Request().Context())
 
 	return nil
@@ -174,7 +174,7 @@ func (a *Adapter) readPump(conn *websocket.Conn, client *chatDomain.Client, ctx 
 }
 
 // writePump handles writing messages to websocket
-func (a *Adapter) writePump(conn *websocket.Conn, client *chatDomain.Client) {
+func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *chatDomain.Client) {
 	ticker := time.NewTicker(a.options.pingPeriod)
 	defer func() {
 		ticker.Stop()

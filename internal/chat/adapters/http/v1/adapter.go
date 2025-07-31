@@ -8,8 +8,8 @@ import (
 	chatWebSocketAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/websocket/v1"
 )
 
-// HTTPAdapter wraps the websocket adapter to work with the HTTP server registration system
-type HTTPAdapter struct {
+// Adapter wraps the websocket adapter to work with the HTTP server registration system
+type Adapter struct {
 	websocketAdapter *chatWebSocketAdapterV1.Adapter
 	authService      *auth.Service
 	websocketPath    string
@@ -20,8 +20,8 @@ func NewHTTPAdapter(
 	websocketAdapter *chatWebSocketAdapterV1.Adapter,
 	authService *auth.Service,
 	websocketPath string,
-) *HTTPAdapter {
-	return &HTTPAdapter{
+) *Adapter {
+	return &Adapter{
 		websocketAdapter: websocketAdapter,
 		authService:      authService,
 		websocketPath:    websocketPath,
@@ -29,7 +29,7 @@ func NewHTTPAdapter(
 }
 
 // Register implements the adapterAccessor interface for HTTP server registration
-func (a *HTTPAdapter) Register(group *echo.Group) {
+func (a *Adapter) Register(group *echo.Group) {
 	// Add websocket endpoint with auth middleware
 	authMiddlewareFunc := authMiddleware.NewAuthMiddleware(a.authService)
 	group.GET(a.websocketPath, a.websocketAdapter.HandleWebSocket, authMiddlewareFunc)
