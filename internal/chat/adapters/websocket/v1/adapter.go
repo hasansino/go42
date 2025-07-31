@@ -103,14 +103,12 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		return err
 	}
 
-	// Get user information from auth service
 	user, err := a.authService.GetUserByID(c.Request().Context(), authInfo.ID)
 	if err != nil {
 		a.logger.ErrorContext(c.Request().Context(), "failed to get user info", slog.Any("error", err))
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user info")
 	}
 
-	// Create client
 	client := &chatDomain.Client{
 		ID:        uuid.New().String(),
 		UserID:    authInfo.ID,
@@ -120,18 +118,15 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		JoinedAt:  time.Now(),
 	}
 
-	// Register client with service
 	a.service.RegisterClient(c.Request().Context(), client)
 
-	// Start goroutines for reading and writing
 	go a.writePump(c.Request().Context(), conn, client)
-	go a.readPump(conn, client, c.Request().Context())
+	go a.readPump(c.Request().Context(), conn, client)
 
 	return nil
 }
 
-// readPump handles reading messages from websocket
-func (a *Adapter) readPump(conn *websocket.Conn, client *chatDomain.Client, ctx context.Context) {
+func (a *Adapter) readPump(ctx context.Context, conn *websocket.Conn, client *chatDomain.Client) {
 	defer func() {
 		a.service.UnregisterClient(ctx, client.ID)
 		conn.Close()
@@ -158,7 +153,6 @@ func (a *Adapter) readPump(conn *websocket.Conn, client *chatDomain.Client, ctx 
 				slog.Any("error", err),
 				slog.String("client_id", client.ID))
 			
-			// Send error response
 			errMsg := WebSocketMessage{
 				Type: "error",
 				Data: map[string]string{"message": err.Error()},
@@ -172,7 +166,6 @@ func (a *Adapter) readPump(conn *websocket.Conn, client *chatDomain.Client, ctx 
 	}
 }
 
-// writePump handles writing messages to websocket
 func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *chatDomain.Client) {
 	ticker := time.NewTicker(a.options.pingPeriod)
 	defer func() {
@@ -195,7 +188,6 @@ func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *c
 			}
 			w.Write(message)
 
-			// Add queued messages to current message
 			n := len(client.Send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte{'\n'})
@@ -281,7 +273,6 @@ func (a *Adapter) handleCreateRoom(ctx context.Context, client *chatDomain.Clien
 		return err
 	}
 
-	// Send response back to client
 	response := WebSocketMessage{
 		Type: "room_created",
 		Data: room,
@@ -311,7 +302,6 @@ func (a *Adapter) handleListRooms(ctx context.Context, client *chatDomain.Client
 		return err
 	}
 
-	// Send response back to client
 	response := WebSocketMessage{
 		Type: "rooms_list",
 		Data: rooms,

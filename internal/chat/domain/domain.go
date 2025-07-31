@@ -33,12 +33,13 @@ var RoomTypes = []string{
 
 // Errors
 var (
-	ErrRoomNotFound     = errors.New("room not found")
-	ErrUserNotFound     = errors.New("user not found")
-	ErrInvalidMessage   = errors.New("invalid message")
-	ErrUnauthorized     = errors.New("unauthorized")
-	ErrRoomFull         = errors.New("room is full")
-	ErrUserAlreadyInRoom = errors.New("user already in room")
+	ErrRoomNotFound       = errors.New("room not found")
+	ErrRoomAlreadyExists  = errors.New("room already exists")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidMessage     = errors.New("invalid message")
+	ErrUnauthorized       = errors.New("unauthorized")
+	ErrRoomFull           = errors.New("room is full")
+	ErrUserAlreadyInRoom  = errors.New("user already in room")
 )
 
 // Message represents a chat message

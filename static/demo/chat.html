@@ -280,11 +280,10 @@
             log('Attempting to connect...', 'info');
             
             try {
-                ws = new WebSocket(serverUrl);
-                
-                // Add authorization header
-                // Note: WebSocket in browsers doesn't support custom headers directly
-                // For demo purposes, we'll need to handle auth differently
+                // Add JWT token as query parameter
+                const wsUrl = new URL(serverUrl);
+                wsUrl.searchParams.set('token', token);
+                ws = new WebSocket(wsUrl.toString());
                 
                 ws.onopen = function() {
                     isConnected = true;

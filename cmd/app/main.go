@@ -50,6 +50,7 @@ import (
 	"github.com/hasansino/go42/internal/chat"
 	chatHTTPAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/http/v1"
 	chatWebSocketAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/websocket/v1"
+	chatRepositoryPkg "github.com/hasansino/go42/internal/chat/repository"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
 	"github.com/hasansino/go42/internal/database/mysql"
@@ -476,8 +477,10 @@ func main() {
 
 		// chat domain
 		chatLogger := slog.Default().With(slog.String("component", "chat-service"))
+		chatRepository := chatRepositoryPkg.New(database.NewBaseRepository(dbEngine))
 		chatService = chat.NewService(
 			chat.WithLogger(chatLogger),
+			chat.WithRepository(chatRepository),
 			chat.WithMaxRoomsPerUser(cfg.Chat.MaxRoomsPerUser),
 			chat.WithMaxMessagesPerMin(cfg.Chat.MaxMessagesPerMin),
 			chat.WithDefaultMaxUsers(cfg.Chat.DefaultMaxUsers),

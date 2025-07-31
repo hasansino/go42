@@ -28,9 +28,7 @@ func NewHTTPAdapter(
 	}
 }
 
-// Register implements the adapterAccessor interface for HTTP server registration
 func (a *Adapter) Register(group *echo.Group) {
-	// Add websocket endpoint with auth middleware
 	authMiddlewareFunc := authMiddleware.NewAuthMiddleware(a.authService)
 	group.GET(a.websocketPath, a.websocketAdapter.HandleWebSocket, authMiddlewareFunc)
 }
