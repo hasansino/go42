@@ -423,21 +423,21 @@ components:
     
     User:
       type: object
-      required:
-        - id
-        - email
       properties:
-        id:
+        uuid:
           type: string
-          format: uuid
-          description: Unique user identifier
-          example: "789e0123-e89b-12d3-a456-426614174002"
+          default: ""
         email:
           type: string
-          format: email
-          description: User email address
-          example: "user@example.com"
-        display_name:
+          default: ""
+        created_at:
           type: string
-          description: User display name (if available)
-          example: "John Doe"
+          default: ""
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
