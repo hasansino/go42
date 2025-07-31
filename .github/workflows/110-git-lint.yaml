@@ -3,6 +3,10 @@ name: git-lint
 # Git linter.
 # Designed to check if user adheres to the project's Git rules.
 # Also branch naming have implicit limitations due to docker tag naming rules.
+#
+# Allows:
+#   - TASK-0000_my_branch-name
+#
 
 on:
   workflow_dispatch:
@@ -40,10 +44,8 @@ jobs:
           else
             BRANCH_NAME="${{ github.ref_name }}"
           fi
-          
-          PATTERN="^[A-Za-z0-9-]+$"
-          
+          PATTERN="^[A-Za-z0-9-\/\_]+$"
           if ! echo "$BRANCH_NAME" | grep -qE "$PATTERN"; then
-            echo "Branch names should follow regex ^[A-Za-z0-9-]+$"
+            echo "Branch names should follow regex ^[A-Za-z0-9-\\/]+$"
             exit 1
           fi
