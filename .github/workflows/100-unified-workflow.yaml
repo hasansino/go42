@@ -172,7 +172,7 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ docker-prepare-tag, security-extra ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -181,7 +181,7 @@ jobs:
 
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ docker-prepare-tag, security-extra ]
+    needs: [ docker-prepare-tag, docker-build ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
