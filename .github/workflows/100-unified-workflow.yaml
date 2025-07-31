@@ -132,6 +132,7 @@ jobs:
 
   docker-prepare-tag:
     runs-on: ubuntu-latest
+    needs: [ unit-tests ]
     outputs:
       tag: ${{ steps.docker-prepare-tag.outputs.tag }}
     steps:
