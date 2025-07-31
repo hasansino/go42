@@ -27,13 +27,18 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 Go42 is opinionated approach to develop cloud native golang services.
 
-# Goals
+## Goals
 
-- Provide SDLC framework which will scale with project, team and organization growth.
-- Reduce operational overhead by enforcing conventions and practices.
-- Incorporate security fundamentals from the day zero.
-- Make it easy to integrate AI tooling into the development process.
-- Fastest possible operational deployment bootstrapping.
+- Establish an SDLC framework that scales with project, team, and organizational growth.
+- Support both closed-source operation and open-source friendliness by design.
+- Minimize operational overhead through enforced rules, conventions, and best practices at the CI/CD level.
+- Enable effortless integration of AI tools into the development workflow.
+- Ensure rapid and streamlined operational deployment bootstrapping.
+- Embed security fundamentals from day one.
+
+## Backward Compatibility
+
+go42 idea is `move fast, break things`, and any project bootstrapped with specific version of go42 will NOT be able to upgrade to the next version without breaking changes. This MAY apply to minor versions as well. This is intentional and by design.
 
 ## Backlog
 
@@ -68,21 +73,15 @@ Go42 is opinionated approach to develop cloud native golang services.
 - switch from zipkin to jaeger or tempo
   - https://echo.labstack.com/docs/middleware/jaeger
 - circuit breaker (https://github.com/sony/gobreaker)
+- datadog integration
+- release annotations
 
 ### ദ്ദി( •̀ ᴗ - )
 
-- datadog integration
-- release annotations
-- pr llm review
-- generate release summary with llm
-- integration with project management tools
-- using AI agents to complete tasks
-- arch/business/feature documentation generation
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 - graceful connection recovery
 - outbox table cleanup worker
-- logging conventions
 - slog contextual values (like request id etc.) propogation
 - run make generate in CI/CD to check for changes in generated files
 - distributed rate limiter
@@ -98,6 +97,11 @@ Go42 is opinionated approach to develop cloud native golang services.
 - cost analysis for different scales
 - Documentation
 - Conventions - validation
+- arch/business/feature documentation generation
+- using AI agents to complete tasks
+- integration with project management tools
+- pr llm review
+- generate release summary with llm
 
 ## Bugs
 
