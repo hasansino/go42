@@ -90,6 +90,7 @@ jobs:
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
+          cache: false
 
   nancy:
     name: nancy

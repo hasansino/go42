@@ -57,6 +57,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - slog smart sampling of duplicates
 - Try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 - Try https://github.com/tconbeer/sqlfmt
+- `capslock -output=compare baseline.json` and fail the build if new unexpected capabilities are introduced
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 

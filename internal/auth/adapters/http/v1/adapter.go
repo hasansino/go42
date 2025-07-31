@@ -20,6 +20,8 @@ import (
 	"github.com/hasansino/go42/internal/tools"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
+
 type serviceAccessor interface {
 	SignUp(ctx context.Context, email string, password string) (*models.User, error)
 	Login(ctx context.Context, email string, password string) (*domain.Tokens, error)
