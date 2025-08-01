@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	headerXApiToken         = "x-api-key"
 	headerAuthorization     = "Authorization"
 	headerValueBearerPrefix = "Bearer "
 )
@@ -31,7 +30,6 @@ type authServiceAccessor interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
-	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
 }
 
 func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -54,21 +52,6 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 				// Support JWT token as query parameter for WebSocket connections
 				token := ctx.QueryParam("token")
 				if err := processUserAuth(ctx, svc, token); err != nil {
-					return httpAPI.SendJSONError(ctx,
-						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
-				}
-			case ctx.Request().Header.Get(headerXApiToken) != "":
-				if err := processTokenAuth(
-					ctx, svc, ctx.Request().Header.Get(headerXApiToken),
-				); err != nil {
-					return httpAPI.SendJSONError(ctx,
-						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
-				}
-			case ctx.QueryParam("api_key") != "":
-				// Support API token as query parameter
-				if err := processTokenAuth(
-					ctx, svc, ctx.QueryParam("api_key"),
-				); err != nil {
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
@@ -126,36 +109,6 @@ func processUserAuth(ctx echo.Context, svc authServiceAccessor, token string) er
 		Type: domain.AuthenticationTypeCredentials,
 	}
 	authInfo.SetPermissions(user.PermissionList())
-
-	newCtx := auth.SetAuthToContext(ctx.Request().Context(), authInfo)
-	ctx.SetRequest(ctx.Request().WithContext(newCtx))
-
-	return nil
-}
-
-func processTokenAuth(ctx echo.Context, svc authServiceAccessor, token string) error {
-	apiToken, err := svc.ValidateAPIToken(ctx.Request().Context(), token)
-	if err != nil {
-		return fmt.Errorf("invalid access token: %w", err)
-	}
-
-	user, err := svc.GetUserByID(ctx.Request().Context(), apiToken.UserID)
-	if err != nil {
-		return fmt.Errorf("error retrieveing user: %w", err)
-	}
-
-	if !user.IsActive() {
-		return errors.New("user is not allowed to authenticate")
-	}
-
-	authInfo := domain.ContextAuthInfo{
-		ID:   apiToken.ID,
-		UUID: apiToken.UUID.String(),
-		Type: domain.AuthenticationTypeApiToken,
-	}
-
-	// for api token auth we are using only token permissions
-	authInfo.SetPermissions(apiToken.PermissionList())
 
 	newCtx := auth.SetAuthToContext(ctx.Request().Context(), authInfo)
 	ctx.SetRequest(ctx.Request().WithContext(newCtx))
