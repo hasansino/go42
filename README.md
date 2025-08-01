@@ -36,12 +36,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Ensure rapid and streamlined operational deployment bootstrapping.
 - Embed security fundamentals from day one.
 
-## Backward Compatibility
-
-go42 idea is `move fast, break things`, and any project bootstrapped with specific version of go42  
-will NOT be able to upgrade to the next version without breaking changes. This MAY apply to minor  
-versions as well. This is intentional and by design.
-
 ## Backlog
 
 ### 💪(•̀_•́💪)
