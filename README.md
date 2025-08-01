@@ -153,3 +153,4 @@ versions as well. This is intentional and by design.
 - graphql support
 - event sourcing - cqrs
 - Try https://valkey.io/
+- research hipaa compliance
