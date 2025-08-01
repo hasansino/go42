@@ -50,9 +50,24 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
+			case ctx.QueryParam("token") != "":
+				// Support JWT token as query parameter for WebSocket connections
+				token := ctx.QueryParam("token")
+				if err := processUserAuth(ctx, svc, token); err != nil {
+					return httpAPI.SendJSONError(ctx,
+						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+				}
 			case ctx.Request().Header.Get(headerXApiToken) != "":
 				if err := processTokenAuth(
 					ctx, svc, ctx.Request().Header.Get(headerXApiToken),
+				); err != nil {
+					return httpAPI.SendJSONError(ctx,
+						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+				}
+			case ctx.QueryParam("api_key") != "":
+				// Support API token as query parameter
+				if err := processTokenAuth(
+					ctx, svc, ctx.QueryParam("api_key"),
 				); err != nil {
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))

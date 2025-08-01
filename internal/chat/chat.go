@@ -10,25 +10,22 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/hasansino/go42/internal/chat/domain"
-	"github.com/hasansino/go42/internal/chat/repository"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 // Service represents the chat service
 type Service struct {
-	mu         sync.RWMutex
-	rooms      map[string]*domain.Room
-	clients    map[string]*domain.Client
-	logger     *slog.Logger
-	repository *repository.Repository
-	options    serviceOptions
+	mu      sync.RWMutex
+	rooms   map[string]*domain.Room
+	clients map[string]*domain.Client
+	logger  *slog.Logger
+	options serviceOptions
 }
 
 // serviceOptions holds configuration options for the service
 type serviceOptions struct {
 	logger            *slog.Logger
-	repository        *repository.Repository
 	maxRoomsPerUser   int
 	maxMessagesPerMin int
 	defaultMaxUsers   int
@@ -48,11 +45,10 @@ func NewService(opts ...Option) *Service {
 	}
 
 	return &Service{
-		rooms:      make(map[string]*domain.Room),
-		clients:    make(map[string]*domain.Client),
-		logger:     options.logger,
-		repository: options.repository,
-		options:    options,
+		rooms:   make(map[string]*domain.Room),
+		clients: make(map[string]*domain.Client),
+		logger:  options.logger,
+		options: options,
 	}
 }
 

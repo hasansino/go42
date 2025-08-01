@@ -2,8 +2,6 @@ package chat
 
 import (
 	"log/slog"
-
-	"github.com/hasansino/go42/internal/chat/repository"
 )
 
 // Option represents a configuration option for the Service.
@@ -27,13 +25,6 @@ func WithMaxRoomsPerUser(max int) Option {
 func WithMaxMessagesPerMin(max int) Option {
 	return func(o *serviceOptions) {
 		o.maxMessagesPerMin = max
-	}
-}
-
-// WithRepository sets the repository for the service.
-func WithRepository(repo *repository.Repository) Option {
-	return func(o *serviceOptions) {
-		o.repository = repo
 	}
 }
 
