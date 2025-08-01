@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -16,50 +15,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-// Chat related structures
-type WebSocketMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
-}
-
-type ChatMessage struct {
-	ID        string    `json:"id"`
-	Type      string    `json:"type"`
-	Content   string    `json:"content"`
-	User      UserInfo  `json:"user"`
-	RoomID    string    `json:"room_id"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-type UserInfo struct {
-	UUID     string    `json:"uuid"`
-	Username string    `json:"username"`
-	JoinedAt time.Time `json:"joined_at"`
-}
-
-type Room struct {
-	ID        string             `json:"id"`
-	Name      string             `json:"name"`
-	Type      string             `json:"type"`
-	MaxUsers  int                `json:"max_users"`
-	UserCount int                `json:"user_count"`
-	Users     map[string]UserInfo `json:"users"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
-}
-
-type CreateRoomData struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	MaxUsers int    `json:"max_users"`
-}
-
-type SendMessageData struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
-	RoomID  string `json:"room_id"`
-}
 
 var _ = Describe("Chat WebSocket Integration Tests", func() {
 	var client *http.Client
@@ -708,8 +663,3 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 		})
 	})
 })
-
-func TestChatIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Chat Integration Tests Suite")
-}

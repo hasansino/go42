@@ -15,54 +15,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type SignupRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type RefreshTokenRequest struct {
-	Token string `json:"token"`
-}
-
-type LogoutRequest struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-type UpdateSelfRequest struct {
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-}
-
-type CreateUserRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type UpdateUserRequest struct {
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-}
-
-type User struct {
-	UUID        string   `json:"uuid"`
-	Email       string   `json:"email"`
-	CreatedAt   string   `json:"created_at"`
-	Roles       []string `json:"roles"`
-	Permissions []string `json:"permissions"`
-}
-
-type Tokens struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-}
-
 var _ = Describe("Auth API Integration Tests", func() {
 	var client *http.Client
 
