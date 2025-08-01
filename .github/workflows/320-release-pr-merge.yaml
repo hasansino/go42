@@ -23,20 +23,35 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - id: extract_semver
+        name: Extract version from PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
           VERSION=$(echo "$PR_TITLE" | grep -oP '\d+\.\d+\.\d+' | head -n 1)
+          if [ -z "$VERSION" ]; then
+            echo "Error: No valid semver version found in PR title"
+            exit 1
+          fi
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+
       # create release
       - uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
           generate_release_notes: true
+
       # remove branch after merge
-      - run: |
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH_NAME"
-        env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          # Validate branch name to prevent injection in API call
+          if ! echo "$BRANCH_NAME" | grep -qE '^[A-Za-z0-9/_.-]+$'; then
+            echo "Error: Invalid branch name format"
+            exit 1
+          fi
+          gh api -X DELETE "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}"
