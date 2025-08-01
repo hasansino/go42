@@ -12,16 +12,15 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
+	authDomain "github.com/hasansino/go42/internal/auth/domain"
 	authMiddleware "github.com/hasansino/go42/internal/auth/middleware"
-	authModels "github.com/hasansino/go42/internal/auth/models"
 	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type serviceAccessor interface {
-	CreateRoom(ctx context.Context, data *chatDomain.CreateRoomData, creatorID int, creatorUUID, creatorEmail string) (*chatDomain.Room, error)
+	CreateRoom(ctx context.Context, data *chatDomain.CreateRoomData, creator chatDomain.UserInfo) (*chatDomain.Room, error)
 	GetRoom(ctx context.Context, roomID string) (*chatDomain.Room, error)
 	ListRooms(ctx context.Context, roomType string) ([]*chatDomain.Room, error)
 	JoinRoom(ctx context.Context, roomID string, client *chatDomain.Client) error
@@ -29,10 +28,6 @@ type serviceAccessor interface {
 	SendMessage(ctx context.Context, clientID string, data *chatDomain.SendMessageData) error
 	RegisterClient(ctx context.Context, client *chatDomain.Client)
 	UnregisterClient(ctx context.Context, clientID string)
-}
-
-type authServiceAccessor interface {
-	GetUserByID(ctx context.Context, id int) (*authModels.User, error)
 }
 
 // Adapter handles HTTP and WebSocket connections for chat
@@ -46,11 +41,12 @@ type Adapter struct {
 }
 
 type adapterOptions struct {
-	logger       *slog.Logger
-	readTimeout  time.Duration
-	writeTimeout time.Duration
-	pingPeriod   time.Duration
-	pongWait     time.Duration
+	logger         *slog.Logger
+	readTimeout    time.Duration
+	writeTimeout   time.Duration
+	pingPeriod     time.Duration
+	pongWait       time.Duration
+	allowedOrigins []string
 }
 
 // New creates a new HTTP adapter for chat
@@ -61,11 +57,12 @@ func New(
 	opts ...Option,
 ) *Adapter {
 	options := adapterOptions{
-		logger:       slog.Default(),
-		readTimeout:  60 * time.Second,
-		writeTimeout: 10 * time.Second,
-		pingPeriod:   54 * time.Second,
-		pongWait:     60 * time.Second,
+		logger:         slog.Default(),
+		readTimeout:    60 * time.Second,
+		writeTimeout:   10 * time.Second,
+		pingPeriod:     54 * time.Second,
+		pongWait:       60 * time.Second,
+		allowedOrigins: []string{"*"},
 	}
 
 	for _, opt := range opts {
@@ -76,8 +73,16 @@ func New(
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			// TODO: Implement proper origin checking for production
-			return true
+			origin := r.Header.Get("Origin")
+			if len(options.allowedOrigins) == 1 && options.allowedOrigins[0] == "*" {
+				return true
+			}
+			for _, allowedOrigin := range options.allowedOrigins {
+				if origin == allowedOrigin {
+					return true
+				}
+			}
+			return false
 		},
 	}
 
@@ -98,16 +103,21 @@ type WebSocketMessage struct {
 }
 
 func (a *Adapter) Register(group *echo.Group) {
-	authMiddlewareFunc := authMiddleware.NewAuthMiddleware(a.authService)
-	group.GET(a.websocketPath, a.HandleWebSocket, authMiddlewareFunc)
+	chatAuthMiddleware := authMiddleware.NewJWTOnlyMiddleware(a.authService)
+	group.GET(a.websocketPath, a.HandleWebSocket, chatAuthMiddleware)
 }
 
 // HandleWebSocket handles websocket connections
 func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	// Get authenticated user from context
-	authInfo, ok := c.Get("auth").(*domain.ContextAuthInfo)
+	authInfo, ok := c.Get("auth").(*authDomain.ContextAuthInfo)
 	if !ok || authInfo == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
+	}
+
+	// Only allow JWT-based authentication (authInfo.Type should be credentials)
+	if authInfo.Type != authDomain.AuthenticationTypeCredentials {
+		return echo.NewHTTPError(http.StatusUnauthorized, "only JWT authentication is allowed for chat")
 	}
 
 	// Upgrade connection to websocket
@@ -117,19 +127,18 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		return err
 	}
 
-	user, err := a.authService.GetUserByID(c.Request().Context(), authInfo.ID)
-	if err != nil {
-		a.logger.ErrorContext(c.Request().Context(), "failed to get user info", slog.Any("error", err))
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user info")
+	// Create UserInfo for chat (without exposing sensitive data)
+	userInfo := chatDomain.UserInfo{
+		UUID:     authInfo.UUID,
+		Username: authInfo.UUID, // Use UUID as username for now since we don't have access to display name
+		JoinedAt: time.Now(),
 	}
 
 	client := &chatDomain.Client{
-		ID:        uuid.New().String(),
-		UserID:    authInfo.ID,
-		UserUUID:  authInfo.UUID,
-		UserEmail: user.Email,
-		Send:      make(chan []byte, 256),
-		JoinedAt:  time.Now(),
+		ID:       uuid.New().String(),
+		User:     userInfo,
+		Send:     make(chan []byte, 256),
+		JoinedAt: time.Now(),
 	}
 
 	a.service.RegisterClient(c.Request().Context(), client)
@@ -282,7 +291,7 @@ func (a *Adapter) handleCreateRoom(ctx context.Context, client *chatDomain.Clien
 		return chatDomain.ErrInvalidMessage
 	}
 
-	room, err := a.service.CreateRoom(ctx, &roomData, client.UserID, client.UserUUID, client.UserEmail)
+	room, err := a.service.CreateRoom(ctx, &roomData, client.User)
 	if err != nil {
 		return err
 	}

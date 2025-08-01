@@ -53,7 +53,7 @@ func NewService(opts ...Option) *Service {
 }
 
 // CreateRoom creates a new chat room
-func (s *Service) CreateRoom(ctx context.Context, data *domain.CreateRoomData, creatorID int, creatorUUID, creatorEmail string) (*domain.Room, error) {
+func (s *Service) CreateRoom(ctx context.Context, data *domain.CreateRoomData, creator domain.UserInfo) (*domain.Room, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (s *Service) CreateRoom(ctx context.Context, data *domain.CreateRoomData, c
 		Type:      data.Type,
 		MaxUsers:  maxUsers,
 		UserCount: 0,
-		Users:     make(map[int]domain.UserInfo),
+		Users:     make(map[string]domain.UserInfo),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -81,7 +81,7 @@ func (s *Service) CreateRoom(ctx context.Context, data *domain.CreateRoomData, c
 		slog.String("room_id", roomID),
 		slog.String("name", data.Name),
 		slog.String("type", data.Type),
-		slog.Int("creator_id", creatorID))
+		slog.String("creator_uuid", creator.UUID))
 
 	return room, nil
 }
@@ -128,19 +128,18 @@ func (s *Service) JoinRoom(ctx context.Context, roomID string, client *domain.Cl
 		return domain.ErrRoomFull
 	}
 
-	if _, exists := room.Users[client.UserID]; exists {
+	if _, exists := room.Users[client.User.UUID]; exists {
 		return domain.ErrUserAlreadyInRoom
 	}
 
 	// Add user to room
 	userInfo := domain.UserInfo{
-		ID:       client.UserID,
-		UUID:     client.UserUUID,
-		Email:    client.UserEmail,
+		UUID:     client.User.UUID,
+		Username: client.User.Username,
 		JoinedAt: time.Now(),
 	}
 
-	room.Users[client.UserID] = userInfo
+	room.Users[client.User.UUID] = userInfo
 	room.UserCount++
 	room.UpdatedAt = time.Now()
 
@@ -150,17 +149,14 @@ func (s *Service) JoinRoom(ctx context.Context, roomID string, client *domain.Cl
 
 	s.logger.InfoContext(ctx, "user joined room",
 		slog.String("room_id", roomID),
-		slog.Int("user_id", client.UserID),
-		slog.String("user_uuid", client.UserUUID))
+		slog.String("user_uuid", client.User.UUID))
 
 	// Send join message to room
 	joinMessage := &domain.Message{
 		ID:        uuid.New().String(),
 		Type:      domain.MessageTypeJoin,
-		Content:   client.UserEmail + " joined the room",
-		UserID:    client.UserID,
-		UserUUID:  client.UserUUID,
-		UserEmail: client.UserEmail,
+		Content:   client.User.Username + " joined the room",
+		User:      client.User,
 		RoomID:    roomID,
 		Timestamp: time.Now(),
 	}
@@ -190,23 +186,20 @@ func (s *Service) LeaveRoom(ctx context.Context, clientID string) error {
 	}
 
 	// Remove user from room
-	delete(room.Users, client.UserID)
+	delete(room.Users, client.User.UUID)
 	room.UserCount--
 	room.UpdatedAt = time.Now()
 
 	s.logger.InfoContext(ctx, "user left room",
 		slog.String("room_id", client.RoomID),
-		slog.Int("user_id", client.UserID),
-		slog.String("user_uuid", client.UserUUID))
+		slog.String("user_uuid", client.User.UUID))
 
 	// Send leave message to room
 	leaveMessage := &domain.Message{
 		ID:        uuid.New().String(),
 		Type:      domain.MessageTypeLeave,
-		Content:   client.UserEmail + " left the room",
-		UserID:    client.UserID,
-		UserUUID:  client.UserUUID,
-		UserEmail: client.UserEmail,
+		Content:   client.User.Username + " left the room",
+		User:      client.User,
 		RoomID:    client.RoomID,
 		Timestamp: time.Now(),
 	}
@@ -243,9 +236,7 @@ func (s *Service) SendMessage(ctx context.Context, clientID string, data *domain
 		ID:        uuid.New().String(),
 		Type:      data.Type,
 		Content:   data.Content,
-		UserID:    client.UserID,
-		UserUUID:  client.UserUUID,
-		UserEmail: client.UserEmail,
+		User:      client.User,
 		RoomID:    data.RoomID,
 		Timestamp: time.Now(),
 	}
@@ -253,7 +244,7 @@ func (s *Service) SendMessage(ctx context.Context, clientID string, data *domain
 	s.logger.InfoContext(ctx, "message sent",
 		slog.String("message_id", message.ID),
 		slog.String("room_id", data.RoomID),
-		slog.Int("user_id", client.UserID))
+		slog.String("user_uuid", client.User.UUID))
 
 	s.broadcastToRoom(data.RoomID, message)
 
@@ -269,8 +260,7 @@ func (s *Service) RegisterClient(ctx context.Context, client *domain.Client) {
 
 	s.logger.InfoContext(ctx, "client registered",
 		slog.String("client_id", client.ID),
-		slog.Int("user_id", client.UserID),
-		slog.String("user_uuid", client.UserUUID))
+		slog.String("user_uuid", client.User.UUID))
 }
 
 // UnregisterClient unregisters a websocket client

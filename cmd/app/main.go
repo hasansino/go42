@@ -520,6 +520,7 @@ func main() {
 		authService,
 		cfg.Chat.WebSocketPath,
 		chatHTTPAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
+		chatHTTPAdapterV1.WithAllowedOrigins(cfg.Chat.AllowedOrigins),
 		chatHTTPAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
 		chatHTTPAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
 		chatHTTPAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),

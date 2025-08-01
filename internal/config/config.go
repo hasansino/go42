@@ -497,6 +497,7 @@ type Chat struct {
 	MaxMessagesPerMin   int           `env:"CHAT_MAX_MESSAGES_PER_MIN"    default:"30"`
 	DefaultMaxUsers     int           `env:"CHAT_DEFAULT_MAX_USERS"       default:"100"`
 	WebSocketPath       string        `env:"CHAT_WEBSOCKET_PATH"          default:"/ws/chat"`
+	AllowedOrigins      []string      `env:"CHAT_ALLOWED_ORIGINS"         default:"*"`
 	ReadTimeout         time.Duration `env:"CHAT_READ_TIMEOUT"            default:"60s"`
 	WriteTimeout        time.Duration `env:"CHAT_WRITE_TIMEOUT"           default:"10s"`
 	PingPeriod          time.Duration `env:"CHAT_PING_PERIOD"             default:"54s"`

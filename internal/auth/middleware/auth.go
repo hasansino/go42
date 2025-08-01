@@ -162,3 +162,36 @@ func processTokenAuth(ctx echo.Context, svc authServiceAccessor, token string) e
 
 	return nil
 }
+
+// NewJWTOnlyMiddleware creates an auth middleware that only supports JWT tokens (for WebSocket)
+func NewJWTOnlyMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			var token string
+			var err error
+
+			// Try JWT from Authorization header first
+			if authHeader := ctx.Request().Header.Get(headerAuthorization); authHeader != "" {
+				token, err = extractBearerToken(authHeader)
+				if err != nil {
+					return httpAPI.SendJSONError(ctx,
+						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+				}
+			} else if queryToken := ctx.QueryParam("token"); queryToken != "" {
+				// Support JWT token as query parameter for WebSocket connections
+				token = queryToken
+			} else {
+				// No valid JWT token found
+				return httpAPI.SendJSONError(ctx,
+					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+			}
+
+			if err := processUserAuth(ctx, svc, token); err != nil {
+				return httpAPI.SendJSONError(ctx,
+					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
+			}
+
+			return next(ctx)
+		}
+	}
+}

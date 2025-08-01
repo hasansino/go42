@@ -47,39 +47,27 @@ type Message struct {
 	ID        string    `json:"id"`
 	Type      string    `json:"type"`
 	Content   string    `json:"content"`
-	UserID    int       `json:"user_id"`
-	UserUUID  string    `json:"user_uuid"`
-	UserEmail string    `json:"user_email"`
+	User      UserInfo  `json:"user"`
 	RoomID    string    `json:"room_id"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 // Room represents a chat room
 type Room struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Type        string            `json:"type"`
-	MaxUsers    int               `json:"max_users"`
-	UserCount   int               `json:"user_count"`
-	Users       map[int]UserInfo  `json:"users"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-}
-
-// UserInfo represents basic user information in chat context
-type UserInfo struct {
-	ID       int    `json:"id"`
-	UUID     string `json:"uuid"`
-	Email    string `json:"email"`
-	JoinedAt time.Time `json:"joined_at"`
+	ID          string              `json:"id"`
+	Name        string              `json:"name"`
+	Type        string              `json:"type"`
+	MaxUsers    int                 `json:"max_users"`
+	UserCount   int                 `json:"user_count"`
+	Users       map[string]UserInfo `json:"users"` // keyed by user UUID
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
 // Client represents a websocket client
 type Client struct {
 	ID       string
-	UserID   int
-	UserUUID string
-	UserEmail string
+	User     UserInfo
 	RoomID   string
 	Send     chan []byte
 	JoinedAt time.Time

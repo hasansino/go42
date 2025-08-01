@@ -42,3 +42,10 @@ func WithPongWait(wait time.Duration) Option {
 		o.pongWait = wait
 	}
 }
+
+// WithAllowedOrigins sets the allowed origins for websocket connections.
+func WithAllowedOrigins(origins []string) Option {
+	return func(o *adapterOptions) {
+		o.allowedOrigins = origins
+	}
+}
