@@ -10,6 +10,8 @@ tags:
     x-displayName: auth
   - name: users
     x-displayName: users
+  - name: dummy
+    x-displayName: dummy
 paths:
   /auth/signup:
     post:
@@ -279,9 +281,24 @@ paths:
           description: Unauthorized
         '404':
           description: User not found
-  get:
-    summary: Get dummy
-    operationId: getDummy
+  /dummy:
+    get:
+      tags:
+        - dummy
+      summary: dummy endpoint
+      operationId: dummy
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This is a dummy response
+      security: []
 components:
   securitySchemes:
     jwt:
@@ -401,3 +418,6 @@ x-tagGroups:
     tags:
       - auth
       - users
+  - name: dummy
+    tags:
+      - dummy
