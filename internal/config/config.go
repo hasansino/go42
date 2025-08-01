@@ -482,6 +482,8 @@ type Auth struct {
 	JWTRefreshTokenTTL     time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
 	JWTIssuer              string        `env:"AUTH_JWT_ISSUER"                default:"go42"`
 	JWTAudience            []string      `env:"AUTH_JWT_AUDIENCE"              default:"go42"`
+	JWTRotationPeriod      time.Duration `env:"AUTH_JWT_ROTATION_PERIOD"       default:"24h"`
+	JWTTokenLength         int           `env:"AUTH_JWT_TOKEN_LENGTH"          default:"32"`
 	APICacheTTL            time.Duration `env:"AUTH_API_CACHE_TTL"             default:"60m"`
 	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`

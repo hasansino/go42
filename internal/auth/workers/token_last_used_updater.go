@@ -1,8 +1,5 @@
 package workers
 
-// @warn this will not work with multiple instances of the service
-// @todo consider using a distributed lock or a message queue to handle updates across multiple instances
-
 import (
 	"context"
 	"log/slog"

@@ -459,6 +459,15 @@ func main() {
 		)
 		go authTokenLastUsedUpdater.Run(ctx, cfg.Auth.TokenUpdaterInterval)
 
+		authSecretRotationWorker := authWorkers.NewSecretRotationWorker(
+			authService,
+			authWorkers.SecretRotationWorkerWithLogger(
+				slog.Default().With(slog.String("component", "auth-secret-rotation")),
+			),
+			authWorkers.SecretRotationWorkerWithSecretStrength(cfg.Auth.JWTTokenLength),
+		)
+		go authSecretRotationWorker.Run(ctx, cfg.Auth.JWTRotationPeriod)
+
 		authEventsSubscriber := authWorkers.NewAuthEventSubscriber(
 			authRepository,
 			authWorkers.AuthEventSubscriberWithLogger(
