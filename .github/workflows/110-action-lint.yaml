@@ -31,7 +31,7 @@ permissions: {}
 
 jobs:
   action-lint:
-    name: docker-lint
+    name: action-lint
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
@@ -42,5 +42,4 @@ jobs:
       # ---
       - uses: raven-actions/actionlint@v2
         with:
-          fail-on-error: false
           version: latest

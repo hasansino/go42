@@ -126,7 +126,7 @@ jobs:
 
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
-    needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint, writing-lint ]
+    needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint, writing-lint, action-lint ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
