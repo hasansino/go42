@@ -1,0 +1,46 @@
+name: action-lint
+
+# Linter for github actions.
+# @see https://github.com/rhysd/actionlint
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  action-lint:
+    name: docker-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+    # ---
+    steps:
+      - uses: actions/checkout@v4
+      # ---
+      - uses: raven-actions/actionlint@v2
+        with:
+          fail-on-error: false
+          version: latest
