@@ -5,3 +5,4 @@ __debug*
 bin/
 .env
 app
+*.test

@@ -16,6 +16,7 @@ import (
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
+	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
 	"github.com/hasansino/go42/internal/tools"
 )
@@ -491,25 +492,25 @@ func tokenSHA256(token string) string {
 }
 
 // ValidateTokenForChat validates a JWT token and returns basic user information for chat systems
-// This implements the ChatAuthService interface defined in domain
-func (s *Service) ValidateTokenForChat(ctx context.Context, token string) (domain.ChatUserInfo, error) {
+// This implements the AuthService interface defined in chat domain
+func (s *Service) ValidateTokenForChat(ctx context.Context, token string) (chatDomain.UserInfo, error) {
 	// Validate the JWT token using the auth service
 	claims, err := s.ValidateJWTToken(ctx, token)
 	if err != nil {
-		return domain.ChatUserInfo{}, err
+		return chatDomain.UserInfo{}, err
 	}
 
 	// Get user details using the subject (user UUID) from claims
 	user, err := s.GetUserByUUID(ctx, claims.Subject)
 	if err != nil {
-		return domain.ChatUserInfo{}, err
+		return chatDomain.UserInfo{}, err
 	}
 
 	// Convert UUID to string for chat domain
 	userUUIDStr := user.UUID.String()
 
 	// Convert to chat domain UserInfo (hiding sensitive data like email, ID)
-	return domain.ChatUserInfo{
+	return chatDomain.UserInfo{
 		UUID:     userUUIDStr,
 		Username: user.Email, // Using email as username for now
 		JoinedAt: time.Now(),

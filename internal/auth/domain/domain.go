@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"errors"
 	"time"
 )
@@ -130,19 +129,4 @@ type CreateUserData struct {
 type UpdateUserData struct {
 	Email    *string
 	Password *string
-}
-
-// ChatUserInfo represents basic user information for external chat systems
-// without exposing sensitive data like internal IDs or emails
-type ChatUserInfo struct {
-	UUID     string    `json:"uuid"`     // Non-sensitive unique identifier
-	Username string    `json:"username"` // Display name for chat
-	JoinedAt time.Time `json:"joined_at"`
-}
-
-// ChatAuthService defines the interface for chat authentication
-// This allows chat systems to authenticate users without importing auth internals
-type ChatAuthService interface {
-	// ValidateTokenForChat validates a JWT token and returns basic user information for chat
-	ValidateTokenForChat(ctx context.Context, token string) (ChatUserInfo, error)
 }

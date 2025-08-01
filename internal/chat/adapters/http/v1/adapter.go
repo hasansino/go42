@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
-	authDomain "github.com/hasansino/go42/internal/auth/domain"
 	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 )
 
@@ -36,7 +35,7 @@ type serviceAccessor interface {
 // Adapter handles HTTP and WebSocket connections for chat
 type Adapter struct {
 	service       serviceAccessor
-	authService   authDomain.ChatAuthService
+	authService   chatDomain.AuthService
 	websocketPath string
 	upgrader      websocket.Upgrader
 	logger        *slog.Logger
@@ -55,7 +54,7 @@ type adapterOptions struct {
 // New creates a new HTTP adapter for chat
 func New(
 	service serviceAccessor,
-	authService authDomain.ChatAuthService,
+	authService chatDomain.AuthService,
 	websocketPath string,
 	opts ...Option,
 ) *Adapter {

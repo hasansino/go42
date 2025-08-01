@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -92,4 +93,11 @@ type SendMessageData struct {
 	Type    string `json:"type"    validate:"required,oneof=text system"`
 	Content string `json:"content" validate:"required,max=1000"`
 	RoomID  string `json:"room_id" validate:"required"`
+}
+
+// AuthService defines the interface for chat authentication
+// This allows chat systems to authenticate users without importing auth internals
+type AuthService interface {
+	// ValidateTokenForChat validates a JWT token and returns basic user information for chat
+	ValidateTokenForChat(ctx context.Context, token string) (UserInfo, error)
 }
