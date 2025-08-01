@@ -579,8 +579,12 @@
             handleMessage(message) {
                 this.log('Received: ' + JSON.stringify(message), 'info');
                 
+                // Handle chat messages (domain.Message objects with id field) first
+                if (message.id) {
+                    this.displayChatMessage(message);
+                }
                 // Handle WebSocket control messages (type-based)
-                if (message.type) {
+                else if (message.type) {
                     switch (message.type) {
                         case 'room_created':
                             this.log('Room created: ' + message.data.name, 'success');
@@ -595,10 +599,6 @@
                         default:
                             this.log('Unknown message type: ' + message.type, 'warning');
                     }
-                } 
-                // Handle chat messages (domain.Message objects with id field)
-                else if (message.id) {
-                    this.displayChatMessage(message);
                 }
             }
 
