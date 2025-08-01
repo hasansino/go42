@@ -161,9 +161,18 @@ jobs:
 
   # stage 5: post-build security scans
 
+  security-extra-group:
+    name: "Security Scans"
+    runs-on: ubuntu-latest
+    needs: [ docker-prepare-tag, docker-build ]
+    steps:
+      - run: echo "Grouping job for security scans"
+    outputs:
+      ready: ${{ steps.ready.outputs.ok }}
+
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
-    needs: [ docker-prepare-tag, docker-build ]
+    needs: [ security-extra-group ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -172,9 +181,18 @@ jobs:
 
   # stage 6: integration & load tests
 
+  functional-tests-group:
+    name: "Integration & Load Tests"
+    runs-on: ubuntu-latest
+    needs: [ docker-prepare-tag, docker-build ]
+    steps:
+      - run: echo "Grouping job for tests"
+    outputs:
+      ready: ${{ steps.ready.outputs.ok }}
+
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ docker-prepare-tag, docker-build ]
+    needs: [ functional-tests-group ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -183,7 +201,7 @@ jobs:
 
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ docker-prepare-tag, docker-build ]
+    needs: [ functional-tests-group ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
