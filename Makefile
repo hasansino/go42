@@ -109,7 +109,7 @@ lint:
 	@echo "Linting proto files..."
 	@buf lint api
 	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."

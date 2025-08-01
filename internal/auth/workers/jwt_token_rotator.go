@@ -52,7 +52,7 @@ func (w *SecretRotationWorker) run(ctx context.Context) {
 	newSecret, err := w.generateSecret()
 	if err != nil {
 		w.logger.ErrorContext(ctx, "failed to rotate JWT secret",
-			slog.Any("    error", err),
+			slog.Any("error", err),
 		)
 		return
 	}
