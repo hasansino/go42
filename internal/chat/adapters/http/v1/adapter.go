@@ -12,9 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
-	"github.com/hasansino/go42/internal/auth"
-	authDomain "github.com/hasansino/go42/internal/auth/domain"
-	authMiddleware "github.com/hasansino/go42/internal/auth/middleware"
 	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 )
 
@@ -37,12 +34,12 @@ type serviceAccessor interface {
 
 // Adapter handles HTTP and WebSocket connections for chat
 type Adapter struct {
-	service       serviceAccessor
-	authService   *auth.Service
+	service      serviceAccessor
+	authProvider chatDomain.AuthProvider
 	websocketPath string
-	upgrader      websocket.Upgrader
-	logger        *slog.Logger
-	options       adapterOptions
+	upgrader     websocket.Upgrader
+	logger       *slog.Logger
+	options      adapterOptions
 }
 
 type adapterOptions struct {
@@ -57,7 +54,7 @@ type adapterOptions struct {
 // New creates a new HTTP adapter for chat
 func New(
 	service serviceAccessor,
-	authService *auth.Service,
+	authProvider chatDomain.AuthProvider,
 	websocketPath string,
 	opts ...Option,
 ) *Adapter {
@@ -93,7 +90,7 @@ func New(
 
 	return &Adapter{
 		service:       service,
-		authService:   authService,
+		authProvider:  authProvider,
 		websocketPath: websocketPath,
 		upgrader:      upgrader,
 		logger:        options.logger,
@@ -108,28 +105,39 @@ type WebSocketMessage struct {
 }
 
 func (a *Adapter) Register(group *echo.Group) {
-	chatAuthMiddleware := authMiddleware.NewJWTOnlyMiddleware(a.authService)
-	group.GET(a.websocketPath, a.HandleWebSocket, chatAuthMiddleware)
+	group.GET(a.websocketPath, a.HandleWebSocket)
 }
 
 // HandleWebSocket handles websocket connections
 func (a *Adapter) HandleWebSocket(c echo.Context) error {
-	// Get authenticated user from context
-	authInfo := auth.RetrieveAuthFromContext(c.Request().Context())
-	if authInfo == nil {
-		a.logger.ErrorContext(c.Request().Context(), "authentication required - no auth info in context")
+	// Extract JWT token from query parameter or Authorization header
+	var token string
+	
+	// Try query parameter first (for WebSocket connections)
+	token = c.QueryParam("token")
+	
+	// If not in query, try Authorization header
+	if token == "" {
+		authHeader := c.Request().Header.Get("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			token = authHeader[7:]
+		}
+	}
+	
+	if token == "" {
+		a.logger.ErrorContext(c.Request().Context(), "authentication required - no token provided")
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
 	}
-
-	// Only allow JWT-based authentication (authInfo.Type should be credentials)
-	if authInfo.Type != authDomain.AuthenticationTypeCredentials {
-		a.logger.ErrorContext(c.Request().Context(), "only JWT authentication is allowed for chat",
-			slog.String("auth_type", string(authInfo.Type)))
-		return echo.NewHTTPError(http.StatusUnauthorized, "only JWT authentication is allowed for chat")
+	
+	// Validate token and get user info using AuthProvider
+	userInfo, err := a.authProvider.ValidateToken(c.Request().Context(), token)
+	if err != nil {
+		a.logger.ErrorContext(c.Request().Context(), "token validation failed", slog.String("error", err.Error()))
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 	}
-
+	
 	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful",
-		slog.String("user_uuid", authInfo.UUID))
+		slog.String("user_uuid", userInfo.UUID))
 
 	// Log request headers for debugging
 	a.logger.DebugContext(c.Request().Context(), "WebSocket upgrade request headers",
@@ -172,16 +180,9 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		return err
 	}
 
-	// Create UserInfo for chat (without exposing sensitive data)
-	userInfo := chatDomain.UserInfo{
-		UUID:     authInfo.UUID,
-		Username: authInfo.UUID, // Use UUID as username for now since we don't have access to display name
-		JoinedAt: time.Now(),
-	}
-
 	client := &chatDomain.Client{
 		ID:       uuid.New().String(),
-		User:     userInfo,
+		User:     userInfo, // Use the userInfo from AuthProvider
 		Send:     make(chan []byte, 256),
 		JoinedAt: time.Now(),
 	}

@@ -515,9 +515,10 @@ func main() {
 	httpServer.RegisterV1(authHttpAdapter)
 
 	// register chat websocket
+	chatAuthProvider := auth.NewChatAuthProvider(authService)
 	chatHTTPAdapter := chatHTTPAdapterV1.New(
 		chatService,
-		authService,
+		chatAuthProvider,
 		cfg.Chat.WebSocketPath,
 		chatHTTPAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
 		chatHTTPAdapterV1.WithAllowedOrigins(cfg.Chat.AllowedOrigins),
