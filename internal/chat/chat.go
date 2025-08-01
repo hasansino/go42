@@ -53,12 +53,16 @@ func NewService(opts ...Option) *Service {
 }
 
 // CreateRoom creates a new chat room
-func (s *Service) CreateRoom(ctx context.Context, data *domain.CreateRoomData, creator domain.UserInfo) (*domain.Room, error) {
+func (s *Service) CreateRoom(
+	ctx context.Context,
+	data *domain.CreateRoomData,
+	creator domain.UserInfo,
+) (*domain.Room, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	roomID := uuid.New().String()
-	
+
 	maxUsers := data.MaxUsers
 	if maxUsers <= 0 {
 		maxUsers = s.options.defaultMaxUsers

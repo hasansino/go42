@@ -100,7 +100,7 @@ func TestService_JoinRoom(t *testing.T) {
 		{
 			name: "successful join",
 			client: &domain.Client{
-				ID:   "client-1",
+				ID: "client-1",
 				User: domain.UserInfo{
 					UUID:     "user-1-uuid",
 					Username: "user1",
@@ -112,7 +112,7 @@ func TestService_JoinRoom(t *testing.T) {
 		{
 			name: "join different user",
 			client: &domain.Client{
-				ID:   "client-2",
+				ID: "client-2",
 				User: domain.UserInfo{
 					UUID:     "user-2-uuid",
 					Username: "user2",
@@ -124,7 +124,7 @@ func TestService_JoinRoom(t *testing.T) {
 		{
 			name: "room full",
 			client: &domain.Client{
-				ID:   "client-3",
+				ID: "client-3",
 				User: domain.UserInfo{
 					UUID:     "user-3-uuid",
 					Username: "user3",
@@ -172,7 +172,7 @@ func TestService_SendMessage(t *testing.T) {
 	require.NoError(t, err)
 
 	client := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",
@@ -259,23 +259,23 @@ func TestService_ListRooms(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name         string
-		roomType     string
+		name          string
+		roomType      string
 		expectedCount int
 	}{
 		{
-			name:         "list all rooms",
-			roomType:     "",
+			name:          "list all rooms",
+			roomType:      "",
 			expectedCount: 2,
 		},
 		{
-			name:         "list public rooms only",
-			roomType:     domain.RoomTypePublic,
+			name:          "list public rooms only",
+			roomType:      domain.RoomTypePublic,
 			expectedCount: 1,
 		},
 		{
-			name:         "list private rooms only",
-			roomType:     domain.RoomTypePrivate,
+			name:          "list private rooms only",
+			roomType:      domain.RoomTypePrivate,
 			expectedCount: 1,
 		},
 	}
@@ -286,9 +286,10 @@ func TestService_ListRooms(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Len(t, rooms, tt.expectedCount)
 
-			if tt.roomType == domain.RoomTypePublic {
+			switch tt.roomType {
+			case domain.RoomTypePublic:
 				assert.Equal(t, publicRoom.ID, rooms[0].ID)
-			} else if tt.roomType == domain.RoomTypePrivate {
+			case domain.RoomTypePrivate:
 				assert.Equal(t, privateRoom.ID, rooms[0].ID)
 			}
 		})
@@ -366,7 +367,7 @@ func TestService_LeaveRoom(t *testing.T) {
 
 	// Create and join a client
 	client := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",
@@ -402,7 +403,7 @@ func TestService_LeaveRoom(t *testing.T) {
 				assert.Equal(t, tt.expectError, err)
 			} else {
 				assert.NoError(t, err)
-				
+
 				// Verify room state if client exists
 				if tt.clientID == client.ID {
 					updatedRoom, err := service.GetRoom(ctx, room.ID)
@@ -420,7 +421,7 @@ func TestService_RegisterUnregisterClient(t *testing.T) {
 	ctx := context.Background()
 
 	client := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",
@@ -431,7 +432,7 @@ func TestService_RegisterUnregisterClient(t *testing.T) {
 	// Test RegisterClient
 	t.Run("register client", func(t *testing.T) {
 		service.RegisterClient(ctx, client)
-		
+
 		// Verify client is registered
 		service.mu.RLock()
 		_, exists := service.clients[client.ID]
@@ -453,13 +454,13 @@ func TestService_RegisterUnregisterClient(t *testing.T) {
 		}
 		room, err := service.CreateRoom(ctx, roomData, creator)
 		require.NoError(t, err)
-		
+
 		err = service.JoinRoom(ctx, room.ID, client)
 		require.NoError(t, err)
-		
+
 		// Now unregister
 		service.UnregisterClient(ctx, client.ID)
-		
+
 		// Verify client is unregistered (removed by LeaveRoom)
 		service.mu.RLock()
 		_, exists := service.clients[client.ID]
@@ -488,7 +489,7 @@ func TestService_UserAlreadyInRoom(t *testing.T) {
 
 	// Create a client
 	client := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",
@@ -502,7 +503,7 @@ func TestService_UserAlreadyInRoom(t *testing.T) {
 
 	// Try to join again with same user
 	client2 := &domain.Client{
-		ID:   "client-2",
+		ID: "client-2",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid", // Same user UUID
 			Username: "user1",
@@ -534,7 +535,7 @@ func TestService_MessageBroadcasting(t *testing.T) {
 
 	// Create multiple clients
 	client1 := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",
@@ -543,7 +544,7 @@ func TestService_MessageBroadcasting(t *testing.T) {
 	}
 
 	client2 := &domain.Client{
-		ID:   "client-2",
+		ID: "client-2",
 		User: domain.UserInfo{
 			UUID:     "user-2-uuid",
 			Username: "user2",
@@ -568,7 +569,7 @@ func TestService_MessageBroadcasting(t *testing.T) {
 	require.NoError(t, err)
 
 	// Both clients should receive the message
-	// Note: In a real scenario you'd need to check the channels, 
+	// Note: In a real scenario you'd need to check the channels,
 	// but for unit tests we're just verifying no errors occurred
 	assert.NoError(t, err)
 }
@@ -602,7 +603,7 @@ func TestService_RoomCleanup(t *testing.T) {
 
 	// Create and join a client to both rooms
 	client := &domain.Client{
-		ID:   "client-1",
+		ID: "client-1",
 		User: domain.UserInfo{
 			UUID:     "user-1-uuid",
 			Username: "user1",

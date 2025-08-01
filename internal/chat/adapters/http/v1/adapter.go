@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
 	"github.com/hasansino/go42/internal/auth"
@@ -21,7 +21,11 @@ import (
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type serviceAccessor interface {
-	CreateRoom(ctx context.Context, data *chatDomain.CreateRoomData, creator chatDomain.UserInfo) (*chatDomain.Room, error)
+	CreateRoom(
+		ctx context.Context,
+		data *chatDomain.CreateRoomData,
+		creator chatDomain.UserInfo,
+	) (*chatDomain.Room, error)
 	GetRoom(ctx context.Context, roomID string) (*chatDomain.Room, error)
 	ListRooms(ctx context.Context, roomType string) ([]*chatDomain.Room, error)
 	JoinRoom(ctx context.Context, roomID string, client *chatDomain.Client) error
@@ -110,7 +114,7 @@ func (a *Adapter) Register(group *echo.Group) {
 
 // HandleWebSocket handles websocket connections
 func (a *Adapter) HandleWebSocket(c echo.Context) error {
-	// Get authenticated user from context  
+	// Get authenticated user from context
 	authInfo := auth.RetrieveAuthFromContext(c.Request().Context())
 	if authInfo == nil {
 		a.logger.ErrorContext(c.Request().Context(), "authentication required - no auth info in context")
@@ -119,12 +123,12 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 
 	// Only allow JWT-based authentication (authInfo.Type should be credentials)
 	if authInfo.Type != authDomain.AuthenticationTypeCredentials {
-		a.logger.ErrorContext(c.Request().Context(), "only JWT authentication is allowed for chat", 
+		a.logger.ErrorContext(c.Request().Context(), "only JWT authentication is allowed for chat",
 			slog.String("auth_type", string(authInfo.Type)))
 		return echo.NewHTTPError(http.StatusUnauthorized, "only JWT authentication is allowed for chat")
 	}
 
-	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful", 
+	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful",
 		slog.String("user_uuid", authInfo.UUID))
 
 	// Log request headers for debugging
@@ -140,7 +144,7 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	// that implements http.Hijacker interface
 	resp := c.Response()
 	writer := resp.Writer
-	
+
 	// Log debug info about the response writer type
 	a.logger.DebugContext(c.Request().Context(), "Response writer info",
 		slog.String("writer_type", fmt.Sprintf("%T", writer)),
@@ -148,10 +152,10 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 			_, ok := writer.(http.Hijacker)
 			return ok
 		}()))
-	
+
 	// Try to unwrap any middleware wrappers to get the underlying http.ResponseWriter
 	// that implements http.Hijacker. Use reflection to access the embedded field.
-	
+
 	// For the responseRecorder from our middleware, try to access the embedded ResponseWriter
 	// using reflection since the struct is not exported
 	if underlyingWriter := getUnderlyingHijacker(writer); underlyingWriter != nil {
@@ -161,7 +165,7 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	}
 	conn, err := a.upgrader.Upgrade(writer, c.Request(), nil)
 	if err != nil {
-		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket", 
+		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket",
 			slog.Any("error", err),
 			slog.String("error_type", fmt.Sprintf("%T", err)),
 			slog.String("error_message", err.Error()))
@@ -193,12 +197,12 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 func (a *Adapter) readPump(ctx context.Context, conn *websocket.Conn, client *chatDomain.Client) {
 	defer func() {
 		a.service.UnregisterClient(ctx, client.ID)
-		conn.Close()
+		_ = conn.Close()
 	}()
 
-	conn.SetReadDeadline(time.Now().Add(a.options.pongWait))
+	_ = conn.SetReadDeadline(time.Now().Add(a.options.pongWait))
 	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(a.options.pongWait))
+		_ = conn.SetReadDeadline(time.Now().Add(a.options.pongWait))
 		return nil
 	})
 
@@ -216,7 +220,7 @@ func (a *Adapter) readPump(ctx context.Context, conn *websocket.Conn, client *ch
 			a.logger.ErrorContext(ctx, "failed to handle message",
 				slog.Any("error", err),
 				slog.String("client_id", client.ID))
-			
+
 			errMsg := WebSocketMessage{
 				Type: "error",
 				Data: map[string]string{"message": err.Error()},
@@ -234,15 +238,15 @@ func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *c
 	ticker := time.NewTicker(a.options.pingPeriod)
 	defer func() {
 		ticker.Stop()
-		conn.Close()
+		_ = conn.Close()
 	}()
 
 	for {
 		select {
 		case message, ok := <-client.Send:
-			conn.SetWriteDeadline(time.Now().Add(a.options.writeTimeout))
+			_ = conn.SetWriteDeadline(time.Now().Add(a.options.writeTimeout))
 			if !ok {
-				conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -250,12 +254,12 @@ func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *c
 			if err != nil {
 				return
 			}
-			w.Write(message)
+			_, _ = w.Write(message)
 
 			n := len(client.Send)
 			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-client.Send)
+				_, _ = w.Write([]byte{'\n'})
+				_, _ = w.Write(<-client.Send)
 			}
 
 			if err := w.Close(); err != nil {
@@ -263,7 +267,7 @@ func (a *Adapter) writePump(ctx context.Context, conn *websocket.Conn, client *c
 			}
 
 		case <-ticker.C:
-			conn.SetWriteDeadline(time.Now().Add(a.options.writeTimeout))
+			_ = conn.SetWriteDeadline(time.Now().Add(a.options.writeTimeout))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
@@ -392,7 +396,7 @@ func getUnderlyingHijacker(w http.ResponseWriter) http.ResponseWriter {
 	if _, ok := w.(http.Hijacker); ok {
 		return w
 	}
-	
+
 	// Try to unwrap common wrapper patterns
 	// Pattern 1: responseRecorder with embedded ResponseWriter field
 	if wrapped := unwrapResponseRecorder(w); wrapped != nil {
@@ -400,7 +404,7 @@ func getUnderlyingHijacker(w http.ResponseWriter) http.ResponseWriter {
 			return wrapped
 		}
 	}
-	
+
 	return nil
 }
 
@@ -410,7 +414,6 @@ func unwrapResponseRecorder(w http.ResponseWriter) http.ResponseWriter {
 	if recorder, ok := w.(interface{ GetUnderlyingWriter() http.ResponseWriter }); ok {
 		return recorder.GetUnderlyingWriter()
 	}
-	
+
 	return nil
 }
-

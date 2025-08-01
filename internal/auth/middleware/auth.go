@@ -179,7 +179,11 @@ func NewJWTOnlyMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) e
 
 			// Try JWT from Authorization header first
 			if authHeader := ctx.Request().Header.Get(headerAuthorization); authHeader != "" {
-				slog.DebugContext(ctx.Request().Context(), "Found Authorization header", slog.String("header", authHeader))
+				slog.DebugContext(
+					ctx.Request().Context(),
+					"Found Authorization header",
+					slog.String("header", authHeader),
+				)
 				token, err = extractBearerToken(authHeader)
 				if err != nil {
 					slog.ErrorContext(ctx.Request().Context(), "Failed to extract bearer token", slog.Any("error", err))
@@ -197,7 +201,11 @@ func NewJWTOnlyMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) e
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
-			slog.DebugContext(ctx.Request().Context(), "Processing user auth with token", slog.String("token_prefix", token[:20]+"..."))
+			slog.DebugContext(
+				ctx.Request().Context(),
+				"Processing user auth with token",
+				slog.String("token_prefix", token[:20]+"..."),
+			)
 			if err := processUserAuth(ctx, svc, token); err != nil {
 				slog.ErrorContext(ctx.Request().Context(), "User auth failed", slog.Any("error", err))
 				return httpAPI.SendJSONError(ctx,
