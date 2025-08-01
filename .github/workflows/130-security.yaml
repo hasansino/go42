@@ -7,6 +7,8 @@ name: security
 # @see https://github.com/sonatype-nexus-community/nancy
 # @see https://codeql.github.com/
 # @see https://github.com/google/go-licenses
+# @see https://github.com/ossf/scorecard
+# @see https://github.com/google/capslock
 
 on:
   workflow_dispatch:
