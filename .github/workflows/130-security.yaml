@@ -79,14 +79,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
@@ -106,14 +98,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - run: go list -json -m all > go.list
       - uses: sonatype-nexus-community/nancy-github-action@main
         with:
@@ -189,14 +173,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - run: go install github.com/google/capslock/cmd/capslock@latest
       - run: capslock -packages ./... -output=json > capslock-report.json
       - uses: actions/upload-artifact@v4

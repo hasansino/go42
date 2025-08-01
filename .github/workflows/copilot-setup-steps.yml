@@ -1,4 +1,4 @@
-name: "Copilot Setup Steps"
+name: copilot-setup-steps
 
 # Automatically run the setup steps when they are changed to allow for easy validation, and
 # allow manual testing through the repository's "Actions" tab
@@ -30,7 +30,7 @@ jobs:
             ~/.cache/go-build
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go
       # ----
       - run: go mod tidy && go mod download
       # ----
