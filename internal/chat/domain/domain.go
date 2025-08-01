@@ -42,6 +42,13 @@ var (
 	ErrUserAlreadyInRoom  = errors.New("user already in room")
 )
 
+// UserInfo represents basic user information for chat without sensitive data
+type UserInfo struct {
+	UUID     string    `json:"uuid"`     // Non-sensitive unique identifier
+	Username string    `json:"username"` // Display name for chat
+	JoinedAt time.Time `json:"joined_at"`
+}
+
 // Message represents a chat message
 type Message struct {
 	ID        string    `json:"id"`
