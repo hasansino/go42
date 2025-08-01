@@ -49,7 +49,6 @@ import (
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/chat"
 	chatHTTPAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/http/v1"
-	chatWebSocketAdapterV1 "github.com/hasansino/go42/internal/chat/adapters/websocket/v1"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
 	"github.com/hasansino/go42/internal/database/mysql"
@@ -516,20 +515,15 @@ func main() {
 	httpServer.RegisterV1(authHttpAdapter)
 
 	// register chat websocket
-	chatWebSocketAdapter := chatWebSocketAdapterV1.New(
+	chatHTTPAdapter := chatHTTPAdapterV1.New(
 		chatService,
 		authService,
-		chatWebSocketAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
-		chatWebSocketAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
-		chatWebSocketAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
-		chatWebSocketAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),
-		chatWebSocketAdapterV1.WithPongWait(cfg.Chat.PongWait),
-	)
-
-	chatHTTPAdapter := chatHTTPAdapterV1.NewHTTPAdapter(
-		chatWebSocketAdapter,
-		authService,
 		cfg.Chat.WebSocketPath,
+		chatHTTPAdapterV1.WithLogger(slog.Default().With(slog.String("component", "chat-websocket"))),
+		chatHTTPAdapterV1.WithReadTimeout(cfg.Chat.ReadTimeout),
+		chatHTTPAdapterV1.WithWriteTimeout(cfg.Chat.WriteTimeout),
+		chatHTTPAdapterV1.WithPingPeriod(cfg.Chat.PingPeriod),
+		chatHTTPAdapterV1.WithPongWait(cfg.Chat.PongWait),
 	)
 
 	httpServer.Register(chatHTTPAdapter)
