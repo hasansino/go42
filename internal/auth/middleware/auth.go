@@ -170,27 +170,41 @@ func NewJWTOnlyMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) e
 			var token string
 			var err error
 
+			// Debug logging
+			slog.DebugContext(ctx.Request().Context(), "JWT middleware processing request",
+				slog.String("path", ctx.Request().URL.Path),
+				slog.String("query", ctx.Request().URL.RawQuery),
+				slog.String("authorization_header", ctx.Request().Header.Get(headerAuthorization)),
+				slog.String("token_query_param", ctx.QueryParam("token")))
+
 			// Try JWT from Authorization header first
 			if authHeader := ctx.Request().Header.Get(headerAuthorization); authHeader != "" {
+				slog.DebugContext(ctx.Request().Context(), "Found Authorization header", slog.String("header", authHeader))
 				token, err = extractBearerToken(authHeader)
 				if err != nil {
+					slog.ErrorContext(ctx.Request().Context(), "Failed to extract bearer token", slog.Any("error", err))
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
 			} else if queryToken := ctx.QueryParam("token"); queryToken != "" {
 				// Support JWT token as query parameter for WebSocket connections
+				slog.DebugContext(ctx.Request().Context(), "Found token query parameter", slog.String("token_prefix", queryToken[:20]+"..."))
 				token = queryToken
 			} else {
 				// No valid JWT token found
+				slog.ErrorContext(ctx.Request().Context(), "No valid JWT token found")
 				return httpAPI.SendJSONError(ctx,
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
+			slog.DebugContext(ctx.Request().Context(), "Processing user auth with token", slog.String("token_prefix", token[:20]+"..."))
 			if err := processUserAuth(ctx, svc, token); err != nil {
+				slog.ErrorContext(ctx.Request().Context(), "User auth failed", slog.Any("error", err))
 				return httpAPI.SendJSONError(ctx,
 					http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 			}
 
+			slog.DebugContext(ctx.Request().Context(), "JWT middleware completed successfully")
 			return next(ctx)
 		}
 	}

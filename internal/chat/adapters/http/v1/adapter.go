@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -109,21 +110,37 @@ func (a *Adapter) Register(group *echo.Group) {
 
 // HandleWebSocket handles websocket connections
 func (a *Adapter) HandleWebSocket(c echo.Context) error {
-	// Get authenticated user from context
-	authInfo, ok := c.Get("auth").(*authDomain.ContextAuthInfo)
-	if !ok || authInfo == nil {
+	// Get authenticated user from context  
+	authInfo := auth.RetrieveAuthFromContext(c.Request().Context())
+	if authInfo == nil {
+		a.logger.ErrorContext(c.Request().Context(), "authentication required - no auth info in context")
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
 	}
 
 	// Only allow JWT-based authentication (authInfo.Type should be credentials)
 	if authInfo.Type != authDomain.AuthenticationTypeCredentials {
+		a.logger.ErrorContext(c.Request().Context(), "only JWT authentication is allowed for chat", 
+			slog.String("auth_type", string(authInfo.Type)))
 		return echo.NewHTTPError(http.StatusUnauthorized, "only JWT authentication is allowed for chat")
 	}
+
+	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful", 
+		slog.String("user_uuid", authInfo.UUID))
+
+	// Log request headers for debugging
+	a.logger.DebugContext(c.Request().Context(), "WebSocket upgrade request headers",
+		slog.String("connection", c.Request().Header.Get("Connection")),
+		slog.String("upgrade", c.Request().Header.Get("Upgrade")),
+		slog.String("sec_websocket_version", c.Request().Header.Get("Sec-Websocket-Version")),
+		slog.String("sec_websocket_key", c.Request().Header.Get("Sec-Websocket-Key")),
+		slog.String("user_agent", c.Request().Header.Get("User-Agent")))
 
 	// Upgrade connection to websocket
 	conn, err := a.upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket", slog.Any("error", err))
+		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket", 
+			slog.Any("error", err),
+			slog.String("error_type", fmt.Sprintf("%T", err)))
 		return err
 	}
 
