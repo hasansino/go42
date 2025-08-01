@@ -13,9 +13,17 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
-func WithJWTSecret(secret string) Option {
+func WithJWTSecrets(secret []string) Option {
 	return func(s *Service) {
-		s.jwtSecret = secret
+		for _, secret := range secret {
+			s.jwtSecrets = append(
+				s.jwtSecrets,
+				jwtSecret{
+					sha256: strToSHA256(secret),
+					secret: secret,
+				},
+			)
+		}
 	}
 }
 

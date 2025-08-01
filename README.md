@@ -52,7 +52,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
-- jwt secret rotation
 - HMAC -> more secure method
 - caching for user/permission lookups
 - slog smart sampling of duplicates
@@ -101,7 +100,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## Bugs
 
-- govulncheck warnings and availability (it's a cache!)
 - same-line imports fixes from linters
 - fix third party protobuf generation (protovalidate)
 - tint log handler does nto support nested fields

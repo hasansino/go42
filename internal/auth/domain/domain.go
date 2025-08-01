@@ -3,6 +3,8 @@ package domain
 import (
 	"errors"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // RBAC roles.
@@ -70,6 +72,11 @@ var (
 )
 
 // ----
+
+type JWTClaims struct {
+	jwt.RegisteredClaims
+	KID string `json:"kid,omitempty"`
+}
 
 // Tokens represents the structure of JWT authentication tokens.
 type Tokens struct {

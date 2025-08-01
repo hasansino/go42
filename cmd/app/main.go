@@ -463,7 +463,7 @@ func main() {
 			outboxService,
 			cacheEngine,
 			auth.WithLogger(authLogger),
-			auth.WithJWTSecret(cfg.Auth.JWTSecret),
+			auth.WithJWTSecrets(cfg.Auth.JWTSecrets),
 			auth.WithJWTAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
 			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
 			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),
@@ -479,6 +479,15 @@ func main() {
 			),
 		)
 		go authTokenLastUsedUpdater.Run(ctx, cfg.Auth.TokenUpdaterInterval)
+
+		authSecretRotationWorker := authWorkers.NewSecretRotationWorker(
+			authService,
+			authWorkers.SecretRotationWorkerWithLogger(
+				slog.Default().With(slog.String("component", "auth-secret-rotation")),
+			),
+			authWorkers.SecretRotationWorkerWithSecretStrength(cfg.Auth.JWTTokenLength),
+		)
+		go authSecretRotationWorker.Run(ctx, cfg.Auth.JWTRotationPeriod)
 
 		authEventsSubscriber := authWorkers.NewAuthEventSubscriber(
 			authRepository,

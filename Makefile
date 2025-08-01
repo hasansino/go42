@@ -8,6 +8,7 @@ help: Makefile
 
 ## setup | install dependencies
 # Prerequisites: brew, go
+# Used by github copilot to setup its environment.
 setup:
 	@go mod tidy -e && go mod download
 	@brew install yq grpcui k6
@@ -16,6 +17,7 @@ setup:
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@go install github.com/go-delve/delve/cmd/dlv@latest
+	@go install github.com/daixiang0/gci@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
