@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
+	authDomain "github.com/hasansino/go42/internal/auth/domain"
 	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 )
 
@@ -34,12 +35,12 @@ type serviceAccessor interface {
 
 // Adapter handles HTTP and WebSocket connections for chat
 type Adapter struct {
-	service      serviceAccessor
-	authProvider chatDomain.AuthProvider
+	service       serviceAccessor
+	authService   authDomain.ChatAuthService
 	websocketPath string
-	upgrader     websocket.Upgrader
-	logger       *slog.Logger
-	options      adapterOptions
+	upgrader      websocket.Upgrader
+	logger        *slog.Logger
+	options       adapterOptions
 }
 
 type adapterOptions struct {
@@ -54,7 +55,7 @@ type adapterOptions struct {
 // New creates a new HTTP adapter for chat
 func New(
 	service serviceAccessor,
-	authProvider chatDomain.AuthProvider,
+	authService authDomain.ChatAuthService,
 	websocketPath string,
 	opts ...Option,
 ) *Adapter {
@@ -90,7 +91,7 @@ func New(
 
 	return &Adapter{
 		service:       service,
-		authProvider:  authProvider,
+		authService:   authService,
 		websocketPath: websocketPath,
 		upgrader:      upgrader,
 		logger:        options.logger,
@@ -112,10 +113,10 @@ func (a *Adapter) Register(group *echo.Group) {
 func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	// Extract JWT token from query parameter or Authorization header
 	var token string
-	
+
 	// Try query parameter first (for WebSocket connections)
 	token = c.QueryParam("token")
-	
+
 	// If not in query, try Authorization header
 	if token == "" {
 		authHeader := c.Request().Header.Get("Authorization")
@@ -123,19 +124,26 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 			token = authHeader[7:]
 		}
 	}
-	
+
 	if token == "" {
 		a.logger.ErrorContext(c.Request().Context(), "authentication required - no token provided")
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
 	}
-	
-	// Validate token and get user info using AuthProvider
-	userInfo, err := a.authProvider.ValidateToken(c.Request().Context(), token)
+
+	// Validate token and get user info using AuthService
+	chatUserInfo, err := a.authService.ValidateTokenForChat(c.Request().Context(), token)
 	if err != nil {
 		a.logger.ErrorContext(c.Request().Context(), "token validation failed", slog.String("error", err.Error()))
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 	}
-	
+
+	// Convert auth domain user info to chat domain user info
+	userInfo := chatDomain.UserInfo{
+		UUID:     chatUserInfo.UUID,
+		Username: chatUserInfo.Username,
+		JoinedAt: chatUserInfo.JoinedAt,
+	}
+
 	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful",
 		slog.String("user_uuid", userInfo.UUID))
 

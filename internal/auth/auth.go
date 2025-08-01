@@ -489,3 +489,29 @@ func tokenSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
 }
+
+// ValidateTokenForChat validates a JWT token and returns basic user information for chat systems
+// This implements the ChatAuthService interface defined in domain
+func (s *Service) ValidateTokenForChat(ctx context.Context, token string) (domain.ChatUserInfo, error) {
+	// Validate the JWT token using the auth service
+	claims, err := s.ValidateJWTToken(ctx, token)
+	if err != nil {
+		return domain.ChatUserInfo{}, err
+	}
+
+	// Get user details using the subject (user UUID) from claims
+	user, err := s.GetUserByUUID(ctx, claims.Subject)
+	if err != nil {
+		return domain.ChatUserInfo{}, err
+	}
+
+	// Convert UUID to string for chat domain
+	userUUIDStr := user.UUID.String()
+
+	// Convert to chat domain UserInfo (hiding sensitive data like email, ID)
+	return domain.ChatUserInfo{
+		UUID:     userUUIDStr,
+		Username: user.Email, // Using email as username for now
+		JoinedAt: time.Now(),
+	}, nil
+}
