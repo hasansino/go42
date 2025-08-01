@@ -73,7 +73,6 @@ func New(
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		Subprotocols:    []string{}, // Explicitly set empty subprotocols
 		CheckOrigin: func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
 			if len(options.allowedOrigins) == 1 && options.allowedOrigins[0] == "*" {
@@ -86,7 +85,6 @@ func New(
 			}
 			return false
 		},
-		EnableCompression: false, // Disable compression to avoid compatibility issues
 	}
 
 	return &Adapter{
@@ -138,7 +136,30 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		slog.String("user_agent", c.Request().Header.Get("User-Agent")))
 
 	// Upgrade connection to websocket
-	conn, err := a.upgrader.Upgrade(c.Response(), c.Request(), nil)
+	// Echo and middleware may wrap the response writer, so we need to get the original one
+	// that implements http.Hijacker interface
+	resp := c.Response()
+	writer := resp.Writer
+	
+	// Log debug info about the response writer type
+	a.logger.DebugContext(c.Request().Context(), "Response writer info",
+		slog.String("writer_type", fmt.Sprintf("%T", writer)),
+		slog.Bool("implements_hijacker", func() bool {
+			_, ok := writer.(http.Hijacker)
+			return ok
+		}()))
+	
+	// Try to unwrap any middleware wrappers to get the underlying http.ResponseWriter
+	// that implements http.Hijacker. Use reflection to access the embedded field.
+	
+	// For the responseRecorder from our middleware, try to access the embedded ResponseWriter
+	// using reflection since the struct is not exported
+	if underlyingWriter := getUnderlyingHijacker(writer); underlyingWriter != nil {
+		a.logger.DebugContext(c.Request().Context(), "Successfully found hijacker-capable writer",
+			slog.String("unwrapped_writer_type", fmt.Sprintf("%T", underlyingWriter)))
+		writer = underlyingWriter
+	}
+	conn, err := a.upgrader.Upgrade(writer, c.Request(), nil)
 	if err != nil {
 		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket", 
 			slog.Any("error", err),
@@ -363,3 +384,33 @@ func (a *Adapter) encodeMessage(msg *WebSocketMessage) []byte {
 	data, _ := json.Marshal(msg)
 	return data
 }
+
+// getUnderlyingHijacker tries to extract an http.ResponseWriter that implements http.Hijacker
+// from wrapped response writers (like middleware recorders)
+func getUnderlyingHijacker(w http.ResponseWriter) http.ResponseWriter {
+	// Check if the current writer implements Hijacker
+	if _, ok := w.(http.Hijacker); ok {
+		return w
+	}
+	
+	// Try to unwrap common wrapper patterns
+	// Pattern 1: responseRecorder with embedded ResponseWriter field
+	if wrapped := unwrapResponseRecorder(w); wrapped != nil {
+		if _, ok := wrapped.(http.Hijacker); ok {
+			return wrapped
+		}
+	}
+	
+	return nil
+}
+
+// unwrapResponseRecorder tries to extract the embedded ResponseWriter from a responseRecorder
+func unwrapResponseRecorder(w http.ResponseWriter) http.ResponseWriter {
+	// Check if this is our responseRecorder type and it has the GetUnderlyingWriter method
+	if recorder, ok := w.(interface{ GetUnderlyingWriter() http.ResponseWriter }); ok {
+		return recorder.GetUnderlyingWriter()
+	}
+	
+	return nil
+}
+

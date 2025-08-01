@@ -42,3 +42,9 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 	r.size += size
 	return size, err
 }
+
+// GetUnderlyingWriter returns the underlying http.ResponseWriter
+// This is needed for WebSocket upgrades that require http.Hijacker interface
+func (r *responseRecorder) GetUnderlyingWriter() http.ResponseWriter {
+	return r.ResponseWriter
+}
