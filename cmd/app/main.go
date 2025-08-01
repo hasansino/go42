@@ -442,7 +442,7 @@ func main() {
 			outboxService,
 			cacheEngine,
 			auth.WithLogger(authLogger),
-			auth.WithJWTSecret(cfg.Auth.JWTSecret),
+			auth.WithJWTSecrets(cfg.Auth.JWTSecrets),
 			auth.WithJWTAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
 			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
 			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),

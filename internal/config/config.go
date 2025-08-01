@@ -477,7 +477,7 @@ type Outbox struct {
 // ╰──────────────────────────────╯
 
 type Auth struct {
-	JWTSecret              string        `env:"AUTH_JWT_SECRET"                default:"0128899"`
+	JWTSecrets             []string      `env:"AUTH_JWT_SECRETS"               default:"0128899,9988210"`
 	JWTAccessTokenTTL      time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"      default:"15m"`
 	JWTRefreshTokenTTL     time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
 	JWTIssuer              string        `env:"AUTH_JWT_ISSUER"                default:"go42"`

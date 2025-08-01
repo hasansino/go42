@@ -52,7 +52,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
-- jwt secret rotation
 - HMAC -> more secure method
 - caching for user/permission lookups
 - slog smart sampling of duplicates

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -52,17 +53,28 @@ type outboxService interface {
 	NewOutboxMessage(ctx context.Context, topic string, msg *outboxDomain.Message) error
 }
 
+// jwtSecret holds the SHA256 hash of the secret and the secret itself.
+// The SHA256 hash is used as the KID (Key ID) in JWT tokens to
+// allow for key rotation.
+type jwtSecret struct {
+	sha256 string
+	secret string
+}
+
 type Service struct {
 	logger        *slog.Logger
 	repository    repository
 	cache         cache
 	outboxService outboxService
 
-	jwtSecret       string
+	jwtSecrets   []jwtSecret
+	jwtSecretsMu sync.RWMutex
+
+	jwtIssuer   string
+	jwtAudience []string
+
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
-	jwtIssuer       string
-	jwtAudience     []string
 
 	minPasswordEntropyBits int
 
@@ -79,6 +91,7 @@ func NewService(
 		repository:     repository,
 		outboxService:  outboxService,
 		cache:          cache,
+		jwtSecrets:     make([]jwtSecret, 0, 2),
 		tokensUsedChan: make(chan domain.TokenWasUsed, tools.BufferSize4096),
 	}
 	for _, opt := range opts {
@@ -365,12 +378,38 @@ func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User,
 
 // ----
 
+func (s *Service) RotateJWTSecret(newSecret string) {
+	s.jwtSecretsMu.Lock()
+	defer s.jwtSecretsMu.Unlock()
+
+	hash := sha256.Sum256([]byte(newSecret))
+	newJWTSecret := jwtSecret{
+		sha256: hex.EncodeToString(hash[:]),
+		secret: newSecret,
+	}
+
+	s.jwtSecrets = append(s.jwtSecrets, newJWTSecret)
+
+	// only 3 secrets are kept in memory
+	if len(s.jwtSecrets) > 3 {
+		s.jwtSecrets = s.jwtSecrets[len(s.jwtSecrets)-3:]
+	}
+}
+
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
-	t, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(s.jwtSecret), nil
+		kid, _ := token.Header["kid"].(string)
+		s.jwtSecretsMu.RLock()
+		defer s.jwtSecretsMu.RUnlock()
+		for _, secret := range s.jwtSecrets {
+			if kid == secret.sha256 {
+				return []byte(secret.secret), nil
+			}
+		}
+		return []byte(s.jwtSecrets[len(s.jwtSecrets)-1].secret), nil
 	})
 	if err != nil {
 		return nil, err
@@ -385,7 +424,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 		return nil, domain.ErrInvalidToken
 	}
 
-	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+tokenSHA256(token)); err != nil {
+	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+strToSHA256(token)); err != nil {
 		s.logger.ErrorContext(
 			ctx, "failed to fetch cache: %w",
 			slog.Any("error", err))
@@ -399,7 +438,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
 	return s.cache.SetTTL(
 		ctx,
-		cacheKeyInvalidatedToken+tokenSHA256(token),
+		cacheKeyInvalidatedToken+strToSHA256(token),
 		cacheValueInvalidatedToken,
 		time.Until(until)+1,
 	)
@@ -424,31 +463,43 @@ func (s *Service) generateTokens(userUUID string) (*domain.Tokens, error) {
 }
 
 func (s *Service) generateAccessToken(userUUID string) (string, error) {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        uuid.New().String(),
-		Audience:  s.jwtAudience,
-		Issuer:    s.jwtIssuer,
-		Subject:   userUUID,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
-	}).SignedString([]byte(s.jwtSecret))
+	s.jwtSecretsMu.RLock()
+	token := s.jwtSecrets[len(s.jwtSecrets)-1]
+	s.jwtSecretsMu.RUnlock()
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, domain.JWTClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
+			Audience:  s.jwtAudience,
+			Issuer:    s.jwtIssuer,
+			Subject:   userUUID,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
+		},
+		KID: token.sha256,
+	}).SignedString([]byte(token.secret))
 }
 
 func (s *Service) generateRefreshToken(userUUID string) (string, error) {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ID:        uuid.New().String(),
-		Audience:  s.jwtAudience,
-		Issuer:    s.jwtIssuer,
-		Subject:   userUUID,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
-	}).SignedString([]byte(s.jwtSecret))
+	s.jwtSecretsMu.RLock()
+	token := s.jwtSecrets[len(s.jwtSecrets)-1]
+	s.jwtSecretsMu.RUnlock()
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, domain.JWTClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(),
+			Audience:  s.jwtAudience,
+			Issuer:    s.jwtIssuer,
+			Subject:   userUUID,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
+		},
+		KID: token.sha256,
+	}).SignedString([]byte(token.secret))
 }
 
 // ----
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
-	apiToken, err := s.repository.GetToken(ctx, tokenSHA256(token))
+	apiToken, err := s.repository.GetToken(ctx, strToSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
 	}
@@ -485,7 +536,7 @@ func (s *Service) CheckPasswordStrength(password string) error {
 	return passwordvalidator.Validate(password, float64(s.minPasswordEntropyBits))
 }
 
-func tokenSHA256(token string) string {
+func strToSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
 }
