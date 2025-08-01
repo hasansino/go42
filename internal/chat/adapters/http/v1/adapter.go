@@ -73,6 +73,7 @@ func New(
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		Subprotocols:    []string{}, // Explicitly set empty subprotocols
 		CheckOrigin: func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
 			if len(options.allowedOrigins) == 1 && options.allowedOrigins[0] == "*" {
@@ -85,6 +86,7 @@ func New(
 			}
 			return false
 		},
+		EnableCompression: false, // Disable compression to avoid compatibility issues
 	}
 
 	return &Adapter{
@@ -140,7 +142,8 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 	if err != nil {
 		a.logger.ErrorContext(c.Request().Context(), "failed to upgrade websocket", 
 			slog.Any("error", err),
-			slog.String("error_type", fmt.Sprintf("%T", err)))
+			slog.String("error_type", fmt.Sprintf("%T", err)),
+			slog.String("error_message", err.Error()))
 		return err
 	}
 
