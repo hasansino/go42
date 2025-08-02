@@ -53,11 +53,7 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 	}
 
 	// migrations have independent connections, so we can close the connection after migration
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.Error("failed to close database connection", "error", err)
-		}
-	}()
+	defer db.Close()
 
 	// locker is used to ensure that only one migration process runs at a time
 	// this is required to prevent concurrent migrations that could lead to database inconsistencies

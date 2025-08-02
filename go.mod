@@ -13,6 +13,7 @@ require (
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/agiledragon/gomonkey/v2 v2.13.0
+	github.com/allegro/bigcache v1.2.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.14.0
@@ -36,7 +37,6 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lmittmann/tint v1.1.2
-	github.com/maypok86/otter/v2 v2.2.1
 	github.com/nats-io/nats.go v1.43.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/onsi/ginkgo/v2 v2.23.4
@@ -68,7 +68,6 @@ require (
 require (
 	cel.dev/expr v0.24.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect

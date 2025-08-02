@@ -441,8 +441,12 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 
 // ValidateJWTTokenInternal validates a JWT token and returns full JWT claims
 // This is used by auth package components (middleware, HTTP adapter)
-func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*domain.JWTClaims, error) {
-	return s.validateJWTTokenInternal(ctx, token)
+func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+	claims, err := s.validateJWTTokenInternal(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	return &claims.RegisteredClaims, nil
 }
 
 // ValidateJWTToken validates a JWT token and returns the user UUID from claims
