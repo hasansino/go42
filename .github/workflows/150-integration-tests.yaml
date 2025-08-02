@@ -43,19 +43,36 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-  packages: read
+permissions: {}
 
 jobs:
   integration-tests:
-    name: integration-tests
+    name: integration-tests-${{ matrix.database }}
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        database: [sqlite, mysql, pgsql]
+        include:
+          - database: sqlite
+            database_engine: sqlite
+            app_port: 44442
+            grpc_port: 55552
+          - database: mysql
+            database_engine: mysql
+            app_port: 44443
+            grpc_port: 55553
+          - database: pgsql
+            database_engine: pgsql
+            app_port: 44444
+            grpc_port: 55554
     # ---
     services:
       mysql:
-        image: mysql:latest
+        image: ${{ matrix.database == 'mysql' && 'mysql:latest' || '' }}
         ports:
           - 3306:3306
         env:
@@ -70,7 +87,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       pgsql:
-        image: postgres:latest
+        image: ${{ matrix.database == 'pgsql' && 'postgres:latest' || '' }}
         ports:
           - 5432:5432
         env:
@@ -86,8 +103,8 @@ jobs:
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
-          - 44442:8080  # should be unique to avoid conflicts on self-hosted runners
-          - 55552:50051 # should be unique to avoid conflicts on self-hosted runners
+          - ${{ matrix.app_port }}:8080  # unique ports to avoid conflicts on self-hosted runners
+          - ${{ matrix.grpc_port }}:50051 # unique ports to avoid conflicts on self-hosted runners
         # environment variables read by service against which integration tests are run
         env:
           LOG_LEVEL: warn
@@ -95,7 +112,7 @@ jobs:
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
           SERVER_GRPC_AUTHORIZATION_ENABLED: false
-          DATABASE_ENGINE: sqlite
+          DATABASE_ENGINE: ${{ matrix.database_engine }}
           DATABASE_MYSQL_MASTER_HOST: mysql
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
@@ -117,5 +134,5 @@ jobs:
         # environment variables read by integration tests
         env:
           CGO_ENABLED: 1 # needed for -race
-          HTTP_SERVER_ADDRESS: http://localhost:44442
-          GRPC_SERVER_ADDRESS: localhost:55552
+          HTTP_SERVER_ADDRESS: http://localhost:${{ matrix.app_port }}
+          GRPC_SERVER_ADDRESS: localhost:${{ matrix.grpc_port }}

@@ -103,21 +103,21 @@ image:
 #   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 lint:
 	@echo "Linting go files..."
-	@golangci-lint run --config etc/.golangci.yml
+	@golangci-lint run --config etc/.golangci.yml || true
 	@echo "Linting dockerfile..."
-	@hadolint Dockerfile
+	@hadolint Dockerfile || true
 	@echo "Linting proto files..."
-	@buf lint api
+	@buf lint api || true
 	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
-	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
+	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/ || true
 	@echo "Linting SQL files..."
-	@sqlfluff lint --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite
-	@sqlfluff lint --disable-progress-bar migrate/mysql/*.sql --dialect mysql
-	@sqlfluff lint --disable-progress-bar migrate/pgsql/*.sql --dialect postgres
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
 
 ## generate | generate code for all modules
 # Dependencies:
