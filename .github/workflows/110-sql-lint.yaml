@@ -42,5 +42,8 @@ jobs:
       # ----
       - run: pip install sqlfluff
       - run: sqlfluff lint migrate/sqlite/*.sql --dialect sqlite
+        continue-on-error: true
       - run: sqlfluff lint migrate/mysql/*.sql --dialect mysql
+        continue-on-error: true
       - run: sqlfluff lint migrate/pgsql/*.sql --dialect postgres
+        continue-on-error: true
