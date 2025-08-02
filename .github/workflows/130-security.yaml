@@ -182,9 +182,6 @@ jobs:
       - run: mv capabilities.json /tmp/capabilities.json
       # ---
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
       - run: capslock -packages ./... -output=compare /tmp/capabilities.json
       - uses: actions/upload-artifact@v4
         with:

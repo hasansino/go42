@@ -58,4 +58,3 @@ jobs:
       # ----
       - run: pip install sqlfluff
       - run: sqlfluff lint ${{ matrix.path }} --dialect ${{ matrix.dialect }}
-        continue-on-error: true
