@@ -57,7 +57,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - `capslock -output=compare baseline.json` and fail the build if new unexpected capabilities are introduced
 - try https://github.com/ogen-go/ogen
 - release rollback automation
-- check current branch (except master) for commit naming violations
 - deploy docs to private gh-pages (gh enterprise)
 
 ### ദ്ദി( •̀ ᴗ •́ )و

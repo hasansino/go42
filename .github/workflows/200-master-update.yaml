@@ -1,6 +1,7 @@
-name: dep-submission
+name: master-update
 
 # Syncs go dependencies with GitHub dependency submission API.
+# Updates capabilities.json with the latest information from the codebase.
 
 on:
   # manual trigger
@@ -9,15 +10,17 @@ on:
   push:
     branches: [ master ]
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
+
   dep-submission:
     if: |
       github.event.head_commit.message != 'initial commit' && 
       !startsWith(github.event.head_commit.message, 'auto-release-')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -27,3 +30,30 @@ jobs:
         with:
           go-mod-path: go.mod
           go-build-target: cmd/app/main.go
+
+  capslock:
+    name: capslock
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # ----
+    steps:
+      - uses: actions/checkout@v4
+      # ----
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - run: go install github.com/google/capslock/cmd/capslock@latest
+      - run: capslock -packages ./... -output=json > capabilities.json
+      # ----
+      - run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add capabilities.json
+          git diff --staged --quiet || git commit -m "update capabilities.json"
+      # ----
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
