@@ -1,0 +1,20 @@
+[sqlfluff]
+
+# @see https://docs.sqlfluff.com/en/stable/perma/rule_disabling.html
+# exclude_rules = ambiguous.column_count, structure.column_order
+
+max_line_length = 120
+
+[sqlfluff:rules:aliasing.length]
+min_alias_length = 3
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower

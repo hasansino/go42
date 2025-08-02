@@ -13,23 +13,27 @@ create table if not exists auth_users (
     deleted_at timestamp null
 );
 
-create unique index if not exists idx_auth_users_uuid on auth_users(uuid);
-create unique index if not exists idx_auth_users_email on auth_users(email);
-create index if not exists idx_auth_users_deleted_at on auth_users(deleted_at);
+create unique index if not exists idx_auth_users_uuid on auth_users (uuid);
+create unique index if not exists idx_auth_users_email on auth_users (email);
+create index if not exists idx_auth_users_deleted_at on auth_users (deleted_at);
 
 create table if not exists auth_users_history
 (
-    id          uuid primary key,
+    id uuid primary key,
     occurred_at timestamp not null,
-    created_at  timestamp default now() not null,
-    user_id     integer not null,
-    event_type  varchar(255) not null,
-    data        varchar(255) null,
-    metadata    varchar(1000) null,
-    constraint  fk_auth_users_history_user_id foreign key (user_id) references auth_users(id) on delete cascade
+    created_at timestamp default now() not null,
+    user_id integer not null,
+    event_type varchar(255) not null,
+    data varchar(255) null,
+    metadata varchar(1000) null,
+    constraint fk_auth_users_history_user_id foreign key (
+        user_id
+    ) references auth_users (id) on delete cascade
 );
 
-create index if not exists idx_auth_users_history_occurred_at on auth_users_history(occurred_at);
+create index if not exists idx_auth_users_history_occurred_at on auth_users_history (
+    occurred_at
+);
 
 create table if not exists auth_roles (
     id bigserial primary key,
@@ -41,8 +45,8 @@ create table if not exists auth_roles (
     deleted_at timestamp null
 );
 
-create unique index if not exists idx_auth_roles_name on auth_roles(name);
-create index if not exists idx_auth_roles_deleted_at on auth_roles(deleted_at);
+create unique index if not exists idx_auth_roles_name on auth_roles (name);
+create index if not exists idx_auth_roles_deleted_at on auth_roles (deleted_at);
 
 create table if not exists auth_permissions (
     id bigserial primary key,
@@ -51,14 +55,20 @@ create table if not exists auth_permissions (
     created_at timestamp not null default current_timestamp
 );
 
-create unique index if not exists idx_auth_permissions_resource_action on auth_permissions(resource, action);
+create unique index if not exists idx_auth_permissions_resource_action on auth_permissions (
+    resource, action
+);
 
 create table if not exists auth_role_permissions (
     role_id bigint not null,
     permission_id bigint not null,
     primary key (role_id, permission_id),
-    constraint fk_auth_role_permissions_role_id foreign key (role_id) references auth_roles(id) on delete cascade,
-    constraint fk_auth_role_permissions_permission_id foreign key (permission_id) references auth_permissions(id) on delete cascade
+    constraint fk_auth_role_permissions_role_id foreign key (
+        role_id
+    ) references auth_roles (id) on delete cascade,
+    constraint fk_auth_role_permissions_permission_id foreign key (
+        permission_id
+    ) references auth_permissions (id) on delete cascade
 );
 
 create table if not exists auth_user_roles (
@@ -67,13 +77,23 @@ create table if not exists auth_user_roles (
     created_at timestamp not null default current_timestamp,
     expires_at timestamp null,
     primary key (user_id, role_id),
-    constraint fk_auth_user_roles_user_id foreign key (user_id) references auth_users(id) on delete cascade,
-    constraint fk_auth_user_roles_role_id foreign key (role_id) references auth_roles(id) on delete cascade
+    constraint fk_auth_user_roles_user_id foreign key (
+        user_id
+    ) references auth_users (id) on delete cascade,
+    constraint fk_auth_user_roles_role_id foreign key (
+        role_id
+    ) references auth_roles (id) on delete cascade
 );
 
-create index if not exists idx_auth_user_roles_role_id on auth_user_roles(role_id);
-create index if not exists idx_auth_user_roles_expires_at on auth_user_roles(expires_at);
-create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions(permission_id);
+create index if not exists idx_auth_user_roles_role_id on auth_user_roles (
+    role_id
+);
+create index if not exists idx_auth_user_roles_expires_at on auth_user_roles (
+    expires_at
+);
+create index if not exists idx_auth_role_permissions_permission_id on auth_role_permissions (
+    permission_id
+);
 
 create table if not exists auth_api_tokens (
     id bigserial primary key,
@@ -86,22 +106,32 @@ create table if not exists auth_api_tokens (
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp,
     deleted_at timestamp default null,
-    constraint fk_api_tokens_user foreign key (user_id) references auth_users(id) on delete cascade
+    constraint fk_api_tokens_user foreign key (user_id) references auth_users (
+        id
+    ) on delete cascade
 );
 
-create unique index idx_token on auth_api_tokens(token);
-create index idx_token_lookup on auth_api_tokens(token, deleted_at, expires_at);
+create unique index idx_token on auth_api_tokens (token);
+create index idx_token_lookup on auth_api_tokens (
+    token, deleted_at, expires_at
+);
 
 create table if not exists auth_api_tokens_permissions (
     token_id integer not null,
     permission_id integer not null,
     primary key (token_id, permission_id),
-    foreign key (token_id) references auth_api_tokens(id) on delete cascade,
-    foreign key (permission_id) references auth_permissions(id) on delete cascade
+    foreign key (token_id) references auth_api_tokens (id) on delete cascade,
+    foreign key (permission_id) references auth_permissions (
+        id
+    ) on delete cascade
 );
 
-create index if not exists idx_token_permissions_token_id on auth_api_tokens_permissions(token_id);
-create index if not exists idx_token_permissions_permission_id on auth_api_tokens_permissions(permission_id);
+create index if not exists idx_token_permissions_token_id on auth_api_tokens_permissions (
+    token_id
+);
+create index if not exists idx_token_permissions_permission_id on auth_api_tokens_permissions (
+    permission_id
+);
 
 -- +goose Down
 

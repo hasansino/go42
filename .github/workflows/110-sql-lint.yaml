@@ -44,7 +44,7 @@ jobs:
           - pgsql
         include:
           - database: sqlite
-            dialect: sqlite
+            dialect: ansi
             path: migrate/sqlite/*.sql
           - database: mysql
             dialect: mysql
@@ -57,4 +57,4 @@ jobs:
       - uses: actions/checkout@v4
       # ----
       - run: pip install sqlfluff
-      - run: sqlfluff lint ${{ matrix.path }} --dialect ${{ matrix.dialect }}
+      - run: sqlfluff lint --config etc/.sqlfluff ${{ matrix.path }} --dialect ${{ matrix.dialect }}

@@ -115,9 +115,9 @@ lint:
 	@echo "Linting writing..."
 	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
 	@echo "Linting SQL files..."
-	@sqlfluff lint --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite
-	@sqlfluff lint --disable-progress-bar migrate/mysql/*.sql --dialect mysql
-	@sqlfluff lint --disable-progress-bar migrate/pgsql/*.sql --dialect postgres
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/sqlite/*.sql --dialect ansi
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/mysql/*.sql --dialect mysql
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/pgsql/*.sql --dialect postgres
 
 ## generate | generate code for all modules
 # Dependencies:

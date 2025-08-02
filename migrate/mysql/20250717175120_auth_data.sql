@@ -19,18 +19,34 @@ insert ignore into auth_permissions (resource, action) values
 -- admins have all permissions
 insert ignore into auth_role_permissions (role_id, permission_id)
 select
-    (select id from auth_roles where name = 'admin'), ap.id
-from auth_permissions ap;
+    (
+        select id from auth_roles
+        where name = 'admin'
+    ),
+    ap.id
+from auth_permissions as ap;
 
 -- users can read & update themselves
 insert ignore into auth_role_permissions (role_id, permission_id) values
 (
-    (select id from auth_roles where name = 'user'),
-    (select id from auth_permissions where resource = 'users' and action = 'read_self')
+    (
+        select id from auth_roles
+        where name = 'user'
+    ),
+    (
+        select id from auth_permissions
+        where resource = 'users' and action = 'read_self'
+    )
 ),
 (
-    (select id from auth_roles where name = 'user'),
-    (select id from auth_permissions where resource = 'users' and action = 'update_self')
+    (
+        select id from auth_roles
+        where name = 'user'
+    ),
+    (
+        select id from auth_permissions
+        where resource = 'users' and action = 'update_self'
+    )
 );
 
 -- +goose Down

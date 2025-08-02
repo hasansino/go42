@@ -18,9 +18,7 @@ insert or ignore into auth_permissions (resource, action) values
 
 -- admins have all permissions
 insert or ignore into auth_role_permissions (role_id, permission_id)
-select
-    (select id from auth_roles where name = 'admin'), ap.id
-    from auth_permissions ap;
+select (select id from auth_roles where name = 'admin'), ap.id from auth_permissions ap;
 
 -- users can read & update themselves
 insert or ignore into auth_role_permissions (role_id, permission_id) values

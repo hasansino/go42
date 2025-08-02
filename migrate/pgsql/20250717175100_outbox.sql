@@ -7,14 +7,18 @@ create table if not exists transactional_outbox (
     payload text null,
     created_at timestamp default current_timestamp,
     processed_at timestamp null,
-    status varchar(20) not null check (status in ('pending', 'processed', 'failed')),
+    status varchar(20) not null check (
+        status in ('pending', 'processed', 'failed')
+    ),
     retry_count integer not null,
     max_retries integer not null,
     last_error text not null,
     metadata text null
 );
 
-create index if not exists transactional_outbox_publisher ON transactional_outbox (status);
+create index if not exists transactional_outbox_publisher on transactional_outbox (
+    status
+);
 
 -- +goose Down
 drop table if exists transactional_outbox;
