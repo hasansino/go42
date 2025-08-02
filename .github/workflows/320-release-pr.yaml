@@ -41,7 +41,7 @@ jobs:
             echo "previous_tag=" >> "$GITHUB_OUTPUT"
             echo "comparison_url=" >> "$GITHUB_OUTPUT"
           else
-            echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+            echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
             echo "comparison_url=https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi
       - run: |
