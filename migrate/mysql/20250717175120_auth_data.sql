@@ -20,11 +20,13 @@ insert ignore into auth_permissions (resource, action) values
 insert ignore into auth_role_permissions (role_id, permission_id)
 select
     (
-        select id from auth_roles
-        where name = 'admin'
-    ),
-    ap.id
-from auth_permissions as ap;
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'admin'
+    ) as role_id,
+    auth_permissions.id as permission_id
+from
+    auth_permissions;
 
 -- users can read & update themselves
 insert ignore into auth_role_permissions (role_id, permission_id) values

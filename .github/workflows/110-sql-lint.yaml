@@ -44,7 +44,7 @@ jobs:
           - pgsql
         include:
           - database: sqlite
-            dialect: ansi
+            dialect: sqlite
             path: migrate/sqlite/*.sql
           - database: mysql
             dialect: mysql

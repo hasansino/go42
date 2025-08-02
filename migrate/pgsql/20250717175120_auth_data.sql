@@ -23,11 +23,13 @@ on conflict do nothing;
 insert into auth_role_permissions (role_id, permission_id)
 select
     (
-        select id from auth_roles
-        where name = 'admin'
-    ),
-    ap.id
-from auth_permissions as ap
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'admin'
+    ) as role_id,
+    auth_permissions.id as permission_id
+from
+    auth_permissions
 on conflict do nothing;
 
 -- users can read & update themselves

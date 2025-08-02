@@ -18,22 +18,51 @@ insert or ignore into auth_permissions (resource, action) values
 
 -- admins have all permissions
 insert or ignore into auth_role_permissions (role_id, permission_id)
-select (select id from auth_roles where name = 'admin'), ap.id from auth_permissions ap;
+select
+    (
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'admin'
+    ) as role_id,
+    auth_permissions.id as permission_id
+from
+    auth_permissions;
 
 -- users can read & update themselves
 insert or ignore into auth_role_permissions (role_id, permission_id) values
 (
-       (select id from auth_roles where name = 'user'),
-       (select id from auth_permissions where resource = 'users' and action = 'read_self')
+    (
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'user'
+    ),
+    (
+        select auth_permissions.id
+        from
+            auth_permissions
+        where
+            auth_permissions.resource = 'users'
+            and auth_permissions.action = 'read_self'
+    )
 ),
 (
-       (select id from auth_roles where name = 'user'),
-       (select id from auth_permissions where resource = 'users' and action = 'update_self')
+    (
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'user'
+    ),
+    (
+        select auth_permissions.id
+        from auth_permissions
+        where
+            auth_permissions.resource = 'users'
+            and auth_permissions.action = 'update_self'
+    )
 );
 
 -- +goose Down
 
-truncate table auth_role_permissions;
-truncate table auth_permissions;
-truncate table auth_roles;
-truncate table auth_users;
+delete from auth_role_permissions;
+delete from auth_permissions;
+delete from auth_roles;
+delete from auth_users;
