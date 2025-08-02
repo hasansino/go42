@@ -18,18 +18,19 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
-  packages: write
-  attestations: write
-  id-token: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-pr:
     name: release-pr
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+      pull-requests: write
     # ---
     steps:
       - uses: actions/checkout@v4

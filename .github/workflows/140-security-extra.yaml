@@ -45,17 +45,16 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-  packages: read
-  actions: read
-  security-events: write
+permissions: {}
 
 jobs:
   trivy:
     name: trivy
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      packages: read
     # ---
     steps:
       - uses: aquasecurity/trivy-action@0.32.0
@@ -71,6 +70,9 @@ jobs:
     name: zap-api-scan
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      packages: read
     # ---
     services:
       app:
@@ -101,6 +103,11 @@ jobs:
     name: osv-scanner
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

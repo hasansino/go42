@@ -52,10 +52,7 @@ on:
         required: true
         type: string
 
-permissions:
-  packages: read
-  pull-requests: write
-  issues: write
+permissions: {}
 
 jobs:
   load-tests-http:
@@ -63,6 +60,10 @@ jobs:
     name: load-tests-http
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      packages: read
+      pull-requests: write
+      issues: write
     # ----
     services:
       mysql:
@@ -163,6 +164,10 @@ jobs:
     name: load-tests-grpc
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      packages: read
+      pull-requests: write
+      issues: write
     # ----
     services:
       mysql:
