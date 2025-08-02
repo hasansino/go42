@@ -55,8 +55,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
 - try https://github.com/ogen-go/ogen
-- release rollback automation
-- deploy docs to private gh-pages (gh enterprise)
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -145,3 +143,4 @@ Go42 is opinionated approach to develop cloud native golang services.
 - try https://github.com/Oloruntobi1/pproftui
 - try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 - dead letter queues
+- release rollback automation

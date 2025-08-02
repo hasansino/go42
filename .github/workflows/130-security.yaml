@@ -184,7 +184,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - run: capslock -packages ./... -output=compare -baseline=capabilities.json > capslock-report.json
+      - run: capslock -packages ./... -output=compare capabilities.json
       - uses: actions/upload-artifact@v4
         with:
           name: capslock-report
