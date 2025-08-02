@@ -411,6 +411,10 @@ func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*
 				return []byte(secret.secret), nil
 			}
 		}
+		// Check if we have any secrets before accessing the slice
+		if len(s.jwtSecrets) == 0 {
+			return nil, fmt.Errorf("no JWT secrets configured")
+		}
 		return []byte(s.jwtSecrets[len(s.jwtSecrets)-1].secret), nil
 	})
 	if err != nil {
