@@ -151,7 +151,8 @@ jobs:
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
-          publish_results: true
+          # this updates badge, we want it to reflect only master branch
+          publish_results: ${{ github.ref == 'refs/heads/master' }}
       - uses: actions/upload-artifact@v4
         with:
           name: scorecard-results
