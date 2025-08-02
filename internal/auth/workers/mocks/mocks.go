@@ -123,6 +123,18 @@ func (mr *MockauthServiceMockRecorder) RecentlyUsedTokensChan() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecentlyUsedTokensChan", reflect.TypeOf((*MockauthService)(nil).RecentlyUsedTokensChan))
 }
 
+// RotateJWTSecret mocks base method.
+func (m *MockauthService) RotateJWTSecret(newSecret string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RotateJWTSecret", newSecret)
+}
+
+// RotateJWTSecret indicates an expected call of RotateJWTSecret.
+func (mr *MockauthServiceMockRecorder) RotateJWTSecret(newSecret any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RotateJWTSecret", reflect.TypeOf((*MockauthService)(nil).RotateJWTSecret), newSecret)
+}
+
 // Mocksubscriber is a mock of subscriber interface.
 type Mocksubscriber struct {
 	ctrl     *gomock.Controller

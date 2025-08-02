@@ -186,7 +186,7 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.validateJWTTokenInternal(ctx, token)
+	claims, err := s.ValidateJWTTokenInternal(ctx, token)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -210,11 +210,11 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.validateJWTTokenInternal(ctx, accessToken)
+	accessTokenClaims, err := s.ValidateJWTTokenInternal(ctx, accessToken)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.validateJWTTokenInternal(ctx, refreshToken)
+	refreshTokenClaims, err := s.ValidateJWTTokenInternal(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -396,8 +396,9 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	}
 }
 
-// validateJWTTokenInternal is the internal method that returns full JWT claims
-func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+// ValidateJWTTokenInternal validates a JWT token and returns full JWT claims
+// This is used by auth package components (middleware, HTTP adapter)
+func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -439,7 +440,7 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 // ValidateJWTToken validates a JWT token and returns the user UUID from claims
 // This implements the AuthService interface for external systems
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (string, error) {
-	claims, err := s.validateJWTTokenInternal(ctx, token)
+	claims, err := s.ValidateJWTTokenInternal(ctx, token)
 	if err != nil {
 		return "", err
 	}
@@ -454,12 +455,6 @@ func (s *Service) GetBasicUserInfo(ctx context.Context, uuid string) (string, st
 		return "", "", err
 	}
 	return user.UUID.String(), user.Email, nil
-}
-
-// ValidateJWTTokenInternal is the internal method that returns full JWT claims
-// This is used by auth package components (middleware, HTTP adapter)
-func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
-	return s.validateJWTTokenInternal(ctx, token)
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
