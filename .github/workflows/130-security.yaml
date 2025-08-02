@@ -160,21 +160,31 @@ jobs:
         with:
           sarif_file: scorecard-results.sarif
 
+  # run capslock only on non-master branches to determine difference
+  # between the current branch and master branch in capabilities
   capslock:
+    if: github.ref != 'refs/heads/master'
     name: capslock
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ---
+    # ----
     steps:
       - uses: actions/checkout@v4
-      # ---
+        with:
+          ref: master
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
       - run: go install github.com/google/capslock/cmd/capslock@latest
-      - run: capslock -packages ./... -output=json > capslock-report.json
+      - run: capslock -packages ./... -output=json > capabilities.json
+      # ---
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - run: capslock -packages ./... -output=compare -baseline=capabilities.json > capslock-report.json
       - uses: actions/upload-artifact@v4
         with:
           name: capslock-report
