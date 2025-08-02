@@ -31,19 +31,31 @@ permissions: {}
 
 jobs:
   sql-lint:
-    name: sql-lint
+    name: sql-lint (${{ matrix.database }})
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
+    strategy:
+      matrix:
+        database:
+          - sqlite
+          - mysql
+          - pgsql
+        include:
+          - database: sqlite
+            dialect: sqlite
+            path: migrate/sqlite/*.sql
+          - database: mysql
+            dialect: mysql
+            path: migrate/mysql/*.sql
+          - database: pgsql
+            dialect: postgres
+            path: migrate/pgsql/*.sql
     # ----
     steps:
       - uses: actions/checkout@v4
       # ----
       - run: pip install sqlfluff
-      - run: sqlfluff lint migrate/sqlite/*.sql --dialect sqlite
-        continue-on-error: true
-      - run: sqlfluff lint migrate/mysql/*.sql --dialect mysql
-        continue-on-error: true
-      - run: sqlfluff lint migrate/pgsql/*.sql --dialect postgres
+      - run: sqlfluff lint ${{ matrix.path }} --dialect ${{ matrix.dialect }}
         continue-on-error: true
