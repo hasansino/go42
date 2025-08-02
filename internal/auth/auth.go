@@ -46,7 +46,7 @@ type repository interface {
 
 type cache interface {
 	Get(ctx context.Context, key string) (string, error)
-	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+	Set(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
 type outboxService interface {
@@ -186,7 +186,7 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.ValidateJWTTokenInternal(ctx, token)
+	claims, err := s.validateJWTTokenInternal(ctx, token)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -210,11 +210,11 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.ValidateJWTTokenInternal(ctx, accessToken)
+	accessTokenClaims, err := s.validateJWTTokenInternal(ctx, accessToken)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.ValidateJWTTokenInternal(ctx, refreshToken)
+	refreshTokenClaims, err := s.validateJWTTokenInternal(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -396,18 +396,16 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	}
 }
 
-// ValidateJWTTokenInternal validates a JWT token and returns full JWT claims
-// This is used by auth package components (middleware, HTTP adapter)
-func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*domain.JWTClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		kid, _ := token.Header["kid"].(string)
+		claims, _ := token.Claims.(*domain.JWTClaims)
 		s.jwtSecretsMu.RLock()
 		defer s.jwtSecretsMu.RUnlock()
 		for _, secret := range s.jwtSecrets {
-			if kid == secret.sha256 {
+			if claims.KID == secret.sha256 {
 				return []byte(secret.secret), nil
 			}
 		}
@@ -421,7 +419,7 @@ func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*
 		return nil, err
 	}
 
-	claims, ok := t.Claims.(*jwt.RegisteredClaims)
+	claims, ok := t.Claims.(*domain.JWTClaims)
 	if !ok || !t.Valid {
 		return nil, domain.ErrInvalidToken
 	}
@@ -441,10 +439,16 @@ func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*
 	return claims, nil
 }
 
+// ValidateJWTTokenInternal validates a JWT token and returns full JWT claims
+// This is used by auth package components (middleware, HTTP adapter)
+func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*domain.JWTClaims, error) {
+	return s.validateJWTTokenInternal(ctx, token)
+}
+
 // ValidateJWTToken validates a JWT token and returns the user UUID from claims
 // This implements the AuthService interface for external systems
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (string, error) {
-	claims, err := s.ValidateJWTTokenInternal(ctx, token)
+	claims, err := s.validateJWTTokenInternal(ctx, token)
 	if err != nil {
 		return "", err
 	}
@@ -462,7 +466,7 @@ func (s *Service) GetBasicUserInfo(ctx context.Context, uuid string) (string, st
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
-	return s.cache.SetTTL(
+	return s.cache.Set(
 		ctx,
 		cacheKeyInvalidatedToken+strToSHA256(token),
 		cacheValueInvalidatedToken,

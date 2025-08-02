@@ -227,18 +227,18 @@ func (mr *MockcacheMockRecorder) Get(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*Mockcache)(nil).Get), ctx, key)
 }
 
-// SetTTL mocks base method.
-func (m *Mockcache) SetTTL(ctx context.Context, key, value string, ttl time.Duration) error {
+// Set mocks base method.
+func (m *Mockcache) Set(ctx context.Context, key, value string, ttl time.Duration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTTL", ctx, key, value, ttl)
+	ret := m.ctrl.Call(m, "Set", ctx, key, value, ttl)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetTTL indicates an expected call of SetTTL.
-func (mr *MockcacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
+// Set indicates an expected call of Set.
+func (mr *MockcacheMockRecorder) Set(ctx, key, value, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*Mockcache)(nil).SetTTL), ctx, key, value, ttl)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*Mockcache)(nil).Set), ctx, key, value, ttl)
 }
 
 // MockoutboxService is a mock of outboxService interface.

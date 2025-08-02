@@ -316,7 +316,7 @@ components:
           default: "user@example.com"
         password:
           type: string
-          default: "1234567890"
+          default: "12#$abCD%$"
     LoginRequest:
       type: object
       required:
@@ -328,7 +328,7 @@ components:
           default: "user@example.com"
         password:
           type: string
-          default: "1234567890"
+          default: "12#$abCD%$"
     RefreshRequest:
       type: object
       required:
@@ -360,7 +360,7 @@ components:
           default: "user@example.com"
         password:
           type: string
-          default: "1234567890"
+          default: "12#$abCD%$"
     UpdateUserRequest:
       type: object
       properties:
@@ -369,7 +369,7 @@ components:
           default: "user@example.com"
         password:
           type: string
-          default: "1234567890"
+          default: "12#$abCD%$"
     UpdateSelfRequest:
       type: object
       properties:
@@ -378,4 +378,4 @@ components:
           default: "user@example.com"
         password:
           type: string
-          default: "1234567890"
+          default: "12#$abCD%$"

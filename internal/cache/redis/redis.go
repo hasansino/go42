@@ -80,11 +80,7 @@ func (w *Wrapper) Get(ctx context.Context, key string) (string, error) {
 	return cmd.Val(), nil
 }
 
-func (w *Wrapper) Set(ctx context.Context, key string, value string) error {
-	return w.SetTTL(ctx, key, value, 0)
-}
-
-func (w *Wrapper) SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error {
+func (w *Wrapper) Set(ctx context.Context, key string, value string, ttl time.Duration) error {
 	cmd := w.client.Set(ctx, key, value, ttl)
 	return cmd.Err()
 }

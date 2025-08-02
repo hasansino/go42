@@ -10,6 +10,8 @@ tags:
     x-displayName: auth
   - name: users
     x-displayName: users
+  - name: dummy
+    x-displayName: dummy
   - name: chat
     x-displayName: chat
 paths:
@@ -281,6 +283,24 @@ paths:
           description: Unauthorized
         '404':
           description: User not found
+  /dummy:
+    get:
+      tags:
+        - dummy
+      summary: dummy endpoint
+      operationId: dummy
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This is a dummy response
+      security: []
   /ws/chat:
     get:
       tags:
@@ -350,9 +370,6 @@ paths:
             pattern: ^Bearer .+
           description: JWT authentication token
           example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-  get:
-    summary: Get dummy
-    operationId: getDummy
 components:
   securitySchemes:
     jwt:
@@ -404,7 +421,7 @@ components:
           default: user@example.com
         password:
           type: string
-          default: '1234567890'
+          default: 12#$abCD%$
     LoginRequest:
       type: object
       required:
@@ -416,7 +433,7 @@ components:
           default: user@example.com
         password:
           type: string
-          default: '1234567890'
+          default: 12#$abCD%$
     RefreshRequest:
       type: object
       required:
@@ -448,7 +465,7 @@ components:
           default: user@example.com
         password:
           type: string
-          default: '1234567890'
+          default: 12#$abCD%$
     UpdateUserRequest:
       type: object
       properties:
@@ -457,7 +474,7 @@ components:
           default: user@example.com
         password:
           type: string
-          default: '1234567890'
+          default: 12#$abCD%$
     UpdateSelfRequest:
       type: object
       properties:
@@ -466,7 +483,7 @@ components:
           default: user@example.com
         password:
           type: string
-          default: '1234567890'
+          default: 12#$abCD%$
     WebSocketMessage:
       type: object
       required:
@@ -808,6 +825,9 @@ x-tagGroups:
     tags:
       - auth
       - users
+  - name: dummy
+    tags:
+      - dummy
   - name: chat
     tags:
       - chat

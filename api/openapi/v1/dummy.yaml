@@ -8,17 +8,20 @@ servers:
     description: local
 security: []
 paths:
-  get:
-    summary: 'Get dummy'
-    operationId: getDummy
-    responses:
-      '200':
-        description: 'OK'
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 'Hello, world!'
+  /dummy:
+    get:
+      tags:
+        - dummy
+      summary: dummy endpoint
+      operationId: dummy
+      responses:
+        '200':
+          description: 'successful operation'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'This is a dummy response'

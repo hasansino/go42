@@ -122,11 +122,31 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
 
+  sql-lint:
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      ( github.event.head_commit.message != 'initial commit' 
+      && !startsWith(github.event.head_commit.message, 'auto-release-'))
+    uses: ./.github/workflows/110-sql-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+
   # stage 2: unit tests
 
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
-    needs: [ git-lint, golangci-lint, docker-lint, proto-lint, openapi-lint, markdown-lint, writing-lint, action-lint ]
+    needs: [
+      git-lint,
+      golangci-lint,
+      docker-lint,
+      proto-lint,
+      openapi-lint,
+      markdown-lint,
+      writing-lint,
+      action-lint,
+      sql-lint,
+    ]
     with:
       runs_on: ubuntu-latest
       continue_on_error: true

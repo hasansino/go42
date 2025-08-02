@@ -280,10 +280,19 @@ func (db PgsqlSlave) DSN() string {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none otter memcached redis aerospike"`
+	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none bigcache memcached redis"`
+	BigCache  BigCache
 	Redis     Redis
 	Memcached Memcached
-	Aerospike Aerospike
+}
+
+type BigCache struct {
+	Shards             int           `env:"CACHE_BIGCACHE_SHARDS"                default:"1"`
+	LifeWindow         time.Duration `env:"CACHE_BIGCACHE_LIFE_WINDOW"           default:"5m"`
+	MaxEntriesInWindow int           `env:"CACHE_BIGCACHE_MAX_ENTRIES_IN_WINDOW" default:"1000"`
+	MaxEntrySizeBytes  int           `env:"CACHE_BIGCACHE_MAX_ENTRY_SIZE_BYTES"  default:"512000"` // 500 KB
+	HardMaxCacheSize   int           `env:"CACHE_BIGCACHE_HARD_MAX_CACHE_SIZE"   default:"100000"` // ~500 MB
+	Verbose            bool          `env:"CACHE_BIGCACHE_VERBOSE"               default:"true"`
 }
 
 type Redis struct {
@@ -311,11 +320,6 @@ type Memcached struct {
 	Hosts        []string      `env:"CACHE_MEMCACHED_HOSTS"          default:"localhost:11211"`
 	Timeout      time.Duration `env:"CACHE_MEMCACHED_TIMEOUT"        default:"1s"`
 	MaxIdleConns int           `env:"CACHE_MEMCACHED_MAX_IDLE_CONNS" default:"100"`
-}
-
-type Aerospike struct {
-	Hosts     []string `env:"CACHE_AEROSPIKE_HOSTS"     default:"localhost:3000"`
-	Namespace string   `env:"CACHE_AEROSPIKE_NAMESPACE" default:"go42"`
 }
 
 // ╭──────────────────────────────╮
@@ -478,16 +482,26 @@ type Outbox struct {
 // ╰──────────────────────────────╯
 
 type Auth struct {
-	JWTSecrets             []string      `env:"AUTH_JWT_SECRETS"               default:"0128899,9988210"`
-	JWTAccessTokenTTL      time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"      default:"15m"`
-	JWTRefreshTokenTTL     time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
-	JWTIssuer              string        `env:"AUTH_JWT_ISSUER"                default:"go42"`
-	JWTAudience            []string      `env:"AUTH_JWT_AUDIENCE"              default:"go42"`
-	JWTRotationPeriod      time.Duration `env:"AUTH_JWT_ROTATION_PERIOD"       default:"24h"`
-	JWTTokenLength         int           `env:"AUTH_JWT_TOKEN_LENGTH"          default:"32"`
-	APICacheTTL            time.Duration `env:"AUTH_API_CACHE_TTL"             default:"60m"`
 	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
+	Cache                  struct {
+		API        time.Duration `env:"AUTH_CACHE_API"                 default:"1m"`
+		Repository struct {
+			Users   time.Duration `env:"AUTH_CACHE_REPOSITORY_USERS" default:"1m"`
+			Secrets time.Duration `env:"AUTH_CACHE_REPOSITORY_SECRETS" default:"1m"`
+		}
+	}
+	JWT struct {
+		InitialSecrets  []string      `env:"AUTH_JWT_SECRETS"               default:"0128899,9988210"`
+		AccessTokenTTL  time.Duration `env:"AUTH_JWT_ACCESS_TOKEN_TTL"      default:"15m"`
+		RefreshTokenTTL time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
+		Issuer          string        `env:"AUTH_JWT_ISSUER"                default:"go42"`
+		Audience        []string      `env:"AUTH_JWT_AUDIENCE"              default:"go42"`
+	}
+	Rotation struct {
+		Period       time.Duration `env:"AUTH_ROTATION_PERIOD"  default:"24h"`
+		SecretLength int           `env:"AUTH_ROTATION_SECRET_LENGTH" default:"32"`
+	}
 }
 
 // ╭──────────────────────────────╮

@@ -11,7 +11,7 @@ help: Makefile
 # Used by github copilot to setup its environment.
 setup:
 	@go mod tidy -e && go mod download
-	@brew install yq grpcui k6
+	@brew install yq grpcui k6 sqlfluff
 	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 	@vale --config etc/.vale.ini sync
 	@go install go.uber.org/mock/mockgen@latest
@@ -109,11 +109,15 @@ lint:
 	@echo "Linting proto files..."
 	@buf lint api
 	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
 	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
+	@echo "Linting SQL files..."
+	@sqlfluff lint --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite
+	@sqlfluff lint --disable-progress-bar migrate/mysql/*.sql --dialect mysql
+	@sqlfluff lint --disable-progress-bar migrate/pgsql/*.sql --dialect postgres
 
 ## generate | generate code for all modules
 # Dependencies:

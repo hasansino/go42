@@ -12,7 +12,6 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	domain "github.com/hasansino/go42/internal/auth/domain"
 	models "github.com/hasansino/go42/internal/auth/models"
@@ -114,59 +113,6 @@ func (m *MockserviceAccessor) UpdateUser(ctx context.Context, uuid string, data 
 func (mr *MockserviceAccessorMockRecorder) UpdateUser(ctx, uuid, data any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockserviceAccessor)(nil).UpdateUser), ctx, uuid, data)
-}
-
-// Mockcache is a mock of cache interface.
-type Mockcache struct {
-	ctrl     *gomock.Controller
-	recorder *MockcacheMockRecorder
-	isgomock struct{}
-}
-
-// MockcacheMockRecorder is the mock recorder for Mockcache.
-type MockcacheMockRecorder struct {
-	mock *Mockcache
-}
-
-// NewMockcache creates a new mock instance.
-func NewMockcache(ctrl *gomock.Controller) *Mockcache {
-	mock := &Mockcache{ctrl: ctrl}
-	mock.recorder = &MockcacheMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *Mockcache) EXPECT() *MockcacheMockRecorder {
-	return m.recorder
-}
-
-// Get mocks base method.
-func (m *Mockcache) Get(ctx context.Context, key string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, key)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get.
-func (mr *MockcacheMockRecorder) Get(ctx, key any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*Mockcache)(nil).Get), ctx, key)
-}
-
-// SetTTL mocks base method.
-func (m *Mockcache) SetTTL(ctx context.Context, key, value string, ttl time.Duration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTTL", ctx, key, value, ttl)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTTL indicates an expected call of SetTTL.
-func (mr *MockcacheMockRecorder) SetTTL(ctx, key, value, ttl any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTTL", reflect.TypeOf((*Mockcache)(nil).SetTTL), ctx, key, value, ttl)
 }
 
 // MockpermissionRegistry is a mock of permissionRegistry interface.
