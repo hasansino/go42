@@ -18,6 +18,7 @@ setup:
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@go install github.com/go-delve/delve/cmd/dlv@latest
 	@go install github.com/daixiang0/gci@latest
+	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
@@ -118,6 +119,8 @@ lint:
 	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
 	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
 	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
+	@echo "Linting action files..."
+	@actionlint -oneline
 
 ## generate | generate code for all modules
 # Dependencies:

@@ -31,7 +31,6 @@ on:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       service_name:
         required: true
         type: string

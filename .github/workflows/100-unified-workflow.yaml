@@ -200,8 +200,6 @@ jobs:
     needs: [ docker-prepare-tag, docker-build ]
     steps:
       - run: echo "Grouping job for security scans"
-    outputs:
-      ready: ${{ steps.ready.outputs.ok }}
 
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
@@ -221,8 +219,6 @@ jobs:
     needs: [ docker-prepare-tag, docker-build ]
     steps:
       - run: echo "Grouping job for tests"
-    outputs:
-      ready: ${{ steps.ready.outputs.ok }}
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml

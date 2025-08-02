@@ -20,11 +20,9 @@ on:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
-        default: false
 
 permissions: {}
 

@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   # run on changes to the setup steps
   push:
+    branches:
+      - master
     paths:
       - .github/workflows/copilot-setup-steps.yml
 
