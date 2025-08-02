@@ -27,14 +27,15 @@ on:
         type: boolean
         default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   docker-lint:
     name: docker-lint
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4

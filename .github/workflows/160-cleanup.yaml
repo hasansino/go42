@@ -39,14 +39,15 @@ on:
         required: true
         type: string
 
-permissions:
-  packages: write
-  contents: read
+permissions: {}
 
 jobs:
   cleanup:
     name: cleanup
     runs-on: ${{ inputs.runs_on }}
+    permissions:
+      packages: write
+      contents: read
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -77,12 +77,7 @@ on:
         required: true
         type: boolean
 
-permissions:
-  packages: write
-  contents: read
-  attestations: write
-  id-token: write
-  actions: read
+permissions: {}
 
 jobs:
   # build image, pushes to ghcr.io and generates metadata
@@ -90,6 +85,12 @@ jobs:
     name: docker-build
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+      actions: read
     # ---
     steps:
       - uses: actions/checkout@v4
