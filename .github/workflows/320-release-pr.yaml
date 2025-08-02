@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
       - id: prev_tag
         run: |
-          PREVIOUS_TAG="$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")"
+          PREVIOUS_TAG="$(git describe --abbrev=0 --tags "$(git rev-list --tags --skip=1 --max-count=1)" 2>/dev/null || echo "")"
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "previous_tag=" >> "$GITHUB_OUTPUT"
             echo "comparison_url=" >> "$GITHUB_OUTPUT"
