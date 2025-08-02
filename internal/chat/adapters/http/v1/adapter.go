@@ -129,18 +129,25 @@ func (a *Adapter) HandleWebSocket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication required")
 	}
 
-	// Validate token and get user info using AuthService
-	chatUserInfo, err := a.authService.ValidateTokenForChat(c.Request().Context(), token)
+	// Validate token and get user UUID using AuthService
+	userUUID, err := a.authService.ValidateJWTToken(c.Request().Context(), token)
 	if err != nil {
 		a.logger.ErrorContext(c.Request().Context(), "token validation failed", slog.String("error", err.Error()))
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 	}
 
-	// Convert auth domain user info to chat domain user info
+	// Get basic user information
+	userUUIDStr, email, err := a.authService.GetBasicUserInfo(c.Request().Context(), userUUID)
+	if err != nil {
+		a.logger.ErrorContext(c.Request().Context(), "failed to get user info", slog.String("error", err.Error()))
+		return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
+	}
+
+	// Create chat user info
 	userInfo := chatDomain.UserInfo{
-		UUID:     chatUserInfo.UUID,
-		Username: chatUserInfo.Username,
-		JoinedAt: chatUserInfo.JoinedAt,
+		UUID:     userUUIDStr,
+		Username: email, // Using email as username for now
+		JoinedAt: time.Now(),
 	}
 
 	a.logger.DebugContext(c.Request().Context(), "WebSocket authentication successful",

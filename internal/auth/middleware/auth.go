@@ -28,7 +28,7 @@ type authServiceAccessor interface {
 	Logout(ctx context.Context, accessToken, refreshToken string) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
+	ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
 }
 
@@ -77,7 +77,7 @@ func extractBearerToken(authHeader string) (string, error) {
 }
 
 func processUserAuth(ctx echo.Context, svc authServiceAccessor, token string) error {
-	claims, err := svc.ValidateJWTToken(ctx.Request().Context(), token)
+	claims, err := svc.ValidateJWTTokenInternal(ctx.Request().Context(), token)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}

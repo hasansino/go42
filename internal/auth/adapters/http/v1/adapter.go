@@ -35,7 +35,7 @@ type serviceAccessor interface {
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 
-	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
+	ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
 	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
 }

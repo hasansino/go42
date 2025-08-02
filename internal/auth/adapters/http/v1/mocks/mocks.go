@@ -220,19 +220,19 @@ func (mr *MockserviceAccessorMockRecorder) ValidateAPIToken(ctx, token any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAPIToken", reflect.TypeOf((*MockserviceAccessor)(nil).ValidateAPIToken), ctx, token)
 }
 
-// ValidateJWTToken mocks base method.
-func (m *MockserviceAccessor) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+// ValidateJWTTokenInternal mocks base method.
+func (m *MockserviceAccessor) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateJWTToken", ctx, token)
+	ret := m.ctrl.Call(m, "ValidateJWTTokenInternal", ctx, token)
 	ret0, _ := ret[0].(*jwt.RegisteredClaims)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ValidateJWTToken indicates an expected call of ValidateJWTToken.
-func (mr *MockserviceAccessorMockRecorder) ValidateJWTToken(ctx, token any) *gomock.Call {
+// ValidateJWTTokenInternal indicates an expected call of ValidateJWTTokenInternal.
+func (mr *MockserviceAccessorMockRecorder) ValidateJWTTokenInternal(ctx, token any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateJWTToken", reflect.TypeOf((*MockserviceAccessor)(nil).ValidateJWTToken), ctx, token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateJWTTokenInternal", reflect.TypeOf((*MockserviceAccessor)(nil).ValidateJWTTokenInternal), ctx, token)
 }
 
 // Mockcache is a mock of cache interface.

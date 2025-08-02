@@ -17,7 +17,6 @@ import (
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
-	chatDomain "github.com/hasansino/go42/internal/chat/domain"
 	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
 	"github.com/hasansino/go42/internal/tools"
 )
@@ -187,7 +186,7 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.ValidateJWTToken(ctx, token)
+	claims, err := s.validateJWTTokenInternal(ctx, token)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -211,11 +210,11 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken)
+	accessTokenClaims, err := s.validateJWTTokenInternal(ctx, accessToken)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken)
+	refreshTokenClaims, err := s.validateJWTTokenInternal(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -397,7 +396,8 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	}
 }
 
-func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+// validateJWTTokenInternal is the internal method that returns full JWT claims
+func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -434,6 +434,32 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 	}
 
 	return claims, nil
+}
+
+// ValidateJWTToken validates a JWT token and returns the user UUID from claims
+// This implements the AuthService interface for external systems
+func (s *Service) ValidateJWTToken(ctx context.Context, token string) (string, error) {
+	claims, err := s.validateJWTTokenInternal(ctx, token)
+	if err != nil {
+		return "", err
+	}
+	return claims.Subject, nil
+}
+
+// GetBasicUserInfo returns basic user information by UUID
+// This implements the AuthService interface for external systems
+func (s *Service) GetBasicUserInfo(ctx context.Context, uuid string) (string, string, error) {
+	user, err := s.GetUserByUUID(ctx, uuid)
+	if err != nil {
+		return "", "", err
+	}
+	return user.UUID.String(), user.Email, nil
+}
+
+// ValidateJWTTokenInternal is the internal method that returns full JWT claims
+// This is used by auth package components (middleware, HTTP adapter)
+func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+	return s.validateJWTTokenInternal(ctx, token)
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
@@ -540,30 +566,4 @@ func (s *Service) CheckPasswordStrength(password string) error {
 func strToSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
-}
-
-// ValidateTokenForChat validates a JWT token and returns basic user information for chat systems
-// This implements the AuthService interface defined in chat domain
-func (s *Service) ValidateTokenForChat(ctx context.Context, token string) (chatDomain.UserInfo, error) {
-	// Validate the JWT token using the auth service
-	claims, err := s.ValidateJWTToken(ctx, token)
-	if err != nil {
-		return chatDomain.UserInfo{}, err
-	}
-
-	// Get user details using the subject (user UUID) from claims
-	user, err := s.GetUserByUUID(ctx, claims.Subject)
-	if err != nil {
-		return chatDomain.UserInfo{}, err
-	}
-
-	// Convert UUID to string for chat domain
-	userUUIDStr := user.UUID.String()
-
-	// Convert to chat domain UserInfo (hiding sensitive data like email, ID)
-	return chatDomain.UserInfo{
-		UUID:     userUUIDStr,
-		Username: user.Email, // Using email as username for now
-		JoinedAt: time.Now(),
-	}, nil
 }

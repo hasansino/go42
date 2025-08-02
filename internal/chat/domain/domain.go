@@ -95,9 +95,11 @@ type SendMessageData struct {
 	RoomID  string `json:"room_id" validate:"required"`
 }
 
-// AuthService defines the interface for chat authentication
-// This allows chat systems to authenticate users without importing auth internals
+// AuthService defines the interface for authentication
+// This allows other systems to authenticate users without importing auth internals
 type AuthService interface {
-	// ValidateTokenForChat validates a JWT token and returns basic user information for chat
-	ValidateTokenForChat(ctx context.Context, token string) (UserInfo, error)
+	// ValidateJWTToken validates a JWT token and returns the user UUID from claims
+	ValidateJWTToken(ctx context.Context, token string) (userUUID string, err error)
+	// GetBasicUserInfo returns basic user information by UUID (UUID and email only)
+	GetBasicUserInfo(ctx context.Context, uuid string) (userUUID string, email string, err error)
 }
