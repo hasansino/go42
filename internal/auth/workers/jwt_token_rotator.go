@@ -76,7 +76,7 @@ func SecretRotationWorkerWithLogger(logger *slog.Logger) SecretRotationWorkerOpt
 	}
 }
 
-func SecretRotationWorkerWithSecretStrength(length int) SecretRotationWorkerOption {
+func SecretRotationWorkerWithSecretLength(length int) SecretRotationWorkerOption {
 	return func(o *SecretRotationWorker) {
 		o.secretLength = length
 	}

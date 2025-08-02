@@ -64,12 +64,11 @@ func (w *Wrapper) Get(_ context.Context, key string) (string, error) {
 	return string(item.Value), nil
 }
 
-func (w *Wrapper) Set(_ context.Context, key string, value string) error {
+func (w *Wrapper) Set(_ context.Context, key string, value string, ttl time.Duration) error {
+	if ttl > 0 {
+		return w.client.Set(&memcache.Item{Key: key, Value: []byte(value), Expiration: int32(ttl.Seconds())})
+	}
 	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value)})
-}
-
-func (w *Wrapper) SetTTL(_ context.Context, key string, value string, ttl time.Duration) error {
-	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value), Expiration: int32(ttl.Seconds())})
 }
 
 func (w *Wrapper) Invalidate(_ context.Context, key string) error {

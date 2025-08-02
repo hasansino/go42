@@ -1,0 +1,46 @@
+name: sql-lint
+
+# Linter for sql migrations.
+# @see https://github.com/sqlfluff/sqlfluff
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  sql-lint:
+    name: sql-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+    # ----
+    steps:
+      - uses: actions/checkout@v4
+      # ----
+      - run: pip install sqlfluff
+      - run: sqlfluff lint migrate/sqlite/*.sql --dialect sqlite
+      - run: sqlfluff lint migrate/mysql/*.sql --dialect mysql
+      - run: sqlfluff lint migrate/pgsql/*.sql --dialect postgres

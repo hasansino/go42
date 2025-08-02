@@ -17,12 +17,17 @@ const (
 
 type cacheAccessor interface {
 	Get(ctx context.Context, key string) (string, error)
-	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Invalidate(ctx context.Context, key string) error
 }
 
 func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if ttl == 0 {
+				return next(c)
+			}
+
 			key := fmt.Sprintf(
 				"%s+%s?%s",
 				c.Request().Method, c.Request().URL.Path, c.Request().URL.RawQuery,
@@ -52,7 +57,7 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 				return err
 			}
 
-			err = cache.SetTTL(c.Request().Context(), key, resRecorder.body.String(), ttl)
+			err = cache.Set(c.Request().Context(), key, resRecorder.body.String(), ttl)
 			if err != nil {
 				slog.Default().
 					With(slog.String("component", "echo-middleware-cache")).

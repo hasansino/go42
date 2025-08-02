@@ -47,6 +47,7 @@ func NewTokenLastUsedUpdater(
 }
 
 func (u *TokenLastUsedUpdater) Run(ctx context.Context, interval time.Duration) {
+	u.logger.InfoContext(ctx, "starting api token last used updater")
 	go func() {
 		c := u.authService.RecentlyUsedTokensChan()
 		for {

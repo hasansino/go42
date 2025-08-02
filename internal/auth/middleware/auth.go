@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
@@ -29,7 +28,7 @@ type authServiceAccessor interface {
 	Logout(ctx context.Context, accessToken, refreshToken string) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error)
+	ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
 	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
 }

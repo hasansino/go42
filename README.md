@@ -40,6 +40,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
+- switch from zipkin to jaeger or tempo
+
 - security headers
   - Strict-Transport-Security (HSTS)
   - Content-Security-Policy (CSP) with configurable policies
@@ -52,12 +54,11 @@ Go42 is opinionated approach to develop cloud native golang services.
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
 - auth pkg metrics
-- HMAC -> more secure method
-- caching for user/permission lookups
-- slog smart sampling of duplicates
-- Try https://sqlc.dev/ or https://github.com/stephenafamo/bob
-- Try https://github.com/tconbeer/sqlfmt
 - `capslock -output=compare baseline.json` and fail the build if new unexpected capabilities are introduced
+- try https://github.com/ogen-go/ogen
+- release rollback automation
+- check current branch (except master) for commit naming violations
+- deploy docs to private gh-pages (gh enterprise)
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -65,7 +66,7 @@ Go42 is opinionated approach to develop cloud native golang services.
   - consul - consul kv for config
   - etcd
   - k8 CoreDNS
-- switch from zipkin to jaeger or tempo
+- feature flags system
   - https://echo.labstack.com/docs/middleware/jaeger
 - circuit breaker (https://github.com/sony/gobreaker)
 - datadog integration
@@ -73,14 +74,17 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### ദ്ദി( •̀ ᴗ - )
 
+- custom & simple DI container for main.go
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 - graceful connection recovery
 - outbox table cleanup worker
-- slog contextual values (like request id etc.) propogation
 - run make generate in CI/CD to check for changes in generated files
 - distributed rate limiter
 - workflow running on schedule to cleanup docker registry
+- slog contextual values (like request id etc.) propogation
+- slog smart sampling of duplicates
+- slog enforcing field names and types
 
 ### ( ´• ω •)
 
@@ -90,11 +94,13 @@ Go42 is opinionated approach to develop cloud native golang services.
 - go42-runner
 - support hetzner, aws, gcp, azure
 - cost analysis for different scales
-- Documentation
-- Conventions - validation
+- documentation
+- conventions - validation
 - arch/business/feature documentation generation
-- using AI agents to complete tasks
 - integration with project management tools
+- capacity planning and resource management
+- scaling and organizing multiple projects
+- using AI agents to complete tasks
 - pr llm review
 - generate release summary with llm
 
@@ -107,42 +113,37 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## 100% after v1.0.0 release
 
+- research sso -> saml/oidc
 - auth0
 - casbin
-- TLS connections and certificate management
-- Try https://testcontainers.com/
-- Try https://backstage.io/
-- Feature flags system
-- GoLand / VSCode configuration + goenv-scp
-- Scaling and organizing multiple projects
-- Try https://github.com/docker/bake-action
-- Try https://github.com/mvdan/gofumpt (again)
+- tls connections and certificate management
+- try https://testcontainers.com/
+- try https://backstage.io/
+- goland / vscode configuration + goenv-scp
+- try https://github.com/docker/bake-action
+- try https://github.com/mvdan/gofumpt (again)
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
-- migration linting and change management
-- Try https://github.com/hypermodeinc/badger
-- Try asyncapi (again)
-- Register echo validator -> simplify adapters
-- Release notifications to slack (https://github.com/8398a7/action-slack)
-- Swagger annotations in adapters - generation of specs
+- try https://github.com/hypermodeinc/badger
+- try asyncapi (again)
+- register echo validator -> simplify adapters
+- release notifications to slack (https://github.com/8398a7/action-slack)
+- swagger annotations in adapters - generation of specs
 - k8 hpa/vpa configurations
-- Capacity planning and resource management
-- Compliance research -> SOC2, ISO 27001, PCI-DSS
-- Research sso -> saml/oidc
-- Audit package implementation and guidelines
-- Try https://echo.labstack.com/docs/middleware/gzip
-- Research doc builders like mkdocs / sphinx-doc
-- Deploy docs to private gh-pages (gh enterprise)
-- Check current branch (except master) for commit naming violations
-- Try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
-- Release rollback automation
+- try https://echo.labstack.com/docs/middleware/gzip
+- research doc builders like mkdocs / sphinx-doc
+- try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
 - move all echo middleware to middleware package
 - grpc transport credentials
-- Try https://github.com/tursodatabase/turso
-- make cache generic where possible
+- try https://github.com/tursodatabase/turso
 - nosql -> `clickhouse` + `duckdb`
-- Custom GitHub runner hardening
-- Custom & simple DI container for main.go
+- github runner hardening (self-hosted and cloud)
 - graphql support
 - event sourcing - cqrs
-- Try https://valkey.io/
+- try https://valkey.io/
+- audit package implementation and guidelines
+- compliance research -> SOC2, ISO 27001, PCI-DSS
 - research hipaa compliance
+- try https://github.com/kisielk/godepgraph
+- try https://github.com/Oloruntobi1/pproftui
+- try https://sqlc.dev/ or https://github.com/stephenafamo/bob
+- dead letter queues

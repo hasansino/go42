@@ -12,7 +12,6 @@ require (
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/VictoriaMetrics/metrics v1.38.0
-	github.com/aerospike/aerospike-client-go/v8 v8.2.2
 	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
@@ -68,6 +67,7 @@ require (
 require (
 	cel.dev/expr v0.24.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
@@ -151,8 +151,6 @@ require (
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
-	github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad // indirect
-	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.4 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect

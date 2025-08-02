@@ -3,7 +3,6 @@ package adapter
 import (
 	"context"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,21 +30,13 @@ type serviceAccessor interface {
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 }
 
-type cache interface {
-	Get(ctx context.Context, key string) (string, error)
-	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
-}
-
 type permissionRegistry interface {
 	Register(method string, permissions ...string)
 }
 
 type Adapter struct {
 	pb.UnimplementedAuthServiceServer
-	service  serviceAccessor
-	cache    cache
-	cacheTTL time.Duration
-
+	service            serviceAccessor
 	permissionRegistry permissionRegistry
 }
 

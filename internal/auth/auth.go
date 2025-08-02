@@ -46,7 +46,7 @@ type repository interface {
 
 type cache interface {
 	Get(ctx context.Context, key string) (string, error)
-	SetTTL(ctx context.Context, key string, value string, ttl time.Duration) error
+	Set(ctx context.Context, key string, value string, ttl time.Duration) error
 }
 
 type outboxService interface {
@@ -396,16 +396,16 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	}
 }
 
-func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
+func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		kid, _ := token.Header["kid"].(string)
+		claims, _ := token.Claims.(*domain.JWTClaims)
 		s.jwtSecretsMu.RLock()
 		defer s.jwtSecretsMu.RUnlock()
 		for _, secret := range s.jwtSecrets {
-			if kid == secret.sha256 {
+			if claims.KID == secret.sha256 {
 				return []byte(secret.secret), nil
 			}
 		}
@@ -415,7 +415,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 		return nil, err
 	}
 
-	claims, ok := t.Claims.(*jwt.RegisteredClaims)
+	claims, ok := t.Claims.(*domain.JWTClaims)
 	if !ok || !t.Valid {
 		return nil, domain.ErrInvalidToken
 	}
@@ -436,7 +436,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*jwt.Regi
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
-	return s.cache.SetTTL(
+	return s.cache.Set(
 		ctx,
 		cacheKeyInvalidatedToken+strToSHA256(token),
 		cacheValueInvalidatedToken,

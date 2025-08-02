@@ -35,6 +35,7 @@ import (
 	"google.golang.org/grpc"
 
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
+	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth"
 	authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1"
@@ -43,9 +44,8 @@ import (
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
 	authWorkers "github.com/hasansino/go42/internal/auth/workers"
 	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/cache/aerospike"
+	"github.com/hasansino/go42/internal/cache/bigcache"
 	"github.com/hasansino/go42/internal/cache/memcached"
-	"github.com/hasansino/go42/internal/cache/otter"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
 	"github.com/hasansino/go42/internal/database"
@@ -235,18 +235,22 @@ func main() {
 
 	// cache engine
 	var (
-		cacheEngine cache.Cache
+		cacheEngine cache.Engine
 	)
 	switch cfg.Cache.Engine {
-	case "none":
-		cacheEngine = cache.NewNoop()
-		slog.Info("no cache engine initialized")
-	case "otter":
-		cacheEngine, err = otter.New()
+	case "bigcache":
+		cacheEngine, err = bigcache.New(
+			bigcache.WithShards(cfg.Cache.BigCache.Shards),
+			bigcache.WithLifeWindow(cfg.Cache.BigCache.LifeWindow),
+			bigcache.WithMaxEntriesInWindow(cfg.Cache.BigCache.MaxEntriesInWindow),
+			bigcache.WithMaxEntrySizeBytes(cfg.Cache.BigCache.MaxEntrySizeBytes),
+			bigcache.WithHardMaxCacheSize(cfg.Cache.BigCache.HardMaxCacheSize),
+			bigcache.WithVerbose(cfg.Cache.BigCache.Verbose),
+		)
 		if err != nil {
-			log.Fatalf("failed to initialize otter cache: %v\n", err)
+			log.Fatalf("failed to initialize bigcache: %v\n", err)
 		}
-		slog.Info("otter cache engine initialized")
+		slog.Info("bigcache engine initialized")
 	case "memcached":
 		var err error
 		cacheEngine, err = memcached.Open(
@@ -286,17 +290,9 @@ func main() {
 			log.Fatalf("failed to initialize redis cache: %v\n", err)
 		}
 		slog.Info("redis cache initialized")
-	case "aerospike":
-		var err error
-		cacheEngine, err = aerospike.Open(
-			ctx,
-			cfg.Cache.Aerospike.Hosts,
-			cfg.Cache.Aerospike.Namespace,
-		)
-		if err != nil {
-			log.Fatalf("failed to initialize aerospike cache: %v\n", err)
-		}
-		slog.Info("aerospike cache initialized")
+	default:
+		cacheEngine = cache.NewNoop()
+		slog.Info("no cache engine initialized")
 	}
 
 	// event engine
@@ -304,9 +300,6 @@ func main() {
 		eventsEngine events.Eventer
 	)
 	switch cfg.Events.Engine {
-	case "none":
-		eventsEngine = events.NewNoop()
-		slog.Info("no event engine initialized")
 	case "gochan":
 		eventsEngine = gochan.New(
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
@@ -405,6 +398,9 @@ func main() {
 			log.Fatalf("failed to initialize kafka event engine: %v\n", err)
 		}
 		slog.Info("kafka event engine initialized")
+	default:
+		eventsEngine = events.NewNoop()
+		slog.Info("no event engine initialized")
 	}
 
 	// ----
@@ -436,17 +432,22 @@ func main() {
 
 		// auth domain
 		authLogger := slog.Default().With(slog.String("component", "auth-service"))
-		authRepository := authRepositoryPkg.New(database.NewBaseRepository(dbEngine))
+		authRepository := authRepositoryPkg.New(
+			database.NewBaseRepository(dbEngine),
+			cacheEngine,
+			cfg.Auth.Cache.Repository.Users,
+			cfg.Auth.Cache.Repository.Secrets,
+		)
 		authService = auth.NewService(
 			authRepository,
 			outboxService,
 			cacheEngine,
 			auth.WithLogger(authLogger),
-			auth.WithJWTSecrets(cfg.Auth.JWTSecrets),
-			auth.WithJWTAccessTokenTTL(cfg.Auth.JWTAccessTokenTTL),
-			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWTRefreshTokenTTL),
-			auth.WithJWTIssuer(cfg.Auth.JWTIssuer),
-			auth.WithJWTAudience(cfg.Auth.JWTAudience),
+			auth.WithJWTSecrets(cfg.Auth.JWT.InitialSecrets),
+			auth.WithJWTAccessTokenTTL(cfg.Auth.JWT.AccessTokenTTL),
+			auth.WithJWTRefreshTokenTTL(cfg.Auth.JWT.RefreshTokenTTL),
+			auth.WithJWTIssuer(cfg.Auth.JWT.Issuer),
+			auth.WithJWTAudience(cfg.Auth.JWT.Audience),
 			auth.WithMinPasswordEntropyBits(cfg.Auth.MinPasswordEntropyBits),
 		)
 
@@ -464,9 +465,9 @@ func main() {
 			authWorkers.SecretRotationWorkerWithLogger(
 				slog.Default().With(slog.String("component", "auth-secret-rotation")),
 			),
-			authWorkers.SecretRotationWorkerWithSecretStrength(cfg.Auth.JWTTokenLength),
+			authWorkers.SecretRotationWorkerWithSecretLength(cfg.Auth.Rotation.SecretLength),
 		)
-		go authSecretRotationWorker.Run(ctx, cfg.Auth.JWTRotationPeriod)
+		go authSecretRotationWorker.Run(ctx, cfg.Auth.Rotation.Period)
 
 		authEventsSubscriber := authWorkers.NewAuthEventSubscriber(
 			authRepository,
@@ -507,7 +508,7 @@ func main() {
 
 	authHttpAdapter := authHttpAdapterV1.New(
 		authService,
-		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
+		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.Cache.API),
 	)
 	httpServer.RegisterV1(authHttpAdapter)
 
@@ -558,13 +559,19 @@ func main() {
 		)
 	}
 
+	grpcServerOpts = append(grpcServerOpts,
+		grpcAPI.WithUnaryInterceptor(
+			grpcAPI.InterceptorPriorityCache,
+			interceptors.NewUnaryServerCacheInterceptor(cacheEngine, cfg.Auth.Cache.API),
+		),
+	)
+
 	grpcServer := grpcAPI.New(grpcServerOpts...)
 
 	// register grpc services
 
 	authGrpc := authGrpcAdapterV1.New(
 		authService,
-		authGrpcAdapterV1.WithCache(cacheEngine, cfg.Auth.APICacheTTL),
 		authGrpcAdapterV1.WithPermissionRegistry(grpcPermissionRegistry),
 	)
 	grpcServer.Register(authGrpc)

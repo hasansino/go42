@@ -4,20 +4,39 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/database"
 )
 
-type Repository struct {
-	*database.BaseRepository
+type cacheAccessor interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Invalidate(ctx context.Context, key string) error
 }
 
-func New(baseRepository *database.BaseRepository) *Repository {
+type Repository struct {
+	*database.BaseRepository
+	cache          cacheAccessor
+	userCacheTTL   time.Duration
+	secretCacheTTL time.Duration
+}
+
+func New(
+	baseRepository *database.BaseRepository,
+	cache cacheAccessor,
+	userCacheTTL time.Duration,
+	secretCacheTTL time.Duration,
+) *Repository {
 	return &Repository{
 		BaseRepository: baseRepository,
+		cache:          cache,
+		userCacheTTL:   userCacheTTL,
+		secretCacheTTL: secretCacheTTL,
 	}
 }
 
@@ -151,14 +170,25 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*models.
 }
 
 func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*models.User, error) {
-	var user models.User
+	cacheKey := generateUserCacheKey(filter)
+	cachedUser, err := cache.GetDecode[*models.User](ctx, r.cache, cacheKey)
+	if err != nil {
+		slog.Default().ErrorContext(
+			ctx, "error retrieving cached user",
+			slog.Any("err", err),
+		)
+	}
+	if cachedUser != nil {
+		return cachedUser, nil
+	}
 
 	tx := r.GetReadDB(ctx)
 	for key, value := range filter {
 		tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 	}
 
-	err := tx.First(&user).Error
+	var user models.User
+	err = tx.First(&user).Error
 	if r.IsNotFoundError(err) {
 		return nil, domain.ErrEntityNotFound
 	}
@@ -211,7 +241,28 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	}
 
 	user.Roles = roles
+
+	if err := cache.SetEncode[*models.User](
+		ctx, r.cache, cacheKey, &user, r.userCacheTTL,
+	); err != nil {
+		slog.Default().ErrorContext(
+			ctx, "error caching user",
+			slog.Int("user_id", user.ID),
+			slog.Any("err", err),
+		)
+	}
+
 	return &user, nil
+}
+
+const userCacheKeyPrefix = "cache:user"
+
+func generateUserCacheKey(filter map[string]any) string {
+	key := userCacheKeyPrefix
+	for k, v := range filter {
+		key += fmt.Sprintf(":%s=%v", k, v)
+	}
+	return key
 }
 
 func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName string) error {
@@ -236,15 +287,39 @@ func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName 
 	return nil
 }
 
+const tokenCacheKeyPrefix = "cache:token"
+
 func (r *Repository) GetToken(ctx context.Context, hashedToken string) (*models.Token, error) {
+	cacheKey := fmt.Sprintf("%s:%s", tokenCacheKeyPrefix, hashedToken)
+	cachedToken, err := cache.GetDecode[*models.Token](ctx, r.cache, cacheKey)
+	if err != nil {
+		slog.Default().ErrorContext(
+			ctx, "error retrieving cached api token",
+			slog.Any("err", err),
+		)
+	}
+	if cachedToken != nil {
+		return cachedToken, nil
+	}
+
 	var apiToken models.Token
-	err := r.GetReadDB(ctx).
+	err = r.GetReadDB(ctx).
 		Preload("Permissions").
 		Where("token = ?", hashedToken).
 		First(&apiToken).Error
 
 	if r.IsNotFoundError(err) {
 		return nil, domain.ErrEntityNotFound
+	}
+
+	if err := cache.SetEncode[*models.Token](
+		ctx, r.cache, cacheKey, &apiToken, r.secretCacheTTL,
+	); err != nil {
+		slog.Default().ErrorContext(
+			ctx, "error caching api token",
+			slog.Int("token_id", apiToken.ID),
+			slog.Any("err", err),
+		)
 	}
 
 	return &apiToken, err
