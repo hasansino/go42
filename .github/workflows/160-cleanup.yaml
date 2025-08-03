@@ -4,34 +4,11 @@ name: cleanup
 # Deletes docker image used in unified workflow.
 
 on:
-  workflow_dispatch:
-    inputs:
-      runs_on:
-        required: true
-        type: string
-        default: ubuntu-latest
-        description: "runs_on"
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
-        description: "continue_on_error"
-      service_name:
-        required: true
-        type: string
-        default: "go42"
-        description: "service_name"
-      image_tag:
-        required: true
-        type: string
-        default: "tmp"
-        description: "image_tag"
   workflow_call:
     inputs:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       service_name:
         required: true
         type: string
@@ -39,14 +16,15 @@ on:
         required: true
         type: string
 
-permissions:
-  packages: write
-  contents: read
+permissions: {}
 
 jobs:
   cleanup:
     name: cleanup
     runs-on: ${{ inputs.runs_on }}
+    permissions:
+      packages: write
+      contents: read
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

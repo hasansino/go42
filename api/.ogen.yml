@@ -1,0 +1,27 @@
+parser:
+  infer_types: true
+  allow_remote: true
+  depth_limit: 1000
+
+# @see https://github.com/ogen-go/ogen/blob/main/gen/features.go
+generator:
+  features:
+    enable:
+      - 'paths/client'
+      - 'paths/server'
+      - 'webhooks/client'
+      - 'webhooks/server'
+      - 'client/security/reentrant'
+      - 'client/request/validation'
+      - 'server/response/validation'
+      - 'ogen/otel'
+      - 'ogen/unimplemented'
+    disable_all: true
+
+  filters:
+    path_regex: ".*"
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+
+  ignore_not_implemented: ["all"]
+
+expand: ""

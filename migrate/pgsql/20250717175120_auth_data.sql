@@ -22,19 +22,37 @@ on conflict do nothing;
 -- admins have all permissions
 insert into auth_role_permissions (role_id, permission_id)
 select
-(select id from auth_roles where name = 'admin'), ap.id
-from auth_permissions ap
+    (
+        select auth_roles.id
+        from auth_roles
+        where auth_roles.name = 'admin'
+    ) as role_id,
+    auth_permissions.id as permission_id
+from
+    auth_permissions
 on conflict do nothing;
 
 -- users can read & update themselves
 insert into auth_role_permissions (role_id, permission_id) values
 (
-    (select id from auth_roles where name = 'user'),
-    (select id from auth_permissions where resource = 'users' and action = 'read_self')
+    (
+        select id from auth_roles
+        where name = 'user'
+    ),
+    (
+        select id from auth_permissions
+        where resource = 'users' and action = 'read_self'
+    )
 ),
 (
-    (select id from auth_roles where name = 'user'),
-    (select id from auth_permissions where resource = 'users' and action = 'update_self')
+    (
+        select id from auth_roles
+        where name = 'user'
+    ),
+    (
+        select id from auth_permissions
+        where resource = 'users' and action = 'update_self'
+    )
 )
 on conflict do nothing;
 

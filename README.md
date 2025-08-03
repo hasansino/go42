@@ -35,13 +35,15 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Enable effortless integration of AI tools into the development workflow.
 - Ensure rapid and streamlined operational deployment bootstrapping.
 - Embed security fundamentals from day one.
+- Me learning a lot of new things in the process.
 
 ## Backlog
 
 ### 💪(•̀_•́💪)
 
 - switch from zipkin to jaeger or tempo
-
+- auth pkg metrics + dashboard
+- move all echo middleware to middleware package
 - security headers
   - Strict-Transport-Security (HSTS)
   - Content-Security-Policy (CSP) with configurable policies
@@ -53,12 +55,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - CORS -> https://echo.labstack.com/docs/middleware/cors
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
-- auth pkg metrics
-- `capslock -output=compare baseline.json` and fail the build if new unexpected capabilities are introduced
-- try https://github.com/ogen-go/ogen
-- release rollback automation
-- check current branch (except master) for commit naming violations
-- deploy docs to private gh-pages (gh enterprise)
+- https://echo.labstack.com/docs/middleware/gzip
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -94,6 +91,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - go42-runner
 - support hetzner, aws, gcp, azure
 - cost analysis for different scales
+- research mkdocs + docusaurus
 - documentation
 - conventions - validation
 - arch/business/feature documentation generation
@@ -116,34 +114,44 @@ Go42 is opinionated approach to develop cloud native golang services.
 - research sso -> saml/oidc
 - auth0
 - casbin
-- tls connections and certificate management
 - try https://testcontainers.com/
 - try https://backstage.io/
 - goland / vscode configuration + goenv-scp
 - try https://github.com/docker/bake-action
 - try https://github.com/mvdan/gofumpt (again)
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
-- try https://github.com/hypermodeinc/badger
 - try asyncapi (again)
-- register echo validator -> simplify adapters
 - release notifications to slack (https://github.com/8398a7/action-slack)
-- swagger annotations in adapters - generation of specs
 - k8 hpa/vpa configurations
-- try https://echo.labstack.com/docs/middleware/gzip
-- research doc builders like mkdocs / sphinx-doc
 - try https://www.checkov.io/ and https://terrasolid.com/products/terrascan/
-- move all echo middleware to middleware package
-- grpc transport credentials
-- try https://github.com/tursodatabase/turso
 - nosql -> `clickhouse` + `duckdb`
-- github runner hardening (self-hosted and cloud)
 - graphql support
 - event sourcing - cqrs
-- try https://valkey.io/
-- audit package implementation and guidelines
-- compliance research -> SOC2, ISO 27001, PCI-DSS
-- research hipaa compliance
 - try https://github.com/kisielk/godepgraph
 - try https://github.com/Oloruntobi1/pproftui
 - try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 - dead letter queues
+- release rollback automation
+
+### Explore
+
+- https://github.com/tursodatabase/turso
+- https://valkey.io/
+- https://github.com/hypermodeinc/badger
+
+### Security
+
+- redocly-cli is basically spyware - replace
+- github runner hardening (self-hosted and cloud)
+- PATs for github actions
+- tls connections and certificate management
+- grpc transport credentials
+
+### Compliance
+
+- audit package implementation and guidelines
+- compliance research -> SOC2, ISO 27001, PCI-DSS, HIPAA
+
+### Technical debt
+
+- register echo validator -> simplify adapters

@@ -9,27 +9,26 @@ on:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
-        default: false
       tag:
         required: true
         type: string
 
-permissions:
-  contents: write
-  packages: write
-  attestations: write
-  id-token: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-pr:
     name: release-pr
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: write
+      packages: write
+      attestations: write
+      id-token: write
+      pull-requests: write
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -37,13 +36,13 @@ jobs:
           fetch-depth: 0
       - id: prev_tag
         run: |
-          PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
+          PREVIOUS_TAG="$(git describe --abbrev=0 --tags "$(git rev-list --tags --skip=1 --max-count=1)" 2>/dev/null || echo "")"
           if [ -z "$PREVIOUS_TAG" ]; then
-            echo "previous_tag=" >> $GITHUB_OUTPUT
-            echo "comparison_url=" >> $GITHUB_OUTPUT
+            echo "previous_tag=" >> "$GITHUB_OUTPUT"
+            echo "comparison_url=" >> "$GITHUB_OUTPUT"
           else
-            echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
-            echo "comparison_url=https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+            echo "comparison_url=https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi
       - run: |
           sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/app/Chart.yaml

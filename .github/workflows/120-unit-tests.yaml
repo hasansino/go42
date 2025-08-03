@@ -20,20 +20,19 @@ on:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
-        default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   unit-tests:
     name: unit-tests
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +40,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - run: go test -count=1 -v -race $(go list ./... | grep -v '/tests/')
+      - run: go list ./... | grep -v '/tests/' | xargs go test -count=1 -v -race
         env:
           CGO_ENABLED: 1  # needed for -race

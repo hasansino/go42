@@ -10,7 +10,7 @@ create table if not exists transactional_outbox (
     status enum('pending', 'processed', 'failed') not null,
     retry_count int not null,
     max_retries int not null,
-    last_error text not null ,
+    last_error text not null,
     metadata text null,
     key transactional_outbox_publisher (status)
 );

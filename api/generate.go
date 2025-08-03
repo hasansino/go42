@@ -16,8 +16,13 @@ package api
 
 //go:generate mkdir -p gen/sdk/http/v1
 
-//go:generate oapi-codegen -package auth -o gen/sdk/http/v1/auth/auth.gen.go -generate types,client,spec openapi/v1/auth.yaml
-//go:generate mockgen -source gen/sdk/http/v1/auth/auth.gen.go -package mocks -destination gen/sdk/http/v1/auth/mocks/auth.gen.go
+//go:generate oapi-codegen -package auth -o gen/sdk/http/v1/auth/oapi-codegen/auth.gen.go -generate types,client,spec openapi/v1/auth.yaml
+//go:generate mockgen -source gen/sdk/http/v1/auth/oapi-codegen/auth.gen.go -package mocks -destination gen/sdk/http/v1/auth/oapi-codegen/mocks/auth.gen.go
+
+//go:generate ogen -config .ogen.yml --target gen/sdk/http/v1/auth/ogen -package auth openapi/v1/auth.yaml
+//go:generate mockgen -source=./gen/sdk/http/v1/auth/ogen/oas_interfaces_gen.go -destination=./gen/sdk/http/v1/auth/ogen/mocks/interfaces.gen.go -package=mocks
+//go:generate mockgen -source=./gen/sdk/http/v1/auth/ogen/oas_server_gen.go -destination=./gen/sdk/http/v1/auth/ogen/mocks/server.gen.go -package=mocks
+//go:generate mockgen -source=./gen/sdk/http/v1/auth/ogen/oas_client_gen.go -destination=./gen/sdk/http/v1/auth/ogen/mocks/client.gen.go -package=mocks
 
 //go:generate oapi-codegen -package chat -o gen/sdk/http/v1/chat/chat.gen.go -generate types,client,spec openapi/v1/chat.yaml
 //go:generate mockgen -source gen/sdk/http/v1/chat/chat.gen.go -package mocks -destination gen/sdk/http/v1/chat/mocks/chat.gen.go

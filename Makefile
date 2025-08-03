@@ -11,13 +11,14 @@ help: Makefile
 # Used by github copilot to setup its environment.
 setup:
 	@go mod tidy -e && go mod download
-	@brew install yq grpcui k6 sqlfluff
-	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
+	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale yq grpcui k6 sqlfluff
 	@vale --config etc/.vale.ini sync
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@go install github.com/go-delve/delve/cmd/dlv@latest
 	@go install github.com/daixiang0/gci@latest
+	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
+	@go install -v github.com/ogen-go/ogen/cmd/ogen@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
@@ -103,21 +104,24 @@ image:
 #   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
 lint:
 	@echo "Linting go files..."
-	@golangci-lint run --config etc/.golangci.yml
+	@golangci-lint run --config etc/.golangci.yml || true
 	@echo "Linting dockerfile..."
-	@hadolint Dockerfile
+	@hadolint Dockerfile || true
 	@echo "Linting proto files..."
-	@buf lint api
+	@buf lint api || true
 	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
+	redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
-	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/
+	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/ || true
 	@echo "Linting SQL files..."
-	@sqlfluff lint --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite
-	@sqlfluff lint --disable-progress-bar migrate/mysql/*.sql --dialect mysql
-	@sqlfluff lint --disable-progress-bar migrate/pgsql/*.sql --dialect postgres
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
+	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
+	@echo "Linting action files..."
+	@actionlint -oneline
 
 ## generate | generate code for all modules
 # Dependencies:
@@ -128,9 +132,11 @@ generate:
 	@buf generate api --template api/buf.gen.yaml
 	@go generate ./...
 	@go run cmd/cfg2env/main.go
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
+	redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
+	redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
 
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │

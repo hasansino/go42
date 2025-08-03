@@ -21,20 +21,19 @@ on:
       runs_on:
         required: true
         type: string
-        default: ubuntu-latest
       continue_on_error:
         required: true
         type: boolean
-        default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   markdown-lint:
     name: markdown-lint
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
     # ---
     steps:
       - uses: actions/checkout@v4
