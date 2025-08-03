@@ -107,8 +107,19 @@ func NewService(
 }
 
 func (s *Service) SignUp(ctx context.Context, email string, password string) (*models.User, error) {
-	if err := s.CheckPasswordStrength(password); err != nil {
-		return nil, domain.ErrPasswordWeak
+	var (
+		err error
+	)
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "signup.checkpwd",
+		func(ctx context.Context) error {
+			if err := s.CheckPasswordStrength(password); err != nil {
+				return domain.ErrPasswordWeak
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
 	user := &models.User{
@@ -117,11 +128,19 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		Status: domain.UserStatusActive,
 	}
 
-	if err := user.SetPassword(password); err != nil {
-		return nil, fmt.Errorf("failed to set password: %w", err)
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "signup.setpswd",
+		func(ctx context.Context) error {
+			if err := user.SetPassword(password); err != nil {
+				return fmt.Errorf("failed to set password: %w", err)
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
-	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	err = s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		if err := s.repository.CreateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}

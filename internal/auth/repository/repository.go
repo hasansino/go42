@@ -159,7 +159,7 @@ func (r *Repository) ListUsers(ctx context.Context, limit, offset int) ([]*model
 }
 
 func (r *Repository) GetUserByID(ctx context.Context, id int) (*models.User, error) {
-	return tools.Traced[*models.User](
+	return tools.TraceReturnTWithErr[*models.User](
 		ctx, "auth", "auth.repository.GetUserByID",
 		func(ctx context.Context) (*models.User, error) {
 			return r.getUser(ctx, map[string]any{"id": id})
@@ -167,7 +167,7 @@ func (r *Repository) GetUserByID(ctx context.Context, id int) (*models.User, err
 }
 
 func (r *Repository) GetUserByUUID(ctx context.Context, uuid string) (*models.User, error) {
-	return tools.Traced[*models.User](
+	return tools.TraceReturnTWithErr[*models.User](
 		ctx, "auth", "auth.repository.GetUserByUUID",
 		func(ctx context.Context) (*models.User, error) {
 			return r.getUser(ctx, map[string]any{"uuid": uuid})
@@ -175,7 +175,7 @@ func (r *Repository) GetUserByUUID(ctx context.Context, uuid string) (*models.Us
 }
 
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return tools.Traced[*models.User](
+	return tools.TraceReturnTWithErr[*models.User](
 		ctx, "auth", "auth.repository.GetUserByEmail",
 		func(ctx context.Context) (*models.User, error) {
 			return r.getUser(ctx, map[string]any{"email": email})

@@ -14,8 +14,6 @@ var DefaultSkipper = func(c echo.Context) bool {
 	return false
 }
 
-// ---
-
 type responseRecorder struct {
 	http.ResponseWriter
 	status int

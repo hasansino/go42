@@ -143,14 +143,7 @@ func New(opts ...Option) *Server {
 		},
 	}))
 
-	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
-
 	s.e.Use(middleware.RemoveTrailingSlash())
-
-	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
-		Skipper: customMiddleware.DefaultSkipper,
-		Limit:   s.bodyLimit,
-	}))
 
 	if s.tracingEnabled {
 		s.e.Use(otelecho.Middleware(
@@ -159,7 +152,13 @@ func New(opts ...Option) *Server {
 		))
 	}
 
-	// normal operation logging (http 100-499)
+	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
+
+	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
+		Skipper: customMiddleware.DefaultSkipper,
+		Limit:   s.bodyLimit,
+	}))
+
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper:      customMiddleware.DefaultSkipper,
 		LogError:     true,

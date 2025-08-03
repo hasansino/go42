@@ -42,7 +42,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 ### 💪(•̀_•́💪)
 
 - auth pkg metrics + dashboard
-- move all echo middleware to middleware package
 - security headers
   - Strict-Transport-Security (HSTS)
   - Content-Security-Policy (CSP) with configurable policies
