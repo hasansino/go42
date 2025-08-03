@@ -135,7 +135,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - grpc transport credentials
 - try https://github.com/tursodatabase/turso
 - nosql -> `clickhouse` + `duckdb`
-- github runner hardening (self-hosted and cloud)
 - graphql support
 - event sourcing - cqrs
 - try https://valkey.io/
@@ -148,4 +147,9 @@ Go42 is opinionated approach to develop cloud native golang services.
 - dead letter queues
 - release rollback automation
 - try https://github.com/ogen-go/ogen
+
+### Security
+
 - redocly-cli is basically spyware - replace
+- github runner hardening (self-hosted and cloud)
+- PATs for github actions
