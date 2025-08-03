@@ -123,6 +123,12 @@ services:
     ports:
       - "3333:3000" # ui
 
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - "16686:16686" # ui
+      - "14268:14268" # collector
+
   zipkin:
     image: openzipkin/zipkin:latest
     ports:

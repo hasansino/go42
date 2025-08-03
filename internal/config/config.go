@@ -116,10 +116,26 @@ func (l *Logger) Level() slog.Level {
 // ╰──────────────────────────────╯
 
 type Tracing struct {
-	Enable  bool          `env:"TRACING_ENABLED" default:"false"`
-	DSN     string        `env:"TRACING_DSN"     default:""`
-	Timeout time.Duration `env:"TRACING_TIMEOUT" default:"5s"`
+	Enable             bool          `env:"TRACING_ENABLED"               default:"false"`
+	Provider           string        `env:"TRACING_PROVIDER"              default:"zipkin" v:"oneof=zipkin jaeger datadog"`
+	SamplingRate       float64       `env:"TRACING_SAMPLING_RATE"         default:"1.0"    v:"gte=0.0,lte=1.0"`
+	Timeout            time.Duration `env:"TRACING_TIMEOUT"               default:"5s"`
+	MaxExportBatchSize int           `env:"TRACING_MAX_EXPORT_BATCH_SIZE" default:"100"`
+	MaxQueueSize       int           `env:"TRACING_MAX_QUEUE_SIZE"        default:"1000"`
+	Zipkin             Zipkin
+	Jaeger             Jaeger
+	Datadog            Datadog
 }
+
+type Zipkin struct {
+	DSN string `env:"TRACING_ZIPKIN_DSN" default:"http://localhost:9411/api/v2/spans"`
+}
+
+type Jaeger struct {
+	DSN string `env:"TRACING_JAEGER_DSN" default:"http://localhost:14268/api/traces"`
+}
+
+type Datadog struct{}
 
 // ╭──────────────────────────────╮
 // │            SENTRY            │

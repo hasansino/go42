@@ -18,7 +18,8 @@ setup:
 	@go install github.com/go-delve/delve/cmd/dlv@latest
 	@go install github.com/daixiang0/gci@latest
 	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
-	@go install -v github.com/ogen-go/ogen/cmd/ogen@latest
+	@go install github.com/ogen-go/ogen/cmd/ogen@latest
+	@go install github.com/segmentio/golines@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.

@@ -13,6 +13,7 @@ import (
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 type Postgres struct {
@@ -68,6 +69,14 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 		return nil, err
 	}
 
+	if err := masterConn.Use(tracing.NewPlugin(
+		tracing.WithDBSystem("mysql-master"),
+		tracing.WithoutServerAddress(),
+		tracing.WithoutMetrics(),
+	)); err != nil {
+		return nil, err
+	}
+
 	masterConnDB, err := masterConn.DB()
 	if err != nil {
 		return nil, err
@@ -91,6 +100,14 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 				Logger:      slogGorm.New(slogGormOpts...),
 			})
 		if err != nil {
+			return nil, err
+		}
+
+		if err := slaveConn.Use(tracing.NewPlugin(
+			tracing.WithDBSystem("pgsql-slave"),
+			tracing.WithoutServerAddress(),
+			tracing.WithoutMetrics(),
+		)); err != nil {
 			return nil, err
 		}
 

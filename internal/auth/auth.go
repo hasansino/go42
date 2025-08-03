@@ -13,6 +13,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	passwordvalidator "github.com/wagslane/go-password-validator"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/hasansino/go42/internal/auth/domain"
@@ -144,6 +147,16 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		return nil, err
 	}
 
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_signup_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user signed up")
+	}
+
 	return user, nil
 }
 
@@ -182,6 +195,16 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		)
 	}
 
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_login_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user logged in")
+	}
+
 	return tokens, nil
 }
 
@@ -206,7 +229,22 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		return nil, domain.ErrInvalidToken
 	}
 
-	return s.generateTokens(user.UUID.String())
+	tokens, err := s.generateTokens(user.UUID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_refresh_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user session refreshed")
+	}
+
+	return tokens, err
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
@@ -243,6 +281,16 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 			slog.Any("event", event),
 			slog.Any("error", err),
 		)
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_logout_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user logged out")
 	}
 
 	return nil
@@ -432,6 +480,15 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*domain.J
 		return nil, domain.ErrInvalidToken
 	}
 
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("jwt_token_validated",
+			trace.WithAttributes(
+				attribute.String("jwt.claims.user.uuid", claims.Subject),
+			),
+		)
+		span.SetStatus(codes.Ok, "jwt token validated successfully")
+	}
+
 	return claims, nil
 }
 
@@ -513,6 +570,16 @@ func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.T
 	default:
 		// if channel is full, we discard payload and record warning
 		s.logger.WarnContext(ctx, "auth.tokensUsedChan overflow")
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("jwt_token_validated",
+			trace.WithAttributes(
+				attribute.Int("token.id", apiToken.ID),
+				attribute.Int("token.user_id", apiToken.UserID),
+			),
+		)
+		span.SetStatus(codes.Ok, "api token validated")
 	}
 
 	return apiToken, nil

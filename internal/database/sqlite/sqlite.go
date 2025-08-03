@@ -9,6 +9,7 @@ import (
 	"github.com/glebarez/sqlite"
 	slogGorm "github.com/orandin/slog-gorm"
 	"gorm.io/gorm"
+	"gorm.io/plugin/opentelemetry/tracing"
 	sqlitelib "modernc.org/sqlite/lib"
 )
 
@@ -60,6 +61,14 @@ func Open(dbPath string, opts ...Option) (*Sqlite, error) {
 			Logger:      slogGorm.New(slogGormOpts...),
 		})
 	if err != nil {
+		return nil, err
+	}
+
+	if err := gormDB.Use(tracing.NewPlugin(
+		tracing.WithDBSystem("sqlite"),
+		tracing.WithoutServerAddress(),
+		tracing.WithoutMetrics(),
+	)); err != nil {
 		return nil, err
 	}
 

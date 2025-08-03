@@ -52,6 +52,7 @@ This document is a repository of conventions and rules used by this project.
 * put technical phrases in backticks in comments to avoid linting issues
 * `fmt.Errorf` vs `errors.Wrap` (collides vs std errors)
 * use power of 2 for buffer sizing, implemented using bitwise shift operator
+* using golines
 
 ## Miscellaneous
 
