@@ -40,7 +40,7 @@ import (
 	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth"
-	authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1"
+	// authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1" // Temporarily disabled due to missing gRPC generated files
 	authHttpAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/http/v1"
 	authInterceptors "github.com/hasansino/go42/internal/auth/interceptors"
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
@@ -599,11 +599,12 @@ func main() {
 
 	// register grpc services
 
-	authGrpc := authGrpcAdapterV1.New(
-		authService,
-		authGrpcAdapterV1.WithPermissionRegistry(grpcPermissionRegistry),
-	)
-	grpcServer.Register(authGrpc)
+	// Temporarily disabled due to missing gRPC generated files
+	// authGrpc := authGrpcAdapterV1.New(
+	// 	authService,
+	// 	authGrpcAdapterV1.WithPermissionRegistry(grpcPermissionRegistry),
+	// )
+	// grpcServer.Register(authGrpc)
 
 	// run server
 

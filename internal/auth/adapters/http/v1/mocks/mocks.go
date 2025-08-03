@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	domain "github.com/hasansino/go42/internal/auth/domain"
 	models "github.com/hasansino/go42/internal/auth/models"
 	gomock "go.uber.org/mock/gomock"
@@ -220,10 +221,10 @@ func (mr *MockserviceAccessorMockRecorder) ValidateAPIToken(ctx, token any) *gom
 }
 
 // ValidateJWTTokenInternal mocks base method.
-func (m *MockserviceAccessor) ValidateJWTTokenInternal(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (m *MockserviceAccessor) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateJWTTokenInternal", ctx, token)
-	ret0, _ := ret[0].(*domain.JWTClaims)
+	ret0, _ := ret[0].(*jwt.RegisteredClaims)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
