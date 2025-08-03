@@ -128,35 +128,35 @@ jobs:
         with:
           name: k6-summary-http-v1
           path: k6-summary-http-v1.json
-      # ----
-      - if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            
-            const resultsHttpV1 = JSON.parse(fs.readFileSync('k6-summary-http-v1.json', 'utf8'));
-            
-            const summary = `## Load Test Results
-            
-            ### HTTP v1
-            
-            | Metric          | Value  |
-            |-----------------|--------|
-            | Virtual Users   | ${resultsHttpV1.metrics.vus_max.value} max (${resultsHttpV1.metrics.vus.min}-${resultsHttpV1.metrics.vus.max}) |
-            | Total Requests  | ${resultsHttpV1.metrics.http_reqs.count} @ ${resultsHttpV1.metrics.http_reqs.rate.toFixed(2)}/sec |
-            | Response Time   | Avg: ${resultsHttpV1.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttpV1.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
-            | Failed Requests | ${resultsHttpV1.metrics.http_req_failed.passes} (${(resultsHttpV1.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-            | Success Rate    | ${(resultsHttpV1.metrics.checks.passes / (resultsHttpV1.metrics.checks.passes + resultsHttpV1.metrics.checks.fails) * 100).toFixed(2)}% |
-            `;
-            
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            });
+#      # ----
+#      - if: github.event_name == 'pull_request' && false
+#        uses: actions/github-script@v7
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          script: |
+#            const fs = require('fs');
+#
+#            const resultsHttpV1 = JSON.parse(fs.readFileSync('k6-summary-http-v1.json', 'utf8'));
+#
+#            const summary = `## Load Test Results
+#
+#            ### HTTP v1
+#
+#            | Metric          | Value  |
+#            |-----------------|--------|
+#            | Virtual Users   | ${resultsHttpV1.metrics.vus_max.value} max (${resultsHttpV1.metrics.vus.min}-${resultsHttpV1.metrics.vus.max}) |
+#            | Total Requests  | ${resultsHttpV1.metrics.http_reqs.count} @ ${resultsHttpV1.metrics.http_reqs.rate.toFixed(2)}/sec |
+#            | Response Time   | Avg: ${resultsHttpV1.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttpV1.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
+#            | Failed Requests | ${resultsHttpV1.metrics.http_req_failed.passes} (${(resultsHttpV1.metrics.http_req_failed.value * 100).toFixed(2)}%) |
+#            | Success Rate    | ${(resultsHttpV1.metrics.checks.passes / (resultsHttpV1.metrics.checks.passes + resultsHttpV1.metrics.checks.fails) * 100).toFixed(2)}% |
+#            `;
+#
+#            await github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: summary
+#            });
   load-tests-grpc:
     # ----
     name: load-tests-grpc
@@ -229,37 +229,37 @@ jobs:
           flags: --summary-export=k6-summary-grpc-v1.json
         env:
           GRPC_SERVER_ADDRESS: localhost:55553
-      # ---
+      # ----
       - uses: actions/upload-artifact@v4
         with:
           name: k6-summary-grpc-v1
           path: k6-summary-grpc-v1.json
-      # ---
-      - if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            
-            const resultsGrpcV1 = JSON.parse(fs.readFileSync('k6-summary-grpc-v1.json', 'utf8'));
-            
-            const summary = `## Load Test Results
-            
-            ### GRPC v1
-            
-            | Metric          | Value |
-            |-----------------|-------|
-            | Virtual Users   | ${resultsGrpcV1.metrics.vus_max.value} max (${resultsGrpcV1.metrics.vus.min}-${resultsGrpcV1.metrics.vus.max}) |
-            | Total Requests  | ${resultsGrpcV1.metrics.iterations.count} @ ${resultsGrpcV1.metrics.iterations.rate.toFixed(2)}/sec |
-            | Response Time   | Avg: ${(resultsGrpcV1.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(resultsGrpcV1.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |
-            | Failed Requests | ${resultsGrpcV1.metrics.checks.fails} (${(resultsGrpcV1.metrics.checks.fails / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}%) |
-            | Success Rate    | ${(resultsGrpcV1.metrics.checks.passes / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}% |      
-            `;
-            
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            });
+#      # ----
+#      - if: github.event_name == 'pull_request'
+#        uses: actions/github-script@v7
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          script: |
+#            const fs = require('fs');
+#
+#            const resultsGrpcV1 = JSON.parse(fs.readFileSync('k6-summary-grpc-v1.json', 'utf8'));
+#
+#            const summary = `## Load Test Results
+#
+#            ### GRPC v1
+#
+#            | Metric          | Value |
+#            |-----------------|-------|
+#            | Virtual Users   | ${resultsGrpcV1.metrics.vus_max.value} max (${resultsGrpcV1.metrics.vus.min}-${resultsGrpcV1.metrics.vus.max}) |
+#            | Total Requests  | ${resultsGrpcV1.metrics.iterations.count} @ ${resultsGrpcV1.metrics.iterations.rate.toFixed(2)}/sec |
+#            | Response Time   | Avg: ${(resultsGrpcV1.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(resultsGrpcV1.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |
+#            | Failed Requests | ${resultsGrpcV1.metrics.checks.fails} (${(resultsGrpcV1.metrics.checks.fails / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}%) |
+#            | Success Rate    | ${(resultsGrpcV1.metrics.checks.passes / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}% |
+#            `;
+#
+#            await github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: summary
+#            });
