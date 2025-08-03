@@ -192,11 +192,24 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.Password.V), []byte(password)) != nil {
-		return nil, domain.ErrInvalidCredentials
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "login.CompareHashAndPassword",
+		func(ctx context.Context) error {
+			if bcrypt.CompareHashAndPassword([]byte(user.Password.V), []byte(password)) != nil {
+				return domain.ErrInvalidCredentials
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
-	tokens, err := s.generateTokens(user.UUID.String())
+	tokens, err := tools.TraceReturnTWithErr[*domain.Tokens](
+		ctx, "auth.service", "login.generate_tokens",
+		func(ctx context.Context) (*domain.Tokens, error) {
+			return s.generateTokens(user.UUID.String())
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
@@ -248,9 +261,14 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		return nil, domain.ErrInvalidToken
 	}
 
-	tokens, err := s.generateTokens(user.UUID.String())
+	tokens, err := tools.TraceReturnTWithErr[*domain.Tokens](
+		ctx, "auth.service", "login.generate_tokens",
+		func(ctx context.Context) (*domain.Tokens, error) {
+			return s.generateTokens(user.UUID.String())
+		},
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
 	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {

@@ -944,8 +944,6 @@ func initTracing(ctx context.Context, cfg *config.Config) ShutMeDown {
 			log.Fatalf("failed to create jaeger collector exporter: %v", err)
 		}
 		slog.Info("initialized jaeger collector tracing exporter", slog.String("endpoint", cfg.Tracing.Jaeger.DSN))
-	case "datadog":
-		// !
 	default:
 		log.Fatalf("unsupported tracing provider: %s", cfg.Tracing.Provider)
 	}
@@ -972,7 +970,7 @@ func initTracing(ctx context.Context, cfg *config.Config) ShutMeDown {
 	otel.SetTracerProvider(tp)
 
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		slog.Error("otel error", slog.Any("error", err))
+		slog.ErrorContext(ctx, "otel error", slog.Any("error", err))
 	}))
 
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
