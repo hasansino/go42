@@ -81,7 +81,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
 			u, err := url.Parse(wsURL)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			q := u.Query()
 			q.Set("token", accessToken1)
 			u.RawQuery = q.Encode()
@@ -96,7 +96,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 
 		It("should reject connection without JWT token", func() {
 			wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
-			
+
 			conn, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusUnauthorized))
@@ -109,7 +109,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
 			u, err := url.Parse(wsURL)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			q := u.Query()
 			q.Set("token", "invalid-token")
 			u.RawQuery = q.Encode()
@@ -176,7 +176,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 				wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
 				u, err := url.Parse(wsURL)
 				Expect(err).ToNot(HaveOccurred())
-				
+
 				q := u.Query()
 				q.Set("token", token)
 				u.RawQuery = q.Encode()
@@ -213,7 +213,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			err = conn1.ReadJSON(&response)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.Type).To(Equal("rooms_list"))
-			
+
 			// Should be empty array or nil
 			rooms, ok := response.Data.([]interface{})
 			if ok {
@@ -240,20 +240,20 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			err = conn1.ReadJSON(&response)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.Type).To(Equal("room_created"))
-			
+
 			// Parse room data
 			roomData, err := json.Marshal(response.Data)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			var room Room
 			err = json.Unmarshal(roomData, &room)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			Expect(room.Name).To(Equal("Test Room"))
 			Expect(room.Type).To(Equal("public"))
 			Expect(room.MaxUsers).To(Equal(10))
 			Expect(room.ID).ToNot(BeEmpty())
-			
+
 			roomID = room.ID
 		})
 
@@ -288,15 +288,15 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			err = conn1.ReadJSON(&listResponse)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(listResponse.Type).To(Equal("rooms_list"))
-			
+
 			// Parse rooms data
 			roomsData, err := json.Marshal(listResponse.Data)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			var rooms []Room
 			err = json.Unmarshal(roomsData, &rooms)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			Expect(rooms).To(HaveLen(1))
 			Expect(rooms[0].Name).To(Equal("Test Room for Listing"))
 		})
@@ -318,11 +318,11 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			var createResponse WebSocketMessage
 			err = conn1.ReadJSON(&createResponse)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			// Extract room ID
 			roomData, err := json.Marshal(createResponse.Data)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			var room Room
 			err = json.Unmarshal(roomData, &room)
 			Expect(err).ToNot(HaveOccurred())
@@ -414,7 +414,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 				wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
 				u, err := url.Parse(wsURL)
 				Expect(err).ToNot(HaveOccurred())
-				
+
 				q := u.Query()
 				q.Set("token", token)
 				u.RawQuery = q.Encode()
@@ -442,10 +442,10 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			var createResponse WebSocketMessage
 			err = conn1.ReadJSON(&createResponse)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			roomData, err := json.Marshal(createResponse.Data)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			var room Room
 			err = json.Unmarshal(roomData, &room)
 			Expect(err).ToNot(HaveOccurred())
@@ -493,7 +493,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			var receivedMsg ChatMessage
 			err = conn2.ReadJSON(&receivedMsg)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			Expect(receivedMsg.Type).To(Equal("text"))
 			Expect(receivedMsg.Content).To(Equal("Hello from user 1!"))
 			Expect(receivedMsg.RoomID).To(Equal(roomID))
@@ -524,7 +524,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 						RoomID:  roomID,
 					},
 				}
-				
+
 				if i%2 == 0 {
 					err := conn1.WriteJSON(sendMsg)
 					Expect(err).ToNot(HaveOccurred())
@@ -588,7 +588,7 @@ var _ = Describe("Chat WebSocket Integration Tests", func() {
 			wsURL := strings.Replace(integration.HTTPServerAddress(), "http", "ws", 1) + "/ws/chat"
 			u, err := url.Parse(wsURL)
 			Expect(err).ToNot(HaveOccurred())
-			
+
 			q := u.Query()
 			q.Set("token", tokens.AccessToken)
 			u.RawQuery = q.Encode()

@@ -74,14 +74,14 @@ type UserInfo struct {
 }
 
 type Room struct {
-	ID        string             `json:"id"`
-	Name      string             `json:"name"`
-	Type      string             `json:"type"`
-	MaxUsers  int                `json:"max_users"`
-	UserCount int                `json:"user_count"`
+	ID        string              `json:"id"`
+	Name      string              `json:"name"`
+	Type      string              `json:"type"`
+	MaxUsers  int                 `json:"max_users"`
+	UserCount int                 `json:"user_count"`
 	Users     map[string]UserInfo `json:"users"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
+	CreatedAt time.Time           `json:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at"`
 }
 
 // WebSocket message data types
