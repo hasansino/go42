@@ -464,6 +464,14 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 }
 
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+	return tools.TraceReturnTWithErr[*domain.JWTClaims](
+		ctx, "auth.service", "validate_jwt_token",
+		func(ctx context.Context) (*domain.JWTClaims, error) {
+			return s.validateJWTToken(ctx, token)
+		})
+}
+
+func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -575,6 +583,14 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 // ----
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
+	return tools.TraceReturnTWithErr[*models.Token](
+		ctx, "auth.service", "validate_jwt_token",
+		func(ctx context.Context) (*models.Token, error) {
+			return s.validateAPIToken(ctx, token)
+		})
+}
+
+func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.Token, error) {
 	apiToken, err := s.repository.GetToken(ctx, strToSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
