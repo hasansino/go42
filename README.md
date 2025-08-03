@@ -35,12 +35,17 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Enable effortless integration of AI tools into the development workflow.
 - Ensure rapid and streamlined operational deployment bootstrapping.
 - Embed security fundamentals from day one.
+- Me learning a lot of new things in the process.
 
 ## Backlog
 
 ### 💪(•̀_•́💪)
 
+- auth pkg metrics
+
 - switch from zipkin to jaeger or tempo
+
+- github cicd loading with annotations
 
 - security headers
   - Strict-Transport-Security (HSTS)
@@ -53,8 +58,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - CORS -> https://echo.labstack.com/docs/middleware/cors
 - CSRF -> https://echo.labstack.com/docs/middleware/csrf
 - https://echo.labstack.com/docs/middleware/secure
-- auth pkg metrics
-- try https://github.com/ogen-go/ogen
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -144,3 +147,5 @@ Go42 is opinionated approach to develop cloud native golang services.
 - try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 - dead letter queues
 - release rollback automation
+- try https://github.com/ogen-go/ogen
+- redocly-cli is basically spyware - replace
