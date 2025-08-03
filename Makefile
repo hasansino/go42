@@ -111,8 +111,7 @@ lint:
 	@echo "Linting proto files..."
 	@buf lint api || true
 	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
-	redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
@@ -133,11 +132,9 @@ generate:
 	@buf generate api --template api/buf.gen.yaml
 	@go generate ./...
 	@go run cmd/cfg2env/main.go
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
-	redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false \
-	redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
 
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │

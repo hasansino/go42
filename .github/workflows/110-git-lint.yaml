@@ -47,8 +47,8 @@ jobs:
           else
             BRANCH_NAME="$REF_NAME"
           fi
-          PATTERN="^[A-Za-z0-9/_-]+$"
+          PATTERN="^[A-Za-z0-9\/_\-\.]+$"
           if ! echo "$BRANCH_NAME" | grep -qE "$PATTERN"; then
-            echo "Branch names should follow regex ^[A-Za-z0-9/_-]+$"
+            echo "Branch names should follow regex ^[A-Za-z0-9\/_\-\.]+$"
             exit 1
           fi

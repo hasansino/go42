@@ -85,3 +85,10 @@ func WithSwaggerDarkStyle(enabled bool) Option {
 		s.swaggerDarkStyle = enabled
 	}
 }
+
+// WithCORSAllowOrigins sets the allowed origins for CORS requests.
+func WithCORSAllowOrigins(allowedOrigins []string) Option {
+	return func(s *Server) {
+		s.allowOrigins = allowedOrigins
+	}
+}

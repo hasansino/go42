@@ -405,8 +405,6 @@ func main() {
 		slog.Info("no event engine initialized")
 	}
 
-	// ----
-
 	// service layer
 
 	var (
@@ -495,6 +493,7 @@ func main() {
 		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
 		httpAPI.WithBodyLimit(fmt.Sprintf("%dK", cfg.Server.HTTP.BodyLimitKB)),
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
+		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {

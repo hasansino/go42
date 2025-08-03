@@ -51,13 +51,14 @@ type Server struct {
 
 	tracingEnabled   bool
 	swaggerDarkStyle bool
-
-	bodyLimit string
+	bodyLimit        string
+	allowOrigins     []string
 }
 
 func New(opts ...Option) *Server {
 	s := &Server{
-		e: echo.New(),
+		e:            echo.New(),
+		allowOrigins: make([]string, 0),
 	}
 
 	for _, opt := range opts {
@@ -186,6 +187,43 @@ func New(opts ...Option) *Server {
 	s.e.Use(customMiddleware.NewMetricsCollector())
 	s.e.Use(customMiddleware.NewRequestID())
 
+	s.e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		Skipper:            customMiddleware.DefaultSkipper,
+		XSSProtection:      "1; mode=block",
+		ContentTypeNosniff: "nosniff",
+		XFrameOptions:      "DENY",
+		HSTSMaxAge:         31536000,
+		HSTSPreloadEnabled: true,
+	}))
+
+	// AllowOrigins: ["*"] with AllowCredentials: true is not allowed by CORS spec.
+	allowCredentials := true
+	if len(s.allowOrigins) > 0 && s.allowOrigins[0] == "*" {
+		allowCredentials = false
+		s.l.Warn("CORS is configured to allow all origins")
+	}
+
+	s.e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: s.allowOrigins,
+		// allow all methods for CORS requests
+		AllowMethods: []string{
+			http.MethodOptions,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		},
+		// allowed headers for CORS requests
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+		// allow javascript to read extra response headers
+		ExposeHeaders: []string{"Content-Length", "x-request-id"},
+		// allow JWT to be sent by cross-origin requests
+		AllowCredentials: allowCredentials,
+		// caching of OPTIONS requests
+		MaxAge: 3600,
+	}))
+
 	s.root = s.e.Group("")
 	s.root.Static("/static", s.staticRoot)
 
@@ -204,8 +242,6 @@ func New(opts ...Option) *Server {
 		s.v1.GET("/", func(c echo.Context) error {
 			return tmpl.Execute(c.Response(), swaggerTemplateData{
 				SpecURLs:  s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
-				CDN:       swaggerCDNjsdelivr,
-				Version:   swaggerUIVersion,
 				DarkTheme: true,
 			})
 		})

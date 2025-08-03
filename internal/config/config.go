@@ -449,14 +449,15 @@ type Server struct {
 }
 
 type HTTP struct {
-	Listen       string        `env:"SERVER_HTTP_LISTEN"        default:":8080"`
-	ReadTimeout  time.Duration `env:"SERVER_HTTP_READ_TIMEOUT"  default:"5s"`
-	WriteTimeout time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT" default:"5s"`
-	StaticRoot   string        `env:"SERVER_HTTP_STATIC_ROOT"   default:"/usr/share/www"`
-	SwaggerRoot  string        `env:"SERVER_HTTP_SWAGGER_ROOT"  default:"/usr/share/www/api"`
-	SwaggerDark  bool          `env:"SERVER_HTTP_SWAGGER_DARK"  default:"true"`
-	BodyLimitKB  int           `env:"SERVER_HTTP_BODY_LIMIT_KB" default:"1024"`
-	RateLimiter  HTTPRateLimiter
+	Listen           string        `env:"SERVER_HTTP_LISTEN"             default:":8080"`
+	ReadTimeout      time.Duration `env:"SERVER_HTTP_READ_TIMEOUT"       default:"5s"`
+	WriteTimeout     time.Duration `env:"SERVER_HTTP_WRITE_TIMEOUT"      default:"5s"`
+	StaticRoot       string        `env:"SERVER_HTTP_STATIC_ROOT"        default:"/usr/share/www"`
+	SwaggerRoot      string        `env:"SERVER_HTTP_SWAGGER_ROOT"       default:"/usr/share/www/api"`
+	SwaggerDark      bool          `env:"SERVER_HTTP_SWAGGER_DARK"       default:"true"`
+	BodyLimitKB      int           `env:"SERVER_HTTP_BODY_LIMIT_KB"      default:"1024"`
+	CORSAllowOrigins []string      `env:"SERVER_HTTP_CORS_ALLOW_ORIGINS" default:"*"`
+	RateLimiter      HTTPRateLimiter
 }
 
 type HTTPRateLimiter struct {

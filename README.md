@@ -41,40 +41,25 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- security headers
-  - Strict-Transport-Security (HSTS)
-  - Content-Security-Policy (CSP) with configurable policies
-  - X-Frame-Options (clickjacking protection)
-  - X-Content-Type-Options (MIME sniffing protection)
-  - X-XSS-Protection (XSS filtering)
-  - Referrer-Policy
-  - Permissions-Policy
-- CORS -> https://echo.labstack.com/docs/middleware/cors
-- CSRF -> https://echo.labstack.com/docs/middleware/csrf
-- https://echo.labstack.com/docs/middleware/secure
-- https://echo.labstack.com/docs/middleware/gzip
+- release annotations
+- run make generate in CI/CD to check for changes in generated files
+- workflow running on schedule to clean up docker registry
+- generate release summary with llm
+- custom & simple DI container for main.go
+- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
+- `main.go` -> move init functions out of file and make them modular
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
+- graceful connection recovery
+- outbox table cleanup worker
 - service discovery
   - consul - consul kv for config
   - etcd
   - k8 CoreDNS
-- feature flags system
-  - https://echo.labstack.com/docs/middleware/jaeger
-- circuit breaker (https://github.com/sony/gobreaker)
-- release annotations
 
 ### ദ്ദി( •̀ ᴗ - )
 
-- custom & simple DI container for main.go
-- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
-- `main.go` -> move init functions out of file and make them modular
-- graceful connection recovery
-- outbox table cleanup worker
-- run make generate in CI/CD to check for changes in generated files
-- distributed rate limiter
-- workflow running on schedule to cleanup docker registry
 - slog contextual values (like request id etc.) propogation
 - slog smart sampling of duplicates
 - slog enforcing field names and types
@@ -83,20 +68,27 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 - lock tools version and sync with CI
 - working with private repositories, .netrc, GOPRIVATE, modules
-- go42-cli (round-kick, fist-punch ASCII)
-- go42-runner
-- support hetzner, aws, gcp, azure
-- cost analysis for different scales
 - research mkdocs + docusaurus
 - documentation
-- conventions - validation
+- conventions + validation in ci/cd
 - arch/business/feature documentation generation
 - integration with project management tools
 - capacity planning and resource management
+- cost analysis for different scales
 - scaling and organizing multiple projects
-- using AI agents to complete tasks
-- pr llm review
-- generate release summary with llm
+- circuit breaker (https://github.com/sony/gobreaker)
+
+### Project `pandemic`
+
+- support hetzner, aws, gcp, azure
+
+### Project `clockwork`
+
+- go42-cli (round-kick, fist-punch ASCII)
+
+### project `machine`
+
+- go42-runner
 
 ## Bugs
 
@@ -104,6 +96,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - fix third party protobuf generation (protovalidate)
 - tint log handler does nto support nested fields
 - osv-scanner re-uploads CVEs to codeql
+- gorm constraint errors are levelled as `error` by slog
 
 ## 100% after v1.0.0 release
 
@@ -128,6 +121,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - try https://sqlc.dev/ or https://github.com/stephenafamo/bob
 - dead letter queues
 - release rollback automation
+- feature flags system
 
 ### Explore
 
