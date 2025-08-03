@@ -28,10 +28,10 @@ on:
         default: "tmp"
         description: "image_tag"
       database_engine:
-        required: true
+        required: false
         type: string
-        default: "sqlite"
-        description: "database_engine"
+        default: ""
+        description: "database_engine (leave empty to test all)"
   workflow_call:
     inputs:
       runs_on:
@@ -47,25 +47,90 @@ on:
         required: true
         type: string
       database_engine:
-        required: true
+        required: false
         type: string
+        default: ""
 
 permissions: {}
 
 jobs:
-  load-tests-http:
-    # ----
-    name: load-tests-http
+  load-tests:
+    name: load-tests-${{ matrix.protocol }}-${{ matrix.database }}
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       packages: read
       pull-requests: write
       issues: write
-    # ----
+    strategy:
+      matrix:
+        protocol: [http, grpc]
+        database: [sqlite, mysql, pgsql]
+        include:
+          # HTTP configurations
+          - protocol: http
+            database: sqlite
+            database_engine: sqlite
+            app_port: 44441
+            grpc_port: 55551
+            test_path: ./tests/load/http/v1/auth_test.js
+            env_name: ci-load-tests-http
+            server_address_env: HTTP_SERVER_ADDRESS
+            grpc_auth_enabled: true
+          - protocol: http
+            database: mysql
+            database_engine: mysql
+            app_port: 44442
+            grpc_port: 55552
+            test_path: ./tests/load/http/v1/auth_test.js
+            env_name: ci-load-tests-http
+            server_address_env: HTTP_SERVER_ADDRESS
+            grpc_auth_enabled: true
+          - protocol: http
+            database: pgsql
+            database_engine: pgsql
+            app_port: 44443
+            grpc_port: 55553
+            test_path: ./tests/load/http/v1/auth_test.js
+            env_name: ci-load-tests-http
+            server_address_env: HTTP_SERVER_ADDRESS
+            grpc_auth_enabled: true
+          # GRPC configurations
+          - protocol: grpc
+            database: sqlite
+            database_engine: sqlite
+            app_port: 44444
+            grpc_port: 55554
+            test_path: ./tests/load/grpc/v1/auth_test.js
+            env_name: ci-load-tests
+            server_address_env: GRPC_SERVER_ADDRESS
+            grpc_auth_enabled: false
+          - protocol: grpc
+            database: mysql
+            database_engine: mysql
+            app_port: 44445
+            grpc_port: 55555
+            test_path: ./tests/load/grpc/v1/auth_test.js
+            env_name: ci-load-tests
+            server_address_env: GRPC_SERVER_ADDRESS
+            grpc_auth_enabled: false
+          - protocol: grpc
+            database: pgsql
+            database_engine: pgsql
+            app_port: 44446
+            grpc_port: 55556
+            test_path: ./tests/load/grpc/v1/auth_test.js
+            env_name: ci-load-tests
+            server_address_env: GRPC_SERVER_ADDRESS
+            grpc_auth_enabled: false
+        exclude:
+          # Exclude combinations if specific database_engine is requested
+          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'sqlite' && 'sqlite' || '' }}
+          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'mysql' && 'mysql' || '' }}
+          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'pgsql' && 'pgsql' || '' }}
     services:
       mysql:
-        image: mysql:latest
+        image: ${{ matrix.database == 'mysql' && 'mysql:latest' || '' }}
         ports:
           - 3306:3306
         env:
@@ -80,7 +145,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       pgsql:
-        image: postgres:latest
+        image: ${{ matrix.database == 'pgsql' && 'postgres:latest' || '' }}
         ports:
           - 5432:5432
         env:
@@ -96,119 +161,15 @@ jobs:
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
-          - 44443:8080  # should be unique to avoid conflicts on self-hosted runners
+          - ${{ matrix.app_port }}:8080  # unique ports to avoid conflicts on self-hosted runners
+          - ${{ matrix.grpc_port }}:50051 # unique ports to avoid conflicts on self-hosted runners
         env:
           LOG_LEVEL: warn
-          ENVIRONMENT: ci-load-tests-http
-          SERVER_HTTP_LISTEN: :8080
-          DATABASE_ENGINE: ${{ inputs.database_engine || 'sqlite' }}
-          DATABASE_MYSQL_MASTER_HOST: mysql
-          DATABASE_MYSQL_SLAVE_HOST: mysql
-          DATABASE_PGSQL_MASTER_HOST: pgsql
-          DATABASE_PGSQL_SLAVE_HOST: pgsql
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health || exit 1"
-          --health-start-period 1s
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    # ----
-    steps:
-      - uses: actions/checkout@v4
-      - uses: grafana/setup-k6-action@v1
-      # http tests
-      - uses: grafana/run-k6-action@v1
-        with:
-          path: ./tests/load/http/v1/auth_test.js
-          flags: --summary-export=k6-summary-http-v1.json
-        env:
-          HTTP_SERVER_ADDRESS: http://localhost:44443
-      # ----
-      - uses: actions/upload-artifact@v4
-        with:
-          name: k6-summary-http-v1
-          path: k6-summary-http-v1.json
-#      # ----
-#      - if: github.event_name == 'pull_request' && false
-#        uses: actions/github-script@v7
-#        with:
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          script: |
-#            const fs = require('fs');
-#
-#            const resultsHttpV1 = JSON.parse(fs.readFileSync('k6-summary-http-v1.json', 'utf8'));
-#
-#            const summary = `## Load Test Results
-#
-#            ### HTTP v1
-#
-#            | Metric          | Value  |
-#            |-----------------|--------|
-#            | Virtual Users   | ${resultsHttpV1.metrics.vus_max.value} max (${resultsHttpV1.metrics.vus.min}-${resultsHttpV1.metrics.vus.max}) |
-#            | Total Requests  | ${resultsHttpV1.metrics.http_reqs.count} @ ${resultsHttpV1.metrics.http_reqs.rate.toFixed(2)}/sec |
-#            | Response Time   | Avg: ${resultsHttpV1.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${resultsHttpV1.metrics.http_req_duration["p(95)"].toFixed(2)}ms |
-#            | Failed Requests | ${resultsHttpV1.metrics.http_req_failed.passes} (${(resultsHttpV1.metrics.http_req_failed.value * 100).toFixed(2)}%) |
-#            | Success Rate    | ${(resultsHttpV1.metrics.checks.passes / (resultsHttpV1.metrics.checks.passes + resultsHttpV1.metrics.checks.fails) * 100).toFixed(2)}% |
-#            `;
-#
-#            await github.rest.issues.createComment({
-#              issue_number: context.issue.number,
-#              owner: context.repo.owner,
-#              repo: context.repo.repo,
-#              body: summary
-#            });
-  load-tests-grpc:
-    # ----
-    name: load-tests-grpc
-    runs-on: ${{ inputs.runs_on }}
-    continue-on-error: ${{ inputs.continue_on_error }}
-    permissions:
-      packages: read
-      pull-requests: write
-      issues: write
-    # ----
-    services:
-      mysql:
-        image: mysql:latest
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_USER: user
-          MYSQL_PASSWORD: qwerty
-          MYSQL_DATABASE: go42
-          MYSQL_ROOT_PASSWORD: qwerty
-        options: >-
-          --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1"
-          --health-start-period 30s
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-      pgsql:
-        image: postgres:latest
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: qwerty
-          POSTGRES_DB: go42
-        options: >-
-          --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1"
-          --health-start-period 10s
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-      app:
-        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
-        ports:
-          - 44443:8080  # should be unique to avoid conflicts on self-hosted runners
-          - 55553:50051 # should be unique to avoid conflicts on self-hosted runners
-        env:
-          LOG_LEVEL: warn
-          ENVIRONMENT: ci-load-tests
+          ENVIRONMENT: ${{ matrix.env_name }}
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
-          SERVER_GRPC_AUTHORIZATION_ENABLED: false
-          DATABASE_ENGINE: ${{ inputs.database_engine || 'sqlite' }}
+          SERVER_GRPC_AUTHORIZATION_ENABLED: ${{ matrix.grpc_auth_enabled }}
+          DATABASE_ENGINE: ${{ matrix.database_engine }}
           DATABASE_MYSQL_MASTER_HOST: mysql
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
@@ -219,47 +180,50 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-    # ----
     steps:
       - uses: actions/checkout@v4
       - uses: grafana/setup-k6-action@v1
       - uses: grafana/run-k6-action@v1
         with:
-          path: ./tests/load/grpc/v1/auth_test.js
-          flags: --summary-export=k6-summary-grpc-v1.json
+          path: ${{ matrix.test_path }}
+          flags: --summary-export=k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
         env:
-          GRPC_SERVER_ADDRESS: localhost:55553
-      # ----
+          ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port) || format('localhost:{0}', matrix.grpc_port) }}
       - uses: actions/upload-artifact@v4
         with:
-          name: k6-summary-grpc-v1
-          path: k6-summary-grpc-v1.json
-#      # ----
-#      - if: github.event_name == 'pull_request'
-#        uses: actions/github-script@v7
-#        with:
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          script: |
-#            const fs = require('fs');
-#
-#            const resultsGrpcV1 = JSON.parse(fs.readFileSync('k6-summary-grpc-v1.json', 'utf8'));
-#
-#            const summary = `## Load Test Results
-#
-#            ### GRPC v1
-#
-#            | Metric          | Value |
-#            |-----------------|-------|
-#            | Virtual Users   | ${resultsGrpcV1.metrics.vus_max.value} max (${resultsGrpcV1.metrics.vus.min}-${resultsGrpcV1.metrics.vus.max}) |
-#            | Total Requests  | ${resultsGrpcV1.metrics.iterations.count} @ ${resultsGrpcV1.metrics.iterations.rate.toFixed(2)}/sec |
-#            | Response Time   | Avg: ${(resultsGrpcV1.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(resultsGrpcV1.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |
-#            | Failed Requests | ${resultsGrpcV1.metrics.checks.fails} (${(resultsGrpcV1.metrics.checks.fails / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}%) |
-#            | Success Rate    | ${(resultsGrpcV1.metrics.checks.passes / (resultsGrpcV1.metrics.checks.passes + resultsGrpcV1.metrics.checks.fails) * 100).toFixed(2)}% |
-#            `;
-#
-#            await github.rest.issues.createComment({
-#              issue_number: context.issue.number,
-#              owner: context.repo.owner,
-#              repo: context.repo.repo,
-#              body: summary
-#            });
+          name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
+          path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
+      - if: github.event_name == 'pull_request' && false
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const protocol = '${{ matrix.protocol }}';
+            const database = '${{ matrix.database }}';
+            const results = JSON.parse(fs.readFileSync(`k6-summary-${protocol}-${database}-v1.json`, 'utf8'));
+
+            let summary = `## Load Test Results - ${protocol.toUpperCase()} v1 (${database})\n\n`;
+            summary += '| Metric          | Value  |\n';
+            summary += '|-----------------|--------|\n';
+
+            if (protocol === 'http') {
+              summary += `| Virtual Users   | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |\n`;
+              summary += `| Total Requests  | ${results.metrics.http_reqs.count} @ ${results.metrics.http_reqs.rate.toFixed(2)}/sec |\n`;
+              summary += `| Response Time   | Avg: ${results.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${results.metrics.http_req_duration["p(95)"].toFixed(2)}ms |\n`;
+              summary += `| Failed Requests | ${results.metrics.http_req_failed.passes} (${(results.metrics.http_req_failed.value * 100).toFixed(2)}%) |\n`;
+            } else if (protocol === 'grpc') {
+              summary += `| Virtual Users   | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |\n`;
+              summary += `| Total Requests  | ${results.metrics.iterations.count} @ ${results.metrics.iterations.rate.toFixed(2)}/sec |\n`;
+              summary += `| Response Time   | Avg: ${(results.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(results.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |\n`;
+              summary += `| Failed Requests | ${results.metrics.checks.fails} (${(results.metrics.checks.fails / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}%) |\n`;
+            }
+
+            summary += `| Success Rate    | ${(results.metrics.checks.passes / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}% |\n`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

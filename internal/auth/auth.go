@@ -20,6 +20,7 @@ import (
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/hasansino/go42/internal/metrics"
 	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
 	"github.com/hasansino/go42/internal/tools"
 )
@@ -107,6 +108,13 @@ func NewService(
 }
 
 func (s *Service) SignUp(ctx context.Context, email string, password string) (*models.User, error) {
+	startTime := time.Now()
+	defer func() {
+		metrics.Histogram("auth_operation_duration_seconds", map[string]interface{}{
+			"operation": "signup",
+		}).Update(time.Since(startTime).Seconds())
+	}()
+
 	var (
 		err error
 	)
@@ -176,19 +184,36 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		span.SetStatus(codes.Ok, "user signed up")
 	}
 
+	metrics.Counter("auth_users_created_total", map[string]interface{}{
+		"method": "signup",
+	}).Inc()
+
 	return user, nil
 }
 
 func (s *Service) Login(ctx context.Context, email string, password string) (*domain.Tokens, error) {
+	startTime := time.Now()
+	defer func() {
+		metrics.Histogram("auth_operation_duration_seconds", map[string]interface{}{
+			"operation": "login",
+		}).Update(time.Since(startTime).Seconds())
+	}()
+
 	user, err := s.repository.GetUserByEmail(
 		ctx,
 		strings.ToLower(strings.TrimSpace(email)),
 	)
 	if err != nil {
+		metrics.Counter("auth_login_attempts_total", map[string]interface{}{
+			"result": "user_not_found",
+		}).Inc()
 		return nil, domain.ErrInvalidCredentials
 	}
 
 	if !user.IsActive() {
+		metrics.Counter("auth_login_attempts_total", map[string]interface{}{
+			"result": "user_inactive",
+		}).Inc()
 		return nil, domain.ErrInvalidCredentials
 	}
 
@@ -201,6 +226,9 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 			return nil
 		})
 	if err != nil {
+		metrics.Counter("auth_login_attempts_total", map[string]interface{}{
+			"result": "invalid_password",
+		}).Inc()
 		return nil, err
 	}
 
@@ -237,12 +265,26 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		span.SetStatus(codes.Ok, "user logged in")
 	}
 
+	metrics.Counter("auth_login_attempts_total", map[string]interface{}{
+		"result": "success",
+	}).Inc()
+
 	return tokens, nil
 }
 
 func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, error) {
-	claims, err := s.validateJWTTokenInternal(ctx, token)
+	startTime := time.Now()
+	defer func() {
+		metrics.Histogram("auth_operation_duration_seconds", map[string]interface{}{
+			"operation": "refresh",
+		}).Update(time.Since(startTime).Seconds())
+	}()
+
+	claims, err := s.validateJWTToken(ctx, token)
 	if err != nil {
+		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+			"result": "invalid_token",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -281,15 +323,19 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		span.SetStatus(codes.Ok, "user session refreshed")
 	}
 
+	metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+		"result": "success",
+	}).Inc()
+
 	return tokens, err
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.validateJWTTokenInternal(ctx, accessToken)
+	accessTokenClaims, err := s.validateJWTToken(ctx, accessToken)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.validateJWTTokenInternal(ctx, refreshToken)
+	refreshTokenClaims, err := s.validateJWTToken(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -479,9 +525,16 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	if len(s.jwtSecrets) > 3 {
 		s.jwtSecrets = s.jwtSecrets[len(s.jwtSecrets)-3:]
 	}
+
+	metrics.Gauge("auth_jwt_secrets_count", nil).Set(float64(len(s.jwtSecrets)))
+	metrics.Counter("auth_jwt_secret_rotations_total", nil).Inc()
 }
 
-func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+	startTime := time.Now()
+	defer func() {
+		metrics.Histogram("auth_jwt_validation_duration_seconds", nil).Update(time.Since(startTime).Seconds())
+	}()
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -501,15 +554,24 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 		return []byte(s.jwtSecrets[len(s.jwtSecrets)-1].secret), nil
 	})
 	if err != nil {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "parse_error",
+		}).Inc()
 		return nil, err
 	}
 
 	claims, ok := t.Claims.(*domain.JWTClaims)
 	if !ok || !t.Valid {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "invalid_token",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
 	if claims.ExpiresAt.Before(time.Now()) {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "expired",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -518,6 +580,9 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 			ctx, "failed to fetch cache: %w",
 			slog.Any("error", err))
 	} else if v == cacheValueInvalidatedToken {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "invalidated",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -530,13 +595,17 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 		span.SetStatus(codes.Ok, "jwt token validated successfully")
 	}
 
+	metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+		"result": "success",
+	}).Inc()
+
 	return claims, nil
 }
 
 // ValidateJWTTokenInternal validates a JWT token and returns full JWT claims
 // This is used by auth package components (middleware, HTTP adapter)
 func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*jwt.RegisteredClaims, error) {
-	claims, err := s.validateJWTTokenInternal(ctx, token)
+	claims, err := s.validateJWTToken(ctx, token)
 	if err != nil {
 		return nil, err
 	}
@@ -549,7 +618,7 @@ func (s *Service) ValidateJWTToken(ctx context.Context, token string) (string, e
 	return tools.TraceReturnTWithErr[string](
 		ctx, "auth.service", "validate_jwt_token",
 		func(ctx context.Context) (string, error) {
-			claims, err := s.validateJWTTokenInternal(ctx, token)
+			claims, err := s.validateJWTToken(ctx, token)
 			if err != nil {
 				return "", err
 			}
