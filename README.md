@@ -138,7 +138,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Security
 
-- redocly-cli is basically spyware - replace
+- `redocly-cli` is basically spyware - replace
 - github runner hardening (self-hosted and cloud)
 - PATs for github actions
 - tls connections and certificate management

@@ -131,7 +131,7 @@ type Zipkin struct {
 }
 
 type Jaeger struct {
-	DSN string `env:"TRACING_JAEGER_DSN" default:"http://localhost:14268/api/traces"`
+	GrpcHost string `env:"TRACING_JAEGER_GRPC_HOST" default:"localhost:4317"`
 }
 
 // ╭──────────────────────────────╮

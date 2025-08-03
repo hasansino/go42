@@ -26,7 +26,8 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -932,18 +933,20 @@ func initTracing(ctx context.Context, cfg *config.Config) ShutMeDown {
 		}
 		slog.Info("initialized zipkin tracing exporter", slog.String("dsn", cfg.Tracing.Zipkin.DSN))
 	case "jaeger":
-		exporter, err = jaeger.New(
-			jaeger.WithCollectorEndpoint(
-				jaeger.WithEndpoint(cfg.Tracing.Jaeger.DSN),
-				jaeger.WithHTTPClient(&http.Client{
-					Timeout: cfg.Tracing.Timeout,
-				}),
+		exporter, err = otlptrace.New(
+			ctx,
+			otlptracegrpc.NewClient(
+				otlptracegrpc.WithEndpoint(cfg.Tracing.Jaeger.GrpcHost),
+				otlptracegrpc.WithTimeout(cfg.Tracing.Timeout),
+				otlptracegrpc.WithInsecure(),
 			),
 		)
 		if err != nil {
-			log.Fatalf("failed to create jaeger collector exporter: %v", err)
+			log.Fatalf("failed to create jaeger OTLP exporter: %v", err)
 		}
-		slog.Info("initialized jaeger collector tracing exporter", slog.String("endpoint", cfg.Tracing.Jaeger.DSN))
+		slog.InfoContext(
+			ctx, "initialized jaeger OTLP tracing exporter",
+			slog.String("endpoint", cfg.Tracing.Jaeger.GrpcHost))
 	default:
 		log.Fatalf("unsupported tracing provider: %s", cfg.Tracing.Provider)
 	}
