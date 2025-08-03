@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
@@ -51,6 +53,11 @@ func StreamRequestIDInterceptor() grpc.StreamServerInterceptor {
 
 func extractOrGenerateRequestID(ctx context.Context) context.Context {
 	requestID := getRequestID(ctx)
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.SetAttributes(attribute.String("rpc.request_id", requestID))
+	}
+
 	return metadata.AppendToOutgoingContext(
 		tools.SetRequestIDToContext(ctx, requestID), headerNameRequestID, requestID)
 }

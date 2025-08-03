@@ -41,9 +41,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- switch from zipkin to jaeger or tempo
 - auth pkg metrics + dashboard
-- move all echo middleware to middleware package
 - security headers
   - Strict-Transport-Security (HSTS)
   - Content-Security-Policy (CSP) with configurable policies
@@ -66,7 +64,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - feature flags system
   - https://echo.labstack.com/docs/middleware/jaeger
 - circuit breaker (https://github.com/sony/gobreaker)
-- datadog integration
 - release annotations
 
 ### ദ്ദി( •̀ ᴗ - )
@@ -141,7 +138,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Security
 
-- redocly-cli is basically spyware - replace
+- `redocly-cli` is basically spyware - replace
 - github runner hardening (self-hosted and cloud)
 - PATs for github actions
 - tls connections and certificate management

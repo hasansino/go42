@@ -11,6 +11,7 @@ import (
 	"github.com/hasansino/go42/internal/auth/models"
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/database"
+	"github.com/hasansino/go42/internal/tools"
 )
 
 type cacheAccessor interface {
@@ -158,15 +159,27 @@ func (r *Repository) ListUsers(ctx context.Context, limit, offset int) ([]*model
 }
 
 func (r *Repository) GetUserByID(ctx context.Context, id int) (*models.User, error) {
-	return r.getUser(ctx, map[string]any{"id": id})
+	return tools.TraceReturnTWithErr[*models.User](
+		ctx, "auth", "auth.repository.GetUserByID",
+		func(ctx context.Context) (*models.User, error) {
+			return r.getUser(ctx, map[string]any{"id": id})
+		})
 }
 
 func (r *Repository) GetUserByUUID(ctx context.Context, uuid string) (*models.User, error) {
-	return r.getUser(ctx, map[string]any{"uuid": uuid})
+	return tools.TraceReturnTWithErr[*models.User](
+		ctx, "auth", "auth.repository.GetUserByUUID",
+		func(ctx context.Context) (*models.User, error) {
+			return r.getUser(ctx, map[string]any{"uuid": uuid})
+		})
 }
 
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	return r.getUser(ctx, map[string]any{"email": email})
+	return tools.TraceReturnTWithErr[*models.User](
+		ctx, "auth", "auth.repository.GetUserByEmail",
+		func(ctx context.Context) (*models.User, error) {
+			return r.getUser(ctx, map[string]any{"email": email})
+		})
 }
 
 func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*models.User, error) {

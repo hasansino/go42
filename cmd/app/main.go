@@ -26,6 +26,8 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	etcdClient "go.etcd.io/etcd/client/v3"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -97,14 +99,14 @@ func main() {
 	}
 
 	// core systems
-	initLogging(cfg)
+	initLogging(ctx, cfg)
 	initVault(ctx, cfg)
 	etcdCloser := initEtcd(ctx, cfg)
-	initLimits(cfg)
+	initLimits(ctx, cfg)
 	initSentry(ctx, cfg)
-	pprofCloser := initProfiling(cfg)
-	metricsHandler := initMetrics(cfg)
-	tracingCloser := initTracing(cfg)
+	pprofCloser := initProfiling(ctx, cfg)
+	metricsHandler := initMetrics(ctx, cfg)
+	tracingCloser := initTracing(ctx, cfg)
 
 	// database engine
 	var (
@@ -623,7 +625,7 @@ func main() {
 	)
 }
 
-func initLogging(cfg *config.Config) {
+func initLogging(_ context.Context, cfg *config.Config) {
 	var slogOutput io.Writer
 	switch cfg.Logger.LogOutput {
 	case "none":
@@ -781,7 +783,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) ShutMeDown {
 	return &ShutMeDownWrap{closer: client}
 }
 
-func initLimits(cfg *config.Config) {
+func initLimits(_ context.Context, cfg *config.Config) {
 	var err error
 	if cfg.Limits.AutoMaxProcsEnabled {
 		_, err = maxprocs.Set(maxprocs.Logger(log.Printf))
@@ -867,7 +869,7 @@ func initSentry(ctx context.Context, cfg *config.Config) ShutMeDown {
 	}
 }
 
-func initProfiling(cfg *config.Config) ShutMeDown {
+func initProfiling(_ context.Context, cfg *config.Config) ShutMeDown {
 	if !cfg.Pprof.Enabled {
 		slog.Warn("pprof is disabled")
 		return nil
@@ -904,7 +906,7 @@ func initProfiling(cfg *config.Config) ShutMeDown {
 	return server
 }
 
-func initMetrics(cfg *config.Config) http.Handler {
+func initMetrics(_ context.Context, cfg *config.Config) http.Handler {
 	hostname, _ := os.Hostname()
 	metrics.RegisterGlobalLabels(map[string]interface{}{
 		"service":     cfg.Core.ServiceName,
@@ -921,52 +923,94 @@ func initMetrics(cfg *config.Config) http.Handler {
 	})
 }
 
-func initTracing(cfg *config.Config) ShutMeDown {
+func initTracing(ctx context.Context, cfg *config.Config) ShutMeDown {
 	if !cfg.Tracing.Enable {
 		slog.Warn("tracing is disabled")
 		return nil
 	}
 
-	exporter, err := zipkin.New(
-		cfg.Tracing.DSN,
-		zipkin.WithClient(&http.Client{
-			Timeout: cfg.Tracing.Timeout,
-		}),
-	)
-	if err != nil {
-		log.Fatalf("failed to create exporter: %v", err)
-	}
-
-	// resource is collection of default labels
-	hostname, _ := os.Hostname()
 	res, err := resource.New(
-		context.Background(),
+		ctx,
 		resource.WithAttributes(
 			semconv.ServiceNameKey.String(cfg.Core.ServiceName),
 			semconv.ServiceVersionKey.String(xBuildTag),
 			semconv.DeploymentEnvironmentKey.String(cfg.Core.Environment),
-			semconv.HostNameKey.String(hostname),
 		),
+		resource.WithOS(),
+		resource.WithProcess(),
+		resource.WithContainer(),
+		resource.WithHost(),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create resource: %v", err)
+		log.Fatalf("failed to create resource: %v", err)
 	}
 
-	// provider creates new spans
+	var exporter sdktrace.SpanExporter
+
+	switch cfg.Tracing.Provider {
+	case "zipkin":
+		exporter, err = zipkin.New(
+			cfg.Tracing.Zipkin.DSN,
+			zipkin.WithClient(&http.Client{
+				Timeout: cfg.Tracing.Timeout,
+			}),
+		)
+		if err != nil {
+			log.Fatalf("failed to create zipkin exporter: %v", err)
+		}
+		slog.Info("initialized zipkin tracing exporter", slog.String("dsn", cfg.Tracing.Zipkin.DSN))
+	case "jaeger":
+		exporter, err = otlptrace.New(
+			ctx,
+			otlptracegrpc.NewClient(
+				otlptracegrpc.WithEndpoint(cfg.Tracing.Jaeger.GrpcHost),
+				otlptracegrpc.WithTimeout(cfg.Tracing.Timeout),
+				otlptracegrpc.WithInsecure(),
+			),
+		)
+		if err != nil {
+			log.Fatalf("failed to create jaeger OTLP exporter: %v", err)
+		}
+		slog.InfoContext(
+			ctx, "initialized jaeger OTLP tracing exporter",
+			slog.String("endpoint", cfg.Tracing.Jaeger.GrpcHost))
+	default:
+		log.Fatalf("unsupported tracing provider: %s", cfg.Tracing.Provider)
+	}
+
+	var sampler sdktrace.Sampler
+	if cfg.Tracing.SamplingRate <= 0 {
+		sampler = sdktrace.NeverSample()
+	} else if cfg.Tracing.SamplingRate >= 1 {
+		sampler = sdktrace.AlwaysSample()
+	} else {
+		sampler = sdktrace.TraceIDRatioBased(cfg.Tracing.SamplingRate)
+	}
+
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithBatcher(exporter),
+		sdktrace.WithSampler(sampler),
+		sdktrace.WithBatcher(exporter,
+			sdktrace.WithBatchTimeout(cfg.Tracing.Timeout),
+			sdktrace.WithMaxExportBatchSize(cfg.Tracing.MaxExportBatchSize),
+			sdktrace.WithMaxQueueSize(cfg.Tracing.MaxQueueSize),
+		),
 		sdktrace.WithResource(res),
 	)
+
 	otel.SetTracerProvider(tp)
 
-	// allow to propagate trace context through http requests
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		slog.ErrorContext(ctx, "otel error", slog.Any("error", err))
+	}))
+
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
 	))
 
-	slog.Info("tracing initialized")
+	slog.Info("tracing initialized",
+		slog.String("provider", cfg.Tracing.Provider),
+		slog.Float64("sampling_rate", cfg.Tracing.SamplingRate))
 
 	return tp
 }

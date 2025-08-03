@@ -13,6 +13,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	passwordvalidator "github.com/wagslane/go-password-validator"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/hasansino/go42/internal/auth/domain"
@@ -104,8 +107,19 @@ func NewService(
 }
 
 func (s *Service) SignUp(ctx context.Context, email string, password string) (*models.User, error) {
-	if err := s.CheckPasswordStrength(password); err != nil {
-		return nil, domain.ErrPasswordWeak
+	var (
+		err error
+	)
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "signup.checkpwd",
+		func(ctx context.Context) error {
+			if err := s.CheckPasswordStrength(password); err != nil {
+				return domain.ErrPasswordWeak
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
 	user := &models.User{
@@ -114,11 +128,19 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		Status: domain.UserStatusActive,
 	}
 
-	if err := user.SetPassword(password); err != nil {
-		return nil, fmt.Errorf("failed to set password: %w", err)
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "signup.setpswd",
+		func(ctx context.Context) error {
+			if err := user.SetPassword(password); err != nil {
+				return fmt.Errorf("failed to set password: %w", err)
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
-	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	err = s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		if err := s.repository.CreateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
@@ -144,6 +166,16 @@ func (s *Service) SignUp(ctx context.Context, email string, password string) (*m
 		return nil, err
 	}
 
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_signup_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user signed up")
+	}
+
 	return user, nil
 }
 
@@ -160,11 +192,24 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.Password.V), []byte(password)) != nil {
-		return nil, domain.ErrInvalidCredentials
+	err = tools.TraceReturnErr(
+		ctx, "auth.service", "login.CompareHashAndPassword",
+		func(ctx context.Context) error {
+			if bcrypt.CompareHashAndPassword([]byte(user.Password.V), []byte(password)) != nil {
+				return domain.ErrInvalidCredentials
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, err
 	}
 
-	tokens, err := s.generateTokens(user.UUID.String())
+	tokens, err := tools.TraceReturnTWithErr[*domain.Tokens](
+		ctx, "auth.service", "login.generate_tokens",
+		func(ctx context.Context) (*domain.Tokens, error) {
+			return s.generateTokens(user.UUID.String())
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
@@ -180,6 +225,16 @@ func (s *Service) Login(ctx context.Context, email string, password string) (*do
 			slog.Any("event", event),
 			slog.Any("error", err),
 		)
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_login_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user logged in")
 	}
 
 	return tokens, nil
@@ -206,7 +261,27 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		return nil, domain.ErrInvalidToken
 	}
 
-	return s.generateTokens(user.UUID.String())
+	tokens, err := tools.TraceReturnTWithErr[*domain.Tokens](
+		ctx, "auth.service", "login.generate_tokens",
+		func(ctx context.Context) (*domain.Tokens, error) {
+			return s.generateTokens(user.UUID.String())
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate tokens: %w", err)
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_refresh_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user session refreshed")
+	}
+
+	return tokens, err
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
@@ -243,6 +318,16 @@ func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) 
 			slog.Any("event", event),
 			slog.Any("error", err),
 		)
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("user_logout_completed",
+			trace.WithAttributes(
+				attribute.Int("user.id", user.ID),
+				attribute.String("user.uuid", user.UUID.String()),
+			),
+		)
+		span.SetStatus(codes.Ok, "user logged out")
 	}
 
 	return nil
@@ -436,6 +521,15 @@ func (s *Service) validateJWTTokenInternal(ctx context.Context, token string) (*
 		return nil, domain.ErrInvalidToken
 	}
 
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("jwt_token_validated",
+			trace.WithAttributes(
+				attribute.String("jwt.claims.user.uuid", claims.Subject),
+			),
+		)
+		span.SetStatus(codes.Ok, "jwt token validated successfully")
+	}
+
 	return claims, nil
 }
 
@@ -452,21 +546,37 @@ func (s *Service) ValidateJWTTokenInternal(ctx context.Context, token string) (*
 // ValidateJWTToken validates a JWT token and returns the user UUID from claims
 // This implements the AuthService interface for external systems
 func (s *Service) ValidateJWTToken(ctx context.Context, token string) (string, error) {
-	claims, err := s.validateJWTTokenInternal(ctx, token)
-	if err != nil {
-		return "", err
-	}
-	return claims.Subject, nil
+	return tools.TraceReturnTWithErr[string](
+		ctx, "auth.service", "validate_jwt_token",
+		func(ctx context.Context) (string, error) {
+			claims, err := s.validateJWTTokenInternal(ctx, token)
+			if err != nil {
+				return "", err
+			}
+			return claims.Subject, nil
+		})
 }
 
 // GetBasicUserInfo returns basic user information by UUID
 // This implements the AuthService interface for external systems
 func (s *Service) GetBasicUserInfo(ctx context.Context, uuid string) (string, string, error) {
-	user, err := s.GetUserByUUID(ctx, uuid)
+	type result struct {
+		uuid  string
+		email string
+	}
+	res, err := tools.TraceReturnTWithErr[result](
+		ctx, "auth.service", "get_basic_user_info",
+		func(ctx context.Context) (result, error) {
+			user, err := s.GetUserByUUID(ctx, uuid)
+			if err != nil {
+				return result{}, err
+			}
+			return result{uuid: user.UUID.String(), email: user.Email}, nil
+		})
 	if err != nil {
 		return "", "", err
 	}
-	return user.UUID.String(), user.Email, nil
+	return res.uuid, res.email, nil
 }
 
 func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until time.Time) error {
@@ -533,6 +643,14 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 // ----
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
+	return tools.TraceReturnTWithErr[*models.Token](
+		ctx, "auth.service", "validate_jwt_token",
+		func(ctx context.Context) (*models.Token, error) {
+			return s.validateAPIToken(ctx, token)
+		})
+}
+
+func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.Token, error) {
 	apiToken, err := s.repository.GetToken(ctx, strToSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
@@ -547,6 +665,16 @@ func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.T
 	default:
 		// if channel is full, we discard payload and record warning
 		s.logger.WarnContext(ctx, "auth.tokensUsedChan overflow")
+	}
+
+	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
+		span.AddEvent("jwt_token_validated",
+			trace.WithAttributes(
+				attribute.Int("token.id", apiToken.ID),
+				attribute.Int("token.user_id", apiToken.UserID),
+			),
+		)
+		span.SetStatus(codes.Ok, "api token validated")
 	}
 
 	return apiToken, nil
