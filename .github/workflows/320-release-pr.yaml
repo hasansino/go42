@@ -107,6 +107,12 @@ jobs:
           BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
           TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
           
+          # Ensure variables are integers (remove any whitespace/newlines)
+          FEATURES=$(echo "$FEATURES" | tr -d '[:space:]')
+          FIXES=$(echo "$FIXES" | tr -d '[:space:]')
+          BREAKING=$(echo "$BREAKING" | tr -d '[:space:]')
+          TOTAL=$(echo "$TOTAL" | tr -d '[:space:]')
+          
           # Prepare the prompt for LLM
           PROMPT=$(cat <<EOF
           Generate a concise and professional release summary for version $CURRENT_TAG based on the following git commits.
@@ -164,7 +170,8 @@ jobs:
             echo "::debug::Rate limit response: $RATE_LIMIT_RESPONSE"
           fi
           
-          MODELS_API_REMAINING=$(echo "$RATE_LIMIT_RESPONSE" | jq -r '.resources.code_scanning_upload.remaining // 1000')
+          # GitHub Models API uses the general API rate limit
+          MODELS_API_REMAINING=$(echo "$RATE_LIMIT_RESPONSE" | jq -r '.rate.remaining // 1000')
           
           if [ "$MODELS_API_REMAINING" -gt 0 ]; then
             echo "GitHub Models API rate limit remaining: $MODELS_API_REMAINING"
@@ -196,7 +203,7 @@ jobs:
             fi
             
             # Call GitHub Models API
-            API_RESPONSE=$(curl -s -X POST "https://api.github.com/models/inference/chat/completions" \
+            API_RESPONSE=$(curl -s -X POST "https://api.github.com/chat/completions" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
