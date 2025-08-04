@@ -8,10 +8,12 @@ help: Makefile
 
 ## setup | install dependencies
 # Prerequisites: brew, go
-# Used by github copilot to setup its environment.
+# @note used by github copilot to setup its environment.
+# @note `golines` is required to format go files on save, but linting is done by golangci-lint.
 setup:
 	@go mod tidy -e && go mod download
-	@brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale yq grpcui k6 sqlfluff
+	@brew install golangci-lint hadolint markdownlint-cli2 vale gitleaks \
+	sqlfluff buf redocly-cli yq grpcui k6
 	@vale --config etc/.vale.ini sync
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
@@ -115,13 +117,15 @@ lint:
 	@echo "Linting markdown files..."
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
 	@echo "Linting writing..."
-	@vale --no-exit --config etc/.vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/ || true
-	@echo "Linting SQL files..."
-	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
-	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
-	@sqlfluff lint --config etc/.sqlfluff --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
-	@echo "Linting action files..."
-	@actionlint -oneline
+	@vale --no-exit --config etc/vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/ || true
+	@echo "Linting SQL migrations..."
+	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
+	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
+	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
+	@echo "Linting github actions..."
+	@actionlint -oneline --config-file etc/actionlint.yaml
+	@echo "Scanning for secrets..."
+	@gitleaks git --config etc/gitleaks.toml --gitleaks-ignore-path='etc/.gitleaksignore' --no-banner --redact -v || true
 
 ## generate | generate code for all modules
 # Dependencies:

@@ -41,7 +41,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- release annotations
+- release annotations for load tests
 - run make generate in CI/CD to check for changes in generated files
 - workflow running on schedule to clean up docker registry
 - generate release summary with llm
@@ -122,6 +122,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - dead letter queues
 - release rollback automation
 - feature flags system
+- release annotations to grafana dashboards
 
 ### Explore
 

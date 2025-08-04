@@ -41,3 +41,4 @@ jobs:
       - uses: raven-actions/actionlint@v2
         with:
           version: latest
+          flags: --config-file etc/actionlint.yaml

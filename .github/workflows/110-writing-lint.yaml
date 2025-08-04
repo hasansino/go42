@@ -41,6 +41,6 @@ jobs:
         with:
           fail_on_error: true
           files: '["README.md","CONVENTIONS.md","internal/","cmd/","pkg/","tests/"]'
-          vale_flags: "--config etc/.vale.ini"
+          vale_flags: "--config etc/vale.ini"
 
 
