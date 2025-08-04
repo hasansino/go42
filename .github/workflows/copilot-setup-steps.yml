@@ -23,16 +23,9 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-#      - uses: actions/cache@v4
-#        with:
-#          path: |
-#            ~/.cache/go-build
-#            ~/go/pkg/mod
-#          key: golang-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
-#          restore-keys: |
-#            golang-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-version.outputs.version }}-
-#            golang-${{ runner.os }}-${{ runner.arch }}-
-#            golang-${{ runner.os }}-
+          cache-dependency-path: |
+            **/go.sum
+            **/go.mod
       # -----
       - run: go mod tidy && go mod download
       # -----
