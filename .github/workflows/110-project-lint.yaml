@@ -49,7 +49,11 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+          key: golang-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            golang-${{ runner.os }}-${{ runner.arch }}-${{ steps.go-version.outputs.version }}-
+            golang-${{ runner.os }}-${{ runner.arch }}-
+            golang-${{ runner.os }}-
       # -----
       - run: go mod tidy && go mod download
       # -----
@@ -59,8 +63,9 @@ jobs:
           path: |
             /home/linuxbrew/.linuxbrew
             /home/linuxbrew/.cache/Homebrew
-          key: homebrew-${{ runner.os }}-${{ hashFiles('Makefile') }}
+          key: homebrew-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
           restore-keys: |
+            homebrew-${{ runner.os }}-${{ runner.arch }}-
             homebrew-${{ runner.os }}-
       # -----
       - uses: Homebrew/actions/setup-homebrew@main
