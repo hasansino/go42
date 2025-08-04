@@ -36,16 +36,6 @@ services:
     ports:
       - "11211:11211"
 
-  aerospike:
-    image: aerospike:ce-8.0.0.8
-    configs:
-      - source: aerospike_cfg
-        target: /opt/aerospike/etc/aerospike.conf
-        mode: 0644
-    command: ["--config-file", "/opt/aerospike/etc/aerospike.conf"]
-    ports:
-      - "3000:3000"
-
   # --- event buses ---
 
   nats:

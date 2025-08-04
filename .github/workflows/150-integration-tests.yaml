@@ -67,7 +67,7 @@ jobs:
             database_engine: pgsql
             app_port: 44444
             grpc_port: 55554
-    # ---
+    # ----
     services:
       mysql:
         image: ${{ matrix.database == 'mysql' && 'mysql:latest' || '' }}
@@ -121,7 +121,7 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-    # ---
+    # ----
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

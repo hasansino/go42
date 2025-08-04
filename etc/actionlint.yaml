@@ -1,0 +1,5 @@
+config-variables:
+  - CUSTOM_ENVIRONMENT_VARIABLE
+
+paths:
+  .github/workflows/*.{yml,yaml}:

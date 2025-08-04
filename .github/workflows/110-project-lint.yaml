@@ -1,0 +1,81 @@
+name: project-lint
+
+# Linter specific to current project.
+# This workflow checks for uncommitted changes after running 'make generate'.
+# It is used to ensure that the relevant generated files are committed to the repository.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+        description: "runs_on"
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: "continue_on_error"
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+      continue_on_error:
+        required: true
+        type: boolean
+
+permissions: {}
+
+jobs:
+  project-lint:
+    name: project-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+    # -----
+    steps:
+      - uses: actions/checkout@v4
+      # -----
+      - id: go-version
+        run: echo "version=$(grep '^go ' go.mod | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+      # -----
+      - run: go mod tidy && go mod download
+      # -----
+      - uses: actions/cache@v4
+        with:
+          path: |
+            $(brew --cache)
+            /usr/local/Cellar
+            /opt/homebrew/Cellar
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+      # -----
+      - uses: Homebrew/actions/setup-homebrew@main
+      # -----
+      - run: |
+          make setup
+          make generate
+      - run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "❌ Uncommitted changes detected after running 'make generate'"
+            echo "The following files have changes:"
+            git status --porcelain
+            echo ""
+            echo "Please run 'make setup && make generate' locally and commit the changes."
+            exit 1
+          else
+            echo "✅ No uncommitted changes detected"
+          fi

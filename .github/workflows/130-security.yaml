@@ -42,7 +42,7 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,6 +51,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+          GITLEAKS_CONFIG: etc/gitleaks.toml
+          GITLEAKS_VERSION: latest
 
   gosec:
     name: gosec
@@ -61,7 +63,7 @@ jobs:
       security-events: write
     env:
       GO111MODULE: on
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
       - uses: securego/gosec@master
@@ -74,7 +76,7 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
       - run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
@@ -90,10 +92,10 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
-      # ----
+      # -----
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
@@ -110,10 +112,10 @@ jobs:
       contents: read
       security-events: write
       actions: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
-      # ----
+      # -----
       - uses: github/codeql-action/init@v3
         with:
           languages: go
@@ -126,7 +128,7 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
       - uses: joeig/go-licenses-action@v1.1
@@ -143,7 +145,7 @@ jobs:
       contents: read
       id-token: write
       security-events: write
-    # ---
+    # ----
     steps:
       - uses: actions/checkout@v4
       - uses: ossf/scorecard-action@v2.4.2
@@ -169,7 +171,7 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
         with:
@@ -180,6 +182,6 @@ jobs:
       - run: go install github.com/google/capslock/cmd/capslock@latest
       - run: capslock -packages ./... -output=json > capabilities.json
       - run: mv capabilities.json /tmp/capabilities.json
-      # ----
+      # -----
       - uses: actions/checkout@v4
       - run: capslock -packages ./... -output=compare /tmp/capabilities.json

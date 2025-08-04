@@ -34,13 +34,13 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ---
+    # ----
     steps:
       - uses: actions/checkout@v4
       - uses: errata-ai/vale-action@v2.1.1
         with:
           fail_on_error: true
           files: '["README.md","CONVENTIONS.md","internal/","cmd/","pkg/","tests/"]'
-          vale_flags: "--config etc/.vale.ini"
+          vale_flags: "--config etc/vale.ini"
 
 

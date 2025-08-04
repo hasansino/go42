@@ -50,9 +50,9 @@ jobs:
           - database: pgsql
             dialect: postgres
             path: migrate/pgsql/*.sql
-    # ----
+    # -----
     steps:
       - uses: actions/checkout@v4
-      # ----
+      # -----
       - run: pip install sqlfluff
-      - run: sqlfluff lint --config etc/.sqlfluff ${{ matrix.path }} --dialect ${{ matrix.dialect }}
+      - run: sqlfluff lint --config etc/sqlfluff.toml ${{ matrix.path }} --dialect ${{ matrix.dialect }}
