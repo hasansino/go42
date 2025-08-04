@@ -125,7 +125,7 @@ lint:
 	@echo "Linting github actions..."
 	@actionlint -oneline --config-file etc/actionlint.yaml
 	@echo "Scanning for secrets..."
-	@gitleaks git --config etc/gitleaks.toml --gitleaks-ignore-path='etc/.gitleaksignore' --no-banner --redact -v || true
+	@gitleaks git --config etc/gitleaks.toml --no-banner --redact -v || true
 
 ## generate | generate code for all modules
 # Dependencies:
