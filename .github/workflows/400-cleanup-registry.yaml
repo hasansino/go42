@@ -20,13 +20,9 @@ on:
         required: false
         type: boolean
         default: false
-      package_name:
-        description: 'Package name to cleanup (leave empty for all)'
-        required: false
-        type: string
-        default: ''
 
 env:
+  SERVICE_NAME: go42
   DEFAULT_RETENTION_DAYS: 30
 
 permissions: {}
@@ -46,13 +42,11 @@ jobs:
             {
               echo "retention_days=${{ env.DEFAULT_RETENTION_DAYS }}"
               echo "dry_run=false"
-              echo "package_name="
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "retention_days=${{ inputs.retention_days }}"
               echo "dry_run=${{ inputs.dry_run }}"
-              echo "package_name=${{ inputs.package_name }}"
             } >> "$GITHUB_OUTPUT"
           fi
       
@@ -60,11 +54,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
+          PACKAGE_NAME: ${{ env.SERVICE_NAME }}
           RETENTION_DAYS: ${{ steps.config.outputs.retention_days }}
           DRY_RUN: ${{ steps.config.outputs.dry_run }}
-          PACKAGE_NAME: ${{ steps.config.outputs.package_name }}
         run: |
-          echo "Starting registry cleanup..."
+          echo "Starting registry cleanup for $PACKAGE_NAME..."
+          echo "Repository: ghcr.io/$OWNER/$PACKAGE_NAME"
           echo "Retention period: $RETENTION_DAYS days"
           echo "Dry run: $DRY_RUN"
           
@@ -76,121 +71,117 @@ jobs:
           fi
           echo "Cutoff date: $CUTOFF_DATE"
           
-          # Get list of packages
-          if [ -n "$PACKAGE_NAME" ]; then
-            PACKAGES="$PACKAGE_NAME"
-            echo "Processing specific package: $PACKAGE_NAME"
-          else
-            echo "Fetching all packages..."
-            response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/users/$OWNER/packages?package_type=container&per_page=100")
-            
-            http_code=$(echo "$response" | tail -n1)
-            packages_json=$(echo "$response" | sed '$ d')
-            
-            if [ "$http_code" != "200" ]; then
-              echo "Error fetching packages: HTTP status $http_code"
-              echo "Response: $packages_json"
-              exit 1
-            fi
-            
-            PACKAGES=$(echo "$packages_json" | jq -r '.[].name')
-            echo "Found $(echo "$PACKAGES" | wc -l) packages"
-          fi
-          
-          # Process each package
+          # Process the package
           total_deleted=0
           total_size_saved=0
           
-          for package in $PACKAGES; do
-            echo ""
-            echo "Processing package: $package"
+          echo ""
+          echo "Processing package: $PACKAGE_NAME"
+          
+          # Fetch all versions
+          page=1
+          all_versions=""
+          
+          while true; do
+            # Try org endpoint first, then user endpoint
+            response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
             
-            # Fetch all versions
-            page=1
-            all_versions=""
+            http_code=$(echo "$response" | tail -n1)
             
-            while true; do
+            # If org endpoint fails with 404, try user endpoint
+            if [ "$http_code" = "404" ]; then
               response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/users/$OWNER/packages/container/$package/versions?per_page=100&page=$page")
-              
-              http_code=$(echo "$response" | tail -n1)
-              versions=$(echo "$response" | sed '$ d')
-              
-              if [ "$http_code" != "200" ]; then
-                echo "Error fetching versions for $package: HTTP status $http_code"
-                break
-              fi
-              
-              # Check if we got any data
-              version_count=$(echo "$versions" | jq '. | length')
-              if [ "$version_count" -eq 0 ]; then
-                break
-              fi
-              
-              all_versions="$all_versions$versions"
-              page=$((page + 1))
-            done
-            
-            if [ -z "$all_versions" ]; then
-              echo "No versions found for $package"
-              continue
+                "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
             fi
             
-            # Find old versions to delete
-            old_versions=$(echo "$all_versions" | jq -c --arg cutoff "$CUTOFF_DATE" '.[] | 
-              select(.updated_at < $cutoff) | 
-              select(.metadata.container.tags | length == 0 or (.metadata.container.tags | all(. != "latest" and . != "master" and . != "main")))')
+            http_code=$(echo "$response" | tail -n1)
+            versions=$(echo "$response" | sed '$ d')
             
-            if [ -z "$old_versions" ]; then
-              echo "No old versions to delete for $package"
-              continue
+            if [ "$http_code" != "200" ]; then
+              echo "Error fetching versions for $PACKAGE_NAME: HTTP status $http_code"
+              exit 1
             fi
             
-            # Process deletions
-            package_deleted=0
-            package_size_saved=0
+            # Check if we got any data
+            version_count=$(echo "$versions" | jq '. | length')
+            if [ "$version_count" -eq 0 ]; then
+              break
+            fi
             
-            echo "$old_versions" | while IFS= read -r version; do
-              version_id=$(echo "$version" | jq -r '.id')
-              version_name=$(echo "$version" | jq -r '.name')
-              version_size=$(echo "$version" | jq -r '.size // 0')
-              version_tags=$(echo "$version" | jq -r '.metadata.container.tags // [] | join(", ")')
-              updated_at=$(echo "$version" | jq -r '.updated_at')
+            all_versions="$all_versions$versions"
+            page=$((page + 1))
+          done
+          
+          if [ -z "$all_versions" ]; then
+            echo "No versions found for $PACKAGE_NAME"
+            exit 0
+          fi
+          
+          # Find old versions to delete
+          old_versions=$(echo "$all_versions" | jq -c --arg cutoff "$CUTOFF_DATE" '.[] | 
+            select(.updated_at < $cutoff) | 
+            select(.metadata.container.tags | length == 0 or (.metadata.container.tags | all(. != "latest" and . != "master" and . != "main")))')
+          
+          if [ -z "$old_versions" ]; then
+            echo "No old versions to delete for $PACKAGE_NAME"
+            exit 0
+          fi
+          
+          # Process deletions
+          package_deleted=0
+          package_size_saved=0
+          
+          echo "$old_versions" | while IFS= read -r version; do
+            version_id=$(echo "$version" | jq -r '.id')
+            version_name=$(echo "$version" | jq -r '.name')
+            version_size=$(echo "$version" | jq -r '.size // 0')
+            version_tags=$(echo "$version" | jq -r '.metadata.container.tags // [] | join(", ")')
+            updated_at=$(echo "$version" | jq -r '.updated_at')
+            
+            echo "  - Version: $version_name (ID: $version_id)"
+            echo "    Updated: $updated_at"
+            echo "    Size: $((version_size / 1024 / 1024)) MB"
+            [ -n "$version_tags" ] && echo "    Tags: $version_tags"
+            
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "    [DRY RUN] Would delete this version"
+            else
+              # Try org endpoint first, then user endpoint
+              delete_response=$(curl -s -w "%{http_code}" -X DELETE \
+                -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions/$version_id")
               
-              echo "  - Version: $version_name (ID: $version_id)"
-              echo "    Updated: $updated_at"
-              echo "    Size: $((version_size / 1024 / 1024)) MB"
-              [ -n "$version_tags" ] && echo "    Tags: $version_tags"
+              delete_http_code=$(echo "$delete_response" | tail -n1)
               
-              if [ "$DRY_RUN" = "true" ]; then
-                echo "    [DRY RUN] Would delete this version"
-              else
+              # If org endpoint fails with 404, try user endpoint
+              if [ "$delete_http_code" = "404" ]; then
                 delete_response=$(curl -s -w "%{http_code}" -X DELETE \
                   -H "Authorization: Bearer $GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
-                  "https://api.github.com/users/$OWNER/packages/container/$package/versions/$version_id")
-                
-                delete_http_code=$(echo "$delete_response" | tail -n1)
-                
-                if [ "$delete_http_code" = "204" ]; then
-                  echo "    ✓ Deleted successfully"
-                  package_deleted=$((package_deleted + 1))
-                  package_size_saved=$((package_size_saved + version_size))
-                else
-                  echo "    ✗ Failed to delete (HTTP $delete_http_code)"
-                fi
+                  "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions/$version_id")
               fi
-            done
-            
-            if [ "$DRY_RUN" != "true" ] && [ "$package_deleted" -gt 0 ]; then
-              echo "  Deleted ${package_deleted:-0} versions from $package, saved $((package_size_saved / 1024 / 1024)) MB"
-              total_deleted=$((total_deleted + package_deleted))
-              total_size_saved=$((total_size_saved + package_size_saved))
+              
+              delete_http_code=$(echo "$delete_response" | tail -n1)
+              
+              if [ "$delete_http_code" = "204" ]; then
+                echo "    ✓ Deleted successfully"
+                package_deleted=$((package_deleted + 1))
+                package_size_saved=$((package_size_saved + version_size))
+              else
+                echo "    ✗ Failed to delete (HTTP $delete_http_code)"
+              fi
             fi
           done
+          
+          if [ "$DRY_RUN" != "true" ] && [ "${package_deleted:-0}" -gt 0 ]; then
+            echo "  Deleted ${package_deleted:-0} versions from $PACKAGE_NAME, saved $((package_size_saved / 1024 / 1024)) MB"
+            total_deleted=$((total_deleted + package_deleted))
+            total_size_saved=$((total_size_saved + package_size_saved))
+          fi
           
           # Summary
           echo ""
@@ -215,12 +206,9 @@ jobs:
           {
             echo "# 🧹 Registry Cleanup Report"
             echo ""
+            echo "**Package:** ghcr.io/${{ github.repository_owner }}/${{ env.SERVICE_NAME }}"
             echo "**Run Type:** ${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }}"
             echo "**Retention Period:** $RETENTION_DAYS days"
             echo "**Mode:** ${{ env.DRY_RUN == 'true' && 'Dry Run' || 'Live' }}"
             echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-            echo ""
-            if [ -f cleanup_summary.txt ]; then
-              cat cleanup_summary.txt
-            fi
           } >> "$GITHUB_STEP_SUMMARY"
