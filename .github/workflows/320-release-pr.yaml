@@ -178,23 +178,19 @@ jobs:
           # Generate release summary using GitHub Models API
           echo "Generating release summary using GitHub Models API with model: $LLM_MODEL"
           
-          # Check rate limit first
-          RATE_LIMIT_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/rate_limit")
+          # Note: GitHub Models API has its own rate limiting separate from the general API
+          # We'll proceed with the request and handle rate limit errors if they occur
+          echo "Calling GitHub Models API..."
           
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::Rate limit response: $RATE_LIMIT_RESPONSE"
+          # Validate GitHub token
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "::error::GITHUB_TOKEN is not set"
+            SUMMARY=""
+            exit 1
           fi
           
-          # GitHub Models API uses the general API rate limit
-          MODELS_API_REMAINING=$(echo "$RATE_LIMIT_RESPONSE" | jq -r '.rate.remaining // 1000')
-          
-          if [ "$MODELS_API_REMAINING" -gt 0 ]; then
-            echo "GitHub Models API rate limit remaining: $MODELS_API_REMAINING"
-            
-            # Prepare JSON payload for GitHub Models API
-            JSON_PAYLOAD=$(jq -n \
+          # Prepare JSON payload for GitHub Models API
+          JSON_PAYLOAD=$(jq -n \
               --arg model "$LLM_MODEL" \
               --arg prompt "$PROMPT" \
               '{
@@ -213,51 +209,65 @@ jobs:
                 "max_tokens": 1000,
                 "stream": false
               }')
-            
-            if [ "${{ inputs.debug }}" = "true" ]; then
-              echo "::debug::API Request payload:"
-              echo "$JSON_PAYLOAD" | jq '.'
+          
+          if [ "${{ inputs.debug }}" = "true" ]; then
+            echo "::debug::API Request payload:"
+            echo "$JSON_PAYLOAD" | jq '.'
+          fi
+          
+          # Call GitHub Models API
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d "$JSON_PAYLOAD")
+          
+          # Extract HTTP status code and response body
+          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
+          
+          if [ "${{ inputs.debug }}" = "true" ]; then
+            echo "::debug::HTTP Response Code: $HTTP_CODE"
+            echo "::debug::API Response (first 1000 chars):"
+            echo "${RESPONSE_BODY:0:1000}"
+            echo "::debug::Full API Response:"
+            echo "$RESPONSE_BODY" | jq '.' || echo "$RESPONSE_BODY"
+          fi
+          
+          # Check HTTP status code
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::GitHub Models API returned HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "429" ]; then
+              echo "::warning::Rate limit exceeded. Using fallback."
+            elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
+              echo "::warning::Authentication or permission issue. Check if 'models: read' permission is granted."
             fi
-            
-            # Call GitHub Models API
-            API_RESPONSE=$(curl -s -X POST "https://models.github.ai/inference/chat/completions" \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              -d "$JSON_PAYLOAD")
-            
-            if [ "${{ inputs.debug }}" = "true" ]; then
-              echo "::debug::API Response status: $?"
-              echo "::debug::API Response (first 1000 chars):"
-              echo "${API_RESPONSE:0:1000}"
-              echo "::debug::Full API Response:"
-              echo "$API_RESPONSE" | jq '.' || echo "$API_RESPONSE"
+          fi
+          
+          # Check if response contains an error
+          ERROR_MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.error.message // empty')
+          
+          if [ -n "$ERROR_MESSAGE" ]; then
+            echo "::warning::GitHub Models API error: $ERROR_MESSAGE"
+            # Check if it's a rate limit error
+            if [[ "$ERROR_MESSAGE" == *"rate limit"* ]] || [[ "$ERROR_MESSAGE" == *"quota"* ]]; then
+              echo "::warning::GitHub Models API rate limit exceeded. Using fallback."
             fi
+            SUMMARY=""
+          else
+            # Extract the summary from response
+            SUMMARY=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
             
-            # Check if response contains an error
-            ERROR_MESSAGE=$(echo "$API_RESPONSE" | jq -r '.error.message // empty')
-            
-            if [ -n "$ERROR_MESSAGE" ]; then
-              echo "::warning::GitHub Models API error: $ERROR_MESSAGE"
-              SUMMARY=""
+            if [ -z "$SUMMARY" ]; then
+              echo "::warning::Failed to generate summary using GitHub Models API. Using fallback."
             else
-              # Extract the summary from response
-              SUMMARY=$(echo "$API_RESPONSE" | jq -r '.choices[0].message.content // empty')
-              
-              if [ -z "$SUMMARY" ]; then
-                echo "::warning::Failed to generate summary using GitHub Models API. Using fallback."
-              else
-                echo "Successfully generated summary using GitHub Models API"
-                if [ "${{ inputs.debug }}" = "true" ]; then
-                  echo "::debug::Generated summary:"
-                  echo "$SUMMARY"
-                fi
+              echo "Successfully generated summary using GitHub Models API"
+              if [ "${{ inputs.debug }}" = "true" ]; then
+                echo "::debug::Generated summary:"
+                echo "$SUMMARY"
               fi
             fi
-          else
-            echo "::warning::GitHub Models API rate limit exceeded. Using fallback."
-            SUMMARY=""
           fi
           
           # Fallback to basic summary if LLM fails or is not configured
