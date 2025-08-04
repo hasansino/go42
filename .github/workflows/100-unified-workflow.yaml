@@ -47,7 +47,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/100-git-lint.yaml
+    uses: ./.github/workflows/110-git-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -57,7 +57,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/110-golangci-lint.yaml
+    uses: ./.github/workflows/110-golangci-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -67,27 +67,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/120-docker-lint.yaml
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: true
-
-  sql-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/130-sql-lint.yaml
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: true
-
-  openapi-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/140-openapi-lint.yaml
+    uses: ./.github/workflows/110-docker-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -97,7 +77,17 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/linters/150-proto-lint.yaml
+    uses: ./.github/workflows/110-proto-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+
+  openapi-lint:
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      ( github.event.head_commit.message != 'initial commit' 
+      && !startsWith(github.event.head_commit.message, 'auto-release-'))
+    uses: ./.github/workflows/110-openapi-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -107,7 +97,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/610-markdown-lint.yaml
+    uses: ./.github/workflows/110-markdown-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -117,7 +107,7 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/170-writing-lint.yaml
+    uses: ./.github/workflows/110-writing-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -127,7 +117,17 @@ jobs:
       github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
       ( github.event.head_commit.message != 'initial commit' 
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
-    uses: ./.github/workflows/180-action-lint.yaml
+    uses: ./.github/workflows/110-action-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+
+  sql-lint:
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
+      ( github.event.head_commit.message != 'initial commit' 
+      && !startsWith(github.event.head_commit.message, 'auto-release-'))
+    uses: ./.github/workflows/110-sql-lint.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
