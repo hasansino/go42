@@ -39,7 +39,6 @@ jobs:
       attestations: write
       id-token: write
       pull-requests: write
-      models: read
     # ----
     steps:
       - uses: actions/checkout@v4
