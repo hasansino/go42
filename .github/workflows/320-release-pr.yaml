@@ -22,6 +22,11 @@ on:
       llm_summary:
         required: true
         type: boolean
+      debug:
+        description: 'Enable debug mode to show API responses'
+        required: false
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -99,10 +104,10 @@ jobs:
           fi
           
           # Count different types of changes
-          FEATURES=$(echo "$COMMITS" | grep -E "^- (feat|feature):" | wc -l || echo "0")
-          FIXES=$(echo "$COMMITS" | grep -E "^- (fix|bugfix):" | wc -l || echo "0")
-          BREAKING=$(echo "$COMMITS" | grep -E "^- (breaking|BREAKING CHANGE):" | wc -l || echo "0")
-          TOTAL=$(echo "$COMMITS" | wc -l || echo "0")
+          FEATURES=$(echo "$COMMITS" | grep -c -E "^- (feat|feature):" || echo "0")
+          FIXES=$(echo "$COMMITS" | grep -c -E "^- (fix|bugfix):" || echo "0")
+          BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
+          TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
           
           # Prepare the prompt for LLM
           PROMPT=$(cat <<EOF
@@ -157,6 +162,10 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/rate_limit")
           
+          if [ "${{ inputs.debug }}" = "true" ]; then
+            echo "::debug::Rate limit response: $RATE_LIMIT_RESPONSE"
+          fi
+          
           MODELS_API_REMAINING=$(echo "$RATE_LIMIT_RESPONSE" | jq -r '.resources.code_scanning_upload.remaining // 1000')
           
           if [ "$MODELS_API_REMAINING" -gt 0 ]; then
@@ -183,6 +192,11 @@ jobs:
                 "stream": false
               }')
             
+            if [ "${{ inputs.debug }}" = "true" ]; then
+              echo "::debug::API Request payload:"
+              echo "$JSON_PAYLOAD" | jq '.'
+            fi
+            
             # Call GitHub Models API
             API_RESPONSE=$(curl -s -X POST "https://api.github.com/models/inference/chat/completions" \
               -H "Content-Type: application/json" \
@@ -190,6 +204,14 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               -d "$JSON_PAYLOAD")
+            
+            if [ "${{ inputs.debug }}" = "true" ]; then
+              echo "::debug::API Response status: $?"
+              echo "::debug::API Response (first 1000 chars):"
+              echo "${API_RESPONSE:0:1000}"
+              echo "::debug::Full API Response:"
+              echo "$API_RESPONSE" | jq '.' || echo "$API_RESPONSE"
+            fi
             
             # Check if response contains an error
             ERROR_MESSAGE=$(echo "$API_RESPONSE" | jq -r '.error.message // empty')
@@ -205,6 +227,10 @@ jobs:
                 echo "::warning::Failed to generate summary using GitHub Models API. Using fallback."
               else
                 echo "Successfully generated summary using GitHub Models API"
+                if [ "${{ inputs.debug }}" = "true" ]; then
+                  echo "::debug::Generated summary:"
+                  echo "$SUMMARY"
+                fi
               fi
             fi
           else
