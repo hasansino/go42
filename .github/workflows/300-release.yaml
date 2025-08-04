@@ -38,5 +38,5 @@ jobs:
       continue_on_error: false
       tag: ${{ github.ref_name }}
       llm_summary: true
-      llm_model: 'gpt-4o-mini'
+      llm_model: 'openai/gpt-4o-mini'
       debug: true
