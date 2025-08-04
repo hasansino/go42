@@ -99,7 +99,6 @@ jobs:
           
           # Process the package
           total_deleted=0
-          total_size_saved=0
           
           echo ""
           echo "Processing package: $PACKAGE_NAME"
@@ -171,8 +170,6 @@ jobs:
             echo "$all_versions" | jq -r '.[0] | keys | @csv' || echo "Debug: Failed to get keys"
             echo "Debug: Sample version object:"
             echo "$all_versions" | jq '.[0]' || echo "Debug: Failed to show sample"
-            echo "Debug: Checking for size field location..."
-            echo "$all_versions" | jq '.[0] | {name, size, "metadata.package_type": .metadata.package_type, "metadata.container": .metadata.container}' || echo "Debug: Failed to check size"
           fi
           
           # Find old versions to delete
@@ -202,27 +199,10 @@ jobs:
           
           # Process deletions
           package_deleted=0
-          package_size_saved=0
           
           while IFS= read -r version; do
             version_id=$(echo "$version" | jq -r '.id')
             version_name=$(echo "$version" | jq -r '.name')
-            # Try different possible locations for size
-            version_size=$(echo "$version" | jq -r '
-              if .size != null then
-                .size
-              elif .metadata.container.size != null then
-                .metadata.container.size
-              elif .metadata.package_type == "container" and .metadata.container.manifest != null then
-                # For container images, sum up all layer sizes if available
-                if .metadata.container.manifest.layers then
-                  [.metadata.container.manifest.layers[].size] | add
-                else
-                  0
-                end
-              else
-                0
-              end')
             version_tags=$(echo "$version" | jq -r '
               if has("metadata") and (.metadata | type) == "object" and 
                  (.metadata | has("container")) and (.metadata.container | has("tags")) and 
@@ -235,14 +215,6 @@ jobs:
             
             echo "  - Version: $version_name (ID: $version_id)"
             echo "    Updated: $updated_at"
-            if [ "$DEBUG_MODE" = "true" ]; then
-              echo "    Debug: Raw size value: $version_size"
-            fi
-            if [ "$version_size" -gt 0 ]; then
-              echo "    Size: $((version_size / 1024 / 1024)) MB"
-            else
-              echo "    Size: Unknown"
-            fi
             [ -n "$version_tags" ] && echo "    Tags: $version_tags"
             
             if [ "$DRY_RUN" = "true" ]; then
@@ -279,7 +251,6 @@ jobs:
               if [ "$delete_http_code" = "204" ]; then
                 echo "    ✓ Deleted successfully"
                 package_deleted=$((package_deleted + 1))
-                package_size_saved=$((package_size_saved + version_size))
               else
                 echo "    ✗ Failed to delete (HTTP $delete_http_code)"
               fi
@@ -288,11 +259,7 @@ jobs:
           
           if [ "$DRY_RUN" != "true" ] && [ "${package_deleted:-0}" -gt 0 ]; then
             echo "  Deleted ${package_deleted:-0} versions from $PACKAGE_NAME"
-            if [ "$package_size_saved" -gt 0 ]; then
-              echo "  Space saved: $((package_size_saved / 1024 / 1024)) MB"
-            fi
             total_deleted=$((total_deleted + package_deleted))
-            total_size_saved=$((total_size_saved + package_size_saved))
           fi
           
           # Summary
@@ -305,11 +272,6 @@ jobs:
             echo "Mode: DRY RUN (no deletions performed)"
           else
             echo "Total versions deleted: $total_deleted"
-            if [ "$total_size_saved" -gt 0 ]; then
-              echo "Total space freed: $((total_size_saved / 1024 / 1024)) MB"
-            else
-              echo "Total space freed: Unknown (size data not available)"
-            fi
           fi
           echo "=========================================="
           
@@ -317,7 +279,6 @@ jobs:
           {
             echo "cutoff_date=$CUTOFF_DATE"
             echo "total_deleted=$total_deleted"
-            echo "total_size_mb=$((total_size_saved / 1024 / 1024))"
           } > cleanup_summary.env
       
       - name: Generate Job Summary
@@ -351,16 +312,6 @@ jobs:
                 echo "| Status | Dry run - no deletions performed |"
               else
                 echo "| Versions Deleted | ${total_deleted:-0} |"
-                if [ "${total_size_mb:-0}" -gt 0 ]; then
-                  echo "| Space Freed | ${total_size_mb} MB |"
-                else
-                  echo "| Space Freed | Unknown* |"
-                fi
-              fi
-              
-              if [ "${total_size_mb:-0}" -eq 0 ] && [ "${total_deleted:-0}" -gt 0 ]; then
-                echo ""
-                echo "*Size information is not available from the GitHub Packages API for container images."
               fi
             fi
           } >> "$GITHUB_STEP_SUMMARY"
