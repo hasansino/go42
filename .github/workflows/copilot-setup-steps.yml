@@ -16,7 +16,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      # ----
+      # -----
       - id: go-version
         run: echo "version=$(grep '^go ' go.mod | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v5
@@ -28,9 +28,9 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ steps.go-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
-      # ----
+      # -----
       - run: go mod tidy && go mod download
-      # ----
+      # -----
       - uses: actions/cache@v4
         with:
           path: |
@@ -41,5 +41,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-homebrew-
       - uses: Homebrew/actions/setup-homebrew@main
-      # ----
+      # -----
       - run: make setup

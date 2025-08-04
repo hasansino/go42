@@ -34,10 +34,10 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read
-    # ---
+    # ----
     steps:
       - uses: actions/checkout@v4
-      # ---
+      # ----
       - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ./Dockerfile
