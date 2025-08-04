@@ -53,9 +53,9 @@ jobs:
           
           echo "Validating branch name: $BRANCH_NAME"
           
-          PATTERN="^[A-Za-z0-9\/_.-]+$"
+          PATTERN="^[A-Za-z0-9\/_.\-]+$"
           if ! echo "$BRANCH_NAME" | grep -qE "$PATTERN"; then
-            echo "Branch names should follow regex ^[A-Za-z0-9\/_.-]+$"
+            echo "Branch names should follow regex ^[A-Za-z0-9\/_.\-]+$"
             echo "Current branch name '$BRANCH_NAME' does not match the pattern"
             exit 1
           fi

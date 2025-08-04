@@ -54,6 +54,94 @@ on:
 permissions: {}
 
 jobs:
+  report:
+    name: report
+    runs-on: ${{ inputs.runs_on }}
+    needs: load-tests
+    if: always()
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: k6-summary-*
+          merge-multiple: true
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Read all k6 summary files
+            const files = fs.readdirSync('.').filter(f => f.startsWith('k6-summary-') && f.endsWith('.json'));
+            
+            let allResults = [];
+            
+            for (const file of files) {
+              const match = file.match(/k6-summary-(\w+)-(\w+)-v1\.json/);
+              if (!match) continue;
+              
+              const [_, protocol, database] = match;
+              const results = JSON.parse(fs.readFileSync(file, 'utf8'));
+              
+              allResults.push({ protocol, database, results });
+            }
+            
+            // Sort results for consistent output
+            allResults.sort((a, b) => {
+              if (a.protocol !== b.protocol) return a.protocol.localeCompare(b.protocol);
+              return a.database.localeCompare(b.database);
+            });
+            
+            // Generate combined report as workflow annotations
+            core.notice('# Load Test Results Summary');
+            
+            for (const { protocol, database, results } of allResults) {
+              let summary = `\n## ${protocol.toUpperCase()} v1 (${database})\n`;
+              
+              if (protocol === 'http') {
+                const vusMax = results.metrics.vus_max?.value || 'N/A';
+                const vusMin = results.metrics.vus?.min || 0;
+                const vusMaxRange = results.metrics.vus?.max || 0;
+                const httpReqsCount = results.metrics.http_reqs?.count || 0;
+                const httpReqsRate = results.metrics.http_reqs?.rate || 0;
+                const httpReqDurationAvg = results.metrics.http_req_duration?.avg || 0;
+                const httpReqDurationP95 = results.metrics.http_req_duration?.["p(95)"] || 0;
+                const httpReqFailedPasses = results.metrics.http_req_failed?.passes || 0;
+                const httpReqFailedValue = results.metrics.http_req_failed?.value || 0;
+                const checksPasses = results.metrics.checks?.passes || 0;
+                const checksFails = results.metrics.checks?.fails || 0;
+                const totalChecks = checksPasses + checksFails;
+                const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
+                
+                summary += `- Virtual Users: ${vusMax} max (${vusMin}-${vusMaxRange})\n`;
+                summary += `- Total Requests: ${httpReqsCount} @ ${httpReqsRate.toFixed(2)}/sec\n`;
+                summary += `- Response Time: Avg: ${httpReqDurationAvg.toFixed(2)}ms / P95: ${httpReqDurationP95.toFixed(2)}ms\n`;
+                summary += `- Failed Requests: ${httpReqFailedPasses} (${(httpReqFailedValue * 100).toFixed(2)}%)\n`;
+                summary += `- Success Rate: ${successRate.toFixed(2)}%\n`;
+              } else if (protocol === 'grpc') {
+                const vusMax = results.metrics.vus_max?.value || 'N/A';
+                const vusMin = results.metrics.vus?.min || 0;
+                const vusMaxRange = results.metrics.vus?.max || 0;
+                const iterationsCount = results.metrics.iterations?.count || 0;
+                const iterationsRate = results.metrics.iterations?.rate || 0;
+                const grpcReqDurationAvg = results.metrics.grpc_req_duration?.avg || 0;
+                const grpcReqDurationP95 = results.metrics.grpc_req_duration?.["p(95)"] || 0;
+                const checksPasses = results.metrics.checks?.passes || 0;
+                const checksFails = results.metrics.checks?.fails || 0;
+                const totalChecks = checksPasses + checksFails;
+                const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
+                
+                summary += `- Virtual Users: ${vusMax} max (${vusMin}-${vusMaxRange})\n`;
+                summary += `- Total Requests: ${iterationsCount} @ ${iterationsRate.toFixed(2)}/sec\n`;
+                summary += `- Response Time: Avg: ${(grpcReqDurationAvg * 1000).toFixed(2)}ms / P95: ${(grpcReqDurationP95 * 1000).toFixed(2)}ms\n`;
+                summary += `- Failed Requests: ${checksFails} (${totalChecks > 0 ? (checksFails / totalChecks * 100).toFixed(2) : 0}%)\n`;
+                summary += `- Success Rate: ${successRate.toFixed(2)}%\n`;
+              }
+              
+              core.notice(summary);
+            }
   load-tests:
     name: load-tests-${{ matrix.protocol }}-${{ matrix.database }}
     runs-on: ${{ inputs.runs_on }}
@@ -193,37 +281,3 @@ jobs:
         with:
           name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
           path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
-      - if: github.event_name == 'pull_request' && false
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const protocol = '${{ matrix.protocol }}';
-            const database = '${{ matrix.database }}';
-            const results = JSON.parse(fs.readFileSync(`k6-summary-${protocol}-${database}-v1.json`, 'utf8'));
-
-            let summary = `## Load Test Results - ${protocol.toUpperCase()} v1 (${database})\n\n`;
-            summary += '| Metric          | Value  |\n';
-            summary += '|-----------------|--------|\n';
-
-            if (protocol === 'http') {
-              summary += `| Virtual Users   | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |\n`;
-              summary += `| Total Requests  | ${results.metrics.http_reqs.count} @ ${results.metrics.http_reqs.rate.toFixed(2)}/sec |\n`;
-              summary += `| Response Time   | Avg: ${results.metrics.http_req_duration.avg.toFixed(2)}ms / P95: ${results.metrics.http_req_duration["p(95)"].toFixed(2)}ms |\n`;
-              summary += `| Failed Requests | ${results.metrics.http_req_failed.passes} (${(results.metrics.http_req_failed.value * 100).toFixed(2)}%) |\n`;
-            } else if (protocol === 'grpc') {
-              summary += `| Virtual Users   | ${results.metrics.vus_max.value} max (${results.metrics.vus.min}-${results.metrics.vus.max}) |\n`;
-              summary += `| Total Requests  | ${results.metrics.iterations.count} @ ${results.metrics.iterations.rate.toFixed(2)}/sec |\n`;
-              summary += `| Response Time   | Avg: ${(results.metrics.grpc_req_duration.avg * 1000).toFixed(2)}ms / P95: ${(results.metrics.grpc_req_duration["p(95)"] * 1000).toFixed(2)}ms |\n`;
-              summary += `| Failed Requests | ${results.metrics.checks.fails} (${(results.metrics.checks.fails / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}%) |\n`;
-            }
-
-            summary += `| Success Rate    | ${(results.metrics.checks.passes / (results.metrics.checks.passes + results.metrics.checks.fails) * 100).toFixed(2)}% |\n`;
-
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: summary
-            });
