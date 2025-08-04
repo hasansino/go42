@@ -156,6 +156,7 @@ jobs:
       writing-lint,
       action-lint,
       sql-lint,
+      project-lint,
     ]
     with:
       runs_on: ubuntu-latest
