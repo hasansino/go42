@@ -74,6 +74,29 @@ jobs:
           CUTOFF_DATE=$(date -u -d "$RETENTION_DAYS days ago" +"%Y-%m-%dT%H:%M:%SZ")
           echo "Cutoff date: $CUTOFF_DATE"
           
+          # Detect if this is an org or user repository
+          IS_ORG="false"
+          if [ "$DEBUG_MODE" = "true" ]; then
+            echo "Debug: Checking if $OWNER is an organization..."
+          fi
+          
+          org_check=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/$OWNER")
+          
+          org_check_code=$(echo "$org_check" | tail -n1)
+          
+          if [ "$org_check_code" = "200" ]; then
+            IS_ORG="true"
+            echo "Repository owner is an organization"
+          else
+            echo "Repository owner is a user"
+          fi
+          
+          if [ "$DEBUG_MODE" = "true" ]; then
+            echo "Debug: IS_ORG=$IS_ORG"
+          fi
+          
           # Process the package
           total_deleted=0
           total_size_saved=0
@@ -86,40 +109,32 @@ jobs:
           all_versions="[]"
           
           while true; do
-            # Try org endpoint first, then user endpoint
-            if [ "$DEBUG_MODE" = "true" ]; then
-              echo "Debug: Fetching page $page for $PACKAGE_NAME (org endpoint)..."
-            fi
-            
-            response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
-            
-            http_code=$(echo "$response" | tail -n1)
-            
-            if [ "$DEBUG_MODE" = "true" ]; then
-              echo "Debug: Response code: $http_code"
-              echo "Debug: Response body (first 500 chars): ${response:0:500}..."
-            fi
-            
-            # If org endpoint fails with 404, try user endpoint
-            if [ "$http_code" = "404" ]; then
+            # Use the appropriate endpoint based on owner type
+            if [ "$IS_ORG" = "true" ]; then
               if [ "$DEBUG_MODE" = "true" ]; then
-                echo "Debug: Org endpoint returned 404, trying user endpoint..."
+                echo "Debug: Fetching page $page for $PACKAGE_NAME (org endpoint)..."
+              fi
+              
+              response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
+            else
+              if [ "$DEBUG_MODE" = "true" ]; then
+                echo "Debug: Fetching page $page for $PACKAGE_NAME (user endpoint)..."
               fi
               
               response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
-              
-              if [ "$DEBUG_MODE" = "true" ]; then
-                echo "Debug: User endpoint response code: $(echo "$response" | tail -n1)"
-                echo "Debug: User endpoint response body (first 500 chars): ${response:0:500}..."
-              fi
             fi
             
             http_code=$(echo "$response" | tail -n1)
             versions=$(echo "$response" | sed '$ d')
+            
+            if [ "$DEBUG_MODE" = "true" ]; then
+              echo "Debug: Response code: $http_code"
+              [ "$http_code" != "200" ] && echo "Debug: Response body (first 500 chars): ${response:0:500}..."
+            fi
             
             if [ "$http_code" != "200" ]; then
               echo "Error fetching versions for $PACKAGE_NAME: HTTP status $http_code"
@@ -209,42 +224,33 @@ jobs:
             if [ "$DRY_RUN" = "true" ]; then
               echo "    [DRY RUN] Would delete this version"
             else
-              # Try org endpoint first, then user endpoint
-              if [ "$DEBUG_MODE" = "true" ]; then
-                echo "Debug: Attempting to delete version $version_id (org endpoint)..."
-              fi
-              
-              delete_response=$(curl -s -w "%{http_code}" -X DELETE \
-                -H "Authorization: Bearer $GH_TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions/$version_id")
-              
-              delete_http_code=$(echo "$delete_response" | tail -n1)
-              
-              if [ "$DEBUG_MODE" = "true" ]; then
-                echo "Debug: Delete response code: $delete_http_code"
-                [ "$delete_http_code" != "204" ] && echo "Debug: Delete response: $delete_response"
-              fi
-              
-              # If org endpoint fails with 404, try user endpoint
-              if [ "$delete_http_code" = "404" ]; then
+              # Use the appropriate endpoint based on owner type
+              if [ "$IS_ORG" = "true" ]; then
                 if [ "$DEBUG_MODE" = "true" ]; then
-                  echo "Debug: Org endpoint returned 404, trying user endpoint..."
+                  echo "Debug: Attempting to delete version $version_id (org endpoint)..."
+                fi
+                
+                delete_response=$(curl -s -w "%{http_code}" -X DELETE \
+                  -H "Authorization: Bearer $GH_TOKEN" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions/$version_id")
+              else
+                if [ "$DEBUG_MODE" = "true" ]; then
+                  echo "Debug: Attempting to delete version $version_id (user endpoint)..."
                 fi
                 
                 delete_response=$(curl -s -w "%{http_code}" -X DELETE \
                   -H "Authorization: Bearer $GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions/$version_id")
-                  
-                if [ "$DEBUG_MODE" = "true" ]; then
-                  delete_http_code_new=$(echo "$delete_response" | tail -n1)
-                  echo "Debug: User endpoint delete response code: $delete_http_code_new"
-                  [ "$delete_http_code_new" != "204" ] && echo "Debug: User endpoint delete response: $delete_response"
-                fi
               fi
               
               delete_http_code=$(echo "$delete_response" | tail -n1)
+              
+              if [ "$DEBUG_MODE" = "true" ]; then
+                echo "Debug: Delete response code: $delete_http_code"
+                [ "$delete_http_code" != "204" ] && echo "Debug: Delete response: ${delete_response:0:200}..."
+              fi
               
               if [ "$delete_http_code" = "204" ]; then
                 echo "    ✓ Deleted successfully"
