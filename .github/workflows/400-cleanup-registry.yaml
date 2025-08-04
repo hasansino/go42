@@ -43,13 +43,17 @@ jobs:
         id: config
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "retention_days=${{ env.DEFAULT_RETENTION_DAYS }}" >> $GITHUB_OUTPUT
-            echo "dry_run=false" >> $GITHUB_OUTPUT
-            echo "package_name=" >> $GITHUB_OUTPUT
+            {
+              echo "retention_days=${{ env.DEFAULT_RETENTION_DAYS }}"
+              echo "dry_run=false"
+              echo "package_name="
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "retention_days=${{ inputs.retention_days }}" >> $GITHUB_OUTPUT
-            echo "dry_run=${{ inputs.dry_run }}" >> $GITHUB_OUTPUT
-            echo "package_name=${{ inputs.package_name }}" >> $GITHUB_OUTPUT
+            {
+              echo "retention_days=${{ inputs.retention_days }}"
+              echo "dry_run=${{ inputs.dry_run }}"
+              echo "package_name=${{ inputs.package_name }}"
+            } >> "$GITHUB_OUTPUT"
           fi
       
       - name: Cleanup old images
@@ -66,7 +70,7 @@ jobs:
           
           # Calculate cutoff date
           if [ "$(uname)" = "Darwin" ]; then
-            CUTOFF_DATE=$(date -u -v-${RETENTION_DAYS}d +"%Y-%m-%dT%H:%M:%SZ")
+            CUTOFF_DATE=$(date -u -v-"${RETENTION_DAYS}"d +"%Y-%m-%dT%H:%M:%SZ")
           else
             CUTOFF_DATE=$(date -u -d "$RETENTION_DAYS days ago" +"%Y-%m-%dT%H:%M:%SZ")
           fi
@@ -182,7 +186,7 @@ jobs:
             done
             
             if [ "$DRY_RUN" != "true" ] && [ "$package_deleted" -gt 0 ]; then
-              echo "  Deleted $package_deleted versions from $package, saved $((package_size_saved / 1024 / 1024)) MB"
+              echo "  Deleted ${package_deleted:-0} versions from $package, saved $((package_size_saved / 1024 / 1024)) MB"
               total_deleted=$((total_deleted + package_deleted))
               total_size_saved=$((total_size_saved + package_size_saved))
             fi
@@ -219,4 +223,4 @@ jobs:
             if [ -f cleanup_summary.txt ]; then
               cat cleanup_summary.txt
             fi
-          } >> $GITHUB_STEP_SUMMARY
+          } >> "$GITHUB_STEP_SUMMARY"

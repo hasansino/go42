@@ -14,7 +14,7 @@ setup:
 	@go mod tidy -e && go mod download
 	@brew install golangci-lint hadolint markdownlint-cli2 vale gitleaks \
 	sqlfluff buf redocly-cli yq grpcui k6
-	@vale --config etc/.vale.ini sync
+	@vale --config etc/vale.ini sync
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	@go install github.com/go-delve/delve/cmd/dlv@latest
@@ -159,7 +159,7 @@ generate-dep-graph:
 # Dependencies:
 #   * brew install redocly-cli
 preview-docs:
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true redocly preview-docs --config etc/redocly.yaml --port 8181 api/openapi/v1/.combined.yaml
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly preview-docs --config etc/redocly.yaml --port 8181 api/openapi/v1/.combined.yaml
 
 ## grpcui | run grpcui for debugging gRPC services
 # Dependencies:
