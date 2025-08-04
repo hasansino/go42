@@ -23,10 +23,8 @@ on:
         required: true
         type: boolean
       debug:
-        description: 'Enable debug mode to show API responses'
         required: false
         type: boolean
-        default: false
 
 permissions: {}
 
