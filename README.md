@@ -43,12 +43,14 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 - set names for all action steps
 - generate release summary with llm
+- generate PR summary with llm
 - custom & simple DI container for main.go
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
+- circuit breaker (https://github.com/sony/gobreaker)
 - graceful connection recovery
 - outbox table cleanup worker
 - service discovery
@@ -58,6 +60,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### ദ്ദി( •̀ ᴗ - )
 
+- register echo validator -> simplify adapters
 - slog contextual values (like request id etc.) propogation
 - slog smart sampling of duplicates
 - slog enforcing field names and types
@@ -66,15 +69,13 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 - lock tools version and sync with CI
 - working with private repositories, .netrc, GOPRIVATE, modules
+
+### Project `get-the-job-done`'
+
 - research mkdocs + docusaurus
 - documentation
 - conventions + validation in ci/cd
 - arch/business/feature documentation generation
-- integration with project management tools
-- capacity planning and resource management
-- cost analysis for different scales
-- scaling and organizing multiple projects
-- circuit breaker (https://github.com/sony/gobreaker)
 
 ### Project `pandemic`
 
@@ -87,6 +88,13 @@ Go42 is opinionated approach to develop cloud native golang services.
 ### project `machine`
 
 - go42-runner
+
+### Project `scrudge-mcrudge`
+
+- integration with project management tools
+- capacity planning and resource management
+- scaling and organizing multiple projects
+- cost analysis for different scales
 
 ## Bugs
 
@@ -140,7 +148,3 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 - audit package implementation and guidelines
 - compliance research -> SOC2, ISO 27001, PCI-DSS, HIPAA
-
-### Technical debt
-
-- register echo validator -> simplify adapters
