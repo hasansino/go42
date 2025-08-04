@@ -39,6 +39,7 @@ jobs:
       attestations: write
       id-token: write
       pull-requests: write
+      models: read
     # ----
     steps:
       - uses: actions/checkout@v4
@@ -107,11 +108,23 @@ jobs:
           BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
           TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
           
-          # Ensure variables are integers (remove any whitespace/newlines)
-          FEATURES=$(echo "$FEATURES" | tr -d '[:space:]')
-          FIXES=$(echo "$FIXES" | tr -d '[:space:]')
-          BREAKING=$(echo "$BREAKING" | tr -d '[:space:]')
-          TOTAL=$(echo "$TOTAL" | tr -d '[:space:]')
+          # Trim any whitespace/newlines from counts
+          FEATURES=$(echo "$FEATURES" | xargs)
+          FIXES=$(echo "$FIXES" | xargs)
+          BREAKING=$(echo "$BREAKING" | xargs)
+          TOTAL=$(echo "$TOTAL" | xargs)
+          
+          # Ensure variables are proper integers
+          FEATURES=${FEATURES//[^0-9]/}
+          FIXES=${FIXES//[^0-9]/}
+          BREAKING=${BREAKING//[^0-9]/}
+          TOTAL=${TOTAL//[^0-9]/}
+          
+          # Default to 0 if empty
+          FEATURES=${FEATURES:-0}
+          FIXES=${FIXES:-0}
+          BREAKING=${BREAKING:-0}
+          TOTAL=${TOTAL:-0}
           
           # Prepare the prompt for LLM
           PROMPT=$(cat <<EOF
@@ -203,7 +216,7 @@ jobs:
             fi
             
             # Call GitHub Models API
-            API_RESPONSE=$(curl -s -X POST "https://api.github.com/chat/completions" \
+            API_RESPONSE=$(curl -s -X POST "https://models.github.ai/inference/chat/completions" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
