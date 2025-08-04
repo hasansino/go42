@@ -151,27 +151,29 @@ jobs:
                 const httpReqFailedValue = results.metrics.http_req_failed?.value || 0;
                 const checksPasses = results.metrics.checks?.passes || 0;
                 const checksFails = results.metrics.checks?.fails || 0;
+                const totalChecks = checksPasses + checksFails;
+                const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
                 
-                summary += '**Virtual Users**\n';
-                summary += `- Maximum: ${vusMax}\n`;
-                summary += `- Range: ${vusMin} - ${vusMaxRange}\n\n`;
-                
-                summary += '**Requests**\n';
-                summary += `- Total: ${httpReqsCount}\n`;
-                summary += `- Rate: ${httpReqsRate.toFixed(2)}/sec\n`;
-                summary += `- Failed: ${httpReqFailedPasses} (${(httpReqFailedValue * 100).toFixed(2)}%)\n\n`;
-                
-                summary += '**Response Times**\n';
-                summary += `- Min: ${httpReqDurationMin.toFixed(2)}ms\n`;
-                summary += `- Median: ${httpReqDurationMed.toFixed(2)}ms\n`;
-                summary += `- Average: ${httpReqDurationAvg.toFixed(2)}ms\n`;
-                summary += `- P90: ${httpReqDurationP90.toFixed(2)}ms\n`;
-                summary += `- P95: ${httpReqDurationP95.toFixed(2)}ms\n`;
-                summary += `- Max: ${httpReqDurationMax.toFixed(2)}ms\n\n`;
-                
-                summary += '**Checks**\n';
-                summary += `- Passed: ${checksPasses}\n`;
-                summary += `- Failed: ${checksFails}\n`;
+                summary += '| Metric | Value |\n';
+                summary += '|--------|-------|\n';
+                summary += `| **Virtual Users** | |\n`;
+                summary += `| Maximum | ${vusMax} |\n`;
+                summary += `| Range | ${vusMin} - ${vusMaxRange} |\n`;
+                summary += `| **Requests** | |\n`;
+                summary += `| Total | ${httpReqsCount} |\n`;
+                summary += `| Rate | ${httpReqsRate.toFixed(2)}/sec |\n`;
+                summary += `| Failed | ${httpReqFailedPasses} (${(httpReqFailedValue * 100).toFixed(2)}%) |\n`;
+                summary += `| Success Rate | ${successRate.toFixed(2)}% |\n`;
+                summary += `| **Response Times** | |\n`;
+                summary += `| Min | ${httpReqDurationMin.toFixed(2)}ms |\n`;
+                summary += `| Median | ${httpReqDurationMed.toFixed(2)}ms |\n`;
+                summary += `| Average | ${httpReqDurationAvg.toFixed(2)}ms |\n`;
+                summary += `| P90 | ${httpReqDurationP90.toFixed(2)}ms |\n`;
+                summary += `| P95 | ${httpReqDurationP95.toFixed(2)}ms |\n`;
+                summary += `| Max | ${httpReqDurationMax.toFixed(2)}ms |\n`;
+                summary += `| **Checks** | |\n`;
+                summary += `| Passed | ${checksPasses} |\n`;
+                summary += `| Failed | ${checksFails} |\n`;
               } else if (protocol === 'grpc') {
                 const vusMax = results.metrics.vus_max?.value || 'N/A';
                 const vusMin = results.metrics.vus?.min || 0;
@@ -186,26 +188,29 @@ jobs:
                 const grpcReqDurationP95 = results.metrics.grpc_req_duration?.['p(95)'] || 0;
                 const checksPasses = results.metrics.checks?.passes || 0;
                 const checksFails = results.metrics.checks?.fails || 0;
+                const totalChecks = checksPasses + checksFails;
+                const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
                 
-                summary += '**Virtual Users**\n';
-                summary += `- Maximum: ${vusMax}\n`;
-                summary += `- Range: ${vusMin} - ${vusMaxRange}\n\n`;
-                
-                summary += '**Requests**\n';
-                summary += `- Total: ${iterationsCount}\n`;
-                summary += `- Rate: ${iterationsRate.toFixed(2)}/sec\n\n`;
-                
-                summary += '**Response Times**\n';
-                summary += `- Min: ${(grpcReqDurationMin * 1000).toFixed(2)}ms\n`;
-                summary += `- Median: ${(grpcReqDurationMed * 1000).toFixed(2)}ms\n`;
-                summary += `- Average: ${(grpcReqDurationAvg * 1000).toFixed(2)}ms\n`;
-                summary += `- P90: ${(grpcReqDurationP90 * 1000).toFixed(2)}ms\n`;
-                summary += `- P95: ${(grpcReqDurationP95 * 1000).toFixed(2)}ms\n`;
-                summary += `- Max: ${(grpcReqDurationMax * 1000).toFixed(2)}ms\n\n`;
-                
-                summary += '**Checks**\n';
-                summary += `- Passed: ${checksPasses}\n`;
-                summary += `- Failed: ${checksFails}\n`;
+                summary += '| Metric | Value |\n';
+                summary += '|--------|-------|\n';
+                summary += `| **Virtual Users** | |\n`;
+                summary += `| Maximum | ${vusMax} |\n`;
+                summary += `| Range | ${vusMin} - ${vusMaxRange} |\n`;
+                summary += `| **Requests** | |\n`;
+                summary += `| Total | ${iterationsCount} |\n`;
+                summary += `| Rate | ${iterationsRate.toFixed(2)}/sec |\n`;
+                summary += `| Failed | ${checksFails} (${totalChecks > 0 ? (checksFails / totalChecks * 100).toFixed(2) : 0}%) |\n`;
+                summary += `| Success Rate | ${successRate.toFixed(2)}% |\n`;
+                summary += `| **Response Times** | |\n`;
+                summary += `| Min | ${(grpcReqDurationMin * 1000).toFixed(2)}ms |\n`;
+                summary += `| Median | ${(grpcReqDurationMed * 1000).toFixed(2)}ms |\n`;
+                summary += `| Average | ${(grpcReqDurationAvg * 1000).toFixed(2)}ms |\n`;
+                summary += `| P90 | ${(grpcReqDurationP90 * 1000).toFixed(2)}ms |\n`;
+                summary += `| P95 | ${(grpcReqDurationP95 * 1000).toFixed(2)}ms |\n`;
+                summary += `| Max | ${(grpcReqDurationMax * 1000).toFixed(2)}ms |\n`;
+                summary += `| **Checks** | |\n`;
+                summary += `| Passed | ${checksPasses} |\n`;
+                summary += `| Failed | ${checksFails} |\n`;
               }
               
               summary += '\n</details>\n\n';
