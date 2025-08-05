@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+      # ----
       - id: extract_semver
         name: Extract version from PR title
         env:
@@ -37,7 +37,7 @@ jobs:
             exit 1
           fi
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
-
+      # ----
       - id: extract_summary
         name: Extract summary from PR body
         env:
@@ -56,19 +56,17 @@ jobs:
           echo "$SUMMARY" > release_summary.md
           
           echo "Summary extracted successfully"
-
-      # create release
+      # ----
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
           body_path: release_summary.md
-          generate_release_notes: false
+          generate_release_notes: true
           append_body: false
           make_latest: true
-
-      # remove branch after merge
+      # ----
       - name: Delete PR branch after merge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

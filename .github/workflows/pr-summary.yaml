@@ -41,7 +41,7 @@ jobs:
             echo "::notice::PR already has a description, skipping summary generation"
             echo "should_generate=false" >> "$GITHUB_OUTPUT"
           fi
-  
+
   generate-summary:
     name: Generate Summary
     needs: check-pr

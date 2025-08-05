@@ -16,19 +16,9 @@ on:
       tag:
         required: true
         type: string
-      llm_model:
-        required: true
-        type: string
-      llm_summary:
-        required: true
-        type: boolean
-      debug:
-        required: false
-        type: boolean
     secrets:
       OPENAI_API_KEY:
-        description: 'OpenAI API key for summary generation'
-        required: false
+        required: true
 
 permissions: {}
 
@@ -76,8 +66,8 @@ jobs:
       base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
       head_ref: ${{ inputs.tag }}
       context_type: release
-      llm_model: ${{ inputs.llm_model }}
-      debug: ${{ inputs.debug }}
+      llm_model: gpt-4o-mini
+      debug: false
     secrets:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
