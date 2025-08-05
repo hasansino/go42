@@ -55,7 +55,8 @@ jobs:
       packages: read
     # ----
     steps:
-      - uses: aquasecurity/trivy-action@0.32.0
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
@@ -89,9 +90,11 @@ jobs:
           --health-retries 10
     # ----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       # ----
-      - uses: zaproxy/action-api-scan@v0.9.0
+      - name: Run ZAP API scan
+        uses: zaproxy/action-api-scan@v0.9.0
         with:
           target: 'http://localhost:44441/api/v1/.combined.yml'
           format: openapi
@@ -107,16 +110,20 @@ jobs:
       actions: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download SBOM artifact
+        uses: actions/download-artifact@v4
         with:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-      - uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
+      - name: Run OSV Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
         continue-on-error: true
         with:
           scan-args: --output=results.json --all-vulns --format=json --recursive ./
-      - uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
+      - name: Generate OSV Scanner report
+        uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
         continue-on-error: true
         with:
           scan-args: |-
@@ -125,10 +132,12 @@ jobs:
             --gh-annotations=true
             --fail-on-vuln=true
             --all-vulns
-      - uses: actions/upload-artifact@v4
+      - name: Upload OSV Scanner results
+        uses: actions/upload-artifact@v4
         with:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv-scanner-results.sarif

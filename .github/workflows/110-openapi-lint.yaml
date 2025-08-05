@@ -37,8 +37,10 @@ jobs:
       pull-requests: write
     # ----
     steps:
-      - uses: actions/checkout@v4
-      - run: |
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run Redocly OpenAPI linter
+        run: |
           docker run --rm \
             -v "${{ github.workspace }}:/workdir" \
             -w /workdir \

@@ -41,11 +41,11 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- set names for all action steps
 - github promt files
 - generate release summary with llm
 - generate PR summary with llm
 - custom & simple DI container for main.go
+
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 
@@ -99,6 +99,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
+- https://docs.anthropic.com/en/docs/claude-code/github-actions
 - resetting claude code context -> benefits?
 - claude sub agents
 - research orchestration pattern

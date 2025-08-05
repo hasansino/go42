@@ -36,8 +36,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - env:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate branch name
+        env:
           # The name of the branch or tag being merged into the base in a pull request.
           # Available only for pull_request and pull_request_target events.
           HEAD_REF: ${{ github.head_ref }}

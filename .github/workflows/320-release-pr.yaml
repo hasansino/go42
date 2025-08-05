@@ -41,10 +41,12 @@ jobs:
       pull-requests: write
     # ----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - id: prev_tag
+      - name: Get previous tag and comparison URL
+        id: prev_tag
         run: |
           PREVIOUS_TAG="$(git describe --abbrev=0 --tags "$(git rev-list --tags --skip=1 --max-count=1)" 2>/dev/null || echo "")"
           if [ -z "$PREVIOUS_TAG" ]; then
@@ -54,7 +56,8 @@ jobs:
             echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
             echo "comparison_url=https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           fi
-      - run: |
+      - name: Update Helm Chart appVersion
+        run: |
           sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/app/Chart.yaml
       
       - name: Generate Release Summary
@@ -324,7 +327,8 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
       # ----
-      - uses: peter-evans/create-pull-request@v7
+      - name: Create pull request for release
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "auto-release-${{ inputs.tag }}"
           title: "Release ${{ inputs.tag }}"

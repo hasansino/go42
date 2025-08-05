@@ -65,3 +65,4 @@ This document is a repository of conventions and rules used by this project.
 * always leave empty lines at the end of files
 * usage of `// ---``
 * never expose IDs -> expose UUIDs
+* always leave trailing newline for text files

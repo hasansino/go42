@@ -21,11 +21,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Go environment
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - uses: actions/go-dependency-submission@v2
+      - name: Submit Go dependencies to GitHub
+        uses: actions/go-dependency-submission@v2
         with:
           go-mod-path: go.mod
           go-build-target: cmd/app/main.go

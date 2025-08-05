@@ -35,11 +35,15 @@ jobs:
       contents: read
     # ----
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - run: go mod download
-      - run: go list ./... | grep -v '/tests/' | xargs go test -count=1 -v -race
+      - name: Download Go modules
+        run: go mod download
+      - name: Run unit tests with race detector
+        run: go list ./... | grep -v '/tests/' | xargs go test -count=1 -v -race
         env:
           CGO_ENABLED: 1  # needed for -race

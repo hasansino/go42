@@ -37,11 +37,14 @@ jobs:
       contents: read
     # -----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       # -----
-      - id: go-version
+      - name: Extract Go version
+        id: go-version
         run: echo "version=$(grep '^go ' go.mod | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-go@v5
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
           cache: true
@@ -49,7 +52,8 @@ jobs:
             **/go.sum
             **/go.mod
       # -----
-      - run: go mod tidy && go mod download
+      - name: Download Go modules
+        run: go mod tidy && go mod download
       # -----
       - name: Cache Homebrew and formulae
         uses: actions/cache@v4
@@ -62,12 +66,15 @@ jobs:
             homebrew-${{ runner.os }}-${{ runner.arch }}-
             homebrew-${{ runner.os }}-
       # -----
-      - uses: Homebrew/actions/setup-homebrew@main
+      - name: Setup Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
       # -----
-      - run: |
+      - name: Run setup and generate
+        run: |
           make setup
           make generate
-      - run: |
+      - name: Check for uncommitted changes
+        run: |
           if [[ -n $(git status --porcelain) ]]; then
             echo "❌ Uncommitted changes detected after running 'make generate'"
             echo "The following files have changes:"

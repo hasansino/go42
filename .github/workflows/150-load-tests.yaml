@@ -62,12 +62,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Download K6 test results
+        uses: actions/download-artifact@v4
         with:
           pattern: k6-summary-*
           merge-multiple: true
-      - uses: actions/github-script@v7
+      - name: Generate load test report
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
@@ -347,15 +350,19 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: grafana/setup-k6-action@v1
-      - uses: grafana/run-k6-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup K6
+        uses: grafana/setup-k6-action@v1
+      - name: Run K6 load tests
+        uses: grafana/run-k6-action@v1
         with:
           path: ${{ matrix.test_path }}
           flags: --summary-export=k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
         env:
           ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port) || format('localhost:{0}', matrix.grpc_port) }}
-      - uses: actions/upload-artifact@v4
+      - name: Upload K6 test results
+        uses: actions/upload-artifact@v4
         with:
           name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
           path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json

@@ -21,7 +21,8 @@ jobs:
       contents: write
     # ----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -38,14 +39,16 @@ jobs:
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
 
       # create release
-      - uses: softprops/action-gh-release@v2
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
           generate_release_notes: true
 
       # remove branch after merge
-      - env:
+      - name: Delete PR branch after merge
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
           REPOSITORY: ${{ github.repository }}

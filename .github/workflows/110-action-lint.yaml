@@ -36,9 +36,11 @@ jobs:
       contents: read
     # ----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       # ----
-      - uses: raven-actions/actionlint@v2
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
         with:
           version: latest
           flags: --config-file etc/actionlint.yaml

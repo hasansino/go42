@@ -52,7 +52,10 @@ jobs:
             path: migrate/pgsql/*.sql
     # -----
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       # -----
-      - run: pip install sqlfluff
-      - run: sqlfluff lint --config etc/sqlfluff.toml ${{ matrix.path }} --dialect ${{ matrix.dialect }}
+      - name: Install SQLFluff
+        run: pip install sqlfluff
+      - name: Run SQLFluff linter
+        run: sqlfluff lint --config etc/sqlfluff.toml ${{ matrix.path }} --dialect ${{ matrix.dialect }}

@@ -37,8 +37,10 @@ jobs:
       pull-requests: write
     # ----
     steps:
-      - uses: actions/checkout@v4
-      - uses: bufbuild/buf-action@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run buf lint and format
+        uses: bufbuild/buf-action@v1
         with:
           version: 1.55.0
           input: api

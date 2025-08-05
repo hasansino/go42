@@ -181,7 +181,8 @@ jobs:
     outputs:
       tag: ${{ steps.docker-prepare-tag.outputs.tag }}
     steps:
-      - id:  docker-prepare-tag
+      - name: Prepare Docker image tag
+        id:  docker-prepare-tag
         run: |
           REF_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
           IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[\/ @]/-/g')
@@ -210,7 +211,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ docker-prepare-tag, docker-build ]
     steps:
-      - run: echo "Grouping job for security scans"
+      - name: Create security scans group
+        run: echo "Grouping job for security scans"
 
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
@@ -229,7 +231,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ docker-prepare-tag, docker-build ]
     steps:
-      - run: echo "Grouping job for tests"
+      - name: Create integration and load tests group
+        run: echo "Grouping job for tests"
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
