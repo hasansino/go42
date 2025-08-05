@@ -53,9 +53,4 @@ jobs:
           BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          # Validate branch name to prevent injection in API call
-          if ! echo "$BRANCH_NAME" | grep -qE '^[A-Za-z0-9/_.\-]+$'; then
-            echo "Error: Invalid branch name format"
-            exit 1
-          fi
           gh api -X DELETE "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}"
