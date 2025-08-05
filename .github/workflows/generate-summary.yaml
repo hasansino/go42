@@ -78,9 +78,23 @@ jobs:
             exit 1
           fi
           
-          # Get commit messages between refs
+          # Get commit messages between refs with clickable hashes
           echo "Fetching commits between $BASE_REF and $HEAD_REF..."
-          COMMITS=$(git log --pretty=format:"- %s (%h)" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
+          # Get commits with hash and message
+          COMMITS_RAW=$(git log --pretty=format:"%h %s" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
+          
+          # Convert to markdown with clickable links
+          COMMITS=""
+          while IFS= read -r line; do
+            if [ -n "$line" ]; then
+              HASH=$(echo "$line" | cut -d' ' -f1)
+              MESSAGE=$(echo "$line" | cut -d' ' -f2-)
+              COMMITS="${COMMITS}- ${MESSAGE} ([${HASH}](https://github.com/${{ github.repository }}/commit/${HASH}))\n"
+            fi
+          done <<< "$COMMITS_RAW"
+          
+          # Remove trailing newline
+          COMMITS=$(echo -e "$COMMITS" | sed '$ s/.$//')
           
           if [ -z "$COMMITS" ]; then
             echo "No commits found between refs"
@@ -142,22 +156,21 @@ jobs:
           $COMMITS
           
           Requirements:
-          1. Start with a brief overview (1-2 sentences) of what this contains
-          2. Group changes by type (Features, Bug Fixes, Breaking Changes, Other Changes)
-          3. Use bullet points for each change
-          4. Keep descriptions clear and user-focused (not technical implementation details)
-          5. If there are breaking changes, highlight them clearly
-          6. Do not use excessive emojis - maximum 1-2 relevant ones for section headers only
-          7. Keep the total summary under 500 words
-          8. Use markdown formatting
+          1. ONLY output two sections: "Highlights" and a list of changes grouped by type
+          2. Do NOT include an overview paragraph or any other sections
+          3. Keep the Highlights section to 2-3 most important changes only
+          4. Group all changes by type (Features, Bug Fixes, Breaking Changes, Other Changes)
+          5. Use bullet points for each change
+          6. Keep descriptions clear and user-focused
+          7. If there are breaking changes, make them prominent
+          8. Do not use any emojis
+          9. Keep the total summary concise
+          10. Use markdown formatting
           
           Template:
-          $TEMPLATE
-          
-          [Brief overview]
-          
           ### Highlights
-          - [Most important changes]
+          - [Most important change 1]
+          - [Most important change 2]
           
           ### Features
           - [New features]
@@ -201,7 +214,7 @@ jobs:
                 "messages": [
                   {
                     "role": "system",
-                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear."
+                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear. ONLY output the Highlights section and the grouped list of changes. Do NOT include any overview paragraphs or additional commentary."
                   },
                   {
                     "role": "user", 
@@ -271,47 +284,40 @@ jobs:
           if [ -z "$SUMMARY" ]; then
             echo "Using fallback summary generation..."
             
-            # Group commits by type
-            FEAT_COMMITS=$(echo "$COMMITS" | grep -E "^- (feat|feature):" || echo "")
-            FIX_COMMITS=$(echo "$COMMITS" | grep -E "^- (fix|bugfix):" || echo "")
-            BREAKING_COMMITS=$(echo "$COMMITS" | grep -E "^- (breaking|BREAKING CHANGE):" || echo "")
-            OTHER_COMMITS=$(echo "$COMMITS" | grep -vE "^- (feat|feature|fix|bugfix|breaking|BREAKING CHANGE):" || echo "")
+            # Group commits by type (handle the new format with links)
+            FEAT_COMMITS=$(echo -e "$COMMITS" | grep -E "^- (feat|feature):" || echo "")
+            FIX_COMMITS=$(echo -e "$COMMITS" | grep -E "^- (fix|bugfix):" || echo "")
+            BREAKING_COMMITS=$(echo -e "$COMMITS" | grep -E "^- (breaking|BREAKING CHANGE):" || echo "")
+            OTHER_COMMITS=$(echo -e "$COMMITS" | grep -vE "^- (feat|feature|fix|bugfix|breaking|BREAKING CHANGE):" || echo "")
             
-            SUMMARY="$TEMPLATE"$'\n\n'"This includes $TOTAL commits"
+            # Start with highlights
+            SUMMARY="### Highlights"$'\n'
             
-            if [ "$FEATURES" -gt 0 ] || [ "$FIXES" -gt 0 ]; then
-              SUMMARY="$SUMMARY with"
-              if [ "$FEATURES" -gt 0 ]; then
-                SUMMARY="$SUMMARY $FEATURES new feature$([ "$FEATURES" -ne 1 ] && echo "s")"
-              fi
-              if [ "$FEATURES" -gt 0 ] && [ "$FIXES" -gt 0 ]; then
-                SUMMARY="$SUMMARY and"
-              fi
-              if [ "$FIXES" -gt 0 ]; then
-                SUMMARY="$SUMMARY $FIXES bug fix$([ "$FIXES" -ne 1 ] && echo "es")"
-              fi
-            fi
-            
-            SUMMARY="$SUMMARY."
-            
+            # Add most important items to highlights
             if [ "$BREAKING" -gt 0 ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"⚠️ **This contains $BREAKING breaking change$([ "$BREAKING" -ne 1 ] && echo "s").**"
+              SUMMARY="$SUMMARY- ⚠️ $BREAKING breaking change$([ "$BREAKING" -ne 1 ] && echo "s") included"$'\n'
+            fi
+            if [ "$FEATURES" -gt 0 ]; then
+              SUMMARY="$SUMMARY- $FEATURES new feature$([ "$FEATURES" -ne 1 ] && echo "s") added"$'\n'
+            fi
+            if [ "$FIXES" -gt 0 ]; then
+              SUMMARY="$SUMMARY- $FIXES bug fix$([ "$FIXES" -ne 1 ] && echo "es") included"$'\n'
             fi
             
             if [ -n "$FEAT_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 🚀 Features"$'\n'"$FEAT_COMMITS"
+              SUMMARY="$SUMMARY"$'\n\n'"### Features"$'\n'"$FEAT_COMMITS"
             fi
             
             if [ -n "$FIX_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 🐛 Bug Fixes"$'\n'"$FIX_COMMITS"
+              SUMMARY="$SUMMARY"$'\n\n'"### Bug Fixes"$'\n'"$FIX_COMMITS"
             fi
             
             if [ -n "$BREAKING_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### ⚠️ Breaking Changes"$'\n'"$BREAKING_COMMITS"
+              SUMMARY="$SUMMARY"$'\n\n'"### Breaking Changes"$'\n'"$BREAKING_COMMITS"
             fi
             
             if [ -n "$OTHER_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 📝 Other Changes"$'\n'"$OTHER_COMMITS"
+              SUMMARY="$SUMMARY"$'\n\n'"### Other Changes"$'\n'"$OTHER_COMMITS"
             fi
           fi
           
