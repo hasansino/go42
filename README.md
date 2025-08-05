@@ -41,7 +41,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- github promt files
 - generate release summary with llm
 - generate PR summary with llm
 - custom & simple DI container for main.go
@@ -147,6 +146,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/tursodatabase/turso
 - https://valkey.io/
 - https://github.com/hypermodeinc/badger
+- https://grafana.com/oss/tempo/
+- https://grafana.com/oss/loki/
 
 ### Security
 
