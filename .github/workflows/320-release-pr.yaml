@@ -1,11 +1,11 @@
 name: release-pr
 
 # Creates a PR to update the appVersion in the Chart.yaml file.
-# This PR will also generate a release summary using GitHub's Models API.
+# This PR will also generate a release summary using OpenAI API.
 # @note merging this PR will trigger deployment.
 
 on:
-  workflow_call:
+  workflow_call: 
     inputs:
       runs_on:
         required: true
@@ -29,18 +29,15 @@ on:
 permissions: {}
 
 jobs:
-  release-pr:
-    name: release-pr
+  prepare-release:
+    name: prepare-release
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    outputs:
+      previous_tag: ${{ steps.prev_tag.outputs.previous_tag }}
+      comparison_url: ${{ steps.prev_tag.outputs.comparison_url }}
     permissions:
       contents: write
-      packages: write
-      attestations: write
-      id-token: write
-      pull-requests: write
-      models: read
-    # ----
     steps:
       - name: Checkout repository with full history
         uses: actions/checkout@v4
@@ -60,274 +57,44 @@ jobs:
       - name: Update Helm Chart appVersion
         run: |
           sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.tag }}\"/" infra/helm/app/Chart.yaml
+      - name: Upload modified files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: infra/helm/app/Chart.yaml
+          
+  generate-summary:
+    name: Generate Release Summary
+    needs: prepare-release
+    if: inputs.llm_summary && needs.prepare-release.outputs.previous_tag != ''
+    uses: ./.github/workflows/generate-summary.yaml
+    with:
+      base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
+      head_ref: ${{ inputs.tag }}
+      context_type: release
+      llm_model: ${{ inputs.llm_model }}
+      debug: ${{ inputs.debug }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       
-      - name: Generate Release Summary
-        id: release_summary
-        if: inputs.llm_summary && steps.prev_tag.outputs.previous_tag != ''
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LLM_MODEL: ${{ inputs.llm_model }}
-          PREVIOUS_TAG: ${{ steps.prev_tag.outputs.previous_tag }}
-          CURRENT_TAG: ${{ inputs.tag }}
-        run: |
-          # Check if model is a premium model and warn
-          # GitHub Models API pricing varies by model
-          # Models need provider prefix (e.g., openai/gpt-4o)
-          PREMIUM_MODELS=("gpt-4o" "gpt-4-turbo" "o1-preview" "o1-mini")
-          FREE_MODELS=("gpt-4o-mini" "gpt-3.5-turbo" "Mistral-small" "Llama-3.2-90B-Vision-Instruct" "Llama-3.2-11B-Vision-Instruct")
-          
-          # Extract model name without provider prefix for comparison
-          MODEL_NAME="${LLM_MODEL#*/}"
-          
-          IS_PREMIUM=false
-          for model in "${PREMIUM_MODELS[@]}"; do
-            if [[ "$MODEL_NAME" == *"$model"* ]]; then
-              IS_PREMIUM=true
-              break
-            fi
-          done
-          
-          if [ "$IS_PREMIUM" = true ]; then
-            echo "::warning::Using premium model '$LLM_MODEL'. This consumes more API rate limit quota."
-          else
-            echo "Using model '$LLM_MODEL'"
-            for model in "${FREE_MODELS[@]}"; do
-              if [[ "$MODEL_NAME" == "$model" ]]; then
-                echo "This is a free/low-cost model in GitHub's Models API"
-                break
-              fi
-            done
-          fi
-          
-          # Get commit messages between tags
-          echo "Fetching commits between $PREVIOUS_TAG and $CURRENT_TAG..."
-          COMMITS=$(git log --pretty=format:"- %s (%h)" "$PREVIOUS_TAG".."$CURRENT_TAG" 2>/dev/null || echo "")
-          
-          if [ -z "$COMMITS" ]; then
-            echo "No commits found between tags"
-            echo "summary=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Count different types of changes
-          FEATURES=$(echo "$COMMITS" | grep -c -E "^- (feat|feature):" || echo "0")
-          FIXES=$(echo "$COMMITS" | grep -c -E "^- (fix|bugfix):" || echo "0")
-          BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
-          TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
-          
-          # Trim any whitespace/newlines from counts
-          FEATURES=$(echo "$FEATURES" | xargs)
-          FIXES=$(echo "$FIXES" | xargs)
-          BREAKING=$(echo "$BREAKING" | xargs)
-          TOTAL=$(echo "$TOTAL" | xargs)
-          
-          # Ensure variables are proper integers
-          FEATURES=${FEATURES//[^0-9]/}
-          FIXES=${FIXES//[^0-9]/}
-          BREAKING=${BREAKING//[^0-9]/}
-          TOTAL=${TOTAL//[^0-9]/}
-          
-          # Default to 0 if empty
-          FEATURES=${FEATURES:-0}
-          FIXES=${FIXES:-0}
-          BREAKING=${BREAKING:-0}
-          TOTAL=${TOTAL:-0}
-          
-          # Prepare the prompt for LLM
-          PROMPT=$(cat <<EOF
-          Generate a concise and professional release summary for version $CURRENT_TAG based on the following git commits.
-          
-          Statistics:
-          - Total commits: $TOTAL
-          - Features: $FEATURES
-          - Bug fixes: $FIXES
-          - Breaking changes: $BREAKING
-          
-          Commits:
-          $COMMITS
-          
-          Requirements:
-          1. Start with a brief overview (1-2 sentences) of what this release contains
-          2. Group changes by type (Features, Bug Fixes, Breaking Changes, Other Changes)
-          3. Use bullet points for each change
-          4. Keep descriptions clear and user-focused (not technical implementation details)
-          5. If there are breaking changes, highlight them clearly
-          6. Do not use excessive emojis - maximum 1-2 relevant ones for section headers only
-          7. Keep the total summary under 500 words
-          8. Use markdown formatting
-          
-          Template:
-          ## Release $CURRENT_TAG
-          
-          [Brief overview]
-          
-          ### Highlights
-          - [Most important changes]
-          
-          ### Features
-          - [New features]
-          
-          ### Bug Fixes
-          - [Fixed issues]
-          
-          ### Breaking Changes (if any)
-          - [Breaking changes with migration notes]
-          
-          ### Other Changes (if any)
-          - [Other notable changes]
-          EOF
-          )
-          
-          # Generate release summary using GitHub Models API
-          echo "Generating release summary using GitHub Models API with model: $LLM_MODEL"
-          
-          # Note: GitHub Models API has its own rate limiting separate from the general API
-          # We'll proceed with the request and handle rate limit errors if they occur
-          echo "Calling GitHub Models API..."
-          
-          # Validate GitHub token
-          if [ -z "$GITHUB_TOKEN" ]; then
-            echo "::error::GITHUB_TOKEN is not set"
-            SUMMARY=""
-            exit 1
-          fi
-          
-          # Prepare JSON payload for GitHub Models API
-          JSON_PAYLOAD=$(jq -n \
-              --arg model "$LLM_MODEL" \
-              --arg prompt "$PROMPT" \
-              '{
-                "model": $model,
-                "messages": [
-                  {
-                    "role": "system",
-                    "content": "You are a helpful assistant that generates professional release summaries for software projects. Be concise and clear."
-                  },
-                  {
-                    "role": "user", 
-                    "content": $prompt
-                  }
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000,
-                "stream": false
-              }')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::API Request payload:"
-            echo "$JSON_PAYLOAD" | jq '.'
-          fi
-          
-          # Call GitHub Models API
-          API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://models.github.ai/inference/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -d "$JSON_PAYLOAD")
-          
-          # Extract HTTP status code and response body
-          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
-          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::HTTP Response Code: $HTTP_CODE"
-            echo "::debug::API Response (first 1000 chars):"
-            echo "${RESPONSE_BODY:0:1000}"
-            echo "::debug::Full API Response:"
-            echo "$RESPONSE_BODY" | jq '.' || echo "$RESPONSE_BODY"
-          fi
-          
-          # Check HTTP status code
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::GitHub Models API returned HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "429" ]; then
-              echo "::warning::Rate limit exceeded. Using fallback."
-            elif [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "403" ]; then
-              echo "::warning::Authentication or permission issue. Check if 'models: read' permission is granted."
-            fi
-          fi
-          
-          # Check if response contains an error
-          ERROR_MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.error.message // empty')
-          
-          if [ -n "$ERROR_MESSAGE" ]; then
-            echo "::warning::GitHub Models API error: $ERROR_MESSAGE"
-            # Check if it's a rate limit error
-            if [[ "$ERROR_MESSAGE" == *"rate limit"* ]] || [[ "$ERROR_MESSAGE" == *"quota"* ]]; then
-              echo "::warning::GitHub Models API rate limit exceeded. Using fallback."
-            fi
-            SUMMARY=""
-          else
-            # Extract the summary from response
-            SUMMARY=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
-            
-            if [ -z "$SUMMARY" ]; then
-              echo "::warning::Failed to generate summary using GitHub Models API. Using fallback."
-            else
-              echo "Successfully generated summary using GitHub Models API"
-              if [ "${{ inputs.debug }}" = "true" ]; then
-                echo "::debug::Generated summary:"
-                echo "$SUMMARY"
-              fi
-            fi
-          fi
-          
-          # Fallback to basic summary if LLM fails or is not configured
-          if [ -z "$SUMMARY" ]; then
-            echo "Using fallback summary generation..."
-            
-            # Group commits by type
-            FEAT_COMMITS=$(echo "$COMMITS" | grep -E "^- (feat|feature):" || echo "")
-            FIX_COMMITS=$(echo "$COMMITS" | grep -E "^- (fix|bugfix):" || echo "")
-            BREAKING_COMMITS=$(echo "$COMMITS" | grep -E "^- (breaking|BREAKING CHANGE):" || echo "")
-            OTHER_COMMITS=$(echo "$COMMITS" | grep -vE "^- (feat|feature|fix|bugfix|breaking|BREAKING CHANGE):" || echo "")
-            
-            SUMMARY="## Release $CURRENT_TAG"$'\n\n'"This release includes $TOTAL commits"
-            
-            if [ "$FEATURES" -gt 0 ] || [ "$FIXES" -gt 0 ]; then
-              SUMMARY="$SUMMARY with"
-              if [ "$FEATURES" -gt 0 ]; then
-                SUMMARY="$SUMMARY $FEATURES new feature$([ "$FEATURES" -ne 1 ] && echo "s")"
-              fi
-              if [ "$FEATURES" -gt 0 ] && [ "$FIXES" -gt 0 ]; then
-                SUMMARY="$SUMMARY and"
-              fi
-              if [ "$FIXES" -gt 0 ]; then
-                SUMMARY="$SUMMARY $FIXES bug fix$([ "$FIXES" -ne 1 ] && echo "es")"
-              fi
-            fi
-            
-            SUMMARY="$SUMMARY."
-            
-            if [ "$BREAKING" -gt 0 ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"⚠️ **This release contains $BREAKING breaking change$([ "$BREAKING" -ne 1 ] && echo "s").**"
-            fi
-            
-            if [ -n "$FEAT_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 🚀 Features"$'\n'"$FEAT_COMMITS"
-            fi
-            
-            if [ -n "$FIX_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 🐛 Bug Fixes"$'\n'"$FIX_COMMITS"
-            fi
-            
-            if [ -n "$BREAKING_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### ⚠️ Breaking Changes"$'\n'"$BREAKING_COMMITS"
-            fi
-            
-            if [ -n "$OTHER_COMMITS" ]; then
-              SUMMARY="$SUMMARY"$'\n\n'"### 📝 Other Changes"$'\n'"$OTHER_COMMITS"
-            fi
-          fi
-          
-          # Save summary to output
-          {
-            echo 'summary<<EOF'
-            echo "$SUMMARY"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
-      # ----
+  create-pr:
+    name: Create Release PR
+    runs-on: ${{ inputs.runs_on }}
+    needs: [prepare-release, generate-summary]
+    if: always() && needs.prepare-release.result == 'success'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download modified files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: infra/helm/app/
       - name: Create pull request for release
         uses: peter-evans/create-pull-request@v7
         with:
@@ -336,12 +103,12 @@ jobs:
           body: |
             This is an automated release PR. Merging this PR will trigger a deployment.
             
-            ${{ steps.prev_tag.outputs.previous_tag && format('**Previous version:** `{0}`', steps.prev_tag.outputs.previous_tag) || '' }}
-            ${{ steps.prev_tag.outputs.comparison_url && format('**Full changelog:** {0}', steps.prev_tag.outputs.comparison_url) || '' }}
+            ${{ needs.prepare-release.outputs.previous_tag && format('**Previous version:** `{0}`', needs.prepare-release.outputs.previous_tag) || '' }}
+            ${{ needs.prepare-release.outputs.comparison_url && format('**Full changelog:** {0}', needs.prepare-release.outputs.comparison_url) || '' }}
             
             ---
             
-            ${{ steps.release_summary.outputs.summary || '## Release Summary\n\nNo automated summary available. Please review the changelog link above.' }}
+            ${{ needs.generate-summary.outputs.summary || '## Release Summary\n\nNo automated summary available. Please review the changelog link above.' }}
           branch: "auto-release-${{ inputs.tag }}"
           delete-branch: true
           branch-suffix: random

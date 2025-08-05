@@ -1,0 +1,323 @@
+name: generate-summary
+
+# Reusable workflow for generating summaries using OpenAI API
+# Can be used for releases, PRs, or any commit range
+
+on:
+  workflow_call:
+    inputs:
+      base_ref:
+        description: 'Base reference (branch, tag, or commit SHA)'
+        required: true
+        type: string
+      head_ref:
+        description: 'Head reference (branch, tag, or commit SHA)'
+        required: true
+        type: string
+      context_type:
+        description: 'Context type for summary (release, pr, custom)'
+        required: false
+        type: string
+        default: 'custom'
+      llm_model:
+        description: 'OpenAI model to use for summary generation'
+        required: false
+        type: string
+        default: 'gpt-4o-mini'
+      debug:
+        description: 'Enable debug output'
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      summary:
+        description: 'Generated summary markdown'
+        value: ${{ jobs.generate.outputs.summary }}
+      comparison_url:
+        description: 'GitHub comparison URL'
+        value: ${{ jobs.generate.outputs.comparison_url }}
+    secrets:
+      OPENAI_API_KEY:
+        description: 'OpenAI API key for summary generation'
+        required: true
+
+permissions: {}
+
+jobs:
+  generate:
+    name: generate-summary
+    runs-on: ubuntu-latest
+    outputs:
+      summary: ${{ steps.generate_summary.outputs.summary }}
+      comparison_url: ${{ steps.urls.outputs.comparison_url }}
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Generate URLs and metadata
+        id: urls
+        run: |
+          # Generate comparison URL
+          echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
+          
+      - name: Generate Summary with OpenAI
+        id: generate_summary
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL: ${{ inputs.llm_model }}
+          BASE_REF: ${{ inputs.base_ref }}
+          HEAD_REF: ${{ inputs.head_ref }}
+          CONTEXT_TYPE: ${{ inputs.context_type }}
+        run: |
+          # Validate OpenAI API key
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::OPENAI_API_KEY is not set in repository secrets"
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          
+          # Get commit messages between refs
+          echo "Fetching commits between $BASE_REF and $HEAD_REF..."
+          COMMITS=$(git log --pretty=format:"- %s (%h)" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
+          
+          if [ -z "$COMMITS" ]; then
+            echo "No commits found between refs"
+            echo "summary=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Count different types of changes
+          FEATURES=$(echo "$COMMITS" | grep -c -E "^- (feat|feature):" || echo "0")
+          FIXES=$(echo "$COMMITS" | grep -c -E "^- (fix|bugfix):" || echo "0")
+          BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
+          TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
+          
+          # Trim any whitespace/newlines from counts
+          FEATURES=$(echo "$FEATURES" | xargs)
+          FIXES=$(echo "$FIXES" | xargs)
+          BREAKING=$(echo "$BREAKING" | xargs)
+          TOTAL=$(echo "$TOTAL" | xargs)
+          
+          # Ensure variables are proper integers
+          FEATURES=${FEATURES//[^0-9]/}
+          FIXES=${FIXES//[^0-9]/}
+          BREAKING=${BREAKING//[^0-9]/}
+          TOTAL=${TOTAL//[^0-9]/}
+          
+          # Default to 0 if empty
+          FEATURES=${FEATURES:-0}
+          FIXES=${FIXES:-0}
+          BREAKING=${BREAKING:-0}
+          TOTAL=${TOTAL:-0}
+          
+          # Customize prompt based on context type
+          case "$CONTEXT_TYPE" in
+            "release")
+              CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF based on the following git commits."
+              TEMPLATE="## Release $HEAD_REF"
+              ;;
+            "pr")
+              CONTEXT_PROMPT="Generate a concise pull request description based on the following git commits. Focus on what changes are being made and why."
+              TEMPLATE="## Summary"
+              ;;
+            *)
+              CONTEXT_PROMPT="Generate a concise summary of changes based on the following git commits."
+              TEMPLATE="## Changes Summary"
+              ;;
+          esac
+          
+          # Prepare the prompt for LLM
+          PROMPT=$(cat <<EOF
+          $CONTEXT_PROMPT
+          
+          Statistics:
+          - Total commits: $TOTAL
+          - Features: $FEATURES
+          - Bug fixes: $FIXES
+          - Breaking changes: $BREAKING
+          
+          Commits:
+          $COMMITS
+          
+          Requirements:
+          1. Start with a brief overview (1-2 sentences) of what this contains
+          2. Group changes by type (Features, Bug Fixes, Breaking Changes, Other Changes)
+          3. Use bullet points for each change
+          4. Keep descriptions clear and user-focused (not technical implementation details)
+          5. If there are breaking changes, highlight them clearly
+          6. Do not use excessive emojis - maximum 1-2 relevant ones for section headers only
+          7. Keep the total summary under 500 words
+          8. Use markdown formatting
+          
+          Template:
+          $TEMPLATE
+          
+          [Brief overview]
+          
+          ### Highlights
+          - [Most important changes]
+          
+          ### Features
+          - [New features]
+          
+          ### Bug Fixes
+          - [Fixed issues]
+          
+          ### Breaking Changes (if any)
+          - [Breaking changes with migration notes]
+          
+          ### Other Changes (if any)
+          - [Other notable changes]
+          EOF
+          )
+          
+          # Generate summary using OpenAI API
+          echo "Generating summary using OpenAI API with model: $LLM_MODEL"
+          
+          # Check if model is premium
+          PREMIUM_MODELS=("gpt-4" "gpt-4-turbo" "gpt-4o" "o1-preview" "o1-mini")
+          IS_PREMIUM=false
+          for model in "${PREMIUM_MODELS[@]}"; do
+            if [[ "$LLM_MODEL" == *"$model"* ]]; then
+              IS_PREMIUM=true
+              break
+            fi
+          done
+          
+          if [ "$IS_PREMIUM" = true ]; then
+            echo "::warning::Using premium model '$LLM_MODEL'. This will incur higher API costs."
+          else
+            echo "Using standard model '$LLM_MODEL'"
+          fi
+          
+          # Prepare JSON payload for OpenAI API
+          JSON_PAYLOAD=$(jq -n \
+              --arg model "$LLM_MODEL" \
+              --arg prompt "$PROMPT" \
+              '{
+                "model": $model,
+                "messages": [
+                  {
+                    "role": "system",
+                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear."
+                  },
+                  {
+                    "role": "user", 
+                    "content": $prompt
+                  }
+                ],
+                "temperature": 0.7,
+                "max_tokens": 1000,
+                "stream": false
+              }')
+          
+          if [ "${{ inputs.debug }}" = "true" ]; then
+            echo "::debug::API Request payload:"
+            echo "$JSON_PAYLOAD" | jq '.'
+          fi
+          
+          # Call OpenAI API
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.openai.com/v1/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -d "$JSON_PAYLOAD")
+          
+          # Extract HTTP status code and response body
+          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
+          
+          if [ "${{ inputs.debug }}" = "true" ]; then
+            echo "::debug::HTTP Response Code: $HTTP_CODE"
+            echo "::debug::API Response (first 1000 chars):"
+            echo "${RESPONSE_BODY:0:1000}"
+          fi
+          
+          # Check HTTP status code
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::OpenAI API returned HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "429" ]; then
+              echo "::warning::Rate limit exceeded. Using fallback."
+            elif [ "$HTTP_CODE" = "401" ]; then
+              echo "::warning::Authentication failed. Check if OPENAI_API_KEY is valid."
+            elif [ "$HTTP_CODE" = "403" ]; then
+              echo "::warning::Access forbidden. Check API key permissions."
+            fi
+          fi
+          
+          # Check if response contains an error
+          ERROR_MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.error.message // empty')
+          
+          if [ -n "$ERROR_MESSAGE" ]; then
+            echo "::warning::OpenAI API error: $ERROR_MESSAGE"
+            SUMMARY=""
+          else
+            # Extract the summary from response
+            SUMMARY=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
+            
+            if [ -z "$SUMMARY" ]; then
+              echo "::warning::Failed to generate summary using OpenAI API. Using fallback."
+            else
+              echo "Successfully generated summary using OpenAI API"
+              if [ "${{ inputs.debug }}" = "true" ]; then
+                echo "::debug::Generated summary:"
+                echo "$SUMMARY"
+              fi
+            fi
+          fi
+          
+          # Fallback to basic summary if LLM fails
+          if [ -z "$SUMMARY" ]; then
+            echo "Using fallback summary generation..."
+            
+            # Group commits by type
+            FEAT_COMMITS=$(echo "$COMMITS" | grep -E "^- (feat|feature):" || echo "")
+            FIX_COMMITS=$(echo "$COMMITS" | grep -E "^- (fix|bugfix):" || echo "")
+            BREAKING_COMMITS=$(echo "$COMMITS" | grep -E "^- (breaking|BREAKING CHANGE):" || echo "")
+            OTHER_COMMITS=$(echo "$COMMITS" | grep -vE "^- (feat|feature|fix|bugfix|breaking|BREAKING CHANGE):" || echo "")
+            
+            SUMMARY="$TEMPLATE"$'\n\n'"This includes $TOTAL commits"
+            
+            if [ "$FEATURES" -gt 0 ] || [ "$FIXES" -gt 0 ]; then
+              SUMMARY="$SUMMARY with"
+              if [ "$FEATURES" -gt 0 ]; then
+                SUMMARY="$SUMMARY $FEATURES new feature$([ "$FEATURES" -ne 1 ] && echo "s")"
+              fi
+              if [ "$FEATURES" -gt 0 ] && [ "$FIXES" -gt 0 ]; then
+                SUMMARY="$SUMMARY and"
+              fi
+              if [ "$FIXES" -gt 0 ]; then
+                SUMMARY="$SUMMARY $FIXES bug fix$([ "$FIXES" -ne 1 ] && echo "es")"
+              fi
+            fi
+            
+            SUMMARY="$SUMMARY."
+            
+            if [ "$BREAKING" -gt 0 ]; then
+              SUMMARY="$SUMMARY"$'\n\n'"⚠️ **This contains $BREAKING breaking change$([ "$BREAKING" -ne 1 ] && echo "s").**"
+            fi
+            
+            if [ -n "$FEAT_COMMITS" ]; then
+              SUMMARY="$SUMMARY"$'\n\n'"### 🚀 Features"$'\n'"$FEAT_COMMITS"
+            fi
+            
+            if [ -n "$FIX_COMMITS" ]; then
+              SUMMARY="$SUMMARY"$'\n\n'"### 🐛 Bug Fixes"$'\n'"$FIX_COMMITS"
+            fi
+            
+            if [ -n "$BREAKING_COMMITS" ]; then
+              SUMMARY="$SUMMARY"$'\n\n'"### ⚠️ Breaking Changes"$'\n'"$BREAKING_COMMITS"
+            fi
+            
+            if [ -n "$OTHER_COMMITS" ]; then
+              SUMMARY="$SUMMARY"$'\n\n'"### 📝 Other Changes"$'\n'"$OTHER_COMMITS"
+            fi
+          fi
+          
+          # Save summary to output
+          {
+            echo 'summary<<EOF'
+            echo "$SUMMARY"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"

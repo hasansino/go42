@@ -41,10 +41,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- generate release summary with llm
-- generate PR summary with llm
 - custom & simple DI container for main.go
-
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 
