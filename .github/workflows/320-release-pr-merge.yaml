@@ -38,13 +38,35 @@ jobs:
           fi
           echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
 
+      - id: extract_summary
+        name: Extract summary from PR body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Extract the summary part from PR body (everything after the --- separator)
+          # The PR body format includes metadata at the top, then ---, then the actual summary
+          SUMMARY=$(echo "$PR_BODY" | awk '/^---$/{p=1; next} p' | sed '/^$/d')
+          
+          if [ -z "$SUMMARY" ]; then
+            echo "No summary found in PR body, using default"
+            SUMMARY="Release ${{ steps.extract_semver.outputs.version }}"
+          fi
+          
+          # Save summary to file to handle multiline content properly
+          echo "$SUMMARY" > release_summary.md
+          
+          echo "Summary extracted successfully"
+
       # create release
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}
-          generate_release_notes: true
+          body_path: release_summary.md
+          generate_release_notes: false
+          append_body: false
+          make_latest: true
 
       # remove branch after merge
       - name: Delete PR branch after merge
@@ -53,4 +75,11 @@ jobs:
           BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          gh api -X DELETE "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}"
+          # Check if branch exists before trying to delete
+          if gh api "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}" >/dev/null 2>&1; then
+            echo "Branch ${BRANCH_NAME} exists, deleting..."
+            gh api -X DELETE "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}"
+            echo "Branch ${BRANCH_NAME} deleted successfully"
+          else
+            echo "Branch ${BRANCH_NAME} does not exist or was already deleted"
+          fi
