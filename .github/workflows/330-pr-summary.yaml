@@ -77,30 +77,12 @@ jobs:
               return;
             }
             
-            // Build the PR body
-            let body = summary;
-            
-            // Add metadata footer
-            body += '\n\n---\n';
-            body += `\n*Generated automatically by GitHub Actions using ${process.env.LLM_MODEL}*`;
-            body += `\n*To regenerate, clear the PR description and push a new commit*`;
-            
             try {
               await github.rest.pulls.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: context.issue.number,
-                body: body
-              });
-              
-              console.log(`Successfully updated PR #${context.issue.number} description`);
-              
-              // Add a comment to notify
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: '🤖 I\'ve generated a summary for this PR based on the commit history. You can edit the description as needed.'
+                body: summary
               });
             } catch (error) {
               console.error('Failed to update PR:', error);
