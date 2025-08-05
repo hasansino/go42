@@ -25,6 +25,10 @@ on:
       debug:
         required: false
         type: boolean
+    secrets:
+      OPENAI_API_KEY:
+        description: 'OpenAI API key for summary generation'
+        required: false
 
 permissions: {}
 
