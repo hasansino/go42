@@ -105,6 +105,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - research agent->agent delegation feature
 - research communication patterns
 - research MCP and MLOps patterns
+- AI PRs automation -> master merge, QA, code review, etc.
 
 ## Bugs
 
