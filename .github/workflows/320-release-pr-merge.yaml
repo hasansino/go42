@@ -54,7 +54,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           # Validate branch name to prevent injection in API call
-          if ! echo "$BRANCH_NAME" | grep -qE '^[A-Za-z0-9\/_\-\.]+$'; then
+          if ! echo "$BRANCH_NAME" | grep -qE '^[A-Za-z0-9/_.\-]+$'; then
             echo "Error: Invalid branch name format"
             exit 1
           fi

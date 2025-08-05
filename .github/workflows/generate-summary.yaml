@@ -78,18 +78,19 @@ jobs:
             exit 1
           fi
           
-          # Get commit messages between refs with clickable hashes
+          # Get commit messages between refs with clickable hashes and authors
           echo "Fetching commits between $BASE_REF and $HEAD_REF..."
-          # Get commits with hash and message
-          COMMITS_RAW=$(git log --pretty=format:"%h %s" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
+          # Get commits with hash, author email, and message
+          COMMITS_RAW=$(git log --pretty=format:"%h|%ae|%s" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
           
-          # Convert to markdown with clickable links
+          # Convert to markdown with clickable links and author info
           COMMITS=""
           while IFS= read -r line; do
             if [ -n "$line" ]; then
-              HASH=$(echo "$line" | cut -d' ' -f1)
-              MESSAGE=$(echo "$line" | cut -d' ' -f2-)
-              COMMITS="${COMMITS}- ${MESSAGE} ([${HASH}](https://github.com/${{ github.repository }}/commit/${HASH}))\n"
+              HASH=$(echo "$line" | cut -d'|' -f1)
+              AUTHOR=$(echo "$line" | cut -d'|' -f2 | cut -d'@' -f1)  # Extract username from email
+              MESSAGE=$(echo "$line" | cut -d'|' -f3-)
+              COMMITS="${COMMITS}- ${MESSAGE} ([${HASH}](https://github.com/${{ github.repository }}/commit/${HASH})) by @${AUTHOR}\n"
             fi
           done <<< "$COMMITS_RAW"
           
@@ -130,15 +131,12 @@ jobs:
           case "$CONTEXT_TYPE" in
             "release")
               CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF based on the following git commits."
-              TEMPLATE="## Release $HEAD_REF"
               ;;
             "pr")
               CONTEXT_PROMPT="Generate a concise pull request description based on the following git commits. Focus on what changes are being made and why."
-              TEMPLATE="## Summary"
               ;;
             *)
               CONTEXT_PROMPT="Generate a concise summary of changes based on the following git commits."
-              TEMPLATE="## Changes Summary"
               ;;
           esac
           
@@ -161,11 +159,13 @@ jobs:
           3. Keep the Highlights section to 2-3 most important changes only
           4. Group all changes by type (Features, Bug Fixes, Breaking Changes, Other Changes)
           5. Use bullet points for each change
-          6. Keep descriptions clear and user-focused
-          7. If there are breaking changes, make them prominent
-          8. Do not use any emojis
-          9. Keep the total summary concise
-          10. Use markdown formatting
+          6. IMPORTANT: Preserve the commit hash links and author information from the original commits
+          7. Each commit line MUST include the clickable hash link and "by @author" at the end
+          8. Keep descriptions clear and user-focused
+          9. If there are breaking changes, make them prominent
+          10. Do not use any emojis
+          11. Keep the total summary concise
+          12. Use markdown formatting
           
           Template:
           ### Highlights
@@ -214,7 +214,7 @@ jobs:
                 "messages": [
                   {
                     "role": "system",
-                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear. ONLY output the Highlights section and the grouped list of changes. Do NOT include any overview paragraphs or additional commentary."
+                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear. ONLY output the Highlights section and the grouped list of changes. Do NOT include any overview paragraphs or additional commentary. IMPORTANT: You MUST preserve the commit hash links in format ([hash](url)) and author information (by @author) from each commit line exactly as provided."
                   },
                   {
                     "role": "user", 
