@@ -10,9 +10,10 @@ help: Makefile
 # Prerequisites: brew, go
 # @note used by github copilot to setup its environment.
 # @note `golines` is required to format go files on save, but linting is done by golangci-lint.
+# @note Makefile hash is used for caching brew artifacts in CI.
 setup:
 	@go mod tidy -e && go mod download
-	@brew install golangci-lint hadolint markdownlint-cli2 vale gitleaks \
+	@brew install -q golangci-lint hadolint markdownlint-cli2 vale gitleaks \
 	sqlfluff buf redocly-cli yq grpcui k6
 	@vale --config etc/vale.ini sync
 	@go install go.uber.org/mock/mockgen@latest

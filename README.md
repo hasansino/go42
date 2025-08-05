@@ -42,6 +42,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 ### 💪(•̀_•́💪)
 
 - set names for all action steps
+- github promt files
 - generate release summary with llm
 - generate PR summary with llm
 - custom & simple DI container for main.go
@@ -95,6 +96,15 @@ Go42 is opinionated approach to develop cloud native golang services.
 - capacity planning and resource management
 - scaling and organizing multiple projects
 - cost analysis for different scales
+
+### Project `swarm`
+
+- resetting claude code context -> benefits?
+- claude sub agents
+- research orchestration pattern
+- research agent->agent delegation feature
+- research communication patterns
+- research MCP and MLOps patterns
 
 ## Bugs
 
