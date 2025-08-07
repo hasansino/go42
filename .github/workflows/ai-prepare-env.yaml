@@ -36,3 +36,5 @@ jobs:
       - uses: Homebrew/actions/setup-homebrew@main
       # -----
       - run: make setup
+      # -----
+      - run: make generate-ai
