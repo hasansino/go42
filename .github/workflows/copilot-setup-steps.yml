@@ -7,39 +7,9 @@ on:
   push:
     paths:
       - .github/workflows/copilot-setup-steps.yml
+      - .github/workflows/ai-prepare-env.yaml
 
 jobs:
   # this job MUST be called `copilot-setup-steps`
   copilot-setup-steps:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      # -----
-      - id: go-version
-        run: echo "version=$(grep '^go ' go.mod | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-          cache-dependency-path: |
-            **/go.sum
-            **/go.mod
-      # -----
-      - run: go mod tidy && go mod download
-      # -----
-      - name: Cache Homebrew and formulae
-        uses: actions/cache@v4
-        with:
-          path: |
-            /home/linuxbrew/.linuxbrew
-            /home/linuxbrew/.cache/Homebrew
-          key: homebrew-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
-          restore-keys: |
-            homebrew-${{ runner.os }}-${{ runner.arch }}-
-            homebrew-${{ runner.os }}-
-      # -----
-      - uses: Homebrew/actions/setup-homebrew@main
-      # -----
-      - run: make setup
+    uses: ./.github/workflows/ai-prepare-env.yaml

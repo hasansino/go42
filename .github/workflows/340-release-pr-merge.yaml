@@ -64,7 +64,7 @@ jobs:
           tag_name: ${{ steps.extract_semver.outputs.version }}
           body_path: release_summary.md
           generate_release_notes: true
-          append_body: false
+          append_body: true
           make_latest: true
       # ----
       - name: Delete PR branch after merge

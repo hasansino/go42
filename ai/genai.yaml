@@ -1,0 +1,17 @@
+# AI Instruction Generation Configuration
+
+project:
+  name: go42
+  language: Go
+  description: GitHub template for Go projects
+  metadata:
+    repository: github.com/hasansino/go42
+
+providers:
+  claude:
+    template: ai/claude.tpl.md
+    output: CLAUDE.md
+
+  copilot:
+    template: ai/copilot.tpl.md
+    output: .github/copilot-instructions.md

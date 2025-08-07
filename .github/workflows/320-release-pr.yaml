@@ -60,7 +60,7 @@ jobs:
   generate-summary:
     name: Generate Release Summary
     needs: prepare-release
-    uses: ./.github/workflows/generate-summary.yaml
+    uses: ./.github/workflows/ai-generate-summary.yaml
     with:
       base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
       head_ref: ${{ inputs.tag }}

@@ -46,7 +46,7 @@ jobs:
     name: Generate Summary
     needs: check-pr
     if: needs.check-pr.outputs.should_generate == 'true'
-    uses: ./.github/workflows/generate-summary.yaml
+    uses: ./.github/workflows/ai-generate-summary.yaml
     with:
       base_ref: ${{ github.event.pull_request.base.sha }}
       head_ref: ${{ github.event.pull_request.head.sha }}

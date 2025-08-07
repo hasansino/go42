@@ -32,7 +32,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - Establish an SDLC framework that scales with project, team, and organizational growth.
 - Support both closed-source operation and open-source friendliness by design.
 - Minimize operational overhead through enforced rules, conventions, and best practices at the CI/CD level.
-- Enable effortless integration of AI tools into the development workflow.
+- Native integration of AI tools into the development workflow.
 - Ensure rapid and streamlined operational deployment bootstrapping.
 - Embed security fundamentals from day one.
 - Me learning a lot of new things in the process.
@@ -95,11 +95,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
-- https://docs.anthropic.com/en/docs/claude-code/github-actions
 - resetting claude code context -> benefits?
-- claude sub agents
 - research orchestration pattern
-- research agent->agent delegation feature
 - research communication patterns
 - research MCP and MLOps patterns
 - AI PRs automation -> master merge, QA, code review, etc.
