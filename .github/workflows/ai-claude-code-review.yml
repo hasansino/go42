@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
     
     steps:
@@ -29,5 +29,16 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_sticky_comment: true
-          # model: "claude-opus-4-20250514"
-          # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
+          model: "claude-opus-4-1-20250805"
+          allowed_tools: |
+            Bash(go mod tidy*)
+            Bash(go mod verify*)
+            Bash(go vet*)
+            Bash(go test*)
+            Bash(make generate*)
+            Bash(make lint*)
+            Bash(make test-unit*)
+            Bash(golangci-lint*)
+            Bash(buf lint*)
+            Bash(gitleaks*)
+            Bash(actionlint*)

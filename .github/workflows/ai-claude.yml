@@ -23,9 +23,9 @@ jobs:
     needs: prepare-env
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
     steps:
@@ -39,10 +39,28 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # model: "claude-opus-4-20250514"
-          # trigger_phrase: "/claude"
-          # assignee_trigger: "claude-bot"
-          # allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
-          # Optional: Custom environment variables for Claude
-          # claude_env: |
-          #   NODE_ENV: test
+          additional_permissions: |
+            actions: read
+            contents: write
+          model: "claude-opus-4-1-20250805"
+          trigger_phrase: "@claude"
+          assignee_trigger: "claude-bot"
+          allowed_tools: |
+            Bash(go mod tidy*)
+            Bash(go mod download*)
+            Bash(go generate*)
+            Bash(go test*)
+            Bash(go run*)
+            Bash(go build*)
+            Bash(make generate*)
+            Bash(make lint*)
+            Bash(make test-unit*)
+            Bash(make test-integration*)
+            Bash(make run*)
+            Bash(make build*)
+            Bash(golangci-lint*)
+            Bash(buf*)
+            Bash(redocly*)
+          claude_env: |
+            GO111MODULE: on
+            CGO_ENABLED: 1
