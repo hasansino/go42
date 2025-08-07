@@ -131,8 +131,8 @@ func main() {
 		dbEngine, sqliteConnErr = sqlite.Open(
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
-			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
-			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlte"))),
+			sqlite.WithCacheMode(cfg.Database.Sqlite.CacheMode),
+			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
 			sqlite.WithQueryLogging(cfg.Database.LogQueries),
 		)
 		if sqliteConnErr != nil {

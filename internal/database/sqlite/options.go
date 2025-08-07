@@ -24,7 +24,7 @@ func WithMode(mode string) Option {
 	}
 }
 
-func WithCacheMod(mode string) Option {
+func WithCacheMode(mode string) Option {
 	return func(w *Sqlite) {
 		w.connOpts = append(w.connOpts, ConnectionOption{"cache", mode})
 	}
