@@ -30,6 +30,16 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_sticky_comment: true
           model: "claude-opus-4-1-20250805"
+          mcp_config: |
+            {
+              "mcpServers": {
+                "kwb": {
+                  "command": "go",
+                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+                  "env": {}
+                }
+              }
+            }
           allowed_tools: |
             Bash(go mod tidy*)
             Bash(go mod verify*)
@@ -42,3 +52,6 @@ jobs:
             Bash(buf lint*)
             Bash(gitleaks*)
             Bash(actionlint*)
+            mcp__kwb__search
+            mcp__kwb__list_files
+            mcp__kwb__get_file

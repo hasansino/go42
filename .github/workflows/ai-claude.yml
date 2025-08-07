@@ -45,6 +45,16 @@ jobs:
           model: "claude-opus-4-1-20250805"
           trigger_phrase: "@claude"
           assignee_trigger: "claude-bot"
+          mcp_config: |
+            {
+              "mcpServers": {
+                "kwb": {
+                  "command": "go",
+                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+                  "env": {}
+                }
+              }
+            }
           allowed_tools: |
             Bash(go mod tidy*)
             Bash(go mod download*)
@@ -61,6 +71,6 @@ jobs:
             Bash(golangci-lint*)
             Bash(buf*)
             Bash(redocly*)
-          claude_env: |
-            GO111MODULE: on
-            CGO_ENABLED: 1
+            mcp__kwb__search
+            mcp__kwb__list_files
+            mcp__kwb__get_file

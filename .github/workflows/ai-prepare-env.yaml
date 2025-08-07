@@ -37,4 +37,20 @@ jobs:
       # -----
       - run: make setup
       # -----
+      - name: Set CI environment variables for genai
+        run: |
+          echo "CI=true" >> $GITHUB_ENV
+          echo "BRANCH=${{ github.head_ref || github.ref_name }}" >> $GITHUB_ENV
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha || github.sha }}" >> $GITHUB_ENV
+          echo "BUILD_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
+          
+          # PR-specific variables
+          if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event_name }}" = "pull_request_review" ] || [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            echo "PR_NUMBER=${{ github.event.pull_request.number || github.event.issue.number }}" >> $GITHUB_ENV
+            echo "TARGET_BRANCH=${{ github.event.pull_request.base.ref || 'main' }}" >> $GITHUB_ENV
+          else
+            echo "PR_NUMBER=" >> $GITHUB_ENV
+            echo "TARGET_BRANCH=main" >> $GITHUB_ENV
+          fi
+      # -----
       - run: make generate-ai

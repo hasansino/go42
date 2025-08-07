@@ -76,18 +76,18 @@ func buildIndex(indexPath string) error {
 	}(index)
 
 	extensions := map[string]bool{
-		".go":   true,
-		".md":   true,
-		".yaml": true,
-		".yml":  true,
-		".mod":  true,
-		".sum":  true,
+		".go":    true,
+		".md":    true,
+		".yaml":  true,
+		".yml":   true,
+		".mod":   true,
+		".sum":   true,
 		".proto": true,
-		".sql":  true,
-		".json": true,
-		".toml": true,
-		".env":  true,
-		".sh":   true,
+		".sql":   true,
+		".json":  true,
+		".toml":  true,
+		".env":   true,
+		".sh":    true,
 	}
 
 	excludeDirs := []string{
