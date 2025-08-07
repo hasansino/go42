@@ -12,8 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # -----
-      - id: go-version
-        run: echo "version=$(grep '^go ' go.mod | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'

@@ -1,0 +1,46 @@
+name: ai-rebuild-kwb-index
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  ai-rebuild-kwb-index:
+    name: ai-rebuild-kwb-index
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # ----
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            **/go.mod
+      # ----
+      - run: go mod tidy && go mod download
+      # ----
+      - name: Build knowledge base index
+        run: go run cmd/genkwb/main.go -build -index ai/index
+      # ----
+      - name: Upload index as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kwb-index-${{ github.sha }}
+          path: ai/index/
+      # ----
+      - name: Commit index to repository
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add ai/index/
+          git diff --staged --quiet || git commit -m "Update knowledge base index [skip ci]"
+          git push

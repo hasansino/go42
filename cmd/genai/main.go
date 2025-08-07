@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,22 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+type MCPServer struct {
+	Command string            `json:"command"`
+	Args    []string          `json:"args"`
+	Env     map[string]string `json:"env,omitempty"`
+}
+
+var mcpServers = map[string]MCPServer{
+	"kwb": {
+		Command: "go",
+		Args:    []string{"run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"},
+		Env:     map[string]string{},
+	},
+}
+
+var enabledMCPServers = []string{"kwb"}
 
 type Config struct {
 	Project   ProjectConfig             `yaml:"project"`
@@ -29,7 +46,6 @@ type ProviderConfig struct {
 	Template string `yaml:"template"`
 	Output   string `yaml:"output"`
 }
-
 
 type Content struct {
 	Chunks map[string]string
@@ -76,6 +92,11 @@ func run() error {
 	// Copy agents to .claude/agents directory
 	if err := copyAgentsToClaudeDir(); err != nil {
 		fmt.Printf("Warning: failed to copy agents: %v\n", err)
+	}
+
+	// Generate .claude/settings.json with MCP servers
+	if err := generateClaudeSettings(); err != nil {
+		fmt.Printf("Warning: failed to generate .claude/settings.json: %v\n", err)
 	}
 
 	subagents, err := loadSubagents("ai/agents")
@@ -137,28 +158,28 @@ func loadContentFromChunks(dir string) (*Content, error) {
 		Chunks: make(map[string]string),
 		Order:  []string{},
 	}
-	
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read chunks directory: %w", err)
 	}
-	
+
 	// Collect all md files
 	var mdFiles []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		// Only process .md files
 		if strings.HasSuffix(entry.Name(), ".md") {
 			mdFiles = append(mdFiles, entry.Name())
 		}
 	}
-	
+
 	// Sort files for consistent ordering
 	sort.Strings(mdFiles)
-	
+
 	// Load each file
 	for _, filename := range mdFiles {
 		path := filepath.Join(dir, filename)
@@ -166,17 +187,17 @@ func loadContentFromChunks(dir string) (*Content, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read %s: %w", filename, err)
 		}
-		
+
 		// Use filename without extension as key
 		key := strings.TrimSuffix(filename, ".md")
 		content.Chunks[key] = string(data)
 		content.Order = append(content.Order, key)
 	}
-	
+
 	if len(content.Chunks) == 0 {
 		return nil, fmt.Errorf("no content chunks found in %s", dir)
 	}
-	
+
 	return content, nil
 }
 
@@ -287,4 +308,39 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func generateClaudeSettings() error {
+	// Define the settings structure
+	type Settings struct {
+		MCPServers            map[string]MCPServer `json:"mcpServers"`
+		EnabledMcpjsonServers []string             `json:"enabledMcpjsonServers"`
+	}
+
+	// Create settings using the defined MCP servers
+	settings := Settings{
+		MCPServers:            mcpServers,
+		EnabledMcpjsonServers: enabledMCPServers,
+	}
+
+	// Create .claude directory if it doesn't exist
+	claudeDir := ".claude"
+	if err := os.MkdirAll(claudeDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .claude directory: %w", err)
+	}
+
+	// Marshal settings to JSON with indentation
+	data, err := json.MarshalIndent(settings, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal settings: %w", err)
+	}
+
+	// Write settings.json file
+	settingsPath := filepath.Join(claudeDir, "settings.json")
+	if err := os.WriteFile(settingsPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write settings.json: %w", err)
+	}
+
+	fmt.Printf("Generated %s\n", settingsPath)
+	return nil
 }

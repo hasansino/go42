@@ -149,7 +149,9 @@ Follow the Arrange-Act-Assert (AAA) pattern
 
 ### Phase 3: Verification
 
-- run `make generate` to update the generated files
+- run `make generate`:
+  - to update the generated files
+  - to update / download go modules and verify they are correct
 - run `make lint` and fix any issues
 - run `make test-unit` to run the tests, fix any issues
 - run `make run` to start application and check if it works
