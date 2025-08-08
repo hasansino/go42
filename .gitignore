@@ -7,7 +7,6 @@
 .claude/
 ai/index/
 CLAUDE.md
-.github/copilot-instructions.md
 
 .env
 app
