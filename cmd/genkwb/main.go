@@ -140,13 +140,17 @@ func buildIndex(indexPath string) error {
 
 		// Skip very large files (>1MB)
 		if info.Size() > 1024*1024 {
-			slog.Warn("skipping large file", "path", path, "size", info.Size())
+			slog.Warn("skipping large file",
+				slog.String("path", path),
+				slog.Int64("size", info.Size()))
 			return nil
 		}
 
 		content, err := os.ReadFile(path)
 		if err != nil {
-			slog.Warn("failed to read file", "path", path, "error", err)
+			slog.Warn("failed to read file",
+				slog.String("path", path),
+				slog.String("error", err.Error()))
 			return nil
 		}
 
@@ -158,12 +162,14 @@ func buildIndex(indexPath string) error {
 		}
 
 		if err := index.Index(doc.ID, doc); err != nil {
-			slog.Warn("failed to index file", "path", path, "error", err)
+			slog.Warn("failed to index file",
+				slog.String("path", path),
+				slog.String("error", err.Error()))
 			return nil
 		}
 
 		fileCount++
-		slog.Debug("indexed file", "path", path)
+		slog.Debug("indexed file", slog.String("path", path))
 		return nil
 	})
 
@@ -172,7 +178,9 @@ func buildIndex(indexPath string) error {
 	}
 
 	count, _ := index.DocCount()
-	slog.Info("indexing complete", "documents", count, "files_processed", fileCount)
+	slog.Info("indexing complete",
+		slog.Uint64("documents", count),
+		slog.Int("files_processed", fileCount))
 	return nil
 }
 
