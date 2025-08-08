@@ -95,6 +95,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
+- qwerty
 - sandbox AI execution in containers
 - structured yaml prompts
 - ai cost tracking
