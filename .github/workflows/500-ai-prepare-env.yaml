@@ -1,5 +1,7 @@
 name: ai-prepare-env
 
+# Prepare the environment for AI-related tasks.
+
 on:
   workflow_call:
 
