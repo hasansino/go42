@@ -1,5 +1,10 @@
 config-variables:
-  - CUSTOM_ENVIRONMENT_VARIABLE
+  - AI_ENABLE
+  - COPILOT_ENABLE
+  - CLAUDE_AUTO_REVIEW
+  - CLAUDE_ENABLE
+  - OPENAI_ENABLE
+  - AI_GENERATE_SUMMARY
 
 paths:
   .github/workflows/*.{yml,yaml}:

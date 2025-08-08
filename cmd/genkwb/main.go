@@ -42,16 +42,16 @@ func main() {
 
 	if *buildMode {
 		if err := buildIndex(*indexPath); err != nil {
-			slog.Error("failed to build index", "error", err)
+			slog.Error("failed to build index", slog.Any("error", err))
 			os.Exit(1)
 		}
-		slog.Info("index built successfully", "path", *indexPath)
+		slog.Info("index built successfully", slog.String("path", *indexPath))
 		return
 	}
 
 	if *serve {
 		if err := runServer(*indexPath); err != nil {
-			slog.Error("failed to run server", "error", err)
+			slog.Error("failed to run server", slog.Any("error", err))
 			os.Exit(1)
 		}
 		return

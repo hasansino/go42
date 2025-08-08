@@ -1,0 +1,89 @@
+name: Claude Code
+
+# Manual interaction with claude.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-env:
+    if: |
+      vars.AI_ENABLE != 'false' && vars.CLAUDE_ENABLE != 'false' &&
+      (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) ||
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)) &&
+      ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))))
+    uses: ./.github/workflows/500-ai-prepare-env.yaml
+
+  claude:
+    needs: prepare-env
+    if: |
+      vars.AI_ENABLE != 'false' &&
+      vars.CLAUDE_ENABLE != 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          additional_permissions: |
+            actions: read
+            contents: write
+          model: "claude-opus-4-1-20250805"
+          trigger_phrase: "@claude"
+          assignee_trigger: "claude-bot"
+          mcp_config: |
+            {
+              "mcpServers": {
+                "kwb": {
+                  "command": "go",
+                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+                  "env": {}
+                }
+              }
+            }
+          allowed_tools: |
+            Bash(go mod tidy*)
+            Bash(go mod download*)
+            Bash(go generate*)
+            Bash(go test*)
+            Bash(go run*)
+            Bash(go build*)
+            Bash(make generate*)
+            Bash(make lint*)
+            Bash(make test-unit*)
+            Bash(make test-integration*)
+            Bash(make run*)
+            Bash(make build*)
+            Bash(golangci-lint*)
+            Bash(buf*)
+            Bash(redocly*)
+            mcp__kwb__search
+            mcp__kwb__list_files
+            mcp__kwb__get_file

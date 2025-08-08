@@ -1,0 +1,72 @@
+name: ai-prepare-env
+
+on:
+  workflow_call:
+
+concurrency:
+  group: ai-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  ai-prepare-env:
+    name: ai-prepare-env
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      # -----
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            **/go.mod
+      # -----
+      - run: go mod tidy && go mod download
+      # -----
+      - name: Cache Homebrew and formulae
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/linuxbrew/.linuxbrew
+            /home/linuxbrew/.cache/Homebrew
+          key: homebrew-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Makefile') }}
+          restore-keys: |
+            homebrew-${{ runner.os }}-${{ runner.arch }}-
+            homebrew-${{ runner.os }}-
+      # -----
+      - uses: Homebrew/actions/setup-homebrew@main
+      # -----
+      - run: make setup
+      # -----
+      - name: Set CI environment variables for genai
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SHA: ${{ github.sha }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          echo "CI=true" >> $GITHUB_ENV
+          echo "BRANCH=${HEAD_REF:-$REF_NAME}" >> $GITHUB_ENV
+          echo "COMMIT_SHA=${PR_HEAD_SHA:-$SHA}" >> $GITHUB_ENV
+          echo "BUILD_URL=${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}" >> $GITHUB_ENV
+          
+          # PR-specific variables
+          if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "pull_request_review" ] || [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
+            echo "PR_NUMBER=${PR_NUMBER:-$ISSUE_NUMBER}" >> $GITHUB_ENV
+            echo "TARGET_BRANCH=${PR_BASE_REF:-master}" >> $GITHUB_ENV
+          else
+            echo "PR_NUMBER=" >> $GITHUB_ENV
+            echo "TARGET_BRANCH=main" >> $GITHUB_ENV
+          fi
+      # -----
+      - run: make generate-ai

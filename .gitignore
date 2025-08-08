@@ -1,6 +1,12 @@
-.idea/
-.claude/
 .DS_Store
-__debug*
-bin/
+
+.idea/
+.vscode/
+
+.crush/
+.claude/
+ai/index/
+CLAUDE.md
+.github/copilot-instructions.md
+
 .env

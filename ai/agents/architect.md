@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Design and plan software architecture for new features or major refactoring efforts
+description: Design and plan software architecture for new features or major refactoring efforts.
 ---
 
 # Architect Agent

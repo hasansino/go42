@@ -131,8 +131,8 @@ func main() {
 		dbEngine, sqliteConnErr = sqlite.Open(
 			cfg.Database.Sqlite.SqliteFile,
 			sqlite.WithMode(cfg.Database.Sqlite.Mode),
-			sqlite.WithCacheMod(cfg.Database.Sqlite.CacheMode),
-			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlte"))),
+			sqlite.WithCacheMode(cfg.Database.Sqlite.CacheMode),
+			sqlite.WithLogger(slog.Default().With(slog.String("component", "gorm-sqlite"))),
 			sqlite.WithQueryLogging(cfg.Database.LogQueries),
 		)
 		if sqliteConnErr != nil {
@@ -331,7 +331,9 @@ func main() {
 		eventsEngine, err = rabbitmq.New(
 			cfg.Events.RabbitMQ.DSN,
 			rabbitmq.WithLogger(slog.Default().With(slog.String("component", "events-rabbitmq"))),
-			rabbitmq.WithReconnectBackoffInitialInterval(cfg.Events.RabbitMQ.ReconnectInitialInterval),
+			rabbitmq.WithReconnectBackoffInitialInterval(
+				cfg.Events.RabbitMQ.ReconnectInitialInterval,
+			),
 			rabbitmq.WithReconnectBackoffMultiplier(cfg.Events.RabbitMQ.ReconnectMultiplier),
 			rabbitmq.WithReconnectBackoffMaxInterval(cfg.Events.RabbitMQ.ReconnectMaxInterval),
 			rabbitmq.WithExchangeName(cfg.Events.RabbitMQ.ExchangeName),

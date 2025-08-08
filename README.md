@@ -95,10 +95,20 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
+- sandbox AI execution in containers
+- structured yaml prompts
+- ai cost tracking
+- limit file access to repository boundaries
+- add audit logging for all AI actions
+- cache generated AI files between workflow runs to avoid regeneration
+- claude permissions issue
+- ignore draft PRs + codeql
+- gh copilot does not connect to mcp server
 - research orchestration patterns
 - research communication patterns
 - research MCP and MLOps patterns
-- AI PRs automation -> master merge, QA, code review, etc.
+- ai PRs automation -> master merge, QA, code review, etc.
+- add explicit context about repository structure
 
 ## Bugs
 

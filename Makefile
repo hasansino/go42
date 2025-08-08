@@ -141,6 +141,14 @@ generate:
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
 
+# ╭────────────────────----------------──────────╮
+# │                      AI                      │
+# ╰─────────────────────----------------─────────╯
+
+## claude | run claude code in isolated environment
+claude:
+	@echo "Not implemented."
+
 ## generate-ai | generate AI-related code and configurations (CLAUDE.md, settings.json, kwb index)
 generate-ai:
 	@go run cmd/genai/main.go
