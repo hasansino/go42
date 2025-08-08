@@ -14,12 +14,16 @@ on:
 
 concurrency:
   group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   prepare-env:
     if: |
-      vars.AI_ENABLE != 'false' && vars.CLAUDE_ENABLE != 'false' &&
+      vars.CLAUDE_ENABLE != 'false' &&
+      ((github.event_name == 'issue_comment' && github.event.comment.user.type != 'Bot') ||
+       (github.event_name == 'pull_request_review_comment' && github.event.comment.user.type != 'Bot') ||
+       (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
+       (github.event_name == 'issues' && github.event.issue.user.type != 'Bot')) &&
       (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) ||
        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)) &&
@@ -32,8 +36,11 @@ jobs:
   claude:
     needs: prepare-env
     if: |
-      vars.AI_ENABLE != 'false' &&
-      vars.CLAUDE_ENABLE != 'false'
+      vars.CLAUDE_ENABLE != 'false' &&
+      ((github.event_name == 'issue_comment' && github.event.comment.user.type != 'Bot') ||
+       (github.event_name == 'pull_request_review_comment' && github.event.comment.user.type != 'Bot') ||
+       (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
+       (github.event_name == 'issues' && github.event.issue.user.type != 'Bot'))
     runs-on: ubuntu-latest
     permissions:
       contents: write

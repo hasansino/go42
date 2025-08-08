@@ -46,7 +46,6 @@ jobs:
   generate:
     name: generate-summary
     if: |
-      vars.AI_ENABLE != 'false' &&
       vars.OPENAI_ENABLE != 'false' &&
       vars.AI_GENERATE_SUMMARY != 'false'
     runs-on: ubuntu-latest

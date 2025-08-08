@@ -8,12 +8,12 @@ on:
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   prepare-env:
     if: |
-      vars.AI_ENABLE != 'false' &&
+      github.event.pull_request.user.type != 'Bot' &&
       vars.CLAUDE_ENABLE != 'false' &&
       vars.CLAUDE_AUTO_REVIEW != 'false' &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
@@ -22,7 +22,7 @@ jobs:
   claude-review:
     needs: prepare-env
     if: |
-      vars.AI_ENABLE != 'false' &&
+      github.event.pull_request.user.type != 'Bot' &&
       vars.CLAUDE_ENABLE != 'false' &&
       vars.CLAUDE_AUTO_REVIEW != 'false' &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
