@@ -2,8 +2,7 @@ name: copilot-setup-steps
 
 # This workflow is responsible for setting up the environment for Copilot.
 # File MUST be named `copilot-setup-steps.yml`.
-# IMPORTANT: This file must contain steps, not jobs, as GitHub Copilot
-# will inline these steps into its dynamically generated workflow.
+# @note Copilot will inline these STEPS (not jobs) into its dynamic workflow
 
 on:
   workflow_dispatch:
