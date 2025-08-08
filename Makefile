@@ -145,10 +145,6 @@ generate:
 # │                      AI                      │
 # ╰─────────────────────----------------─────────╯
 
-## claude | run claude code in isolated environment
-claude:
-	@echo "Not implemented."
-
 ## generate-ai | generate AI-related code and configurations (CLAUDE.md, settings.json, kwb index)
 generate-ai:
 	@go run cmd/genai/main.go
