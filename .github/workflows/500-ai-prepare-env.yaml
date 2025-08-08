@@ -3,10 +3,6 @@ name: ai-prepare-env
 on:
   workflow_call:
 
-concurrency:
-  group: ai-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true
-
 jobs:
   ai-prepare-env:
     name: ai-prepare-env

@@ -12,7 +12,4 @@ on:
 jobs:
   # this job MUST be called `copilot-setup-steps`
   copilot-setup-steps:
-    if: |
-      vars.AI_ENABLE != 'false' &&
-      vars.COPILOT_ENABLE != 'false'
     uses: ./.github/workflows/500-ai-prepare-env.yaml
