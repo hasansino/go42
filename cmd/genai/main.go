@@ -14,21 +14,42 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	mcpServers = map[string]MCPServer{
+		"kwb": {
+			Command: "go",
+			Args:    []string{"run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"},
+			Env:     map[string]string{},
+		},
+	}
+	enabledMCPServers  = []string{"kwb"}
+	defaultPermissions = Permissions{
+		Allow: []string{},
+		Deny:  []string{},
+	}
+)
+
+type MCPServerConfig struct {
+	Servers map[string]MCPServer `json:"mcpServers"`
+}
+
 type MCPServer struct {
 	Command string            `json:"command"`
 	Args    []string          `json:"args"`
 	Env     map[string]string `json:"env,omitempty"`
 }
 
-var mcpServers = map[string]MCPServer{
-	"kwb": {
-		Command: "go",
-		Args:    []string{"run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"},
-		Env:     map[string]string{},
-	},
+type Settings struct {
+	Permissions       Permissions `json:"permissions"`
+	EnabledMCPServers []string    `json:"enabledMcpjsonServers"`
 }
 
-var enabledMCPServers = []string{"kwb"}
+type Permissions struct {
+	Allow []string `json:"allow"`
+	Deny  []string `json:"deny"`
+}
+
+// ----
 
 type Config struct {
 	Project   ProjectConfig             `yaml:"project"`
@@ -97,6 +118,10 @@ func run() error {
 	// Generate .claude/settings.json with MCP servers
 	if err := generateClaudeSettings(); err != nil {
 		fmt.Printf("Warning: failed to generate .claude/settings.json: %v\n", err)
+	}
+
+	if err := generateMCPServerConfig(); err != nil {
+		fmt.Printf("Warning: failed to generate .mcp.json: %v\n", err)
 	}
 
 	subagents, err := loadSubagents("ai/agents")
@@ -303,44 +328,50 @@ func copyAgentsToClaudeDir() error {
 	return nil
 }
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
 func generateClaudeSettings() error {
-	// Define the settings structure
-	type Settings struct {
-		MCPServers            map[string]MCPServer `json:"mcpServers"`
-		EnabledMcpjsonServers []string             `json:"enabledMcpjsonServers"`
-	}
-
-	// Create settings using the defined MCP servers
 	settings := Settings{
-		MCPServers:            mcpServers,
-		EnabledMcpjsonServers: enabledMCPServers,
+		EnabledMCPServers: enabledMCPServers,
+		Permissions:       defaultPermissions,
 	}
 
-	// Create .claude directory if it doesn't exist
 	claudeDir := ".claude"
 	if err := os.MkdirAll(claudeDir, 0755); err != nil {
 		return fmt.Errorf("failed to create .claude directory: %w", err)
 	}
 
-	// Marshal settings to JSON with indentation
 	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal settings: %w", err)
 	}
 
-	// Write settings.json file
 	settingsPath := filepath.Join(claudeDir, "settings.json")
 	if err := os.WriteFile(settingsPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write settings.json: %w", err)
 	}
 
 	fmt.Printf("Generated %s\n", settingsPath)
+
 	return nil
+}
+
+func generateMCPServerConfig() error {
+	config := MCPServerConfig{
+		Servers: mcpServers,
+	}
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+	if err := os.WriteFile(".mcp.json", data, 0644); err != nil {
+		return fmt.Errorf("failed to write settings.json: %w", err)
+	}
+	fmt.Printf("Generated %s\n", ".mcp.json")
+	return nil
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

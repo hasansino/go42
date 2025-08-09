@@ -242,7 +242,7 @@ func New(opts ...Option) *Server {
 		s.v1.GET("/", func(c echo.Context) error {
 			return tmpl.Execute(c.Response(), swaggerTemplateData{
 				SpecURLs:  s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
-				DarkTheme: true,
+				DarkTheme: s.swaggerDarkStyle,
 			})
 		})
 	}

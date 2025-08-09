@@ -44,6 +44,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - custom & simple DI container for main.go
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
+- module init retry
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -95,12 +96,12 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
-- sandbox AI execution in containers
-- structured yaml prompts
+- sandbox ai execution in containers
+- structured yaml prompts (declarative instructions)
 - ai cost tracking
 - limit file access to repository boundaries
 - add audit logging for all AI actions
-- cache generated AI files between workflow runs to avoid regeneration
+- cache generated ai files between workflow runs to avoid regeneration
 - claude permissions issue
 - ignore draft PRs + codeql
 - gh copilot does not connect to mcp server

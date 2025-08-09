@@ -19,8 +19,8 @@ func New(opts ...Option) (*Wrapper, error) {
 		Shards:             1,
 		LifeWindow:         5 * time.Minute,
 		MaxEntriesInWindow: 1000,
-		MaxEntrySize:       512 * 1024, // 512 KB
-		HardMaxCacheSize:   100000,     // ~500 MB
+		MaxEntrySize:       512 * 1024,
+		HardMaxCacheSize:   10000,
 		Verbose:            true,
 	}
 

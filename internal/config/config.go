@@ -302,8 +302,8 @@ type BigCache struct {
 	Shards             int           `env:"CACHE_BIGCACHE_SHARDS"                default:"1"`
 	LifeWindow         time.Duration `env:"CACHE_BIGCACHE_LIFE_WINDOW"           default:"5m"`
 	MaxEntriesInWindow int           `env:"CACHE_BIGCACHE_MAX_ENTRIES_IN_WINDOW" default:"1000"`
-	MaxEntrySizeBytes  int           `env:"CACHE_BIGCACHE_MAX_ENTRY_SIZE_BYTES"  default:"512000"` // 500 KB
-	HardMaxCacheSize   int           `env:"CACHE_BIGCACHE_HARD_MAX_CACHE_SIZE"   default:"100000"` // ~500 MB
+	MaxEntrySizeBytes  int           `env:"CACHE_BIGCACHE_MAX_ENTRY_SIZE_BYTES"  default:"512000"`
+	HardMaxCacheSize   int           `env:"CACHE_BIGCACHE_HARD_MAX_CACHE_SIZE"   default:"1000"`
 	Verbose            bool          `env:"CACHE_BIGCACHE_VERBOSE"               default:"true"`
 }
 

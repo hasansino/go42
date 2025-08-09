@@ -6,7 +6,9 @@
 .crush/
 .claude/
 ai/index/
-CLAUDE.md
+.mcp.json
 .github/copilot-instructions.md
+CLAUDE.md
+AGENTS.md
 
 .env

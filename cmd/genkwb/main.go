@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	defaultIndexPath = "ai/index"
-	serverName       = "kwb"
-	serverVersion    = "0.1.0"
+	serverName    = "kwb"
+	serverVersion = "0.1.0"
 )
 
 type KnowledgeServer struct {
@@ -34,8 +33,8 @@ type Document struct {
 
 func main() {
 	var (
-		indexPath = flag.String("index", defaultIndexPath, "Path to Bleve index")
-		buildMode = flag.Bool("build", false, "Build/rebuild index")
+		buildMode = flag.Bool("build", false, "build index")
+		indexPath = flag.String("index", "ai/index", "Path to Bleve index")
 		serve     = flag.Bool("serve", false, "Start MCP server")
 	)
 	flag.Parse()

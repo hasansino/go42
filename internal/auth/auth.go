@@ -612,7 +612,7 @@ func (s *Service) InvalidateJWTToken(ctx context.Context, token string, until ti
 		ctx,
 		cacheKeyInvalidatedToken+strToSHA256(token),
 		cacheValueInvalidatedToken,
-		time.Until(until)+1,
+		time.Until(until)+time.Second,
 	)
 }
 
