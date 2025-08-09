@@ -15,3 +15,7 @@ providers:
   copilot:
     template: ai/copilot.tpl.md
     output: .github/copilot-instructions.md
+
+  codex:
+    template: ai/codex.tpl.md
+    output: AGENTS.md

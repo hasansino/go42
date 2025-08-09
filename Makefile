@@ -8,9 +8,8 @@ help: Makefile
 
 ## setup | install dependencies
 # Prerequisites: brew, go
-# @note used by github copilot to setup its environment.
+# @note used by ai agents to setup environment.
 # @note `golines` is required to format go files on save, but linting is done by golangci-lint.
-# @note Makefile hash is used for caching brew artifacts in CI.
 setup:
 	@go mod tidy -e && go mod download
 	@brew install -q golangci-lint hadolint markdownlint-cli2 vale gitleaks \
@@ -149,6 +148,24 @@ generate:
 generate-ai:
 	@go run cmd/genai/main.go
 	@go run cmd/genkwb/main.go -build
+
+## codex | run codex agent in isolated environment
+# Dependencies:
+#   * brew install codex
+codex:
+	@echo "Running codex agent..."
+
+## claude | run claude agent in isolated environment
+# Dependencies:
+#   * brew install claude
+claude:
+	@echo "Running claude agent..."
+
+## crush | run crush agent in isolated environment
+# Dependencies:
+#   * brew install charmbracelet/tap/crush
+crush:
+	@echo "Running crush agent..."
 
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │
