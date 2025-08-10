@@ -210,25 +210,8 @@ jobs:
           settings: |-
             {
               "maxSessionTurns": 50,
-                "mcpServers": {
-                "github": {
-                  "command": "docker",
-                  "args": [
-                    "run",
-                    "-i",
-                    "--rm",
-                    "-e",
-                    "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "ghcr.io/github/github-mcp-server"
-                  ],
-                  "includeTools": [
-                    "create_pending_pull_request_review",
-                    "add_comment_to_pending_review",
-                    "submit_pending_pull_request_review"
-                  ],
-                  "env": {
-                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-                  }
-                }
-              },
+              "telemetry": {
+                "enabled": false,
+                "target": "gcp"
+              }
             }

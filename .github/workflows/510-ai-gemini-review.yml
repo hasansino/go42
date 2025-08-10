@@ -161,7 +161,11 @@ jobs:
                 "run_shell_command(head)",
                 "run_shell_command(tail)",
                 "run_shell_command(grep)"
-              ]
+              ],
+              "telemetry": {
+                "enabled": false,
+                "target": "gcp"
+              }
             }
 
       - name: 'Post PR review failure comment'
