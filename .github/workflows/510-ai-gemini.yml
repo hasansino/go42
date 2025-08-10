@@ -53,7 +53,6 @@ jobs:
         !contains(github.event.review.body, '@gemini /review') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       )
-      )
     timeout-minutes: 10
     runs-on: 'ubuntu-latest'
 
