@@ -18,11 +18,6 @@ on:
         required: false
         type: string
         default: 'custom'
-      debug:
-        description: 'Enable debug output'
-        required: false
-        type: boolean
-        default: false
     outputs:
       summary:
         description: 'Generated summary markdown'
@@ -197,10 +192,6 @@ jobs:
             )
           else
             echo "Successfully generated summary using GitHub Copilot"
-            if [ "${{ inputs.debug }}" = "true" ]; then
-              echo "::debug::Generated summary:"
-              echo "$SUMMARY"
-            fi
           fi
           
           # Save summary to output
