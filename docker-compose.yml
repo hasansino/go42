@@ -128,6 +128,13 @@ services:
       - "4317:4317"   # OTLP gRPC
       - "4318:4318"   # OTLP HTTP
 
+  # --- web servers ---
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8081:80"
+
 # ---
 
 # @note host.docker.internal is available only with docker desktop on macos and windows.
