@@ -15,7 +15,10 @@ on:
         required: true
         type: string
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
+  models: read  # required for GitHub Models in ai-generate-summary
 
 jobs:
   prepare-release:

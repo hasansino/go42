@@ -31,14 +31,15 @@ on:
         description: 'GitHub comparison URL'
         value: ${{ jobs.ai-generate-summary.outputs.comparison_url }}
 
-permissions:
-  contents: read
-  models: read  # required to use GitHub Models from Actions
+permissions: {}
 
 jobs:
   ai-generate-summary:
     name: ai-generate-summary
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      models: read
     outputs:
       summary: ${{ steps.generate_summary.outputs.summary }}
       comparison_url: ${{ steps.generate_notes.outputs.comparison_url }}
