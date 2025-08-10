@@ -100,16 +100,13 @@ Go42 is opinionated approach to develop cloud native golang services.
 - structured yaml prompts (declarative instructions)
 - ai cost tracking
 - limit file access to repository boundaries
-- add audit logging for all AI actions
+- add audit logging for all ai actions
 - cache generated ai files between workflow runs to avoid regeneration
-- claude permissions issue
+- claude permissions issue in ci
 - ignore draft PRs + codeql
-- gh copilot does not connect to mcp server
-- research orchestration patterns
-- research communication patterns
-- research MCP and MLOps patterns
-- ai PRs automation -> master merge, QA, code review, etc.
 - add explicit context about repository structure
+- fuzzy + genetic
+- https://github.com/langchain-ai/open-swe
 
 ## Bugs
 
@@ -144,6 +141,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - release rollback automation
 - feature flags system
 - release annotations to grafana dashboards
+- niche spider trap
 
 ### Explore
 

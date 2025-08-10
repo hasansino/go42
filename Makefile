@@ -88,8 +88,8 @@ debug:
 
 ## build | build development version of binary
 build:
-	@go build -gcflags="all=-N -l" -race -v -o ./bin/app ./cmd/app/main.go
-	@file -h ./bin/app && du -h ./bin/app && sha256sum ./bin/app && go tool buildid ./bin/app
+	@go build -gcflags="all=-N -l" -race -v -o ./build/app ./cmd/app/main.go
+	@file -h ./build/app && du -h ./build/app && sha256sum ./build/app && go tool buildid ./build/app
 
 ## image | build docker image
 # @see https://reproducible-builds.org/docs/source-date-epoch/
@@ -149,12 +149,6 @@ generate-ai:
 	@go run cmd/genai/main.go
 	@go run cmd/genkwb/main.go -build
 
-## codex | run codex agent in isolated environment
-# Dependencies:
-#   * brew install codex
-codex:
-	@echo "Running codex agent..."
-
 ## claude | run claude agent in isolated environment
 # Dependencies:
 #   * brew install claude
@@ -199,4 +193,4 @@ grpcui:
 #   * go install loov.dev/lensm@main
 # Usage: FILTER={regex} make show-asm
 show-asm: build
-	@lensm -watch -text-size 22 -filter $(FILTER) bin/app
+	@lensm -watch -text-size 22 -filter $(FILTER) build/app

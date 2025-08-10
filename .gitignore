@@ -1,14 +1,21 @@
+# os
 .DS_Store
 
+# ide
 .idea/
 .vscode/
 
+# ai
 .crush/
 .claude/
 ai/index/
 .mcp.json
+.crush.json
 .github/copilot-instructions.md
 CLAUDE.md
 AGENTS.md
+CRUSH.md
 
+# project
+build/
 .env

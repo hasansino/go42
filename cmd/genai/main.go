@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,39 +13,64 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	mcpServers = map[string]MCPServer{
-		"kwb": {
-			Command: "go",
-			Args:    []string{"run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"},
-			Env:     map[string]string{},
-		},
-	}
-	enabledMCPServers  = []string{"kwb"}
-	defaultPermissions = Permissions{
-		Allow: []string{},
-		Deny:  []string{},
-	}
-)
+const claudeConfigPath = ".claude/settings.json"
+const claudeConfig = `{
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "enabledMcpjsonServers": [
+    "kwb"
+  ]
+}`
 
-type MCPServerConfig struct {
-	Servers map[string]MCPServer `json:"mcpServers"`
+const claudeMCPConfigPath = ".mcp.json"
+const claudeMCPConfig = `{
+  "mcpServers": {
+    "kwb": {
+      "command": "go",
+      "args": [
+        "run",
+        "cmd/genkwb/main.go",
+        "-serve",
+        "-index",
+        "ai/index"
+      ]
+    }
+  }
+}`
+
+const crushConfigPath = ".crush.json"
+const crushConfig = `{
+  "$schema": "https://charm.land/crush.json",
+  "lsp": {
+    "go": {
+      "command": "gopls"
+    }
+  },
+  "mcp": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "go",
+      "args": [
+        "run",
+        "cmd/genkwb/main.go",
+        "-serve",
+        "-index",
+        "ai/index"
+      ]
+    }
+  },
+  "permissions": {
+    "allowed_tools": []
+  }
 }
+`
 
-type MCPServer struct {
-	Command string            `json:"command"`
-	Args    []string          `json:"args"`
-	Env     map[string]string `json:"env,omitempty"`
-}
-
-type Settings struct {
-	Permissions       Permissions `json:"permissions"`
-	EnabledMCPServers []string    `json:"enabledMcpjsonServers"`
-}
-
-type Permissions struct {
-	Allow []string `json:"allow"`
-	Deny  []string `json:"deny"`
+var configs = map[string]string{
+	claudeConfigPath:    claudeConfig,
+	claudeMCPConfigPath: claudeMCPConfig,
+	crushConfigPath:     crushConfig,
 }
 
 // ----
@@ -73,11 +97,6 @@ type Content struct {
 	Order  []string
 }
 
-type Subagents struct {
-	Agents map[string]string
-	Order  []string
-}
-
 type TemplateData struct {
 	Project      string
 	Language     string
@@ -90,7 +109,6 @@ type TemplateData struct {
 	BuildURL     string
 	TargetBranch string
 	Content      Content
-	Subagents    Subagents
 }
 
 func main() {
@@ -105,35 +123,15 @@ func run() error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	content, err := loadContentFromChunks("ai/chunks")
+	content, err := loadChunks("ai/chunks")
 	if err != nil {
 		return fmt.Errorf("failed to load content: %w", err)
 	}
 
-	// Copy agents to .claude/agents directory
-	if err := copyAgentsToClaudeDir(); err != nil {
+	if err := copyAgents(); err != nil {
 		fmt.Printf("Warning: failed to copy agents: %v\n", err)
 	}
 
-	// Generate .claude/settings.json with MCP servers
-	if err := generateClaudeSettings(); err != nil {
-		fmt.Printf("Warning: failed to generate .claude/settings.json: %v\n", err)
-	}
-
-	if err := generateMCPServerConfig(); err != nil {
-		fmt.Printf("Warning: failed to generate .mcp.json: %v\n", err)
-	}
-
-	subagents, err := loadSubagents("ai/agents")
-	if err != nil {
-		// Subagents are optional, so we just log if they're missing
-		subagents = &Subagents{
-			Agents: make(map[string]string),
-			Order:  []string{},
-		}
-	}
-
-	// Build environment data
 	envData := &TemplateData{
 		Project:      config.Project.Name,
 		Language:     config.Project.Language,
@@ -146,10 +144,8 @@ func run() error {
 		BuildURL:     getEnv("BUILD_URL", ""),
 		TargetBranch: getEnv("TARGET_BRANCH", "main"),
 		Content:      *content,
-		Subagents:    *subagents,
 	}
 
-	// Override branch in CI
 	if envData.IsCI {
 		ciBranch := getEnv("CI_BRANCH", "")
 		if ciBranch != "" {
@@ -158,9 +154,13 @@ func run() error {
 	}
 
 	for name, provider := range config.Providers {
-		if err := generateForProvider(provider, name, envData); err != nil {
+		if err := generateProvider(provider, envData); err != nil {
 			return fmt.Errorf("failed to generate for %s: %w", name, err)
 		}
+	}
+
+	if err := exportConfigs(); err != nil {
+		return fmt.Errorf("failed to export configs: %w", err)
 	}
 
 	return nil
@@ -178,7 +178,7 @@ func loadConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
-func loadContentFromChunks(dir string) (*Content, error) {
+func loadChunks(dir string) (*Content, error) {
 	content := &Content{
 		Chunks: make(map[string]string),
 		Order:  []string{},
@@ -189,23 +189,18 @@ func loadContentFromChunks(dir string) (*Content, error) {
 		return nil, fmt.Errorf("failed to read chunks directory: %w", err)
 	}
 
-	// Collect all md files
 	var mdFiles []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-
-		// Only process .md files
 		if strings.HasSuffix(entry.Name(), ".md") {
 			mdFiles = append(mdFiles, entry.Name())
 		}
 	}
 
-	// Sort files for consistent ordering
 	sort.Strings(mdFiles)
 
-	// Load each file
 	for _, filename := range mdFiles {
 		path := filepath.Join(dir, filename)
 		data, err := os.ReadFile(path)
@@ -226,74 +221,14 @@ func loadContentFromChunks(dir string) (*Content, error) {
 	return content, nil
 }
 
-func generateForProvider(provider ProviderConfig, providerName string, data *TemplateData) error {
-
-	// Load and execute template
-	tmplData, err := os.ReadFile(provider.Template)
-	if err != nil {
-		return fmt.Errorf("failed to read template: %w", err)
-	}
-
-	// Add Claude-specific flag to template data
-	templateData := struct {
-		*TemplateData
-		IsClaudeProvider bool
-	}{
-		TemplateData:     data,
-		IsClaudeProvider: providerName == "claude",
-	}
-
-	tmpl, err := template.New("provider").Parse(string(tmplData))
-	if err != nil {
-		return fmt.Errorf("failed to parse template: %w", err)
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, templateData); err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	// Write output
-	dir := filepath.Dir(provider.Output)
-	if dir != "." && dir != "/" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
-		}
-	}
-
-	if err := os.WriteFile(provider.Output, buf.Bytes(), 0644); err != nil {
-		return fmt.Errorf("failed to write output: %w", err)
-	}
-
-	fmt.Printf("Generated %s\n", provider.Output)
-
-	return nil
-}
-
-func loadSubagents(dir string) (*Subagents, error) {
-	subagents := &Subagents{
-		Agents: make(map[string]string),
-		Order:  []string{},
-	}
-
-	// Check if directory exists
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return subagents, nil // Directory doesn't exist, return empty
-	}
-
-	return subagents, nil // Agents are handled differently now
-}
-
-func copyAgentsToClaudeDir() error {
+func copyAgents() error {
 	srcDir := "ai/agents"
 	dstDir := ".claude/agents"
 
-	// Check if source directory exists
 	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		return nil // No agents to copy
+		return nil // no agents to copy
 	}
 
-	// Create destination directory
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return fmt.Errorf("failed to create .claude/agents: %w", err)
 	}
@@ -328,44 +263,35 @@ func copyAgentsToClaudeDir() error {
 	return nil
 }
 
-func generateClaudeSettings() error {
-	settings := Settings{
-		EnabledMCPServers: enabledMCPServers,
-		Permissions:       defaultPermissions,
-	}
-
-	claudeDir := ".claude"
-	if err := os.MkdirAll(claudeDir, 0755); err != nil {
-		return fmt.Errorf("failed to create .claude directory: %w", err)
-	}
-
-	data, err := json.MarshalIndent(settings, "", "  ")
+func generateProvider(provider ProviderConfig, data *TemplateData) error {
+	tmplData, err := os.ReadFile(provider.Template)
 	if err != nil {
-		return fmt.Errorf("failed to marshal settings: %w", err)
+		return fmt.Errorf("failed to read template: %w", err)
 	}
 
-	settingsPath := filepath.Join(claudeDir, "settings.json")
-	if err := os.WriteFile(settingsPath, data, 0644); err != nil {
-		return fmt.Errorf("failed to write settings.json: %w", err)
-	}
-
-	fmt.Printf("Generated %s\n", settingsPath)
-
-	return nil
-}
-
-func generateMCPServerConfig() error {
-	config := MCPServerConfig{
-		Servers: mcpServers,
-	}
-	data, err := json.MarshalIndent(config, "", "  ")
+	tmpl, err := template.New("provider").Parse(string(tmplData))
 	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
+		return fmt.Errorf("failed to parse template: %w", err)
 	}
-	if err := os.WriteFile(".mcp.json", data, 0644); err != nil {
-		return fmt.Errorf("failed to write settings.json: %w", err)
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("failed to execute template: %w", err)
 	}
-	fmt.Printf("Generated %s\n", ".mcp.json")
+
+	dir := filepath.Dir(provider.Output)
+	if dir != "." && dir != "/" {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+	}
+
+	if err := os.WriteFile(provider.Output, buf.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write output: %w", err)
+	}
+
+	fmt.Printf("Generated %s\n", provider.Output)
+
 	return nil
 }
 
@@ -374,4 +300,17 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func exportConfigs() error {
+	for path, content := range configs {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return fmt.Errorf("failed to create directory for %s: %w", path, err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			return fmt.Errorf("failed to write %s: %w", path, err)
+		}
+		fmt.Printf("Exported config to %s\n", path)
+	}
+	return nil
 }

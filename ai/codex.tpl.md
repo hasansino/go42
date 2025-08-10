@@ -1,13 +1,18 @@
-# {{.Project}} Agent Configuration
+# Project: {{.Project}}
 
-## Agent Context
-
-**Project:** {{.Project}}  
-**Language:** {{.Language}}  
-**Description:** {{.Description}}  
-{{- if .Metadata.repository}}
-**Repository:** {{.Metadata.repository}}  
-{{- end}}
+<context>
+  <project>{{.Project}}</project>
+  <language>{{.Language}}</language>
+  {{- if .PRNumber}}
+  <pr_number>{{.PRNumber}}</pr_number>
+  {{- end}}
+  {{- if .CommitSHA}}
+  <commit_sha>{{.CommitSHA}}</commit_sha>
+  {{- end}}
+  {{- if .BuildURL}}
+  <build_url>{{.BuildURL}}</build_url>
+  {{- end}}
+</context>
 
 {{if .IsCI -}}
 ## CI/CD Agent Mode

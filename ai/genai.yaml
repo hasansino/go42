@@ -19,3 +19,7 @@ providers:
   codex:
     template: ai/codex.tpl.md
     output: AGENTS.md
+
+  crush:
+    template: ai/crush.tpl.md
+    output: CRUSH.md
