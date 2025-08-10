@@ -1,9 +1,7 @@
-# AI Instruction Generation Configuration
-
 project:
   name: go42
   language: Go
-  description: GitHub template for Go projects
+  description: GitHub template for Go projects with fireworks
   metadata:
     repository: github.com/hasansino/go42
 

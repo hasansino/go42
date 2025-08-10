@@ -67,10 +67,28 @@ const crushConfig = `{
 }
 `
 
+const geminiConfigPath = ".gemini/settings.json"
+const geminiConfig = `{
+  "mcpServers": {
+    "kwb": {
+      "command": "go",
+      "args": [
+        "run",
+        "cmd/genkwb/main.go",
+        "-serve",
+        "-index",
+        "ai/index"
+      ],
+      "trust": true
+    }
+  }
+}`
+
 var configs = map[string]string{
 	claudeConfigPath:    claudeConfig,
 	claudeMCPConfigPath: claudeMCPConfig,
 	crushConfigPath:     crushConfig,
+	geminiConfigPath:    geminiConfig,
 }
 
 // ----

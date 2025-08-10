@@ -6,9 +6,10 @@
 .vscode/
 
 # ai
+ai/index/
 .crush/
 .claude/
-ai/index/
+.gemini/
 .mcp.json
 .crush.json
 .github/copilot-instructions.md
