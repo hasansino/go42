@@ -1,4 +1,4 @@
-name: Claude Code Review
+name: claude-code-review
 
 # Automated code review using Claude AI for pull requests.
 
@@ -19,7 +19,8 @@ jobs:
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
     uses: ./.github/workflows/500-ai-prepare-env.yaml
 
-  claude-review:
+  claude-code-review:
+    name: claude-code-review
     needs: prepare-env
     if: |
       github.event.pull_request.user.type != 'Bot' &&
@@ -32,13 +33,12 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
+      # ----
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@beta
