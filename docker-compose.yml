@@ -5,6 +5,13 @@
 
 services:
 
+  # --- web servers ---
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+
   # --- databases ---
 
   pgsql:
