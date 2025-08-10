@@ -1,6 +1,6 @@
 name: ai-generate-summary
 
-# Reusable workflow for generating summaries between two git references using GitHub Copilot CLI.
+# Reusable workflow for generating summaries between two git references using GitHub Models.
 
 on:
   workflow_call:
@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: 'custom'
+      model:
+        description: 'GitHub Models AI model to use'
+        required: false
+        type: string
+        default: 'openai/gpt-4o-mini'
     outputs:
       summary:
         description: 'Generated summary markdown'
@@ -28,6 +33,7 @@ on:
 
 permissions:
   contents: read
+  models: read  # required to use GitHub Models from Actions
 
 jobs:
   ai-generate-summary:
@@ -35,163 +41,90 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       summary: ${{ steps.generate_summary.outputs.summary }}
-      comparison_url: ${{ steps.urls.outputs.comparison_url }}
+      comparison_url: ${{ steps.generate_notes.outputs.comparison_url }}
     steps:
       - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # ----
-      - name: Setup GitHub CLI with Copilot
-        run: |
-          # Configure gh CLI for non-interactive use
-          gh config set prompt disabled
-          
-          # Install GitHub Copilot CLI extension (non-interactively)
-          echo "Installing GitHub Copilot CLI extension..."
-          gh extension install github/gh-copilot --force || true
+
+      - name: Generate release notes and metadata
+        id: generate_notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_NO_UPDATE_NOTIFIER: 1
-          GH_PROMPT_DISABLED: 1
-      # ----
-      - name: Generate URLs and metadata
-        id: urls
         run: |
           # Generate comparison URL
           echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
-      # ----
-      - name: Generate Summary with GitHub Copilot
+          
+          # Generate raw notes via GitHub Releases API (PRs + contributors)
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name='${{ inputs.head_ref }}' \
+            -f previous_tag_name='${{ inputs.base_ref }}' \
+            --jq '.body' > NOTES.md || {
+              # Fallback if API fails - get commit messages
+              git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
+                "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > NOTES.md
+            }
+
+      - name: Install GitHub Models CLI extension
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install https://github.com/github/gh-models
+
+      - name: Generate AI Summary
         id: generate_summary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_REF: ${{ inputs.base_ref }}
-          HEAD_REF: ${{ inputs.head_ref }}
           CONTEXT_TYPE: ${{ inputs.context_type }}
         run: |
-          # Get commit messages between refs with clickable hashes and authors
-          echo "Fetching commits between $BASE_REF and $HEAD_REF..."
-          # Get commits with hash, author name, author email, and message
-          COMMITS_RAW=$(git log --pretty=format:"%h|%an|%ae|%s" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
-          
-          # Convert to markdown with clickable links and author info
-          COMMITS=""
-          while IFS= read -r line; do
-            if [ -n "$line" ]; then
-              HASH=$(echo "$line" | cut -d'|' -f1)
-              AUTHOR_NAME=$(echo "$line" | cut -d'|' -f2)
-              AUTHOR_EMAIL=$(echo "$line" | cut -d'|' -f3)
-              MESSAGE=$(echo "$line" | cut -d'|' -f4-)
-              
-              # Try to extract GitHub username from noreply email or use author name
-              if [[ "$AUTHOR_EMAIL" =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
-                # Extract username from GitHub noreply email
-                GITHUB_USER="${BASH_REMATCH[2]}"
-              elif [[ "$AUTHOR_EMAIL" =~ ^([^@]+)@.*$ ]]; then
-                # Fallback to email prefix if not GitHub noreply
-                GITHUB_USER="${BASH_REMATCH[1]}"
-              else
-                # Last resort: use author name with spaces replaced
-                GITHUB_USER=$(echo "$AUTHOR_NAME" | tr ' ' '-')
-              fi
-              
-              COMMITS="${COMMITS}- ${MESSAGE} ([${HASH}](https://github.com/${{ github.repository }}/commit/${HASH})) by [@${GITHUB_USER}](https://github.com/${GITHUB_USER})\n"
-            fi
-          done <<< "$COMMITS_RAW"
-          
-          # Remove trailing newline
-          COMMITS=$(echo -e "$COMMITS" | sed '$ s/.$//')
-          
-          if [ -z "$COMMITS" ]; then
-            echo "No commits found between refs"
-            echo "summary=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Count different types of changes
-          FEATURES=$(echo "$COMMITS" | grep -c -E "^- (feat|feature):" || echo "0")
-          FIXES=$(echo "$COMMITS" | grep -c -E "^- (fix|bugfix):" || echo "0")
-          BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
-          TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
-          
-          # Trim any whitespace/newlines from counts
-          FEATURES=$(echo "$FEATURES" | xargs)
-          FIXES=$(echo "$FIXES" | xargs)
-          BREAKING=$(echo "$BREAKING" | xargs)
-          TOTAL=$(echo "$TOTAL" | xargs)
-          
-          # Ensure variables are proper integers
-          FEATURES=${FEATURES//[^0-9]/}
-          FIXES=${FIXES//[^0-9]/}
-          BREAKING=${BREAKING//[^0-9]/}
-          TOTAL=${TOTAL//[^0-9]/}
-          
-          # Default to 0 if empty
-          FEATURES=${FEATURES:-0}
-          FIXES=${FIXES:-0}
-          BREAKING=${BREAKING:-0}
-          TOTAL=${TOTAL:-0}
-          
-          # Customize prompt based on context type
+          # Prepare context-specific prompt
           case "$CONTEXT_TYPE" in
             "release")
-              CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF."
+              PROMPT_CONTEXT="You are generating a crisp, customer-facing release summary."
               ;;
             "pr")
-              CONTEXT_PROMPT="Generate a concise pull request description focusing on what changes are being made and why."
+              PROMPT_CONTEXT="You are generating a concise pull request description."
               ;;
             *)
-              CONTEXT_PROMPT="Generate a concise summary of changes."
+              PROMPT_CONTEXT="You are generating a concise summary of changes."
               ;;
           esac
           
-          # Prepare the full commit information for Copilot
-          FULL_INFO=$(cat <<EOF
-          $CONTEXT_PROMPT
+          # Create the prompt file
+          cat > prompt.txt <<EOF
+          $PROMPT_CONTEXT
           
-          Statistics:
-          - Total commits: $TOTAL
-          - Features: $FEATURES
-          - Bug fixes: $FIXES
-          - Breaking changes: $BREAKING
+          Summarize the changes below into two sections:
+          1. ### Highlights - 2-3 most important changes as bullet points
+          2. ### Changes - All changes as bullet points with readable titles
           
-          Commits:
-          $COMMITS
-          
-          Generate a markdown summary with ONLY these two sections:
-          1. ### Highlights - List 2-3 most important changes as bullet points
-          2. ### Changes - List all changes as bullet points, prefix each with [feature], [bug], or [refactor]
-          
-          Keep commit hash links and author links exactly as provided. No emojis. Be concise.
+          Group changes by type (features, fixes, refactoring) where appropriate.
+          Call out notable PRs and include upgrade notes if there are breaking changes.
+          Keep markdown tight and professional. No emojis.
           EOF
-          )
           
-          # Use GitHub Copilot to generate the summary
-          echo "Generating summary using GitHub Copilot CLI..."
+          # Generate summary using GitHub Models
+          echo "Generating summary using GitHub Models..."
           
-          # Try to generate summary using gh copilot
-          # Note: gh copilot suggest is more suitable for this use case
-          SUMMARY=$(gh copilot suggest "$FULL_INFO" 2>/dev/null || echo "")
+          SUMMARY=$(cat NOTES.md | gh models run \
+            --model ${{ inputs.model }} \
+            --system "Senior release manager. Output GitHub-flavored Markdown only." \
+            --prompt-file prompt.txt 2>/dev/null || echo "")
           
-          # If gh copilot suggest doesn't work, try gh copilot explain as fallback
+          # Fallback if Models fails
           if [ -z "$SUMMARY" ]; then
-            echo "Trying alternative Copilot command..."
-            SUMMARY=$(gh copilot explain "$FULL_INFO" 2>/dev/null || echo "")
-          fi
-          
-          # If Copilot fails, generate a basic summary
-          if [ -z "$SUMMARY" ]; then
-            echo "::warning::GitHub Copilot generation failed. Using basic summary."
+            echo "::warning::GitHub Models generation failed. Using raw notes."
             SUMMARY=$(cat <<EOF
           ### Highlights
-          - $TOTAL commits with $FEATURES features and $FIXES bug fixes
+          See changes below for details.
           
           ### Changes
-          $COMMITS
+          $(cat NOTES.md)
           EOF
             )
           else
-            echo "Successfully generated summary using GitHub Copilot"
+            echo "Successfully generated summary using GitHub Models"
           fi
           
           # Save summary to output
