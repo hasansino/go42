@@ -13,5 +13,6 @@ on:
       - .github/workflows/copilot-setup-steps.yml
 
 jobs:
-  prepare-env:
+  copilot-setup-steps:
+    name: copilot-setup-steps
     uses: ./.github/workflows/500-ai-prepare-env.yaml
