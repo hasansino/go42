@@ -28,7 +28,6 @@ permissions:
 
 jobs:
   prepare:
-    # This condition is complex to ensure we only run when explicitly invoked.
     if: |-
       vars.GEMINI_ENABLE != 'false' && (
         (
@@ -206,18 +205,30 @@ jobs:
           IS_PR: '${{ steps.get_context.outputs.is_pr }}'
         with:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
-          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
-          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
-          gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
-          gcp_service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
-          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          prompt: '${{ steps.read_prompt.outputs.gemini_prompt }}'
           settings: |-
             {
               "maxSessionTurns": 50,
-              "telemetry": {
-                "enabled": false,
-                "target": "gcp"
-              }
+                "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server"
+                  ],
+                  "includeTools": [
+                    "create_pending_pull_request_review",
+                    "add_comment_to_pending_review",
+                    "submit_pending_pull_request_review"
+                  ],
+                  "env": {
+                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+                  }
+                }
+              },
             }
-          prompt: '${{ steps.read_prompt.outputs.gemini_prompt }}'
