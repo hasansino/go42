@@ -37,4 +37,3 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: false
       tag: ${{ github.ref_name }}
-    secrets: inherit

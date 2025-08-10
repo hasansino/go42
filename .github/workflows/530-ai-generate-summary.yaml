@@ -1,7 +1,6 @@
-name: generate-summary
+name: ai-generate-summary
 
-# Reusable workflow for generating summaries using OpenAI API
-# Can be used for releases, PRs, or any commit range
+# Reusable workflow for generating summaries between two git references using GitHub Copilot CLI.
 
 on:
   workflow_call:
@@ -19,11 +18,6 @@ on:
         required: false
         type: string
         default: 'custom'
-      llm_model:
-        description: 'OpenAI model to use for summary generation'
-        required: false
-        type: string
-        default: 'gpt-4o-mini'
       debug:
         description: 'Enable debug output'
         required: false
@@ -32,22 +26,17 @@ on:
     outputs:
       summary:
         description: 'Generated summary markdown'
-        value: ${{ jobs.generate.outputs.summary }}
+        value: ${{ jobs.ai-generate-summary.outputs.summary }}
       comparison_url:
         description: 'GitHub comparison URL'
-        value: ${{ jobs.generate.outputs.comparison_url }}
-    secrets:
-      OPENAI_API_KEY:
-        required: true
+        value: ${{ jobs.ai-generate-summary.outputs.comparison_url }}
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
-  generate:
-    name: generate-summary
-    if: |
-      vars.OPENAI_ENABLE != 'false' &&
-      vars.AI_GENERATE_SUMMARY != 'false'
+  ai-generate-summary:
+    name: ai-generate-summary
     runs-on: ubuntu-latest
     outputs:
       summary: ${{ steps.generate_summary.outputs.summary }}
@@ -58,28 +47,27 @@ jobs:
         with:
           fetch-depth: 0
       # ----
+      - name: Setup GitHub CLI with Copilot
+        run: |
+          # Install GitHub Copilot CLI extension
+          gh extension install github/gh-copilot || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # ----
       - name: Generate URLs and metadata
         id: urls
         run: |
           # Generate comparison URL
           echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
       # ----
-      - name: Generate Summary with OpenAI
+      - name: Generate Summary with GitHub Copilot
         id: generate_summary
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          LLM_MODEL: ${{ inputs.llm_model }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REF: ${{ inputs.base_ref }}
           HEAD_REF: ${{ inputs.head_ref }}
           CONTEXT_TYPE: ${{ inputs.context_type }}
         run: |
-          # Validate OpenAI API key
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "::error::OPENAI_API_KEY is not set in repository secrets"
-            echo "summary=" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
-          
           # Get commit messages between refs with clickable hashes and authors
           echo "Fetching commits between $BASE_REF and $HEAD_REF..."
           # Get commits with hash, author name, author email, and message
@@ -146,18 +134,18 @@ jobs:
           # Customize prompt based on context type
           case "$CONTEXT_TYPE" in
             "release")
-              CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF based on the following git commits."
+              CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF."
               ;;
             "pr")
-              CONTEXT_PROMPT="Generate a concise pull request description based on the following git commits. Focus on what changes are being made and why."
+              CONTEXT_PROMPT="Generate a concise pull request description focusing on what changes are being made and why."
               ;;
             *)
-              CONTEXT_PROMPT="Generate a concise summary of changes based on the following git commits."
+              CONTEXT_PROMPT="Generate a concise summary of changes."
               ;;
           esac
           
-          # Prepare the prompt for LLM
-          PROMPT=$(cat <<EOF
+          # Prepare the full commit information for Copilot
+          FULL_INFO=$(cat <<EOF
           $CONTEXT_PROMPT
           
           Statistics:
@@ -169,123 +157,43 @@ jobs:
           Commits:
           $COMMITS
           
-          Requirements:
-          1. ONLY output two sections: "Highlights" and "Changes"
-          2. Do NOT include an overview paragraph or any other sections
-          3. Keep the Highlights section to 2-3 most important changes only
-          4. In the Changes section, prefix each change with [feature], [bug], or [refactor]
-          5. Use bullet points for each change
-          6. IMPORTANT: Preserve the commit hash links and author links from the original commits
-          7. Each commit line MUST include the clickable hash link and author link in format "by [@username](url)" at the end
-          8. Keep descriptions clear and user-focused
-          9. If there are breaking changes, mark them with [feature] and note they are breaking
-          10. Do not use any emojis
-          11. Keep the total summary concise
-          12. Use markdown formatting
+          Generate a markdown summary with ONLY these two sections:
+          1. ### Highlights - List 2-3 most important changes as bullet points
+          2. ### Changes - List all changes as bullet points, prefix each with [feature], [bug], or [refactor]
           
-          Template:
-          ### Highlights
-          - [Most important change 1]
-          - [Most important change 2]
-          
-          ### Changes
-          - [feature] New feature description
-          - [bug] Fixed issue description
-          - [refactor] Refactoring description
+          Keep commit hash links and author links exactly as provided. No emojis. Be concise.
           EOF
           )
           
-          # Generate summary using OpenAI API
-          echo "Generating summary using OpenAI API with model: $LLM_MODEL"
+          # Use GitHub Copilot to generate the summary
+          echo "Generating summary using GitHub Copilot CLI..."
           
-          # Check if model is premium
-          PREMIUM_MODELS=("gpt-4" "gpt-4-turbo" "gpt-4o" "o1-preview" "o1-mini")
-          IS_PREMIUM=false
-          for model in "${PREMIUM_MODELS[@]}"; do
-            if [[ "$LLM_MODEL" == *"$model"* ]]; then
-              IS_PREMIUM=true
-              break
-            fi
-          done
+          # Try to generate summary using gh copilot
+          # Note: gh copilot suggest is more suitable for this use case
+          SUMMARY=$(gh copilot suggest "$FULL_INFO" 2>/dev/null || echo "")
           
-          if [ "$IS_PREMIUM" = true ]; then
-            echo "::warning::Using premium model '$LLM_MODEL'. This will incur higher API costs."
+          # If gh copilot suggest doesn't work, try gh copilot explain as fallback
+          if [ -z "$SUMMARY" ]; then
+            echo "Trying alternative Copilot command..."
+            SUMMARY=$(gh copilot explain "$FULL_INFO" 2>/dev/null || echo "")
+          fi
+          
+          # If Copilot fails, generate a basic summary
+          if [ -z "$SUMMARY" ]; then
+            echo "::warning::GitHub Copilot generation failed. Using basic summary."
+            SUMMARY=$(cat <<EOF
+          ### Highlights
+          - $TOTAL commits with $FEATURES features and $FIXES bug fixes
+          
+          ### Changes
+          $COMMITS
+          EOF
+            )
           else
-            echo "Using standard model '$LLM_MODEL'"
-          fi
-          
-          # Prepare JSON payload for OpenAI API
-          JSON_PAYLOAD=$(jq -n \
-              --arg model "$LLM_MODEL" \
-              --arg prompt "$PROMPT" \
-              '{
-                "model": $model,
-                "messages": [
-                  {
-                    "role": "system",
-                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear. ONLY output the Highlights section and the Changes section. Each change in the Changes section MUST be prefixed with [feature], [bug], or [refactor]. Do NOT include any overview paragraphs or additional commentary. IMPORTANT: You MUST preserve the commit hash links in format ([hash](url)) and author links in format (by [@username](url)) from each commit line exactly as provided."
-                  },
-                  {
-                    "role": "user", 
-                    "content": $prompt
-                  }
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000,
-                "stream": false
-              }')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::API Request payload:"
-            echo "$JSON_PAYLOAD" | jq '.'
-          fi
-          
-          # Call OpenAI API
-          API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.openai.com/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            -d "$JSON_PAYLOAD")
-          
-          # Extract HTTP status code and response body
-          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
-          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::HTTP Response Code: $HTTP_CODE"
-            echo "::debug::API Response (first 1000 chars):"
-            echo "${RESPONSE_BODY:0:1000}"
-          fi
-          
-          # Check HTTP status code
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::OpenAI API returned HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "429" ]; then
-              echo "::warning::Rate limit exceeded. Using fallback."
-            elif [ "$HTTP_CODE" = "401" ]; then
-              echo "::warning::Authentication failed. Check if OPENAI_API_KEY is valid."
-            elif [ "$HTTP_CODE" = "403" ]; then
-              echo "::warning::Access forbidden. Check API key permissions."
-            fi
-          fi
-          
-          # Check if response contains an error
-          ERROR_MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.error.message // empty')
-          
-          if [ -n "$ERROR_MESSAGE" ]; then
-            echo "::warning::OpenAI API error: $ERROR_MESSAGE"
-            SUMMARY=""
-          else
-            # Extract the summary from response
-            SUMMARY=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
-            
-            if [ -z "$SUMMARY" ]; then
-              echo "::warning::Failed to generate summary using OpenAI API. Using fallback."
-            else
-              echo "Successfully generated summary using OpenAI API"
-              if [ "${{ inputs.debug }}" = "true" ]; then
-                echo "::debug::Generated summary:"
-                echo "$SUMMARY"
-              fi
+            echo "Successfully generated summary using GitHub Copilot"
+            if [ "${{ inputs.debug }}" = "true" ]; then
+              echo "::debug::Generated summary:"
+              echo "$SUMMARY"
             fi
           fi
           

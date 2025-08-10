@@ -1,7 +1,6 @@
 name: pr-summary
 
-# Automatically generates or updates PR description when a PR is opened or synchronized
-# Uses OpenAI API to generate meaningful summaries based on commit history
+# Automatically generates or updates PR description when a PR is opened or synchronized.
 
 on:
   pull_request:
@@ -13,7 +12,7 @@ permissions:
 
 jobs:
   check-pr:
-    name: Check PR
+    name: check-pr
     runs-on: ubuntu-latest
     outputs:
       should_generate: ${{ steps.pr_check.outputs.should_generate }}
@@ -43,7 +42,7 @@ jobs:
           fi
 
   generate-summary:
-    name: Generate PR Summary
+    name: generate-summary
     needs: check-pr
     if: needs.check-pr.outputs.should_generate == 'true'
     uses: ./.github/workflows/530-ai-generate-summary.yaml
@@ -51,11 +50,9 @@ jobs:
       base_ref: ${{ github.event.pull_request.base.sha }}
       head_ref: ${{ github.event.pull_request.head.sha }}
       context_type: pr
-    secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  
+
   update-pr:
-    name: Update PR Description
+    name: update-pr
     runs-on: ubuntu-latest
     needs: generate-summary
     if: needs.generate-summary.outputs.summary != ''
@@ -64,7 +61,6 @@ jobs:
         uses: actions/github-script@v7
         env:
           SUMMARY: ${{ needs.generate-summary.outputs.summary }}
-          LLM_MODEL: gpt-4o-mini
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

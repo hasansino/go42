@@ -1,8 +1,6 @@
 name: release-pr
 
 # Creates a PR to update the appVersion in the Chart.yaml file.
-# This PR will also generate a release summary using OpenAI API.
-# @note merging this PR will trigger deployment.
 
 on:
   workflow_call: 
@@ -16,9 +14,6 @@ on:
       tag:
         required: true
         type: string
-    secrets:
-      OPENAI_API_KEY:
-        required: true
 
 permissions: {}
 
@@ -56,20 +51,18 @@ jobs:
         with:
           name: release-files
           path: infra/helm/app/Chart.yaml
-          
+
   generate-summary:
-    name: Generate Release Summary
+    name: generate-summary
     needs: prepare-release
     uses: ./.github/workflows/530-ai-generate-summary.yaml
     with:
       base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
       head_ref: ${{ inputs.tag }}
       context_type: release
-    secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      
+
   create-pr:
-    name: Create Release PR
+    name: create-pr
     runs-on: ${{ inputs.runs_on }}
     needs: [prepare-release, generate-summary]
     if: always() && needs.prepare-release.result == 'success'
