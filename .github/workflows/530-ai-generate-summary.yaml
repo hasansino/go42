@@ -18,11 +18,6 @@ on:
         required: false
         type: string
         default: 'custom'
-      model:
-        description: 'GitHub Models AI model to use'
-        required: false
-        type: string
-        default: 'openai/gpt-4o-mini'
     outputs:
       summary:
         description: 'Generated summary markdown'
@@ -43,6 +38,9 @@ jobs:
     outputs:
       summary: ${{ steps.generate_summary.outputs.summary }}
       comparison_url: ${{ steps.generate_notes.outputs.comparison_url }}
+    env:
+      SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
+      SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: Checkout repository with full history
         uses: actions/checkout@v4
@@ -68,6 +66,7 @@ jobs:
             }
 
       - name: Install GitHub Models CLI extension
+        if: env.SUMMARY_ENABLE != 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -79,6 +78,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONTEXT_TYPE: ${{ inputs.context_type }}
         run: |
+          # Check if AI summary is enabled
+          if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
+            echo "AI summary generation is disabled via SUMMARY_ENABLE variable"
+            # Use simple list format without AI
+            SUMMARY=$(cat <<EOF
+          ### Highlights
+          Summary generation is disabled. See changes below.
+          
+          ### Changes
+          $(cat NOTES.md)
+          EOF
+            )
+            # Save summary to output
+            {
+              echo 'summary<<EOF'
+              echo "$SUMMARY"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Determine which model to use (repo variable or default)
+          MODEL="${{ env.SUMMARY_MODEL }}"
+          if [ -z "$MODEL" ]; then
+            MODEL="openai/gpt-5-mini"  # Default model
+          fi
+          echo "Using model: $MODEL"
+          
           # Prepare context-specific prompt
           case "$CONTEXT_TYPE" in
             "release")
@@ -92,8 +119,8 @@ jobs:
               ;;
           esac
           
-          # Create the prompt file
-          cat > prompt.txt <<EOF
+          # Prepare the full prompt with notes
+          FULL_PROMPT=$(cat <<EOF
           $PROMPT_CONTEXT
           
           Summarize the changes below into two sections:
@@ -103,19 +130,32 @@ jobs:
           Group changes by type (features, fixes, refactoring) where appropriate.
           Call out notable PRs and include upgrade notes if there are breaking changes.
           Keep markdown tight and professional. No emojis.
+          
+          Changes to summarize:
+          $(cat NOTES.md)
           EOF
+          )
           
           # Generate summary using GitHub Models
-          echo "Generating summary using GitHub Models..."
+          echo "Generating summary using GitHub Models with model: $MODEL"
           
-          SUMMARY=$(cat NOTES.md | gh models run \
-            --model ${{ inputs.model }} \
-            --system "Senior release manager. Output GitHub-flavored Markdown only." \
-            --prompt-file prompt.txt 2>/dev/null || echo "")
+          # Use the correct syntax for gh models run
+          set +e  # Don't exit on error
+          SUMMARY=$(gh models run "$MODEL" "$FULL_PROMPT" \
+            --system-prompt "Senior release manager. Output GitHub-flavored Markdown only." 2>&1)
+          EXIT_CODE=$?
+          set -e
           
-          # Fallback if Models fails
+          # Check if generation was successful
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::GitHub Models generation failed with exit code $EXIT_CODE"
+            echo "::warning::Error output: $SUMMARY"
+            SUMMARY=""
+          fi
+          
+          # Fallback if Models fails or returns empty
           if [ -z "$SUMMARY" ]; then
-            echo "::warning::GitHub Models generation failed. Using raw notes."
+            echo "::warning::Using raw notes as fallback."
             SUMMARY=$(cat <<EOF
           ### Highlights
           See changes below for details.
@@ -134,3 +174,17 @@ jobs:
             echo "$SUMMARY"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
+
+      - name: Add to job summary
+        if: always()
+        run: |
+          echo "## Summary for ${{ inputs.head_ref }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
+            echo "**Note:** AI summary generation is disabled (SUMMARY_ENABLE=false)" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "${{ env.SUMMARY_MODEL }}" ]; then
+            echo "**Model:** ${{ env.SUMMARY_MODEL }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Model:** openai/gpt-5-mini (default)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.generate_summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY || echo "No summary generated" >> $GITHUB_STEP_SUMMARY
