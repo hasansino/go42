@@ -5,10 +5,16 @@ name: copilot-setup-steps
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
 
 jobs:
   copilot-setup-steps:
-    name: ai-prepare-env
+    name: copilot-setup-steps
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
