@@ -49,10 +49,16 @@ jobs:
       # ----
       - name: Setup GitHub CLI with Copilot
         run: |
-          # Install GitHub Copilot CLI extension
-          gh extension install github/gh-copilot || true
+          # Configure gh CLI for non-interactive use
+          gh config set prompt disabled
+          
+          # Install GitHub Copilot CLI extension (non-interactively)
+          echo "Installing GitHub Copilot CLI extension..."
+          gh extension install github/gh-copilot --force || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_NO_UPDATE_NOTIFIER: 1
+          GH_PROMPT_DISABLED: 1
       # ----
       - name: Generate URLs and metadata
         id: urls
