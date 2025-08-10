@@ -127,8 +127,6 @@ jobs:
           1. ### Highlights - 2-3 most important changes as bullet points
           2. ### Changes - All changes as bullet points with readable titles
           
-          Group changes by type (features, fixes, refactoring) where appropriate.
-          Call out notable PRs and include upgrade notes if there are breaking changes.
           Keep markdown tight and professional. No emojis.
           
           Changes to summarize:
@@ -174,17 +172,3 @@ jobs:
             echo "$SUMMARY"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
-
-      - name: Add to job summary
-        if: always()
-        run: |
-          echo "## Summary for ${{ inputs.head_ref }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
-            echo "**Note:** AI summary generation is disabled (SUMMARY_ENABLE=false)" >> $GITHUB_STEP_SUMMARY
-          elif [ -n "${{ env.SUMMARY_MODEL }}" ]; then
-            echo "**Model:** ${{ env.SUMMARY_MODEL }}" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**Model:** openai/gpt-5-mini (default)" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.generate_summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY || echo "No summary generated" >> $GITHUB_STEP_SUMMARY
