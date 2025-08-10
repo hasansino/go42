@@ -65,7 +65,7 @@ jobs:
             contents: write
           model: "claude-opus-4-1-20250805"
           trigger_phrase: "@claude"
-          assignee_trigger: "claude-bot"
+          use_commit_signing: true
           mcp_config: |
             {
               "mcpServers": {
@@ -77,6 +77,23 @@ jobs:
               }
             }
           allowed_tools: |
+            Bash(git status*)
+            Bash(git diff*)
+            Bash(git add*)
+            Bash(git commit*)
+            Bash(git push*)
+            Bash(git checkout*)
+            Bash(git branch*)
+            Bash(git log*)
+            Bash(git remote*)
+            Bash(git fetch*)
+            Bash(git pull*)
+            Bash(gh pr create*)
+            Bash(gh pr view*)
+            Bash(gh pr list*)
+            Bash(gh pr comment*)
+            Bash(gh issue view*)
+            Bash(gh issue comment*)
             Bash(go mod tidy*)
             Bash(go mod download*)
             Bash(go generate*)
