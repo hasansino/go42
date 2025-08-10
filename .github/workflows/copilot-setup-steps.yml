@@ -10,6 +10,6 @@ jobs:
   copilot-setup-steps:
     name: ai-prepare-env
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    uses: ./.github/workflows/500-ai-prepare-env.yaml
+    steps:
+      - name: Prepare environment
+        uses: ./.github/workflows/500-ai-prepare-env.yaml
