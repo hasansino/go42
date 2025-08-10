@@ -1,6 +1,6 @@
 name: claude-code
 
-# Manual interaction with claude.
+# Claude code interactions.
 
 on:
   issue_comment:

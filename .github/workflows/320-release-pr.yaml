@@ -65,8 +65,6 @@ jobs:
       base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
       head_ref: ${{ inputs.tag }}
       context_type: release
-      llm_model: gpt-4o-mini
-      debug: false
     secrets:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       

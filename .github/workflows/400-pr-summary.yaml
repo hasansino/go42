@@ -43,7 +43,7 @@ jobs:
           fi
 
   generate-summary:
-    name: Generate Summary
+    name: Generate PR Summary
     needs: check-pr
     if: needs.check-pr.outputs.should_generate == 'true'
     uses: ./.github/workflows/530-ai-generate-summary.yaml
@@ -51,8 +51,6 @@ jobs:
       base_ref: ${{ github.event.pull_request.base.sha }}
       head_ref: ${{ github.event.pull_request.head.sha }}
       context_type: pr
-      llm_model: gpt-4o-mini
-      debug: false
     secrets:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   

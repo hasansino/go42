@@ -2,7 +2,7 @@ name: cleanup-registry
 
 # Cleanup GitHub Container Registry.
 # Deletes old Docker images based on retention policy.
-# Runs on schedule and can be triggered manually.
+# Runs on schedule or can be triggered manually.
 
 on:
   schedule:
