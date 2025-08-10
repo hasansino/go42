@@ -13,11 +13,5 @@ on:
       - .github/workflows/copilot-setup-steps.yml
 
 jobs:
-  copilot-setup-steps:
-    name: copilot-setup-steps
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Prepare environment
-        uses: ./.github/workflows/500-ai-prepare-env.yaml
+  prepare-env:
+    uses: ./.github/workflows/500-ai-prepare-env.yaml
