@@ -1,7 +1,6 @@
-name: generate-summary
+name: ai-generate-summary
 
-# Reusable workflow for generating summaries using OpenAI API
-# Can be used for releases, PRs, or any commit range
+# Reusable workflow for generating summaries between two git references using GitHub Models.
 
 on:
   workflow_call:
@@ -19,274 +18,152 @@ on:
         required: false
         type: string
         default: 'custom'
-      llm_model:
-        description: 'OpenAI model to use for summary generation'
-        required: false
-        type: string
-        default: 'gpt-4o-mini'
-      debug:
-        description: 'Enable debug output'
-        required: false
-        type: boolean
-        default: false
     outputs:
       summary:
         description: 'Generated summary markdown'
-        value: ${{ jobs.generate.outputs.summary }}
+        value: ${{ jobs.ai-generate-summary.outputs.summary }}
       comparison_url:
         description: 'GitHub comparison URL'
-        value: ${{ jobs.generate.outputs.comparison_url }}
-    secrets:
-      OPENAI_API_KEY:
-        required: true
+        value: ${{ jobs.ai-generate-summary.outputs.comparison_url }}
 
 permissions: {}
 
 jobs:
-  generate:
-    name: generate-summary
-    if: |
-      vars.OPENAI_ENABLE != 'false' &&
-      vars.AI_GENERATE_SUMMARY != 'false'
+  ai-generate-summary:
+    name: ai-generate-summary
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      models: read
     outputs:
       summary: ${{ steps.generate_summary.outputs.summary }}
-      comparison_url: ${{ steps.urls.outputs.comparison_url }}
+      comparison_url: ${{ steps.generate_notes.outputs.comparison_url }}
+    env:
+      SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
+      SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # ----
-      - name: Generate URLs and metadata
-        id: urls
+
+      - name: Generate release notes and metadata
+        id: generate_notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Generate comparison URL
           echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
-      # ----
-      - name: Generate Summary with OpenAI
+          
+          # Generate raw notes via GitHub Releases API (PRs + contributors)
+          gh api repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name='${{ inputs.head_ref }}' \
+            -f previous_tag_name='${{ inputs.base_ref }}' \
+            --jq '.body' > NOTES.md || {
+              # Fallback if API fails - get commit messages
+              git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
+                "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > NOTES.md
+            }
+
+      - name: Install GitHub Models CLI extension
+        if: env.SUMMARY_ENABLE != 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install https://github.com/github/gh-models
+
+      - name: Generate AI Summary
         id: generate_summary
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          LLM_MODEL: ${{ inputs.llm_model }}
-          BASE_REF: ${{ inputs.base_ref }}
-          HEAD_REF: ${{ inputs.head_ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONTEXT_TYPE: ${{ inputs.context_type }}
         run: |
-          # Validate OpenAI API key
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "::error::OPENAI_API_KEY is not set in repository secrets"
-            echo "summary=" >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
+          # Check if AI summary is enabled
+          if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
+            echo "AI summary generation is disabled via SUMMARY_ENABLE variable"
+            # Use simple list format without AI
+            SUMMARY=$(cat <<EOF
+          ### Highlights
+          Summary generation is disabled. See changes below.
           
-          # Get commit messages between refs with clickable hashes and authors
-          echo "Fetching commits between $BASE_REF and $HEAD_REF..."
-          # Get commits with hash, author name, author email, and message
-          COMMITS_RAW=$(git log --pretty=format:"%h|%an|%ae|%s" "$BASE_REF".."$HEAD_REF" 2>/dev/null || echo "")
-          
-          # Convert to markdown with clickable links and author info
-          COMMITS=""
-          while IFS= read -r line; do
-            if [ -n "$line" ]; then
-              HASH=$(echo "$line" | cut -d'|' -f1)
-              AUTHOR_NAME=$(echo "$line" | cut -d'|' -f2)
-              AUTHOR_EMAIL=$(echo "$line" | cut -d'|' -f3)
-              MESSAGE=$(echo "$line" | cut -d'|' -f4-)
-              
-              # Try to extract GitHub username from noreply email or use author name
-              if [[ "$AUTHOR_EMAIL" =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
-                # Extract username from GitHub noreply email
-                GITHUB_USER="${BASH_REMATCH[2]}"
-              elif [[ "$AUTHOR_EMAIL" =~ ^([^@]+)@.*$ ]]; then
-                # Fallback to email prefix if not GitHub noreply
-                GITHUB_USER="${BASH_REMATCH[1]}"
-              else
-                # Last resort: use author name with spaces replaced
-                GITHUB_USER=$(echo "$AUTHOR_NAME" | tr ' ' '-')
-              fi
-              
-              COMMITS="${COMMITS}- ${MESSAGE} ([${HASH}](https://github.com/${{ github.repository }}/commit/${HASH})) by [@${GITHUB_USER}](https://github.com/${GITHUB_USER})\n"
-            fi
-          done <<< "$COMMITS_RAW"
-          
-          # Remove trailing newline
-          COMMITS=$(echo -e "$COMMITS" | sed '$ s/.$//')
-          
-          if [ -z "$COMMITS" ]; then
-            echo "No commits found between refs"
-            echo "summary=" >> "$GITHUB_OUTPUT"
+          ### Changes
+          $(cat NOTES.md)
+          EOF
+            )
+            # Save summary to output
+            {
+              echo 'summary<<EOF'
+              echo "$SUMMARY"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
-          # Count different types of changes
-          FEATURES=$(echo "$COMMITS" | grep -c -E "^- (feat|feature):" || echo "0")
-          FIXES=$(echo "$COMMITS" | grep -c -E "^- (fix|bugfix):" || echo "0")
-          BREAKING=$(echo "$COMMITS" | grep -c -E "^- (breaking|BREAKING CHANGE):" || echo "0")
-          TOTAL=$(echo "$COMMITS" | grep -c "^-" || echo "0")
+          # Determine which model to use (repo variable or default)
+          MODEL="${{ env.SUMMARY_MODEL }}"
+          if [ -z "$MODEL" ]; then
+            MODEL="openai/gpt-5-mini"  # Default model
+          fi
+          echo "Using model: $MODEL"
           
-          # Trim any whitespace/newlines from counts
-          FEATURES=$(echo "$FEATURES" | xargs)
-          FIXES=$(echo "$FIXES" | xargs)
-          BREAKING=$(echo "$BREAKING" | xargs)
-          TOTAL=$(echo "$TOTAL" | xargs)
-          
-          # Ensure variables are proper integers
-          FEATURES=${FEATURES//[^0-9]/}
-          FIXES=${FIXES//[^0-9]/}
-          BREAKING=${BREAKING//[^0-9]/}
-          TOTAL=${TOTAL//[^0-9]/}
-          
-          # Default to 0 if empty
-          FEATURES=${FEATURES:-0}
-          FIXES=${FIXES:-0}
-          BREAKING=${BREAKING:-0}
-          TOTAL=${TOTAL:-0}
-          
-          # Customize prompt based on context type
+          # Prepare context-specific prompt
           case "$CONTEXT_TYPE" in
             "release")
-              CONTEXT_PROMPT="Generate a concise and professional release summary for version $HEAD_REF based on the following git commits."
+              PROMPT_CONTEXT="You are generating a crisp, customer-facing release summary."
               ;;
             "pr")
-              CONTEXT_PROMPT="Generate a concise pull request description based on the following git commits. Focus on what changes are being made and why."
+              PROMPT_CONTEXT="You are generating a concise pull request description."
               ;;
             *)
-              CONTEXT_PROMPT="Generate a concise summary of changes based on the following git commits."
+              PROMPT_CONTEXT="You are generating a concise summary of changes."
               ;;
           esac
           
-          # Prepare the prompt for LLM
-          PROMPT=$(cat <<EOF
-          $CONTEXT_PROMPT
+          # Prepare the full prompt with notes
+          FULL_PROMPT=$(cat <<EOF
+          $PROMPT_CONTEXT
           
-          Statistics:
-          - Total commits: $TOTAL
-          - Features: $FEATURES
-          - Bug fixes: $FIXES
-          - Breaking changes: $BREAKING
+          Summarize the changes below into two sections:
+          1. ### Highlights - 2-3 most important changes as bullet points
+          2. ### Changes - All changes as bullet points with readable titles
           
-          Commits:
-          $COMMITS
+          Keep markdown tight and professional. No emojis.
           
-          Requirements:
-          1. ONLY output two sections: "Highlights" and "Changes"
-          2. Do NOT include an overview paragraph or any other sections
-          3. Keep the Highlights section to 2-3 most important changes only
-          4. In the Changes section, prefix each change with [feature], [bug], or [refactor]
-          5. Use bullet points for each change
-          6. IMPORTANT: Preserve the commit hash links and author links from the original commits
-          7. Each commit line MUST include the clickable hash link and author link in format "by [@username](url)" at the end
-          8. Keep descriptions clear and user-focused
-          9. If there are breaking changes, mark them with [feature] and note they are breaking
-          10. Do not use any emojis
-          11. Keep the total summary concise
-          12. Use markdown formatting
-          
-          Template:
-          ### Highlights
-          - [Most important change 1]
-          - [Most important change 2]
-          
-          ### Changes
-          - [feature] New feature description
-          - [bug] Fixed issue description
-          - [refactor] Refactoring description
+          Changes to summarize:
+          $(cat NOTES.md)
           EOF
           )
           
-          # Generate summary using OpenAI API
-          echo "Generating summary using OpenAI API with model: $LLM_MODEL"
+          # Generate summary using GitHub Models
+          echo "Generating summary using GitHub Models with model: $MODEL"
           
-          # Check if model is premium
-          PREMIUM_MODELS=("gpt-4" "gpt-4-turbo" "gpt-4o" "o1-preview" "o1-mini")
-          IS_PREMIUM=false
-          for model in "${PREMIUM_MODELS[@]}"; do
-            if [[ "$LLM_MODEL" == *"$model"* ]]; then
-              IS_PREMIUM=true
-              break
-            fi
-          done
+          # Use the correct syntax for gh models run
+          set +e  # Don't exit on error
+          SUMMARY=$(gh models run "$MODEL" "$FULL_PROMPT" \
+            --system-prompt "Senior release manager. Output GitHub-flavored Markdown only." 2>&1)
+          EXIT_CODE=$?
+          set -e
           
-          if [ "$IS_PREMIUM" = true ]; then
-            echo "::warning::Using premium model '$LLM_MODEL'. This will incur higher API costs."
-          else
-            echo "Using standard model '$LLM_MODEL'"
-          fi
-          
-          # Prepare JSON payload for OpenAI API
-          JSON_PAYLOAD=$(jq -n \
-              --arg model "$LLM_MODEL" \
-              --arg prompt "$PROMPT" \
-              '{
-                "model": $model,
-                "messages": [
-                  {
-                    "role": "system",
-                    "content": "You are a helpful assistant that generates professional summaries for software projects. Be concise and clear. ONLY output the Highlights section and the Changes section. Each change in the Changes section MUST be prefixed with [feature], [bug], or [refactor]. Do NOT include any overview paragraphs or additional commentary. IMPORTANT: You MUST preserve the commit hash links in format ([hash](url)) and author links in format (by [@username](url)) from each commit line exactly as provided."
-                  },
-                  {
-                    "role": "user", 
-                    "content": $prompt
-                  }
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000,
-                "stream": false
-              }')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::API Request payload:"
-            echo "$JSON_PAYLOAD" | jq '.'
-          fi
-          
-          # Call OpenAI API
-          API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.openai.com/v1/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            -d "$JSON_PAYLOAD")
-          
-          # Extract HTTP status code and response body
-          HTTP_CODE=$(echo "$API_RESPONSE" | tail -n1)
-          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
-          
-          if [ "${{ inputs.debug }}" = "true" ]; then
-            echo "::debug::HTTP Response Code: $HTTP_CODE"
-            echo "::debug::API Response (first 1000 chars):"
-            echo "${RESPONSE_BODY:0:1000}"
-          fi
-          
-          # Check HTTP status code
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::OpenAI API returned HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "429" ]; then
-              echo "::warning::Rate limit exceeded. Using fallback."
-            elif [ "$HTTP_CODE" = "401" ]; then
-              echo "::warning::Authentication failed. Check if OPENAI_API_KEY is valid."
-            elif [ "$HTTP_CODE" = "403" ]; then
-              echo "::warning::Access forbidden. Check API key permissions."
-            fi
-          fi
-          
-          # Check if response contains an error
-          ERROR_MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.error.message // empty')
-          
-          if [ -n "$ERROR_MESSAGE" ]; then
-            echo "::warning::OpenAI API error: $ERROR_MESSAGE"
+          # Check if generation was successful
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::GitHub Models generation failed with exit code $EXIT_CODE"
+            echo "::warning::Error output: $SUMMARY"
             SUMMARY=""
+          fi
+          
+          # Fallback if Models fails or returns empty
+          if [ -z "$SUMMARY" ]; then
+            echo "::warning::Using raw notes as fallback."
+            SUMMARY=$(cat <<EOF
+          ### Highlights
+          See changes below for details.
+          
+          ### Changes
+          $(cat NOTES.md)
+          EOF
+            )
           else
-            # Extract the summary from response
-            SUMMARY=$(echo "$RESPONSE_BODY" | jq -r '.choices[0].message.content // empty')
-            
-            if [ -z "$SUMMARY" ]; then
-              echo "::warning::Failed to generate summary using OpenAI API. Using fallback."
-            else
-              echo "Successfully generated summary using OpenAI API"
-              if [ "${{ inputs.debug }}" = "true" ]; then
-                echo "::debug::Generated summary:"
-                echo "$SUMMARY"
-              fi
-            fi
+            echo "Successfully generated summary using GitHub Models"
           fi
           
           # Save summary to output

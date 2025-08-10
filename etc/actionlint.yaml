@@ -1,5 +1,7 @@
 config-variables:
   - CLAUDE_ENABLE
+  - SUMMARY_ENABLE
+  - SUMMARY_MODEL
 
 paths:
   .github/workflows/*.{yml,yaml}:
