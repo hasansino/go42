@@ -149,18 +149,6 @@ generate-ai:
 	@go run cmd/genai/main.go
 	@go run cmd/genkwb/main.go -build
 
-## claude | run claude agent in isolated environment
-# Dependencies:
-#   * brew install claude
-claude:
-	@echo "Running claude agent..."
-
-## crush | run crush agent in isolated environment
-# Dependencies:
-#   * brew install charmbracelet/tap/crush
-crush:
-	@echo "Running crush agent..."
-
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │
 # ╰─────────────────────----------------─────────╯

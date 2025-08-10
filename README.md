@@ -107,6 +107,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - add explicit context about repository structure
 - fuzzy + genetic
 - https://github.com/langchain-ai/open-swe
+- https://github.com/cloudwego/eino
+- https://github.com/github/github-mcp-server
 
 ## Bugs
 

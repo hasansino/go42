@@ -128,10 +128,6 @@ func run() error {
 		return fmt.Errorf("failed to load content: %w", err)
 	}
 
-	if err := copyAgents(); err != nil {
-		fmt.Printf("Warning: failed to copy agents: %v\n", err)
-	}
-
 	envData := &TemplateData{
 		Project:      config.Project.Name,
 		Language:     config.Project.Language,
@@ -161,6 +157,10 @@ func run() error {
 
 	if err := exportConfigs(); err != nil {
 		return fmt.Errorf("failed to export configs: %w", err)
+	}
+
+	if err := copyAgents(); err != nil {
+		fmt.Printf("Warning: failed to copy agents: %v\n", err)
 	}
 
 	return nil
@@ -221,48 +221,6 @@ func loadChunks(dir string) (*Content, error) {
 	return content, nil
 }
 
-func copyAgents() error {
-	srcDir := "ai/agents"
-	dstDir := ".claude/agents"
-
-	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
-		return nil // no agents to copy
-	}
-
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
-		return fmt.Errorf("failed to create .claude/agents: %w", err)
-	}
-
-	entries, err := os.ReadDir(srcDir)
-	if err != nil {
-		return fmt.Errorf("failed to read agents directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
-			continue
-		}
-
-		srcPath := filepath.Join(srcDir, entry.Name())
-		dstPath := filepath.Join(dstDir, entry.Name())
-
-		// Read source file
-		data, err := os.ReadFile(srcPath)
-		if err != nil {
-			return fmt.Errorf("failed to read %s: %w", srcPath, err)
-		}
-
-		// Write to destination
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
-			return fmt.Errorf("failed to write %s: %w", dstPath, err)
-		}
-
-		fmt.Printf("Copied agent: %s\n", entry.Name())
-	}
-
-	return nil
-}
-
 func generateProvider(provider ProviderConfig, data *TemplateData) error {
 	tmplData, err := os.ReadFile(provider.Template)
 	if err != nil {
@@ -312,5 +270,47 @@ func exportConfigs() error {
 		}
 		fmt.Printf("Exported config to %s\n", path)
 	}
+	return nil
+}
+
+func copyAgents() error {
+	srcDir := "ai/agents"
+	dstDir := ".claude/agents"
+
+	if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+		return nil // no agents to copy
+	}
+
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		return fmt.Errorf("failed to create .claude/agents: %w", err)
+	}
+
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return fmt.Errorf("failed to read agents directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+
+		srcPath := filepath.Join(srcDir, entry.Name())
+		dstPath := filepath.Join(dstDir, entry.Name())
+
+		// Read source file
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", srcPath, err)
+		}
+
+		// Write to destination
+		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+			return fmt.Errorf("failed to write %s: %w", dstPath, err)
+		}
+
+		fmt.Printf("Copied agent: %s\n", entry.Name())
+	}
+
 	return nil
 }

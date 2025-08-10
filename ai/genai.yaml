@@ -23,3 +23,7 @@ providers:
   crush:
     template: ai/crush.tpl.md
     output: CRUSH.md
+
+  gemini:
+    template: ai/gemini.tpl.md
+    output: GEMINI.md
