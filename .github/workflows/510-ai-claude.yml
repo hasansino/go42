@@ -19,18 +19,28 @@ jobs:
     name: claude
     if: |
       vars.CLAUDE_ENABLE != 'false' &&
-      ((github.event_name == 'issue_comment' && github.event.comment.user.type != 'Bot') ||
-       (github.event_name == 'pull_request_review_comment' && github.event.comment.user.type != 'Bot') ||
-       (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
-       (github.event_name == 'issues' && github.event.issue.user.type != 'Bot')) &&
-      (contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
-       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) ||
-       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)) &&
-      ((github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))))
-    runs-on: 'ubuntu-latest'
+      (
+        (github.event_name == 'issue_comment' && github.event.comment.user.type != 'Bot') ||
+        (github.event_name == 'pull_request_review_comment' && github.event.comment.user.type != 'Bot') ||
+        (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
+        (github.event_name == 'issues' && github.event.issue.user.type != 'Bot')
+      ) &&
+      (
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) ||
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+      ) &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (
+            github.event_name == 'issues' && 
+            (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
@@ -54,8 +64,8 @@ jobs:
           additional_permissions: |
             actions: read
             contents: write
-          model: "claude-opus-4-1-20250805"
-          trigger_phrase: "@claude"
+          model: 'claude-opus-4-1-20250805'
+          trigger_phrase: '@claude'
           use_commit_signing: true
           mcp_config: |
             {
