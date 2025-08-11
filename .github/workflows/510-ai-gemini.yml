@@ -84,14 +84,14 @@ jobs:
 
       - name: 'Generate GitHub App Token'
         id: generate_token
-        if: ${{ vars.APP_ID }}
+        if: ${{ vars.GEMINI_APP_ID }}
         uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e
         with:
-          app-id: ${{ vars.APP_ID }}
+          app-id: ${{ vars.GEMINI_APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: 'Setup git user'
-        if: ${{ !vars.APP_ID }}
+        if: ${{ !vars.GEMINI_APP_ID }}
         run: |-
           # Only needed when not using GitHub App token
           git config --global user.name 'gemini[bot]'
@@ -114,6 +114,8 @@ jobs:
 
       - name: 'Run Gemini'
         uses: google-github-actions/run-gemini-cli@v0
+        continue-on-error: true
+        id: run_gemini
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
@@ -134,20 +136,20 @@ jobs:
           settings: |-
             {
               "maxSessionTurns": 20,
-              "mcpServers": {
-                "github": {
-                  "command": "docker",
-                  "args": [
-                    "run",
-                    "-i",
-                    "--rm",
-                    "-e",
-                    "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "mcp/server-github:latest"
-                  ],
-                  "env": {
-                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${{ env.GITHUB_TOKEN }}"
-                  }
-                }
+              "telemetry": {
+                "enabled": false
               }
             }
+
+      - name: 'Handle failure'
+        if: failure() || steps.run_gemini.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+        run: |-
+          # Post error message if Gemini fails
+          gh issue comment "${ISSUE_NUMBER}" \
+            --body "@${ACTOR} Sorry, I encountered an error. This might be due to rate limits (free tier: 5 requests/minute). Please try again in a minute or check the [workflow logs](https://github.com/${REPOSITORY}/actions/runs/${{ github.run_id }})." \
+            --repo "${REPOSITORY}"

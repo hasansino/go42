@@ -60,6 +60,21 @@ jobs:
       - name: 'Prepare AI environment'
         uses: ./.github/actions/ai-prepare-env
 
+      - name: 'Acknowledge request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |-
+          if [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+            gh api -X POST \
+              "/repos/${REPOSITORY}/issues/comments/${{ github.event.comment.id }}/reactions" \
+              -f content='eyes' || true
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            gh api -X POST \
+              "/repos/${REPOSITORY}/pulls/comments/${{ github.event.comment.id }}/reactions" \
+              -f content='eyes' || true
+          fi
+
       - name: 'Run Claude Code'
         id: claude
         uses: anthropics/claude-code-action@beta
