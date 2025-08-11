@@ -17,6 +17,10 @@ concurrency:
 jobs:
   claude:
     name: claude
+    # 1. Global switch should be set to 'true'
+    # 2. Event must be triggered by a user (not a bot)
+    # 3. Check if the user have permission to invoke agent
+    # 4. Check if triggering event contains '@gemini' keyword
     if: |
       vars.CLAUDE_ENABLE != 'false' &&
       (

@@ -24,11 +24,32 @@ permissions:
 jobs:
   gemini:
     name: gemini
+    # 1. Global switch should be set to 'true'
+    # 2. Event must be triggered by a user (not a bot)
+    # 3. Check if the user have permission to invoke agent
+    # 4. Check if triggering event contains '@gemini' keyword
     if: |-
-      vars.GEMINI_ENABLE != 'false' && 
-      contains(github.event.comment.body || github.event.review.body, '@gemini') &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), 
-        github.event.comment.author_association || github.event.review.author_association)
+      vars.GEMINI_ENABLE != 'false' &&
+      (
+        (github.event_name == 'issue_comment' && github.event.comment.user.type != 'Bot') ||
+        (github.event_name == 'pull_request_review_comment' && github.event.comment.user.type != 'Bot') ||
+        (github.event_name == 'pull_request_review' && github.event.review.user.type != 'Bot') ||
+        (github.event_name == 'issues' && github.event.issue.user.type != 'Bot')
+      ) &&
+      (
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) ||
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association) ||
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
+      ) &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@gemini')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@gemini')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@gemini')) ||
+        (
+            github.event_name == 'issues' && 
+            (contains(github.event.issue.body, '@gemini') || contains(github.event.issue.title, '@gemini'))
+        )
+      )
     timeout-minutes: 10
     runs-on: ubuntu-latest
 
@@ -79,18 +100,16 @@ jobs:
       - name: 'Acknowledge request'
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          COMMENT_ID: ${{ github.event.comment.id || github.event.review.id }}
+          REPOSITORY: ${{ github.repository }}
         run: |-
-          if [[ -n "${COMMENT_ID}" ]]; then
-            gh api graphql -f query='
-              mutation AddReaction($subjectId: ID!) {
-                addReaction(input: {subjectId: $subjectId, content: EYES}) {
-                  reaction {
-                    content
-                  }
-                }
-              }
-            ' -f subjectId="${COMMENT_ID}"
+          if [[ "${{ github.event_name }}" == "issue_comment" ]]; then
+            gh api -X POST \
+              "/repos/${REPOSITORY}/issues/comments/${{ github.event.comment.id }}/reactions" \
+              -f content='eyes' || true
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            gh api -X POST \
+              "/repos/${REPOSITORY}/pulls/comments/${{ github.event.comment.id }}/reactions" \
+              -f content='eyes' || true
           fi
 
       - name: 'Run Gemini'
