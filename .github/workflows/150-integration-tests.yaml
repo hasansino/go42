@@ -123,15 +123,15 @@ jobs:
           --health-retries 10
     # ----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Setup Go
+      - name: 'Setup Go'
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - name: Download Go modules
+      - name: 'Download Go modules'
         run: go mod download
-      - name: Run integration tests
+      - name: 'Run integration tests'
         run: go test -count=1 -v -race ./tests/integration/...
         # environment variables read by integration tests
         env:

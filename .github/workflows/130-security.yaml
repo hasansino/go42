@@ -17,12 +17,12 @@ on:
         required: true
         type: string
         default: ubuntu-latest
-        description: "runs_on"
+        description: 'runs_on'
       continue_on_error:
         required: true
         type: boolean
         default: false
-        description: "continue_on_error"
+        description: 'continue_on_error'
   workflow_call:
     inputs:
       runs_on:
@@ -44,11 +44,11 @@ jobs:
       contents: read
     # -----
     steps:
-      - name: Checkout repository with full history
+      - name: 'Checkout repository with full history'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Run Gitleaks scan
+      - name: 'Run Gitleaks scan'
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -67,9 +67,9 @@ jobs:
       GO111MODULE: on
     # -----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Run Gosec security scanner
+      - name: 'Run Gosec security scanner'
         uses: securego/gosec@master
         with:
           args: -exclude-generated ./...
@@ -82,11 +82,11 @@ jobs:
       contents: read
     # -----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Extract Go version
+      - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
-      - name: Run Go vulnerability check
+      - name: 'Run Go vulnerability check'
         uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
@@ -101,16 +101,16 @@ jobs:
       contents: read
     # -----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
       # -----
-      - name: Setup Go
+      - name: 'Setup Go'
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - name: Generate Go module list
+      - name: 'Generate Go module list'
         run: go list -json -m all > go.list
-      - name: Run Nancy vulnerability scanner
+      - name: 'Run Nancy vulnerability scanner'
         uses: sonatype-nexus-community/nancy-github-action@main
         with:
           nancyVersion: v1.0.51
@@ -125,16 +125,16 @@ jobs:
       actions: read
     # -----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
       # -----
-      - name: Initialize CodeQL
+      - name: 'Initialize CodeQL'
         uses: github/codeql-action/init@v3
         with:
           languages: go
-      - name: Autobuild
+      - name: 'Autobuild'
         uses: github/codeql-action/autobuild@v3
-      - name: Perform CodeQL analysis
+      - name: 'Perform CodeQL analysis'
         uses: github/codeql-action/analyze@v3
 
   licenses:
@@ -145,9 +145,9 @@ jobs:
       contents: read
     # -----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Check Go licenses
+      - name: 'Check Go licenses'
         uses: joeig/go-licenses-action@v1.1
         with:
           # some packages may miss license files, or they are linked to outside libraries
@@ -164,21 +164,21 @@ jobs:
       security-events: write
     # ----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Run OSSF Scorecard analysis
+      - name: 'Run OSSF Scorecard analysis'
         uses: ossf/scorecard-action@v2.4.2
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
           # this updates badge, we want it to reflect only master branch
           publish_results: ${{ github.ref == 'refs/heads/master' }}
-      - name: Upload Scorecard results
+      - name: 'Upload Scorecard results'
         uses: actions/upload-artifact@v4
         with:
           name: scorecard-results
           path: scorecard-results.sarif
-      - name: Upload Scorecard results to code scanning
+      - name: 'Upload Scorecard results to code scanning'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: scorecard-results.sarif
@@ -194,22 +194,22 @@ jobs:
       contents: read
     # -----
     steps:
-      - name: Checkout master branch
+      - name: 'Checkout master branch'
         uses: actions/checkout@v4
         with:
           ref: master
-      - name: Setup Go
+      - name: 'Setup Go'
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - name: Install capslock
+      - name: 'Install capslock'
         run: go install github.com/google/capslock/cmd/capslock@latest
-      - name: Generate master branch capabilities
+      - name: 'Generate master branch capabilities'
         run: capslock -packages ./... -output=json > capabilities.json
-      - name: Save master capabilities
+      - name: 'Save master capabilities'
         run: mv capabilities.json /tmp/capabilities.json
       # -----
-      - name: Checkout current branch
+      - name: 'Checkout current branch'
         uses: actions/checkout@v4
-      - name: Compare capabilities with master
+      - name: 'Compare capabilities with master'
         run: capslock -packages ./... -output=compare /tmp/capabilities.json

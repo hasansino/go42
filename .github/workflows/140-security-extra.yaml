@@ -55,7 +55,7 @@ jobs:
       packages: read
     # ----
     steps:
-      - name: Run Trivy vulnerability scanner
+      - name: 'Run Trivy vulnerability scanner'
         uses: aquasecurity/trivy-action@0.32.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
@@ -90,10 +90,10 @@ jobs:
           --health-retries 10
     # ----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
       # ----
-      - name: Run ZAP API scan
+      - name: 'Run ZAP API scan'
         uses: zaproxy/action-api-scan@v0.9.0
         with:
           target: 'http://localhost:44441/api/v1/.combined.yml'
@@ -110,19 +110,19 @@ jobs:
       actions: read
       security-events: write
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Download SBOM artifact
+      - name: 'Download SBOM artifact'
         uses: actions/download-artifact@v4
         with:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-      - name: Run OSV Scanner
+      - name: 'Run OSV Scanner'
         uses: google/osv-scanner-action/osv-scanner-action@v2.1.0
         continue-on-error: true
         with:
           scan-args: --output=results.json --all-vulns --format=json --recursive ./
-      - name: Generate OSV Scanner report
+      - name: 'Generate OSV Scanner report'
         uses: google/osv-scanner-action/osv-reporter-action@v2.1.0
         continue-on-error: true
         with:
@@ -132,12 +132,12 @@ jobs:
             --gh-annotations=true
             --fail-on-vuln=true
             --all-vulns
-      - name: Upload OSV Scanner results
+      - name: 'Upload OSV Scanner results'
         uses: actions/upload-artifact@v4
         with:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif
-      - name: Upload SARIF to GitHub Security
+      - name: 'Upload SARIF to GitHub Security'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv-scanner-results.sarif

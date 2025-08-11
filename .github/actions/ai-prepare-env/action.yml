@@ -6,7 +6,8 @@ description: Prepare the environment for AI-related tasks (requires checkout to 
 runs:
   using: composite
   steps:
-    - uses: actions/setup-go@v5
+    - name: 'Set up Go'
+      uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
         cache: true
@@ -14,10 +15,11 @@ runs:
           **/go.sum
           **/go.mod
     # -----
-    - run: go mod tidy && go mod download
+    - name: 'Download Go modules'
+      run: go mod tidy && go mod download
       shell: bash
     # -----
-    - name: Cache Homebrew and formulae
+    - name: 'Cache Homebrew and formulae'
       uses: actions/cache@v4
       with:
         path: |
@@ -28,12 +30,14 @@ runs:
           homebrew-${{ runner.os }}-${{ runner.arch }}-
           homebrew-${{ runner.os }}-
     # -----
-    - uses: Homebrew/actions/setup-homebrew@main
+    - name: 'Set up Homebrew'
+      uses: Homebrew/actions/setup-homebrew@main
     # -----
-    - run: make setup
+    - name: 'Install project dependencies'
+      run: make setup
       shell: bash
     # -----
-    - name: Set CI environment variables for genai
+    - name: 'Prepare ai environment variables'
       shell: bash
       env:
         HEAD_REF: ${{ github.head_ref }}
@@ -64,5 +68,6 @@ runs:
           fi
         } >> "$GITHUB_ENV"
     # -----
-    - run: make generate-ai
+    - name: 'Generate ai agent environment'
+      run: make generate-ai
       shell: bash

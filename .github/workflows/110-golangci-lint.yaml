@@ -10,12 +10,12 @@ on:
         required: true
         type: string
         default: ubuntu-latest
-        description: "runs_on"
+        description: 'runs_on'''
       continue_on_error:
         required: true
         type: boolean
         default: false
-        description: "continue_on_error"
+        description: 'continue_on_error'
   workflow_call:
     inputs:
       runs_on:
@@ -36,13 +36,13 @@ jobs:
       contents: read
     # ----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Setup Go
+      - name: 'Setup Go'
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - name: Run golangci-lint
+      - name: 'Run golangci-lint'
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.3

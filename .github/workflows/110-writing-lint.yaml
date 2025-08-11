@@ -10,12 +10,12 @@ on:
         required: true
         type: string
         default: ubuntu-latest
-        description: "runs_on"
+        description: 'runs_on'
       continue_on_error:
         required: true
         type: boolean
         default: false
-        description: "continue_on_error"
+        description: 'continue_on_error'
   workflow_call:
     inputs:
       runs_on:
@@ -36,9 +36,9 @@ jobs:
       contents: read
     # ----
     steps:
-      - name: Checkout repository
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: Run Vale prose linter
+      - name: 'Run Vale prose linter'
         uses: errata-ai/vale-action@v2.1.1
         with:
           fail_on_error: true

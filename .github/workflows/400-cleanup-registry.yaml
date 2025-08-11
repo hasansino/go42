@@ -41,7 +41,7 @@ jobs:
       packages: write
       contents: read
     steps:
-      - name: Set retention period
+      - name: 'Set retention period'
         id: config
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
@@ -56,7 +56,7 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
       
-      - name: Cleanup old images
+      - name: 'Cleanup old images'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
@@ -281,7 +281,7 @@ jobs:
             echo "total_deleted=$total_deleted"
           } > cleanup_summary.env
       
-      - name: Generate Job Summary
+      - name: 'Generate Job Summary'
         if: always()
         env:
           RETENTION_DAYS: ${{ steps.config.outputs.retention_days }}
