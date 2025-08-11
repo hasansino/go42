@@ -1,19 +1,11 @@
 name: ai-prepare-env
-description: Prepare the environment for AI-related tasks
+description: Prepare the environment for AI-related tasks (requires checkout to be done first)
 
-inputs:
-  fetch-depth:
-    description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
-    required: false
-    default: '1'
+# Prepares the environment for ai agents.
 
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: ${{ inputs.fetch-depth }}
-    # -----
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'

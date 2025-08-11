@@ -40,11 +40,14 @@ jobs:
       id-token: write
       actions: read
     steps:
-      - name: 'Prepare AI environment'
-        uses: .github/actions/ai-prepare-env
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      # ----
+
+      - name: 'Prepare AI environment'
+        uses: ./.github/actions/ai-prepare-env
+
       - name: 'Run Claude Code'
         id: claude
         uses: anthropics/claude-code-action@beta
