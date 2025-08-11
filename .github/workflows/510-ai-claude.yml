@@ -46,7 +46,7 @@ jobs:
           fetch-depth: 1
 
       - name: 'Prepare AI environment'
-        uses: .github/actions/ai-prepare-env
+        uses: ./.github/actions/ai-prepare-env
 
       - name: 'Run Claude Code'
         id: claude
