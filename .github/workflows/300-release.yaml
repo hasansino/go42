@@ -30,11 +30,103 @@ jobs:
       attestation: true
       generate_sbom: true
       attestation_sbom: true
-  release-pr:
+
+  prepare-release:
     needs: [ docker-build ]
-    name: release-pr
-    uses: ./.github/workflows/320-release-pr.yaml
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: false
-      tag: ${{ github.ref_name }}
+    name: prepare-release
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    outputs:
+      previous_tag: ${{ steps.prev_tag.outputs.previous_tag }}
+      comparison_url: ${{ steps.prev_tag.outputs.comparison_url }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get previous tag and comparison URL
+        id: prev_tag
+        run: |
+          PREVIOUS_TAG="$(git tag --sort=-version:refname | head -2 | tail -1 2>/dev/null || echo "")"
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "previous_tag=" >> "$GITHUB_OUTPUT"
+            echo "comparison_url=" >> "$GITHUB_OUTPUT"
+          else
+            echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+            echo "comparison_url=https://github.com/${{ github.repository }}/compare/$PREVIOUS_TAG...${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Update Helm Chart appVersion
+        run: |
+          sed -i "s/^appVersion:.*/appVersion: \"${{ github.ref_name }}\"/" infra/helm/app/Chart.yaml
+      - name: Upload modified files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: infra/helm/app/Chart.yaml
+
+  generate-summary:
+    name: generate-summary
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      models: read
+    outputs:
+      summary: ${{ steps.ai_summary.outputs.summary }}
+    env:
+      SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
+      SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate AI Summary
+        id: ai_summary
+        uses: ./.github/actions/ai-generate-summary
+        with:
+          base_ref: ${{ needs.prepare-release.outputs.previous_tag }}
+          head_ref: ${{ github.ref_name }}
+          context_type: release
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  create-pr:
+    name: create-pr
+    runs-on: ubuntu-latest
+    needs: [prepare-release, generate-summary]
+    if: always() && needs.prepare-release.result == 'success'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download modified files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: infra/helm/app/
+      - name: Create pull request for release
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "auto-release-${{ github.ref_name }}"
+          title: "Release ${{ github.ref_name }}"
+          body: |
+            This is an automated release PR. Merging this PR will trigger a deployment.
+            
+            ${{ needs.prepare-release.outputs.previous_tag && format('**Previous version:** `{0}`', needs.prepare-release.outputs.previous_tag) || '' }}
+            ${{ needs.prepare-release.outputs.comparison_url && format('**Full changelog:** {0}', needs.prepare-release.outputs.comparison_url) || '' }}
+            
+            ---
+            
+            ${{ needs.generate-summary.outputs.summary || '## Release Summary\n\nNo automated summary available. Please review the changelog link above.' }}
+          branch: "auto-release-${{ github.ref_name }}"
+          delete-branch: true
+          branch-suffix: random
+          sign-commits: true
+          base: master
+          assignees: ${{ github.actor }} # will be whoever created a tag
