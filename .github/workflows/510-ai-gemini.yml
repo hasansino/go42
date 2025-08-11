@@ -12,7 +12,7 @@ on:
       - 'submitted'
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.event.issue.number }}'
+  group: '${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number }}'
   cancel-in-progress: |-
     ${{ github.event.sender.type == 'User' && ( github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') }}
 
@@ -21,6 +21,7 @@ permissions:
   id-token: 'write'
   pull-requests: 'write'
   issues: 'write'
+  statuses: 'write'
 
 jobs:
   gemini:
@@ -32,13 +33,11 @@ jobs:
           github.event_name == 'pull_request_review_comment'
         ) &&
         contains(github.event.comment.body, '@gemini') &&
-        !contains(github.event.comment.body, '@gemini /review') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
       ) ||
       (
         github.event_name == 'pull_request_review' &&
         contains(github.event.review.body, '@gemini') &&
-        !contains(github.event.review.body, '@gemini /review') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       )
     timeout-minutes: 10
@@ -51,19 +50,36 @@ jobs:
           fetch-depth: 0
 
       - name: 'Prepare AI environment'
-        uses: .github/actions/ai-prepare-env
+        uses: ./.github/actions/ai-prepare-env
+
+      - name: 'Detect mode'
+        id: 'detect_mode'
+        env:
+          COMMENT_BODY: '${{ github.event.comment.body || github.event.review.body }}'
+        run: |-
+          set -euo pipefail
+          
+          # Detect if this is a review request
+          if [[ "${COMMENT_BODY}" == *"@gemini /review"* ]]; then
+            echo "mode=review" >> "${GITHUB_OUTPUT}"
+            echo "::notice::Running in review mode"
+          else
+            echo "mode=chat" >> "${GITHUB_OUTPUT}"
+            echo "::notice::Running in chat mode"
+          fi
 
       - name: 'Generate GitHub App Token'
         id: 'generate_token'
         if: |-
           ${{ vars.APP_ID }}
-        uses: 'actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e' # ratchet:actions/create-github-app-token@v2
+        uses: 'actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e'
         with:
           app-id: '${{ vars.APP_ID }}'
           private-key: '${{ secrets.APP_PRIVATE_KEY }}'
 
-      - name: 'Get context from event'
+      - name: 'Get context from event (chat mode)'
         id: 'get_context'
+        if: steps.detect_mode.outputs.mode == 'chat'
         env:
           EVENT_NAME: '${{ github.event_name }}'
           EVENT_PAYLOAD: '${{ toJSON(github.event) }}'
@@ -100,25 +116,27 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       - name: 'Set up git user for commits'
+        if: steps.detect_mode.outputs.mode == 'chat'
         run: |-
           git config --global user.name 'gemini-cli[bot]'
           git config --global user.email 'gemini-cli[bot]@users.noreply.github.com'
       
-      # Note: We already checked out the repository at the beginning for the composite action
-      - name: 'Checkout correct branch for PR or issue'
+      # Note: We already checked out the repository at the beginning
+      - name: 'Checkout correct branch for PR or issue (chat mode)'
+        if: steps.detect_mode.outputs.mode == 'chat'
         run: |-
           if [[ "${{ steps.get_context.outputs.is_pr }}" == "true" ]]; then
             git fetch origin pull/${{ steps.get_context.outputs.issue_number }}/head:pr-branch
             git checkout pr-branch
           fi
 
-      - name: 'Acknowledge request'
+      - name: 'Acknowledge request (chat mode)'
+        if: steps.detect_mode.outputs.mode == 'chat'
         env:
           GITHUB_ACTOR: '${{ github.actor }}'
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           ISSUE_NUMBER: '${{ steps.get_context.outputs.issue_number }}'
           REPOSITORY: '${{ github.repository }}'
-          REQUEST_TYPE: '${{ steps.get_context.outputs.request_type }}'
         run: |-
           set -euo pipefail
           MESSAGE="@${GITHUB_ACTOR} I've received your request and I'm working on it now! 🤖"
@@ -128,8 +146,9 @@ jobs:
               --repo "${REPOSITORY}"
           fi
 
-      - name: 'Get description'
+      - name: 'Get description (chat mode)'
         id: 'get_description'
+        if: steps.detect_mode.outputs.mode == 'chat'
         env:
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           IS_PR: '${{ steps.get_context.outputs.is_pr }}'
@@ -147,8 +166,9 @@ jobs:
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: 'Get comments'
+      - name: 'Get comments (chat mode)'
         id: 'get_comments'
+        if: steps.detect_mode.outputs.mode == 'chat'
         env:
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           IS_PR: '${{ steps.get_context.outputs.is_pr }}'
@@ -166,6 +186,36 @@ jobs:
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
+      - name: 'Get PR details (review mode)'
+        id: 'get_pr_review'
+        if: steps.detect_mode.outputs.mode == 'review'
+        env:
+          GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          COMMENT_BODY: '${{ github.event.comment.body || github.event.review.body }}'
+          PR_NUMBER: '${{ github.event.issue.number || github.event.pull_request.number }}'
+        run: |-
+          set -euo pipefail
+
+          echo "pr_number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
+
+          # Extract additional instructions from comment
+          ADDITIONAL_INSTRUCTIONS="$(
+            echo "${COMMENT_BODY}" | sed 's/.*@gemini \/review//' | xargs
+          )"
+          echo "additional_instructions=${ADDITIONAL_INSTRUCTIONS}" >> "${GITHUB_OUTPUT}"
+
+          # Get PR details
+          PR_DATA="$(gh pr view "${PR_NUMBER}" --json title,body,additions,deletions,changedFiles,baseRefName,headRefName)"
+          echo "pr_data=${PR_DATA}" >> "${GITHUB_OUTPUT}"
+
+          # Get file changes
+          CHANGED_FILES="$(gh pr diff "${PR_NUMBER}" --name-only)"
+          {
+            echo "changed_files<<EOF"
+            echo "${CHANGED_FILES}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: 'Read GEMINI.md prompt'
         id: 'read_prompt'
         run: |-
@@ -174,7 +224,11 @@ jobs:
           if [[ -f "GEMINI.md" ]]; then
             GEMINI_PROMPT=$(cat GEMINI.md)
           else
-            GEMINI_PROMPT="You are a helpful AI assistant."
+            if [[ "${{ steps.detect_mode.outputs.mode }}" == "review" ]]; then
+              GEMINI_PROMPT="You are an expert code reviewer."
+            else
+              GEMINI_PROMPT="You are a helpful AI assistant."
+            fi
           fi
           {
             echo "gemini_prompt<<EOF"
@@ -182,8 +236,9 @@ jobs:
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: 'Run Gemini'
-        id: 'run_gemini'
+      - name: 'Run Gemini (chat mode)'
+        id: 'run_gemini_chat'
+        if: steps.detect_mode.outputs.mode == 'chat'
         uses: 'google-github-actions/run-gemini-cli@v0'
         env:
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
@@ -198,6 +253,46 @@ jobs:
           settings: |-
             {
               "maxSessionTurns": 50,
+              "telemetry": {
+                "enabled": false,
+                "target": "gcp"
+              }
+            }
+
+      - name: 'Run Gemini PR Review (review mode)'
+        id: 'run_gemini_review'
+        if: steps.detect_mode.outputs.mode == 'review'
+        uses: 'google-github-actions/run-gemini-cli@v0'
+        env:
+          GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          PR_NUMBER: '${{ steps.get_pr_review.outputs.pr_number }}'
+          PR_DATA: '${{ steps.get_pr_review.outputs.pr_data }}'
+          CHANGED_FILES: '${{ steps.get_pr_review.outputs.changed_files }}'
+          ADDITIONAL_INSTRUCTIONS: '${{ steps.get_pr_review.outputs.additional_instructions }}'
+          REPOSITORY: '${{ github.repository }}'
+        with:
+          gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
+          use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          prompt: '${{ steps.read_prompt.outputs.gemini_prompt }}'
+          settings: |-
+            {
+              "maxSessionTurns": 20,
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "mcp/server-github:latest"
+                  ],
+                  "env": {
+                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${{ env.GITHUB_TOKEN }}"
+                  }
+                }
+              },
               "telemetry": {
                 "enabled": false,
                 "target": "gcp"
