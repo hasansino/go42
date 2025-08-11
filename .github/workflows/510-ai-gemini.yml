@@ -62,23 +62,20 @@ jobs:
       - name: 'Prepare AI environment'
         uses: ./.github/actions/ai-prepare-env
 
-      - name: 'Read GEMINI.md prompt'
+      - name: 'Read agent prompt'
         id: read_prompt
+        env:
+          PROMPT_FILE: GEMINI.md
         run: |-
           set -euo pipefail
-          # Read the generated GEMINI.md file
-          if [[ -f "GEMINI.md" ]]; then
-            GEMINI_PROMPT=$(cat GEMINI.md)
+          if [[ -f "${PROMPT_FILE}" ]]; then
+            AGENT_PROMPT=$(cat GEMINI.md)
           else
-            if [[ "${{ steps.detect_mode.outputs.mode }}" == "review" ]]; then
-              GEMINI_PROMPT="You are an expert code reviewer."
-            else
-              GEMINI_PROMPT="You are a helpful AI assistant."
-            fi
+            exit 1
           fi
           {
-            echo "gemini_prompt<<EOF"
-            echo "${GEMINI_PROMPT}"
+            echo "agent_promt<<EOF"
+            echo "${AGENT_PROMPT}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
@@ -132,7 +129,7 @@ jobs:
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_cli_version: ${{ vars.GEMINI_CLI_VERSION }}
-          prompt: ${{ steps.read_prompt.outputs.gemini_prompt }}
+          prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           settings: |-
             {
               "maxSessionTurns": 20,

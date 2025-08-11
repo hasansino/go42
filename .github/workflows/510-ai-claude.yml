@@ -60,6 +60,23 @@ jobs:
       - name: 'Prepare AI environment'
         uses: ./.github/actions/ai-prepare-env
 
+      - name: 'Read agent prompt'
+        id: read_prompt
+        env:
+          PROMPT_FILE: CLAUDE.md
+        run: |-
+          set -euo pipefail
+          if [[ -f "${PROMPT_FILE}" ]]; then
+            AGENT_PROMPT=$(cat GEMINI.md)
+          else
+            exit 1
+          fi
+          {
+            echo "agent_promt<<EOF"
+            echo "${AGENT_PROMPT}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: 'Acknowledge request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -86,6 +103,7 @@ jobs:
           model: 'claude-opus-4-1-20250805'
           trigger_phrase: '@claude'
           use_commit_signing: true
+          override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           mcp_config: |
             {
               "mcpServers": {

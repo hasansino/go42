@@ -96,13 +96,10 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
-- label-based triggers (ai:gemini or ai:claude)
 - sandbox ai execution in containers
 - structured yaml prompts (declarative instructions)
 - ai cost tracking
-- limit file access to repository boundaries
 - add audit logging for all ai actions
-- cache generated ai files between workflow runs to avoid regeneration
 - claude permissions issue in ci
 - ignore draft PRs + codeql
 - add explicit context about repository structure
