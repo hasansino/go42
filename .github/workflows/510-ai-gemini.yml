@@ -70,20 +70,28 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: 'Setup git user'
+        if: ${{ !vars.APP_ID }}
         run: |-
+          # Only needed when not using GitHub App token
           git config --global user.name 'gemini[bot]'
           git config --global user.email 'gemini[bot]@users.noreply.github.com'
 
       - name: 'Acknowledge request'
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
-          REPOSITORY: ${{ github.repository }}
-          ACTOR: ${{ github.actor }}
+          COMMENT_ID: ${{ github.event.comment.id || github.event.review.id }}
         run: |-
-          gh issue comment "${ISSUE_NUMBER}" \
-            --body "@${ACTOR} I've received your request and I'm working on it now! 🤖" \
-            --repo "${REPOSITORY}"
+          if [[ -n "${COMMENT_ID}" ]]; then
+            gh api graphql -f query='
+              mutation AddReaction($subjectId: ID!) {
+                addReaction(input: {subjectId: $subjectId, content: EYES}) {
+                  reaction {
+                    content
+                  }
+                }
+              }
+            ' -f subjectId="${COMMENT_ID}"
+          fi
 
       - name: 'Run Gemini'
         uses: google-github-actions/run-gemini-cli@v0
