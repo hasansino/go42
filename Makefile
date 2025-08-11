@@ -8,7 +8,7 @@ help: Makefile
 
 ## setup | install dependencies
 # Prerequisites: brew, go
-# @note used by ai agents to setup environment.
+# @note used by ci to setup ai agent environment.
 # @note `golines` is required to format go files on save, but linting is done by golangci-lint.
 setup:
 	@go mod tidy -e && go mod download
@@ -22,6 +22,8 @@ setup:
 	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
 	@go install github.com/ogen-go/ogen/cmd/ogen@latest
 	@go install github.com/segmentio/golines@latest
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.

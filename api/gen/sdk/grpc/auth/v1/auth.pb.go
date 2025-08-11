@@ -624,7 +624,7 @@ var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xed\x01\n" +
+	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a'third_party/buf/validate/validate.proto\"\xed\x01\n" +
 	"\x04User\x12\x12\n" +
 	"\x04uuid\x18\x02 \x01(\tR\x04uuid\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12+\n" +

@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package auth.v1;
 
-import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "third_party/buf/validate/validate.proto";
 
 option go_package = "github.com/hasansino/go42/api/auth/v1";
 

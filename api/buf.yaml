@@ -7,7 +7,7 @@ lint:
   use:
     - STANDARD
   ignore:
-    - proto/buf/validate/validate.proto
+    - proto/third_party/buf/validate/validate.proto
 
 breaking:
   use:

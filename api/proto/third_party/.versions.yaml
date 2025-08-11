@@ -1,0 +1,4 @@
+deps:
+  buf/validate:
+    version: v1.0.0-rc.6
+    source: https://github.com/bufbuild/protovalidate
