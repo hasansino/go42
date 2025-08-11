@@ -47,8 +47,8 @@ jobs:
     uses: ./.github/workflows/500-ai-prepare-env.yaml
     secrets: inherit
 
-  gemini-cli:
-    name: gemini-cli
+  gemini:
+    name: gemini
     needs: prepare
     timeout-minutes: 10
     runs-on: 'ubuntu-latest'

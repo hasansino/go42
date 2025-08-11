@@ -49,8 +49,8 @@ jobs:
     uses: ./.github/workflows/500-ai-prepare-env.yaml
     secrets: inherit
 
-  review-pr:
-    name: review-pr
+  gemini:
+    name: gemini
     needs: prepare
     timeout-minutes: 5
     runs-on: 'ubuntu-latest'

@@ -96,6 +96,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
+- prepare stage does not share state with other stages
 - label-based triggers (ai:gemini or ai:claude)
 - sandbox ai execution in containers
 - structured yaml prompts (declarative instructions)
@@ -110,6 +111,10 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/langchain-ai/open-swe
 - https://github.com/cloudwego/eino
 - https://github.com/github/github-mcp-server
+- https://genkit.dev/
+- https://github.com/google-gemini/gemini-cli/blob/main/docs/index.md
+- https://docs.anthropic.com/en/docs/intro
+- https://www.anthropic.com/engineering
 
 ## Bugs
 
@@ -153,6 +158,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/hypermodeinc/badger
 - https://grafana.com/oss/tempo/
 - https://grafana.com/oss/loki/
+- https://github.com/arl/statsviz
 
 ### Security
 

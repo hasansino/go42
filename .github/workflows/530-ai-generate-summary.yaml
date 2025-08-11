@@ -1,6 +1,10 @@
 name: ai-generate-summary
 
-# Reusable workflow for generating summaries between two git references using GitHub Models.
+# Reusable workflow for generating summaries between two git references.
+# @see https://docs.github.com/en/github-models
+# @note This workflow is designed to be called from other workflows.
+# @note It generates a summary of changes between two git references (branches, tags, or commits).
+# @note GitHub models have a free tier with limited usage.
 
 on:
   workflow_call:
