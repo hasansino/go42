@@ -100,8 +100,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - structured yaml prompts (declarative instructions)
 - ai cost tracking
 - add audit logging for all ai actions
-- claude permissions issue in ci
-- ignore draft PRs + codeql
 - add explicit context about repository structure
 - fuzzy + genetic
 - https://github.com/langchain-ai/open-swe
@@ -115,9 +113,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 ## Bugs
 
 - same-line imports fixes from linters
-- fix third party protobuf generation (protovalidate)
 - tint log handler does nto support nested fields
-- osv-scanner re-uploads CVEs to codeql
 - gorm constraint errors are levelled as `error` by slog
 
 ## 100% after v1.0.0 release

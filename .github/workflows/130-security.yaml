@@ -179,6 +179,8 @@ jobs:
           name: scorecard-results
           path: scorecard-results.sarif
       - name: 'Upload Scorecard results to code scanning'
+        # upload to code scanning only for master branch
+        if: github.ref == 'refs/heads/master'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: scorecard-results.sarif

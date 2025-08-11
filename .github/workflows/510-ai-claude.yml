@@ -20,7 +20,8 @@ jobs:
     # 1. Global switch should be set to 'true'
     # 2. Event must be triggered by a user (not a bot)
     # 3. Check if the user have permission to invoke agent
-    # 4. Check if triggering event contains '@gemini' keyword
+    # 4. Check if triggering event contains '@claude' keyword
+    # 5. Skip draft PRs
     if: |
       vars.CLAUDE_ENABLE != 'false' &&
       (
@@ -42,6 +43,10 @@ jobs:
             github.event_name == 'issues' && 
             (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))
         )
+      ) &&
+      (
+        github.event.pull_request.draft != true &&
+        (github.event.issue.pull_request == null || github.event.issue.draft != true)
       )
     runs-on: ubuntu-latest
     timeout-minutes: 10

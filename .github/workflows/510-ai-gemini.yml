@@ -28,6 +28,7 @@ jobs:
     # 2. Event must be triggered by a user (not a bot)
     # 3. Check if the user have permission to invoke agent
     # 4. Check if triggering event contains '@gemini' keyword
+    # 5. Skip draft PRs
     if: |-
       vars.GEMINI_ENABLE != 'false' &&
       (
@@ -49,6 +50,10 @@ jobs:
             github.event_name == 'issues' && 
             (contains(github.event.issue.body, '@gemini') || contains(github.event.issue.title, '@gemini'))
         )
+      ) &&
+      (
+        github.event.pull_request.draft != true &&
+        (github.event.issue.pull_request == null || github.event.issue.draft != true)
       )
     timeout-minutes: 10
     runs-on: ubuntu-latest
