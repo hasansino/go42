@@ -46,11 +46,28 @@ jobs:
     name: generate-summary
     needs: check-pr
     if: needs.check-pr.outputs.should_generate == 'true'
-    uses: ./.github/workflows/530-ai-generate-summary.yaml
-    with:
-      base_ref: ${{ github.event.pull_request.base.sha }}
-      head_ref: ${{ github.event.pull_request.head.sha }}
-      context_type: pr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      models: read
+    outputs:
+      summary: ${{ steps.ai_summary.outputs.summary }}
+    env:
+      SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
+      SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate AI Summary
+        id: ai_summary
+        uses: ./.github/actions/ai-generate-summary
+        with:
+          base_ref: ${{ github.event.pull_request.base.sha }}
+          head_ref: ${{ github.event.pull_request.head.sha }}
+          context_type: pr
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   update-pr:
     name: update-pr

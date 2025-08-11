@@ -41,7 +41,7 @@ jobs:
       actions: read
     steps:
       - name: 'Prepare AI environment'
-        uses: ./.github/actions/ai-prepare-env
+        uses: .github/actions/ai-prepare-env
         with:
           fetch-depth: 1
       # ----

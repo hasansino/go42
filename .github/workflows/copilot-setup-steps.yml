@@ -19,6 +19,6 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: ./.github/actions/ai-prepare-env
+      - uses: .github/actions/ai-prepare-env
         with:
           fetch-depth: 1
