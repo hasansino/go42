@@ -53,7 +53,7 @@ jobs:
           fetch-depth: 0
 
       - name: 'Prepare AI environment'
-        uses: ./.github/actions/ai-prepare-env
+        uses: .github/actions/ai-prepare-env
 
       - name: 'Generate GitHub App Token'
         id: 'generate_token'
