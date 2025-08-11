@@ -1,3 +1,7 @@
+# Version file for third-party dependencies in the proto directory.
+# Currently is manually maintained.
+# @todo Automate this file with a script or tool.
+
 deps:
   buf/validate:
     version: v1.0.0-rc.6

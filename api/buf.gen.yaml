@@ -8,6 +8,7 @@ managed:
     - file_option: go_package
       module: buf.build/bufbuild/protovalidate
 
+# As rule of thumb, use only local plugins, to avoid issues with ci/cd.
 plugins:
   - local: protoc-gen-go
     out: api/gen/sdk/grpc

@@ -1,27 +1,25 @@
 name: gemini
 
+# Gemini agent.
+
 on:
   issue_comment:
-    types:
-      - 'created'
+    types: [created]
   pull_request_review_comment:
-    types:
-      - 'created'
+    types: [created]
   pull_request_review:
-    types:
-      - 'submitted'
+    types: [submitted]
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number }}'
-  cancel-in-progress: |-
-    ${{ github.event.sender.type == 'User' && ( github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') }}
+  group: gemini-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
 
 permissions:
-  contents: 'write'
-  id-token: 'write'
-  pull-requests: 'write'
-  issues: 'write'
-  statuses: 'write'
+  contents: write
+  id-token: write
+  pull-requests: write
+  issues: write
+  statuses: write
 
 jobs:
   gemini:
@@ -45,7 +43,7 @@ jobs:
 
     steps:
       - name: 'Checkout repository'
-        uses: 'actions/checkout@v4'
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
