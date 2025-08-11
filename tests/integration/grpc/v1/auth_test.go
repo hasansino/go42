@@ -43,7 +43,6 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 	})
 
 	Describe("User Management Service", func() {
-
 		Describe("ListUsers", func() {
 			It("should list users", func() {
 				req := &pb.ListUsersRequest{

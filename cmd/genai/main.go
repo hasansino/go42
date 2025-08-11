@@ -13,19 +13,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const claudeConfigPath = ".claude/settings.json"
-const claudeConfig = `{
+const (
+	claudeConfigPath = ".claude/settings.json"
+	claudeConfig     = `{
   "permissions": {
     "allow": [],
     "deny": []
-  },
+  }, 
   "enabledMcpjsonServers": [
     "kwb"
   ]
 }`
+)
 
-const claudeMCPConfigPath = ".mcp.json"
-const claudeMCPConfig = `{
+const (
+	claudeMCPConfigPath = ".mcp.json"
+	claudeMCPConfig     = `{
   "mcpServers": {
     "kwb": {
       "command": "go",
@@ -39,9 +42,11 @@ const claudeMCPConfig = `{
     }
   }
 }`
+)
 
-const crushConfigPath = ".crush.json"
-const crushConfig = `{
+const (
+	crushConfigPath = ".crush.json"
+	crushConfig     = `{
   "$schema": "https://charm.land/crush.json",
   "lsp": {
     "go": {
@@ -66,9 +71,11 @@ const crushConfig = `{
   }
 }
 `
+)
 
-const geminiConfigPath = ".gemini/settings.json"
-const geminiConfig = `{
+const (
+	geminiConfigPath = ".gemini/settings.json"
+	geminiConfig     = `{
   "mcpServers": {
     "kwb": {
       "command": "go",
@@ -83,6 +90,7 @@ const geminiConfig = `{
     }
   }
 }`
+)
 
 var configs = map[string]string{
 	claudeConfigPath:    claudeConfig,
@@ -257,12 +265,12 @@ func generateProvider(provider ProviderConfig, data *TemplateData) error {
 
 	dir := filepath.Dir(provider.Output)
 	if dir != "." && dir != "/" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 	}
 
-	if err := os.WriteFile(provider.Output, buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(provider.Output, buf.Bytes(), 0o644); err != nil {
 		return fmt.Errorf("failed to write output: %w", err)
 	}
 
@@ -280,10 +288,10 @@ func getEnv(key, defaultValue string) string {
 
 func exportConfigs() error {
 	for path, content := range configs {
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return fmt.Errorf("failed to create directory for %s: %w", path, err)
 		}
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return fmt.Errorf("failed to write %s: %w", path, err)
 		}
 		fmt.Printf("Exported config to %s\n", path)
@@ -299,7 +307,7 @@ func copyAgents() error {
 		return nil // no agents to copy
 	}
 
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create .claude/agents: %w", err)
 	}
 
@@ -323,7 +331,7 @@ func copyAgents() error {
 		}
 
 		// Write to destination
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+		if err := os.WriteFile(dstPath, data, 0o644); err != nil {
 			return fmt.Errorf("failed to write %s: %w", dstPath, err)
 		}
 

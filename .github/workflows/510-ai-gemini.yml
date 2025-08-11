@@ -140,6 +140,16 @@ jobs:
               "maxSessionTurns": 20,
               "telemetry": {
                 "enabled": false
+              },
+              "mcpServers": {
+                "kwb": {
+                  "command": "go",
+                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+                  "env": {},
+                  "cwd": "${{ github.workspace }}",
+                  "timeout": 30000,
+                  "trust": true
+                }
               }
             }
 

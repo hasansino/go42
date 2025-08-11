@@ -171,7 +171,6 @@ func buildIndex(indexPath string) error {
 		slog.Debug("indexed file", slog.String("path", path))
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("walking directory: %w", err)
 	}

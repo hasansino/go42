@@ -609,7 +609,7 @@ func initLogging(_ context.Context, cfg *config.Config) {
 	case "stderr":
 		slogOutput = os.Stderr
 	case "file":
-		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			log.Fatalf("failed to open log file: %s", err)
 		}

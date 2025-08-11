@@ -104,6 +104,11 @@ image:
 	-t ghcr.io/hasansino/go42:dev \
 	.
 
+## format | format go files using gofumpt
+format:
+	@echo "Formatting go files with gofumpt..."
+	@./scripts/safe-gofumpt.sh
+
 ## lint | run all linting tools
 # Dependencies:
 #   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale

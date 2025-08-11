@@ -43,7 +43,7 @@ func Open(dbPath string, opts ...Option) (*Sqlite, error) {
 	slogGormOpts := []slogGorm.Option{
 		slogGorm.WithHandler(w.logger.Handler()),
 		// log level translations: when gormDB sends X level -> slog handles it as Y level
-		slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelError),
+		slogGorm.SetLogLevel(slogGorm.ErrorLogType, slog.LevelWarn),
 		slogGorm.SetLogLevel(slogGorm.SlowQueryLogType, slog.LevelWarn),
 		slogGorm.SetLogLevel(slogGorm.DefaultLogType, slog.LevelDebug),
 	}

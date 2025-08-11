@@ -1,11 +1,10 @@
 config-variables:
   - CLAUDE_ENABLE
+  - GEMINI_ENABLE
+  - GEMINI_APP_ID
+  - GEMINI_CLI_VERSION
   - SUMMARY_ENABLE
   - SUMMARY_MODEL
-  - GEMINI_ENABLE
-  - APP_ID
-  - GEMINI_CLI_VERSION
-  - GOOGLE_GENAI_USE_GCA
 
 paths:
   .github/workflows/*.{yml,yaml}:

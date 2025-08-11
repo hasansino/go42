@@ -110,12 +110,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://docs.anthropic.com/en/docs/intro
 - https://www.anthropic.com/engineering
 
-## Bugs
-
-- same-line imports fixes from linters
-- tint log handler does nto support nested fields
-- gorm constraint errors are levelled as `error` by slog
-
 ## 100% after v1.0.0 release
 
 - research sso -> saml/oidc
@@ -125,7 +119,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - try https://backstage.io/
 - goland / vscode configuration + goenv-scp
 - try https://github.com/docker/bake-action
-- try https://github.com/mvdan/gofumpt (again)
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
 - try asyncapi (again)
 - release notifications to slack (https://github.com/8398a7/action-slack)
