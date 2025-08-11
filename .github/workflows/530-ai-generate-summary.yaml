@@ -40,8 +40,8 @@ jobs:
       contents: read
       models: read
     outputs:
-      summary: ${{ steps.generate_summary.outputs.summary }}
-      comparison_url: ${{ steps.generate_notes.outputs.comparison_url }}
+      summary: ${{ steps.ai_summary.outputs.summary }}
+      comparison_url: ${{ steps.ai_summary.outputs.comparison_url }}
     env:
       SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
@@ -51,128 +51,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate release notes and metadata
-        id: generate_notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Generate comparison URL
-          echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
-          
-          # Generate raw notes via GitHub Releases API (PRs + contributors)
-          gh api repos/${{ github.repository }}/releases/generate-notes \
-            -f tag_name='${{ inputs.head_ref }}' \
-            -f previous_tag_name='${{ inputs.base_ref }}' \
-            --jq '.body' > NOTES.md || {
-              # Fallback if API fails - get commit messages
-              git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
-                "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > NOTES.md
-            }
-
-      - name: Install GitHub Models CLI extension
-        if: env.SUMMARY_ENABLE != 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh extension install https://github.com/github/gh-models
-
       - name: Generate AI Summary
-        id: generate_summary
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONTEXT_TYPE: ${{ inputs.context_type }}
-        run: |
-          # Check if AI summary is enabled
-          if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
-            echo "AI summary generation is disabled via SUMMARY_ENABLE variable"
-            # Use simple list format without AI
-            SUMMARY=$(cat <<EOF
-          ### Highlights
-          Summary generation is disabled. See changes below.
-          
-          ### Changes
-          $(cat NOTES.md)
-          EOF
-            )
-            # Save summary to output
-            {
-              echo 'summary<<EOF'
-              echo "$SUMMARY"
-              echo 'EOF'
-            } >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          
-          # Determine which model to use (repo variable or default)
-          MODEL="${{ env.SUMMARY_MODEL }}"
-          if [ -z "$MODEL" ]; then
-            MODEL="openai/gpt-5-mini"  # Default model
-          fi
-          echo "Using model: $MODEL"
-          
-          # Prepare context-specific prompt
-          case "$CONTEXT_TYPE" in
-            "release")
-              PROMPT_CONTEXT="You are generating a crisp, customer-facing release summary."
-              ;;
-            "pr")
-              PROMPT_CONTEXT="You are generating a concise pull request description."
-              ;;
-            *)
-              PROMPT_CONTEXT="You are generating a concise summary of changes."
-              ;;
-          esac
-          
-          # Prepare the full prompt with notes
-          FULL_PROMPT=$(cat <<EOF
-          $PROMPT_CONTEXT
-          
-          Summarize the changes below into two sections:
-          1. ### Highlights - 2-3 most important changes as bullet points
-          2. ### Changes - All changes as bullet points with readable titles
-          
-          Keep markdown tight and professional. No emojis.
-          
-          Changes to summarize:
-          $(cat NOTES.md)
-          EOF
-          )
-          
-          # Generate summary using GitHub Models
-          echo "Generating summary using GitHub Models with model: $MODEL"
-          
-          # Use the correct syntax for gh models run
-          set +e  # Don't exit on error
-          SUMMARY=$(gh models run "$MODEL" "$FULL_PROMPT" \
-            --system-prompt "Senior release manager. Output GitHub-flavored Markdown only." 2>&1)
-          EXIT_CODE=$?
-          set -e
-          
-          # Check if generation was successful
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "::warning::GitHub Models generation failed with exit code $EXIT_CODE"
-            echo "::warning::Error output: $SUMMARY"
-            SUMMARY=""
-          fi
-          
-          # Fallback if Models fails or returns empty
-          if [ -z "$SUMMARY" ]; then
-            echo "::warning::Using raw notes as fallback."
-            SUMMARY=$(cat <<EOF
-          ### Highlights
-          See changes below for details.
-          
-          ### Changes
-          $(cat NOTES.md)
-          EOF
-            )
-          else
-            echo "Successfully generated summary using GitHub Models"
-          fi
-          
-          # Save summary to output
-          {
-            echo 'summary<<EOF'
-            echo "$SUMMARY"
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+        id: ai_summary
+        uses: ./.github/actions/ai-generate-summary
+        with:
+          base_ref: ${{ inputs.base_ref }}
+          head_ref: ${{ inputs.head_ref }}
+          context_type: ${{ inputs.context_type }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

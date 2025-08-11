@@ -15,10 +15,6 @@ concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: 'bash'
-
 permissions:
   contents: 'read'
   id-token: 'write'
@@ -27,7 +23,8 @@ permissions:
   statuses: 'write'
 
 jobs:
-  prepare:
+  gemini:
+    name: gemini
     if: |-
       vars.GEMINI_ENABLE != 'false' &&
       (
@@ -46,18 +43,14 @@ jobs:
         contains(github.event.review.body, '@gemini /review') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       )
-    uses: ./.github/workflows/500-ai-prepare-env.yaml
-    secrets: inherit
-
-  gemini:
-    name: gemini
-    needs: prepare
     timeout-minutes: 5
     runs-on: 'ubuntu-latest'
 
     steps:
-      - name: 'Checkout PR code'
-        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+      - name: 'Prepare AI environment'
+        uses: ./.github/actions/ai-prepare-env
+        with:
+          fetch-depth: 0
 
       - name: 'Generate GitHub App Token'
         id: 'generate_token'

@@ -1,7 +1,7 @@
 name: copilot-setup-steps
 
 # This workflow is responsible for setting up the environment for Copilot.
-# File MUST be named `copilot-setup-steps.yml`.
+# File must be named `copilot-setup-steps.yml` to be recognized.
 
 on:
   workflow_dispatch:
@@ -15,4 +15,10 @@ on:
 jobs:
   copilot-setup-steps:
     name: copilot-setup-steps
-    uses: ./.github/workflows/500-ai-prepare-env.yaml
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: ./.github/actions/ai-prepare-env
+        with:
+          fetch-depth: 1

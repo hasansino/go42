@@ -16,10 +16,6 @@ concurrency:
   cancel-in-progress: |-
     ${{ github.event.sender.type == 'User' && ( github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') }}
 
-defaults:
-  run:
-    shell: 'bash'
-
 permissions:
   contents: 'write'
   id-token: 'write'
@@ -27,7 +23,8 @@ permissions:
   issues: 'write'
 
 jobs:
-  prepare:
+  gemini:
+    name: gemini
     if: |-
       vars.GEMINI_ENABLE != 'false' && (
         (
@@ -44,16 +41,15 @@ jobs:
         !contains(github.event.review.body, '@gemini /review') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       )
-    uses: ./.github/workflows/500-ai-prepare-env.yaml
-    secrets: inherit
-
-  gemini:
-    name: gemini
-    needs: prepare
     timeout-minutes: 10
     runs-on: 'ubuntu-latest'
 
     steps:
+      - name: 'Prepare AI environment'
+        uses: ./.github/actions/ai-prepare-env
+        with:
+          fetch-depth: 0
+      
       - name: 'Generate GitHub App Token'
         id: 'generate_token'
         if: |-
@@ -104,25 +100,14 @@ jobs:
         run: |-
           git config --global user.name 'gemini-cli[bot]'
           git config --global user.email 'gemini-cli[bot]@users.noreply.github.com'
-
-      - name: 'Checkout PR branch'
-        if: |-
-          ${{  steps.get_context.outputs.is_pr == 'true' }}
-        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
-        with:
-          token: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
-          fetch-depth: 0
-
-      - name: 'Checkout main branch'
-        if: |-
-          ${{  steps.get_context.outputs.is_pr == 'false' }}
-        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
-        with:
-          token: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          fetch-depth: 0
+      
+      # Note: We already checked out the repository at the beginning for the composite action
+      - name: 'Checkout correct branch for PR or issue'
+        run: |-
+          if [[ "${{ steps.get_context.outputs.is_pr }}" == "true" ]]; then
+            git fetch origin pull/${{ steps.get_context.outputs.issue_number }}/head:pr-branch
+            git checkout pr-branch
+          fi
 
       - name: 'Acknowledge request'
         env:
