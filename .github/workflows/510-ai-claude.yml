@@ -20,7 +20,7 @@ jobs:
     # 1. Global switch should be set to 'true'
     # 2. Event must be triggered by a user (not a bot)
     # 3. Check if the user have permission to invoke agent
-    # 4. Check if triggering event contains '@claude' keyword
+    # 4. Check if triggering event contains CLAUDE_APP_NAME keyword
     # 5. Skip draft PRs
     if: |
       vars.CLAUDE_ENABLE != 'false' &&
@@ -36,12 +36,12 @@ jobs:
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       ) &&
       (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@go42-claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@go42-claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@go42-claude')) ||
         (
             github.event_name == 'issues' && 
-            (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))
+            (contains(github.event.issue.body, '@go42-claude') || contains(github.event.issue.title, '@go42-claude'))
         )
       ) &&
       (
@@ -146,7 +146,8 @@ jobs:
         env:
           # ----
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ vars.CLAUDE_CODE_MAX_OUTPUT_TOKENS || 1000 }}
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ vars.CLAUDE_CODE_MAX_OUTPUT_TOKENS || 64000 }}
+          DISABLE_TELEMETRY: true # for claude
           # ----
           REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
@@ -168,7 +169,7 @@ jobs:
           override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
           settings: ${{ steps.read_settings.outputs.settings }}
-          trigger_phrase: '@claude'
+          trigger_phrase: '@go42-claude'
           use_commit_signing: true
           timeout_minutes: ${{ vars.CLAUDE_TIMEOUT || 10 }}
           max_turns: ${{ vars.CLAUDE_MAX_TURNS || 5 } }

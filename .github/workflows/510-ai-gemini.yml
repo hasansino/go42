@@ -27,7 +27,7 @@ jobs:
     # 1. Global switch should be set to 'true'
     # 2. Event must be triggered by a user (not a bot)
     # 3. Check if the user have permission to invoke agent
-    # 4. Check if triggering event contains '@gemini' keyword
+    # 4. Check if triggering event contains GEMINI_APP_NAME keyword
     # 5. Skip draft PRs
     if: |-
       vars.GEMINI_ENABLE != 'false' &&
@@ -86,13 +86,20 @@ jobs:
       
       - name: 'Read settings.json'
         id: read_settings
+        env:
+          GEMINI_MAX_TURNS: ${{ vars.GEMINI_MAX_TURNS || '100' }}
+          GEMINI_TIMEOUT: ${{ vars.GEMINI_TIMEOUT || '3600' }}
         run: |-
           set -euo pipefail
           if [[ -f ".gemini/settings.json" ]]; then
             SETTINGS=$(jq --arg cwd "${{ github.workspace }}" \
               --arg index "${{ github.workspace }}/ai/index" \
+              --arg max_turns "${GEMINI_MAX_TURNS}" \
+              --arg timeout "${GEMINI_TIMEOUT}" \
               '.mcpServers.kwb.cwd = $cwd | 
-               .mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index]' \
+               .mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index] |
+               .maxSessionTurns = ($max_turns | tonumber) |
+               .maxSessionDuration = ($timeout | tonumber)' \
               .gemini/settings.json)
           else
             echo "Error: .gemini/settings.json not found" >&2
@@ -111,13 +118,6 @@ jobs:
         with:
           app-id: ${{ vars.GEMINI_APP_ID }}
           private-key: ${{ secrets.GEMINI_APP_PRIVATE_KEY }}
-
-      - name: 'Setup git user'
-        if: ${{ !vars.GEMINI_APP_ID }}
-        run: |-
-          # Only needed when not using GitHub App token
-          git config --global user.name 'gemini[bot]'
-          git config --global user.email 'gemini[bot]@users.noreply.github.com'
 
       - name: 'Acknowledge request'
         env:
