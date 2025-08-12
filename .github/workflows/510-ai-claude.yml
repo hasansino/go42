@@ -132,66 +132,29 @@ jobs:
           fi
 
       - name: 'Run Claude Code'
-        id: claude
         uses: anthropics/claude-code-action@beta
+        id: claude
+        continue-on-error: true
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           additional_permissions: |
             actions: read
             contents: write
-          model: 'claude-opus-4-1-20250805'
+          model: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
           trigger_phrase: '@claude'
           use_commit_signing: true
           override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
           settings: ${{ steps.read_settings.outputs.settings }}
-          allowed_tools: |
-            Read
-            Write
-            Edit
-            MultiEdit
-            Grep
-            Glob
-            LS
-            Bash(echo*)
-            Bash(pwd*)
-            Bash(ls*)
-            Bash(cat*)
-            Bash(grep*)
-            Bash(find*)
-            Bash(which*)
-            Bash(git status*)
-            Bash(git diff*)
-            Bash(git add*)
-            Bash(git commit*)
-            Bash(git push*)
-            Bash(git checkout*)
-            Bash(git branch*)
-            Bash(git log*)
-            Bash(git remote*)
-            Bash(git fetch*)
-            Bash(git pull*)
-            Bash(gh pr create*)
-            Bash(gh pr view*)
-            Bash(gh pr list*)
-            Bash(gh pr comment*)
-            Bash(gh issue view*)
-            Bash(gh issue comment*)
-            Bash(go mod tidy*)
-            Bash(go mod download*)
-            Bash(go generate*)
-            Bash(go test*)
-            Bash(go run*)
-            Bash(go build*)
-            Bash(make generate*)
-            Bash(make lint*)
-            Bash(make test-unit*)
-            Bash(make test-integration*)
-            Bash(make run*)
-            Bash(make build*)
-            Bash(golangci-lint*)
-            Bash(buf*)
-            Bash(redocly*)
-            mcp__kwb__search
-            mcp__kwb__list_files
-            mcp__kwb__get_file
+
+      - name: 'Handle failure'
+        if: failure() || steps.claude.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+        run: |-
+          gh issue comment "${ISSUE_NUMBER}" \
+            --body "@${ACTOR} I encountered an error. [workflow logs](https://github.com/${REPOSITORY}/actions/runs/${{ github.run_id }})." \
+            --repo "${REPOSITORY}"
