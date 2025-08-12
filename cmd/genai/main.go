@@ -16,7 +16,11 @@ import (
 const claudeConfigPath = ".claude/settings.json"
 const claudeConfig = `{
   "permissions": {
-    "allow": [],
+    "allow": [
+      "Edit", "Glob", "Grep", "LS", "MultiEdit", "Read", "Task", "TodoWrite", "WebFetch", "WebSearch", "Write",
+      "Bash",
+      "mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
+    ],
     "deny": []
   }, 
   "enabledMcpjsonServers": [
