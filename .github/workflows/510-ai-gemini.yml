@@ -67,7 +67,7 @@ jobs:
       - name: 'Prepare AI environment'
         uses: ./.github/actions/ai-prepare-env
 
-      - name: 'Read agent prompt'
+      - name: 'Read GEMINI.md'
         id: read_prompt
         env:
           PROMPT_FILE: GEMINI.md
@@ -81,6 +81,25 @@ jobs:
           {
             echo "agent_promt<<EOF"
             echo "${AGENT_PROMPT}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+      
+      - name: 'Read settings.json'
+        id: read_settings
+        run: |-
+          set -euo pipefail
+          if [[ -f ".gemini/settings.json" ]]; then
+            # Read the settings and add the cwd field dynamically
+            SETTINGS=$(jq --arg cwd "${{ github.workspace }}" \
+              '.mcpServers.kwb.cwd = $cwd' \
+              .gemini/settings.json)
+          else
+            echo "Error: .gemini/settings.json not found" >&2
+            exit 1
+          fi
+          {
+            echo "settings<<EOF"
+            echo "${SETTINGS}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
@@ -135,23 +154,7 @@ jobs:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_cli_version: ${{ vars.GEMINI_CLI_VERSION }}
           prompt: ${{ steps.read_prompt.outputs.agent_promt }}
-          settings: |-
-            {
-              "maxSessionTurns": 20,
-              "telemetry": {
-                "enabled": false
-              },
-              "mcpServers": {
-                "kwb": {
-                  "command": "go",
-                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
-                  "env": {},
-                  "cwd": "${{ github.workspace }}",
-                  "timeout": 30000,
-                  "trust": true
-                }
-              }
-            }
+          settings: ${{ steps.read_settings.outputs.settings }}
 
       - name: 'Handle failure'
         if: failure() || steps.run_gemini.outcome == 'failure'

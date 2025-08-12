@@ -13,9 +13,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	claudeConfigPath = ".claude/settings.json"
-	claudeConfig     = `{
+const claudeConfigPath = ".claude/settings.json"
+const claudeConfig = `{
   "permissions": {
     "allow": [],
     "deny": []
@@ -24,11 +23,9 @@ const (
     "kwb"
   ]
 }`
-)
 
-const (
-	claudeMCPConfigPath = ".mcp.json"
-	claudeMCPConfig     = `{
+const claudeMCPConfigPath = ".mcp.json"
+const claudeMCPConfig = `{
   "mcpServers": {
     "kwb": {
       "command": "go",
@@ -42,11 +39,9 @@ const (
     }
   }
 }`
-)
 
-const (
-	crushConfigPath = ".crush.json"
-	crushConfig     = `{
+const crushConfigPath = ".crush.json"
+const crushConfig = `{
   "$schema": "https://charm.land/crush.json",
   "lsp": {
     "go": {
@@ -57,13 +52,8 @@ const (
     "filesystem": {
       "type": "stdio",
       "command": "go",
-      "args": [
-        "run",
-        "cmd/genkwb/main.go",
-        "-serve",
-        "-index",
-        "ai/index"
-      ]
+      "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+	  "env": {},
     }
   },
   "permissions": {
@@ -71,26 +61,23 @@ const (
   }
 }
 `
-)
 
-const (
-	geminiConfigPath = ".gemini/settings.json"
-	geminiConfig     = `{
+const geminiConfigPath = ".gemini/settings.json"
+const geminiConfig = `{
+  "maxSessionTurns": 100,
+  "maxSessionDuration": 3600,
+  "checkpointing": {"enabled": true},
   "mcpServers": {
     "kwb": {
       "command": "go",
-      "args": [
-        "run",
-        "cmd/genkwb/main.go",
-        "-serve",
-        "-index",
-        "ai/index"
-      ],
+      "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+      "env": {},
+      "timeout": 30000,
       "trust": true
     }
-  }
+  },
+  "allowMCPServers": ["kwb"]
 }`
-)
 
 var configs = map[string]string{
 	claudeConfigPath:    claudeConfig,

@@ -65,20 +65,52 @@ jobs:
       - name: 'Prepare AI environment'
         uses: ./.github/actions/ai-prepare-env
 
-      - name: 'Read agent prompt'
+      - name: 'Read CLAUDE.md'
         id: read_prompt
         env:
           PROMPT_FILE: CLAUDE.md
         run: |-
           set -euo pipefail
           if [[ -f "${PROMPT_FILE}" ]]; then
-            AGENT_PROMPT=$(cat GEMINI.md)
+            AGENT_PROMPT=$(cat CLAUDE.md)
           else
             exit 1
           fi
           {
             echo "agent_promt<<EOF"
             echo "${AGENT_PROMPT}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+      
+      - name: 'Read .mcp.json'
+        id: read_mcp_config
+        run: |-
+          set -euo pipefail
+          if [[ -f ".mcp.json" ]]; then
+            MCP_CONFIG=$(cat .mcp.json)
+          else
+            echo "Error: .mcp.json not found" >&2
+            exit 1
+          fi
+          {
+            echo "mcp_config<<EOF"
+            echo "${MCP_CONFIG}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: 'Read settings.json'
+        id: read_settings
+        run: |-
+          set -euo pipefail
+          if [[ -f ".mcp.json" ]]; then
+            SETTINGS=$(cat .claude/settings.json)
+          else
+            echo "Error: .claude/settings.json not found" >&2
+            exit 1
+          fi
+          {
+            echo "settings<<EOF"
+            echo "${SETTINGS}"
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
@@ -109,16 +141,8 @@ jobs:
           trigger_phrase: '@claude'
           use_commit_signing: true
           override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
-          mcp_config: |
-            {
-              "mcpServers": {
-                "kwb": {
-                  "command": "go",
-                  "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
-                  "env": {}
-                }
-              }
-            }
+          mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
+          settings: ${{ steps.read_settings.outputs.settings }}
           allowed_tools: |
             Bash(git status*)
             Bash(git diff*)
