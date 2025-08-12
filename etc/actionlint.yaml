@@ -8,3 +8,6 @@ config-variables:
 
 paths:
   .github/workflows/*.{yml,yaml}:
+    ignore:
+        # actionlint does not support the `models` permission scope as of now
+        - 'unknown permission scope \"models\".+'
