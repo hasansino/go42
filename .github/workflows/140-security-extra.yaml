@@ -138,6 +138,8 @@ jobs:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif
       - name: 'Upload SARIF to GitHub Security'
+        # upload to code scanning only for master branch
+        if: github.ref == 'refs/heads/master'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv-scanner-results.sarif

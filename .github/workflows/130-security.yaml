@@ -132,7 +132,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: go
-      - name: 'Autobuild'
+      - name: 'Build'
         uses: github/codeql-action/autobuild@v3
       - name: 'Perform CodeQL analysis'
         uses: github/codeql-action/analyze@v3
@@ -173,17 +173,6 @@ jobs:
           results_format: sarif
           # this updates badge, we want it to reflect only master branch
           publish_results: ${{ github.ref == 'refs/heads/master' }}
-      - name: 'Upload Scorecard results'
-        uses: actions/upload-artifact@v4
-        with:
-          name: scorecard-results
-          path: scorecard-results.sarif
-      - name: 'Upload Scorecard results to code scanning'
-        # upload to code scanning only for master branch
-        if: github.ref == 'refs/heads/master'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: scorecard-results.sarif
 
   # run capslock only on non-master branches to determine difference
   # between the current branch and master branch in capabilities
