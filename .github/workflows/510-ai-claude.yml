@@ -133,8 +133,21 @@ jobs:
 
       - name: 'Run Claude Code'
         uses: anthropics/claude-code-action@beta
-        id: claude
         continue-on-error: true
+        id: claude
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          IS_PR: ${{ github.event.issue.pull_request != null || github.event.pull_request != null }}
+          USER_REQUEST: ${{ github.event.comment.body || github.event.review.body }}
+          ACTOR: ${{ github.actor }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           additional_permissions: |
