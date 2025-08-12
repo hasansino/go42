@@ -146,6 +146,20 @@ jobs:
           mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
           settings: ${{ steps.read_settings.outputs.settings }}
           allowed_tools: |
+            Read
+            Write
+            Edit
+            MultiEdit
+            Grep
+            Glob
+            LS
+            Bash(echo*)
+            Bash(pwd*)
+            Bash(ls*)
+            Bash(cat*)
+            Bash(grep*)
+            Bash(find*)
+            Bash(which*)
             Bash(git status*)
             Bash(git diff*)
             Bash(git add*)

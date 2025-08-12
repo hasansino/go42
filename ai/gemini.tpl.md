@@ -68,5 +68,5 @@ You are working alongside a developer in their local environment.
 
 {{if not .IsCI -}}
 - **NEVER** commit code - the user handles commits
-  {{- end}}
+{{- end}}
 - **NEVER** add "AI generated" comments

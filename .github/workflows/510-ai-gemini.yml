@@ -1,6 +1,6 @@
 name: gemini
 
-# Simplified Gemini agent with optional GitHub App token support
+# Gemini agent.
 
 on:
   issue_comment:
