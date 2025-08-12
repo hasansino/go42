@@ -144,7 +144,10 @@ jobs:
         continue-on-error: true
         id: claude
         env:
+          # ----
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ vars.CLAUDE_CODE_MAX_OUTPUT_TOKENS || 1000 }}
+          # ----
           REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_PAYLOAD: ${{ toJSON(github.event) }}
@@ -162,11 +165,13 @@ jobs:
             actions: read
             contents: write
           model: ${{ vars.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
-          trigger_phrase: '@claude'
-          use_commit_signing: true
           override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
           settings: ${{ steps.read_settings.outputs.settings }}
+          trigger_phrase: '@claude'
+          use_commit_signing: true
+          timeout_minutes: ${{ vars.CLAUDE_TIMEOUT || 10 }}
+          max_turns: ${{ vars.CLAUDE_MAX_TURNS || 5 } }
 
       - name: 'Handle failure'
         if: failure() || steps.claude.outcome == 'failure'

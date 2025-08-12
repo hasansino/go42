@@ -96,6 +96,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `swarm`
 
+- CLAUDE_CODE_MAX_OUTPUT_TOKENS / DISABLE_TELEMETRY
 - custom gh apps for gemini and claude
 - sandbox ai execution in containers
 - structured yaml prompts (declarative instructions)
