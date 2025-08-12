@@ -104,7 +104,7 @@ jobs:
         id: read_settings
         run: |-
           set -euo pipefail
-          if [[ -f ".mcp.json" ]]; then
+          if [[ -f ".claude/settings.json" ]]; then
             SETTINGS=$(cat .claude/settings.json)
           else
             echo "Error: .claude/settings.json not found" >&2
