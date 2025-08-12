@@ -122,7 +122,7 @@ jobs:
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.CLAUDE_APP_ID }}
-          private-key: ${{ secrets.CLAUDE_PRIVATE_KEY }}
+          private-key: ${{ secrets.CLAUDE_APP_PRIVATE_KEY }}
 
       - name: 'Acknowledge request'
         env:
