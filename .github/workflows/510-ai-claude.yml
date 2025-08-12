@@ -87,7 +87,9 @@ jobs:
         run: |-
           set -euo pipefail
           if [[ -f ".mcp.json" ]]; then
-            MCP_CONFIG=$(cat .mcp.json)
+            MCP_CONFIG=$(jq --arg index "${{ github.workspace }}/ai/index" \
+              '.mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index]' \
+              .mcp.json)
           else
             echo "Error: .mcp.json not found" >&2
             exit 1

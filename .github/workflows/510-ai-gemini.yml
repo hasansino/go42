@@ -89,9 +89,10 @@ jobs:
         run: |-
           set -euo pipefail
           if [[ -f ".gemini/settings.json" ]]; then
-            # Read the settings and add the cwd field dynamically
             SETTINGS=$(jq --arg cwd "${{ github.workspace }}" \
-              '.mcpServers.kwb.cwd = $cwd' \
+              --arg index "${{ github.workspace }}/ai/index" \
+              '.mcpServers.kwb.cwd = $cwd | 
+               .mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index]' \
               .gemini/settings.json)
           else
             echo "Error: .gemini/settings.json not found" >&2
