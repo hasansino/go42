@@ -27,8 +27,7 @@ const (
 	InterceptorPriorityPreprocess     = 1
 	InterceptorPriorityObservability  = 2
 	InterceptorPriorityAuthentication = 3
-	InterceptorPriorityCache          = 4
-	InterceptorPriorityBusinessLogic  = 5
+	InterceptorPriorityBusinessLogic  = 4
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

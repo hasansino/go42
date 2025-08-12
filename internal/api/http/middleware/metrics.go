@@ -33,7 +33,7 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 			duration := time.Since(start).Seconds()
 
 			labels["status"] = strconv.Itoa(resRecorder.status)
-			labels["is_error"] = toStringBool(err == nil)
+			labels["is_error"] = toStringBool(err != nil)
 
 			metrics.Counter("application_http_responses_count", labels).Inc()
 			metrics.Histogram("application_http_latency_sec", labels).Update(duration)

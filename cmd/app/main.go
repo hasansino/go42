@@ -37,7 +37,6 @@ import (
 	"google.golang.org/grpc"
 
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
-	"github.com/hasansino/go42/internal/api/grpc/interceptors"
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth"
 	authGrpcAdapterV1 "github.com/hasansino/go42/internal/auth/adapters/grpc/v1"
@@ -561,13 +560,6 @@ func main() {
 				authInterceptors.NewStreamAccessInterceptor(grpcPermissionRegistry)),
 		)
 	}
-
-	grpcServerOpts = append(grpcServerOpts,
-		grpcAPI.WithUnaryInterceptor(
-			grpcAPI.InterceptorPriorityCache,
-			interceptors.NewUnaryServerCacheInterceptor(cacheEngine, cfg.Auth.Cache.API),
-		),
-	)
 
 	grpcServer := grpcAPI.New(grpcServerOpts...)
 
