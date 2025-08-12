@@ -67,7 +67,7 @@ const crushConfig = `{
       "type": "stdio",
       "command": "go",
       "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
-	  "env": {},
+	  "env": {}
     }
   },
   "permissions": {
