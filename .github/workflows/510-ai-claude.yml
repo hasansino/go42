@@ -36,12 +36,12 @@ jobs:
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.review.author_association)
       ) &&
       (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@go42-claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@go42-claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@go42-claude')) ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, format('@{0}', vars.CLAUDE_APP_NAME || 'claude'))) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, format('@{0}', vars.CLAUDE_APP_NAME || 'claude'))) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, format('@{0}', vars.CLAUDE_APP_NAME || 'claude'))) ||
         (
             github.event_name == 'issues' && 
-            (contains(github.event.issue.body, '@go42-claude') || contains(github.event.issue.title, '@go42-claude'))
+            (contains(github.event.issue.body, format('@{0}', vars.CLAUDE_APP_NAME || 'claude')) || contains(github.event.issue.title, format('@{0}', vars.CLAUDE_APP_NAME || 'claude')))
         )
       ) &&
       (
@@ -169,10 +169,10 @@ jobs:
           override_prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           mcp_config: ${{ steps.read_mcp_config.outputs.mcp_config }}
           settings: ${{ steps.read_settings.outputs.settings }}
-          trigger_phrase: '@go42-claude'
+          trigger_phrase: ${{ format('@{0}', vars.CLAUDE_APP_NAME || 'claude') }}
           use_commit_signing: true
           timeout_minutes: ${{ vars.CLAUDE_TIMEOUT || 10 }}
-          max_turns: ${{ vars.CLAUDE_MAX_TURNS || 5 } }
+          max_turns: ${{ vars.CLAUDE_MAX_TURNS || 5 }}
 
       - name: 'Handle failure'
         if: failure() || steps.claude.outcome == 'failure'
