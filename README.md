@@ -107,9 +107,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/cloudwego/eino
 - https://github.com/github/github-mcp-server
 - https://genkit.dev/
-- https://github.com/google-gemini/gemini-cli/blob/main/docs/index.md
-- https://docs.anthropic.com/en/docs/intro
-- https://www.anthropic.com/engineering
+- https://github.com/oraios/serena
+- https://github.com/stravu/crystal
 
 ## 100% after v1.0.0 release
 

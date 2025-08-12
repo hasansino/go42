@@ -107,10 +107,10 @@ jobs:
       - name: 'Generate GitHub App Token'
         id: generate_token
         if: ${{ vars.GEMINI_APP_ID }}
-        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.GEMINI_APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          private-key: ${{ secrets.GEMINI_APP_PRIVATE_KEY }}
 
       - name: 'Setup git user'
         if: ${{ !vars.GEMINI_APP_ID }}
@@ -151,9 +151,9 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_BASE: ${{ github.event.pull_request.base.ref }}
           PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-pro' }}
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_cli_version: ${{ vars.GEMINI_CLI_VERSION }}
           prompt: ${{ steps.read_prompt.outputs.agent_promt }}
           settings: ${{ steps.read_settings.outputs.settings }}
 
