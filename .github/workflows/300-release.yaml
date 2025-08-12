@@ -46,7 +46,7 @@ jobs:
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: 'Get previous tag'
@@ -73,7 +73,7 @@ jobs:
       pull-requests: write
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: 'Update Helm Chart appVersion'

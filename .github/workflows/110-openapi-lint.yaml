@@ -38,7 +38,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: 'Run Redocly OpenAPI linter'
         run: |
           docker run --rm \
