@@ -173,6 +173,7 @@ jobs:
           use_commit_signing: true
           timeout_minutes: ${{ vars.CLAUDE_TIMEOUT || 10 }}
           max_turns: ${{ vars.CLAUDE_MAX_TURNS || 5 }}
+          github_token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
 
       - name: 'Handle failure'
         if: failure() || steps.claude.outcome == 'failure'
