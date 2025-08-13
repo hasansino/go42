@@ -44,4 +44,4 @@ jobs:
           config: etc/.markdownlint.yaml
           globs: |
             README.md
-            CONVENTIONS.md
+            docs/**/*.md

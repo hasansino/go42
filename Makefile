@@ -129,9 +129,9 @@ lint:
 	@echo "Linting openapi specifications..."
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
 	@echo "Linting markdown files..."
-	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md CONVENTIONS.md || true
+	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md docs/**/*.md || true
 	@echo "Linting writing..."
-	@vale --no-exit --config etc/vale.ini README.md CONVENTIONS.md internal/ cmd/ pkg/ tests/ || true
+	@vale --no-exit --config etc/vale.ini README.md docs/**/*.md internal/ cmd/ pkg/ tests/ || true
 	@echo "Linting SQL migrations..."
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
