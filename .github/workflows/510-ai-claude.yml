@@ -118,7 +118,7 @@ jobs:
 
       - name: 'Generate GitHub App Token'
         id: generate_token
-        if: ${{ vars.CLAUDE_APP_ID && secrets.CLAUDE_APP_PRIVATE_KEY }}
+        if: ${{ vars.CLAUDE_APP_ID }}
         uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.CLAUDE_APP_ID }}
