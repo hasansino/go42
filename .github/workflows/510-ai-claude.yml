@@ -146,8 +146,7 @@ jobs:
         env:
           # ----
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ vars.CLAUDE_CODE_MAX_OUTPUT_TOKENS || 64000 }}
-          DISABLE_TELEMETRY: true # for claude
+          DISABLE_TELEMETRY: true
           # ----
           REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
