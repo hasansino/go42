@@ -9,7 +9,6 @@ help: Makefile
 ## setup | install dependencies
 # Prerequisites: brew, go, npm
 # @note used by ci to setup ai agent environment.
-# @note `golines` is required to format go files on save, but linting is done by golangci-lint.
 setup: setup-git-hooks
 	@go mod tidy -e && go mod download
 	@brew install -q golangci-lint hadolint markdownlint-cli2 vale gitleaks \
@@ -24,12 +23,14 @@ setup: setup-git-hooks
 	@go install github.com/segmentio/golines@latest
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-	@npm install -g @commitlint/cli @commitlint/config-conventional
+	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
+	@echo "✅ Setup complete"
 
 ## setup-git-hooks | install git hooks
 setup-git-hooks:
 	@mkdir -p .git/hooks
-	@ln -sf etc/git-hooks/commit-msg .git/hooks/commit-msg
+	@cp etc/git-hooks/commit-msg .git/hooks/commit-msg
+	@chmod +x .git/hooks/commit-msg
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.

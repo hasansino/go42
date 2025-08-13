@@ -1,43 +1,68 @@
+# Commitlint Configuration
+# Enforces conventional commit format: type(scope): subject
+# Example: feat(auth): add user login endpoint
+
+# Inherit all rules from the conventional commit standard
+# This provides sensible defaults for most rules
 extends:
   - '@commitlint/config-conventional'
 
+# Custom rule overrides and specifications
 rules:
+  # type-enum: Restricts the commit type to specific allowed values
+  # [severity, applicable, value]
+  # severity: 2 = error (0 = disable, 1 = warning, 2 = error)
+  # applicable: 'always' = rule must always pass
+  # value: array of allowed commit types
   type-enum:
-    - 2
-    - always
-    - - feat
-      - fix
-      - docs
-      - style
-      - refactor
-      - perf
-      - test
-      - build
-      - ci
-      - chore
-      - revert
+    - 2        # Error level - blocks commit if violated
+    - always   # Rule is always enforced
+    - - feat     # New feature for the user
+      - fix      # Bug fix
+      - docs     # Documentation only changes
+      - style    # Code style changes (formatting, semicolons, etc)
+      - refactor # Code change that neither fixes a bug nor adds a feature
+      - perf     # Performance improvements
+      - test     # Adding or updating tests
+      - build    # Changes to build system or dependencies
+      - ci       # Changes to CI configuration files and scripts
+      - chore    # Maintenance tasks, tooling changes
+      - revert   # Reverts a previous commit
   
+  # subject-case: Prevents certain casing styles in the subject line
+  # The subject is the main description after "type(scope): "
+  # 'never' means these cases should never be used
   subject-case:
-    - 2
-    - never
-    - - upper-case
-      - pascal-case
-      - start-case
+    - 2        # Error level
+    - never    # These cases must never appear
+    - - upper-case   # LIKE THIS (all caps)
+      - pascal-case  # LikeThis (PascalCase)
+      - start-case   # Like This (Start Case)
+  # Note: This allows lowercase, camelCase, kebab-case, snake_case
   
+  # subject-empty: Ensures the subject line is not empty
+  # Prevents commits like "feat:" with no description
   subject-empty:
-    - 2
-    - never
+    - 2        # Error level
+    - never    # Subject must never be empty
   
+  # subject-full-stop: Prevents ending the subject with a period
+  # Commit subjects should not end with punctuation
+  # Example: "feat: add login" ✓ vs "feat: add login." ✗
   subject-full-stop:
-    - 2
-    - never
-    - '.'
+    - 2        # Error level
+    - never    # Never end with specified character
+    - '.'      # The period character
   
+  # type-case: Enforces lowercase for the commit type
+  # Ensures consistency: "feat:" not "Feat:" or "FEAT:"
   type-case:
-    - 2
-    - always
-    - lower-case
+    - 2        # Error level
+    - always   # Must always be this case
+    - lower-case  # Must be lowercase
   
+  # type-empty: Ensures a commit type is always specified
+  # Prevents commits without a type prefix
   type-empty:
-    - 2
-    - never
+    - 2        # Error level
+    - never    # Type must never be empty

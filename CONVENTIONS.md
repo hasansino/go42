@@ -7,7 +7,8 @@ This document is a repository of conventions and rules used by this project.
 * https://google.github.io/eng-practices/
 * https://google.github.io/styleguide/go/decisions.html
 * https://sre.google/sre-book/table-of-contents/
-
+* https://www.conventionalcommits.org/en/v1.0.0/
+* 
 ## Review
 
 ## Project Management
