@@ -78,6 +78,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 ### Project `pandemic`
 
 - support hetzner, aws, gcp, azure
+- https://www.crossplane.io/
+- https://www.pulumi.com/
 
 ### Project `clockwork`
 
