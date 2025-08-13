@@ -159,4 +159,4 @@ Go42 is opinionated approach to develop cloud native golang services.
 - audit package implementation and guidelines
 - compliance research -> SOC2, ISO 27001, PCI-DSS, HIPAA
 
---
+---
