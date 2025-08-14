@@ -21,6 +21,13 @@ jobs:
       contents: write
     # ----
     steps:
+      - name: 'Generate GitHub App Token'
+        id: generate_token
+        if: ${{ vars.RELEASE_APP_ID }}
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - name: 'Checkout repository with full history'
         uses: actions/checkout@v4
         with:
@@ -59,6 +66,9 @@ jobs:
       # ----
       - name: 'Create GitHub release'
         uses: softprops/action-gh-release@v2
+        env:
+          # use GitHub App token if available, otherwise fallback to default GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
         with:
           name: Release ${{ steps.extract_semver.outputs.version }}
           tag_name: ${{ steps.extract_semver.outputs.version }}

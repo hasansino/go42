@@ -49,11 +49,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # ----
       - name: 'Get previous tag'
         id: prev_tag
         run: |
           PREVIOUS_TAG="$(git tag --sort=-version:refname | head -2 | tail -1 2>/dev/null || echo "")"
           echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
+      # ----
       - name: 'Generate AI Summary'
         id: ai_summary
         uses: ./.github/actions/ai-generate-summary
@@ -72,15 +74,28 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: 'Generate GitHub App Token'
+        id: generate_token
+        if: ${{ vars.RELEASE_APP_ID }}
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      # ----
       - name: 'Checkout repository with full history'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # ----
       - name: 'Update Helm Chart appVersion'
         run: |
           sed -i "s/^appVersion:.*/appVersion: \"${{ github.ref_name }}\"/" infra/helm/app/Chart.yaml
+      # ----
       - name: 'Create pull request for release'
         uses: peter-evans/create-pull-request@v7
+        env:
+          # use GitHub App token if available, otherwise fallback to default GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
         with:
           commit-message: "auto-release-${{ github.ref_name }}"
           title: "Release ${{ github.ref_name }}"
