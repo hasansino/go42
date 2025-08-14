@@ -13,7 +13,7 @@ jobs:
     if: |
       github.event.pull_request.merged == true && 
       startsWith(github.event.pull_request.title, 'Release') &&
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      contains(github.event.pull_request.user.login, format('{0}[bot]', vars.RELEASE_APP_NAME || 'github-actions'))
     name: release-pr-merge
     runs-on: ubuntu-latest
     continue-on-error: false
