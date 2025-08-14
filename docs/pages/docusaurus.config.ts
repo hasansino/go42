@@ -7,7 +7,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'go42 Documentation',
   tagline: 'Project Documentation and Architecture',
-  favicon: 'img/go42-logo.png',
+  favicon: 'img/favicon.svg',
   url: 'https://hasansino.github.io',
   baseUrl: '/go42/',
   organizationName: 'hasansino',
@@ -68,7 +68,7 @@ const config: Config = {
     ],
   ],
   themeConfig: {
-    image: 'img/go42-logo.png',
+    image: 'img/go42-logo.svg',
     docs: {
       sidebar: {
         hideable: true,

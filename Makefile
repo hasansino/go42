@@ -154,11 +154,15 @@ generate:
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
 	@npm --prefix docs/pages run build
 
+## docs | serve documentation
+serve-docs:
+	@npm --prefix docs/pages run serve
+
 # ╭────────────────────----------------──────────╮
 # │                      AI                      │
 # ╰─────────────────────----------------─────────╯
 
-## generate-ai | generate AI-related code and configurations (CLAUDE.md, settings.json, kwb index)
+## generate-ai | generate ai-related code and configurations
 generate-ai:
 	@go run cmd/genai/main.go
 	@go run cmd/genkwb/main.go -build
