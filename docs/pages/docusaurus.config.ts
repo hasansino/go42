@@ -5,13 +5,10 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'go42 Documentation',
-  tagline: 'Project Documentation and Architecture',
-  favicon: 'img/favicon.svg',
-  url: 'https://hasansino.github.io',
-  baseUrl: '/go42/',
-  organizationName: 'hasansino',
-  projectName: 'go42',
+  title: process.env.DOCUSAURUS_TITLE || 'go42',
+  url: process.env.DOCUSAURUS_URL || 'https://hasansino.github.io',
+  baseUrl: process.env.DOCUSAURUS_BASE_URL || '/go42/',
+  favicon: 'img/go42-logo.svg',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   i18n: {

@@ -41,6 +41,10 @@ jobs:
         run: npm run assemble-docs
       - name: 'Build Docusaurus static files'
         working-directory: docs/pages
+        env:
+          DOCUSAURUS_TITLE: ${{ github.event.repository.name }}
+          DOCUSAURUS_URL: ${{ vars.PAGES_CUSTOM_DOMAIN && format('https://{0}', vars.PAGES_CUSTOM_DOMAIN) || format('https://{0}.github.io', github.repository_owner) }}
+          DOCUSAURUS_BASE_URL: ${{ vars.PAGES_CUSTOM_DOMAIN && '/' || format('/{0}/', github.event.repository.name) }}
         run: npm run build
       # ----
       - name: 'Setup Pages'
