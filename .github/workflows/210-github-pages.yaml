@@ -2,6 +2,10 @@ name: github-pages
 
 # This workflow builds the Docusaurus documentation and deploys it to GitHub Pages.
 
+# When you configure a custom domain for GitHub Pages (via repository Settings → Pages → Custom domain),
+# GitHub stores this information in a CNAME file in your repository, but it doesn't automatically
+  # create an Actions variable for it.
+
 on:
   # manual trigger
   workflow_dispatch:
@@ -43,8 +47,8 @@ jobs:
         working-directory: docs/pages
         env:
           DOCUSAURUS_TITLE: ${{ github.event.repository.name }}
-          DOCUSAURUS_URL: ${{ vars.PAGES_CUSTOM_DOMAIN && format('https://{0}', vars.PAGES_CUSTOM_DOMAIN) || format('https://{0}.github.io', github.repository_owner) }}
-          DOCUSAURUS_BASE_URL: ${{ vars.PAGES_CUSTOM_DOMAIN && '/' || format('/{0}/', github.event.repository.name) }}
+          DOCUSAURUS_URL: 'https://${{ github.repository_owner }}.github.io'
+          DOCUSAURUS_BASE_URL: '/${{ github.event.repository.name }}/'
         run: npm run build
       # ----
       - name: 'Setup Pages'

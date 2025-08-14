@@ -11,4 +11,3 @@ Accepted | Pending | Rejected
 ## Consequences
 
 ## Implementation
-
