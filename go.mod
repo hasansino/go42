@@ -75,6 +75,12 @@ require (
 	modernc.org/sqlite v1.38.2
 )
 
+// go.uber.org/mock@v0.5.2 depends on golang.org/x/tools@v0.22.0,
+// which has a compatibility bug with Go 1.24.6 causing:
+// invalid array length -delta * delta (constant -256 of type int64)
+// @todo remove after go.uber.org/mock is updated
+replace golang.org/x/tools v0.22.0 => golang.org/x/tools v0.35.0
+
 require (
 	cel.dev/expr v0.24.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect

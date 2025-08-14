@@ -23,6 +23,7 @@ setup: setup-git-hooks
 	@go install github.com/segmentio/golines@latest
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
 	@echo "✅ Setup complete"
 
@@ -119,9 +120,12 @@ format:
 ## lint | run all linting tools
 # Dependencies:
 #   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
+#   * go install github.com/securego/gosec/v2/cmd/gosec@latest
 lint:
 	@echo "Linting go files..."
 	@golangci-lint run --config etc/.golangci.yml || true
+	@echo "Running security scan..."
+	@gosec -quiet -exclude-generated ./... || true
 	@echo "Linting dockerfile..."
 	@hadolint Dockerfile || true
 	@echo "Linting proto files..."
