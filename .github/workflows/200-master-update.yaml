@@ -14,6 +14,7 @@ permissions: {}
 
 jobs:
   dep-submission:
+    name: master-update
     if: |
       github.event.head_commit.message != 'initial commit' && 
       !startsWith(github.event.head_commit.message, 'auto-release-')

@@ -1,4 +1,4 @@
-name: Deploy Documentation to GitHub Pages
+name: github-pages
 
 # This workflow builds the Docusaurus documentation and deploys it to GitHub Pages.
 
@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   build:
-    name: 'Build'
+    name: build
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout repository'
@@ -54,7 +54,7 @@ jobs:
           path: docs/pages/build
 
   deploy:
-    name: 'Deploy'
+    name: deploy
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
