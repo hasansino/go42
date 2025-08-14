@@ -38,6 +38,21 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
+    [
+      'redocusaurus',
+      {
+        specs: [
+          {
+            id: 'api-v1',
+            spec: '../../api/openapi/v1/.combined.yaml',
+            route: '/api/v1',
+          }
+        ],
+        theme: {
+          primaryColor: '#0969da',
+        },
+      },
+    ],
   ],
   themes: [
     [
@@ -61,12 +76,23 @@ const config: Config = {
       },
     },
     navbar: {
-      title: 'go42',
+      title: 'Documentation',
       logo: {
-        alt: 'go42 Logo',
+        alt: 'logo',
         src: 'img/go42-logo.svg',
       },
       items: [
+        {
+          type: 'dropdown',
+          label: 'OpenAPI',
+          position: 'left',
+          items: [
+            {
+              label: 'Version 1',
+              to: '/api/v1',
+            }
+          ],
+        },
         {
           type: 'search',
           position: 'right',

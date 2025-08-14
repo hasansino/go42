@@ -152,7 +152,7 @@ generate:
 	@go run cmd/cfg2env/main.go
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly build-docs --output=api/gen/doc/http/v1/index.html api/openapi/v1/.combined.yaml
+	@npm --prefix docs/pages run build
 
 # ╭────────────────────----------------──────────╮
 # │                      AI                      │
@@ -177,12 +177,6 @@ generate-migration-id:
 #   * go install github.com/loov/goda@latest
 generate-dep-graph:
 	@goda graph "github.com/hasansino/go42/..." | dot -Tsvg -o dep-graph.svg
-
-## preview-docs | preview openapi generated documentation
-# Dependencies:
-#   * brew install redocly-cli
-preview-docs:
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly preview-docs --config etc/redocly.yaml --port 8181 api/openapi/v1/.combined.yaml
 
 ## grpcui | run grpcui for debugging gRPC services
 # Dependencies:

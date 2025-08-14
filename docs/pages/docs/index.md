@@ -35,3 +35,9 @@ Architecture Decision Records (ADRs) document important architectural choices ma
 Business Requirement Documents (BRDs) capture the business needs, objectives, and specifications that drive development.
 
 [View Business Requirements →](/category/business-requirements)
+
+## 🔌 API Documentation
+
+Interactive API documentation generated from OpenAPI specifications.
+
+- [OpenAPI Version 1 →](/api/v1) - Complete API documentation
