@@ -93,10 +93,8 @@ jobs:
       # ----
       - name: 'Create pull request for release'
         uses: peter-evans/create-pull-request@v7
-        env:
-          # use GitHub App token if available, otherwise fallback to default GITHUB_TOKEN
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
         with:
+          token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           commit-message: "auto-release-${{ github.ref_name }}"
           title: "Release ${{ github.ref_name }}"
           body: |

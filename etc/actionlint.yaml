@@ -1,5 +1,6 @@
 config-variables:
   - RELEASE_APP_ID
+  - RELEASE_APP_NAME
   # ----
   - CLAUDE_ENABLE
   - CLAUDE_MODEL
