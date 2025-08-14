@@ -1,0 +1,97 @@
+import {themes as prismThemes} from 'prism-react-renderer';
+import type {Config} from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
+
+// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+
+const config: Config = {
+  title: 'go42 Documentation',
+  tagline: 'Project Documentation and Architecture',
+  favicon: 'img/go42-logo.png',
+  url: 'https://hasansino.github.io',
+  baseUrl: '/go42/',
+  organizationName: 'hasansino',
+  projectName: 'go42',
+  onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'warn',
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en'],
+  },
+  // @see https://docusaurus.io/docs/api/docusaurus-config#future
+  future: {
+    v4: true,
+  },
+  presets: [
+    [
+      'classic',
+      {
+        docs: {
+          sidebarPath: './sidebars.ts',
+          routeBasePath: '/',
+          sidebarCollapsible: true,
+          sidebarCollapsed: false,
+        },
+        blog: false,
+        theme: {
+          customCss: './src/css/custom.css',
+        },
+      } satisfies Preset.Options,
+    ],
+  ],
+  themes: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        language: ["en"],
+        indexDocs: true,
+        indexBlog: false,
+        docsRouteBasePath: "/",
+        highlightSearchTermsOnTargetPage: true,
+      },
+    ],
+  ],
+  themeConfig: {
+    image: 'img/go42-logo.png',
+    docs: {
+      sidebar: {
+        hideable: true,
+        autoCollapseCategories: true,
+      },
+    },
+    navbar: {
+      title: 'go42',
+      logo: {
+        alt: 'go42 Logo',
+        src: 'img/go42-logo.svg',
+      },
+      items: [
+        {
+          type: 'search',
+          position: 'right',
+        },
+      ],
+    },
+    // prismThemes.github (light)
+    // prismThemes.dracula (dark)
+    // prismThemes.duotoneDark
+    // prismThemes.duotoneLight
+    // prismThemes.nightOwl
+    // prismThemes.oceanicNext
+    // prismThemes.okaidia
+    // prismThemes.palenight
+    // prismThemes.shadesOfPurple
+    // prismThemes.synthwave84
+    // prismThemes.ultramin
+    // prismThemes.vsDark
+    // prismThemes.vsLight
+    prism: {
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
+      additionalLanguages: ['go', 'bash', 'json', 'yaml', 'docker', 'makefile'],
+    },
+  } satisfies Preset.ThemeConfig,
+};
+
+export default config;

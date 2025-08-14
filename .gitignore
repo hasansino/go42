@@ -21,6 +21,3 @@ GEMINI.md
 # project
 build/
 .env
-node_modules/
-package.json
-package-lock.json
