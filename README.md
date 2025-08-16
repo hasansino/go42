@@ -106,10 +106,13 @@ Go42 is opinionated approach to develop cloud native golang services.
 - fuzzy + genetic
 - https://github.com/langchain-ai/open-swe
 - https://github.com/cloudwego/eino
-- https://github.com/github/github-mcp-server
 - https://genkit.dev/
 - https://github.com/oraios/serena
 - https://github.com/stravu/crystal
+- https://github.com/helicone/helicone
+- https://langfuse.com/
+- https://github.com/grafana/mcp-grafana
+- https://github.com/modelcontextprotocol/servers
 
 ## 100% after v1.0.0 release
 
@@ -135,7 +138,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - release rollback automation
 - feature flags system
 - release annotations to grafana dashboards
-- niche spider trap
 
 ### Explore
 
@@ -148,11 +150,11 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Security
 
-- `redocly-cli` is basically spyware - replace
 - github runner hardening (self-hosted and cloud)
 - PATs for github actions
 - tls connections and certificate management
 - grpc transport credentials
+- nicshe spider trap
 
 ### Compliance
 

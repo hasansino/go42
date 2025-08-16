@@ -141,6 +141,7 @@ jobs:
         env:
           # ----
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          GH_MCP_KEY: ${{ secrets.GH_MCP_KEY || secrets.GITHUB_TOKEN }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-pro' }}
           # ----
           REPOSITORY: ${{ github.repository }}

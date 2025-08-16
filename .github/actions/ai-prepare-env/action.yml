@@ -6,7 +6,7 @@ description: Prepare the environment for AI-related tasks (requires checkout to 
 runs:
   using: composite
   steps:
-    - name: 'Set up Go'
+    - name: 'Setup Go'
       uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
@@ -36,11 +36,15 @@ runs:
           homebrew-${{ runner.os }}-${{ runner.arch }}-
           homebrew-${{ runner.os }}-
     # -----
-    - name: 'Set up Homebrew'
+    - name: 'Setup Homebrew'
       uses: Homebrew/actions/setup-homebrew@main
     # -----
-    - name: 'Install project dependencies'
+    - name: 'Setup project dependencies'
       run: make setup
+      shell: bash
+    # -----
+    - name: 'Setup MCP servers'
+      run: make setup-mcp
       shell: bash
     # -----
     - name: 'Prepare ai environment variables'

@@ -146,6 +146,7 @@ jobs:
         env:
           # ----
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
+          GH_MCP_KEY: ${{ secrets.GH_MCP_KEY || secrets.GITHUB_TOKEN }}
           DISABLE_TELEMETRY: true
           # ----
           REPOSITORY: ${{ github.repository }}

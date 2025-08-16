@@ -1,37 +1,58 @@
 # ╭────────────────────----------------──────────╮
-# │               General workflow               │
+# │                     go42                     │
 # ╰─────────────────────----------------─────────╯
+#
+# Before running any commands, ensure you have the following tools installed:
+# - brew @see https://brew.sh/
+# - go @see https://go.dev/
+# - npm @see https://www.npmjs.com/
+# - docker @see https://www.docker.com/
+#
+# Also, ensure you have logged in to GitHub Container Registry:
+#   docker login ghcr.io -u YOUR_GITHUB_USERNAME --password YOUR_GITHUB_TOKEN
+# @see https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry
 
 .PHONY: help
 help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ## setup | install dependencies
-# Prerequisites: brew, go, npm
-# @note used by ci to setup ai agent environment.
 setup: setup-git-hooks
 	@go mod tidy -e && go mod download
-	@brew install -q golangci-lint hadolint markdownlint-cli2 vale gitleaks \
-	sqlfluff buf redocly-cli yq grpcui k6
+	@brew install -q \
+  		golangci-lint hadolint markdownlint-cli2 \
+  		vale gitleaks sqlfluff buf redocly-cli \
+  		jq yq k6
 	@vale --config etc/vale.ini sync
-	@go install go.uber.org/mock/mockgen@latest
-	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-	@go install github.com/go-delve/delve/cmd/dlv@latest
-	@go install github.com/daixiang0/gci@latest
 	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
-	@go install github.com/ogen-go/ogen/cmd/ogen@latest
-	@go install github.com/segmentio/golines@latest
-	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
-	@echo "✅ Setup complete"
+	@go install github.com/go-delve/delve/cmd/dlv@latest
+	@go install go.uber.org/mock/mockgen@latest
+	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+	@go install github.com/ogen-go/ogen/cmd/ogen@latest
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+## setup-formatters | install code formatters
+setup-formatters:
+	@go install github.com/segmentio/golines@latest
+	@go install github.com/daixiang0/gci@latest
+
+## setup-mcp | setup mcp servers
+setup-mcp: setup
+	@go install golang.org/x/tools/gopls@latest
+	@docker pull ghcr.io/github/github-mcp-server:latest
 
 ## setup-git-hooks | install git hooks
 setup-git-hooks:
 	@mkdir -p .git/hooks
 	@cp etc/git-hooks/commit-msg .git/hooks/commit-msg
 	@chmod +x .git/hooks/commit-msg
+
+# ╭────────────────────----------------──────────╮
+# │               General workflow               │
+# ╰─────────────────────----------------─────────╯
 
 ## test-unit | run unit tests
 # -count=1 is needed to prevent caching of test results.
@@ -44,8 +65,6 @@ test-integration:
 	@go test -count=1 -v -race ./tests/integration/...
 
 ## test-load | run load tests (http and grpc)
-# Dependencies:
-#   * brew install k6
 test-load:
 	@k6 version
 	@k6 run tests/load/http/v1/auth_test.js || true
@@ -86,8 +105,6 @@ run-docker:
 	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
 ## debug | run application with delve debugger
-# Dependencies:
-#   * go install github.com/go-delve/delve/cmd/dlv@latest
 debug:
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
@@ -112,15 +129,7 @@ image:
 	-t ghcr.io/hasansino/go42:dev \
 	.
 
-## format | format go files using gofumpt
-format:
-	@echo "Formatting go files with gofumpt..."
-	@./scripts/safe-gofumpt.sh
-
 ## lint | run all linting tools
-# Dependencies:
-#   * brew install golangci-lint hadolint buf redocly-cli markdownlint-cli2 vale
-#   * go install github.com/securego/gosec/v2/cmd/gosec@latest
 lint:
 	@echo "Linting go files..."
 	@golangci-lint run --config etc/.golangci.yml || true
@@ -146,8 +155,6 @@ lint:
 	@gitleaks git --config etc/gitleaks.toml --no-banner --redact -v || true
 
 ## generate | generate code for all modules
-# Dependencies:
-#   * brew install buf
 generate:
 	@go mod tidy -e
 	@rm -rf api/gen
@@ -158,18 +165,14 @@ generate:
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
 	@npm --prefix docs/pages run build
 
-## docs | serve documentation
-serve-docs:
-	@npm --prefix docs/pages run serve
-
-# ╭────────────────────----------------──────────╮
-# │                      AI                      │
-# ╰─────────────────────----------------─────────╯
-
 ## generate-ai | generate ai-related code and configurations
 generate-ai:
 	@go run cmd/genai/main.go
 	@go run cmd/genkwb/main.go -build
+
+## docs | serve documentation
+serve-docs:
+	@npm --prefix docs/pages run serve
 
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │

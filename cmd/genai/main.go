@@ -29,18 +29,136 @@ const claudeConfig = `{
 		"WebSearch", 
 		"Write",
       	"Bash",
-      	"mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
-    ],
+
+		"mcp__gopls__go_workspace",
+		"mcp__gopls__go_search",
+		"mcp__gopls__go_file_context",
+		"mcp__gopls__go_package_api",
+		"mcp__gopls__go_symbol_references",
+		"mcp__gopls__go_diagnostics",
+
+		"mcp__github__create_issue",
+		"mcp__github__update_issue",
+		"mcp__github__get_issue",
+		"mcp__github__get_issue_comments",
+		"mcp__github__add_issue_comment",
+		"mcp__github__list_issues",
+		"mcp__github__search_issues",
+		"mcp__github__list_issue_types",
+		"mcp__github__add_sub_issue",
+		"mcp__github__remove_sub_issue",
+		"mcp__github__reprioritize_sub_issue",
+		"mcp__github__list_sub_issues",
+		"mcp__github__assign_copilot_to_issue",
+
+		"mcp__github__create_pull_request",
+		"mcp__github__update_pull_request",
+		"mcp__github__update_pull_request_branch",
+		"mcp__github__get_pull_request",
+		"mcp__github__get_pull_request_comments",
+		"mcp__github__get_pull_request_diff",
+		"mcp__github__get_pull_request_files",
+		"mcp__github__get_pull_request_reviews",
+		"mcp__github__get_pull_request_status",
+		"mcp__github__list_pull_requests",
+		"mcp__github__search_pull_requests",
+		"mcp__github__merge_pull_request",
+
+		"mcp__github__create_pending_pull_request_review",
+		"mcp__github__add_comment_to_pending_review",
+		"mcp__github__submit_pending_pull_request_review",
+		"mcp__github__delete_pending_pull_request_review",
+		"mcp__github__create_and_submit_pull_request_review",
+		"mcp__github__request_copilot_review",
+
+		"mcp__github__create_repository",
+		"mcp__github__fork_repository",
+		"mcp__github__search_repositories",
+
+		"mcp__github__create_branch",
+		"mcp__github__list_branches",
+		"mcp__github__get_commit",
+		"mcp__github__list_commits",
+
+		"mcp__github__list_workflows",
+		"mcp__github__run_workflow",
+		"mcp__github__get_workflow_run",
+		"mcp__github__list_workflow_runs",
+		"mcp__github__list_workflow_jobs",
+		"mcp__github__rerun_workflow_run",
+		"mcp__github__rerun_failed_jobs",
+		"mcp__github__cancel_workflow_run",
+		"mcp__github__get_workflow_run_logs",
+		"mcp__github__delete_workflow_run_logs",
+		"mcp__github__get_workflow_run_usage",
+		"mcp__github__list_workflow_run_artifacts",
+		"mcp__github__download_workflow_run_artifact",
+		"mcp__github__get_job_logs",
+
+		"mcp__github__list_code_scanning_alerts",
+		"mcp__github__get_code_scanning_alert",
+		"mcp__github__list_dependabot_alerts",
+		"mcp__github__get_dependabot_alert",
+		"mcp__github__list_secret_scanning_alerts",
+		"mcp__github__get_secret_scanning_alert",
+
+		"mcp__github__list_notifications",
+		"mcp__github__get_notification_details",
+		"mcp__github__dismiss_notification",
+		"mcp__github__manage_notification_subscription",
+		"mcp__github__manage_repository_notification_subscription",
+		"mcp__github__mark_all_notifications_read",
+
+		"mcp__github__search_code",
+		"mcp__github__search_users",
+		"mcp__github__search_orgs",
+
+		"mcp__github__get_discussion",
+		"mcp__github__get_discussion_comments",
+		"mcp__github__list_discussions",
+		"mcp__github__list_discussion_categories",
+
+		"mcp__github__get_tag",
+		"mcp__github__list_tags",
+		"mcp__github__list_releases",
+		"mcp__github__get_latest_release",
+
+		"mcp__github__get_me",
+		"mcp__github__get_teams",
+		"mcp__github__get_team_members",
+
+		"mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
+	],
     "deny": []
   }, 
   "enabledMcpjsonServers": [
-    "kwb"
+    "gopls", "github", "kwb"
   ]
 }`
 
 const claudeMCPConfigPath = ".mcp.json"
 const claudeMCPConfig = `{
   "mcpServers": {
+    "gopls": {
+      "command": "gopls",
+      "args": ["mcp"]
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "-e",
+        "GITHUB_TOOLSETS=all",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GH_MCP_KEY"
+      }
+    },
     "kwb": {
       "command": "go",
       "args": [
@@ -53,28 +171,6 @@ const claudeMCPConfig = `{
     }
   }
 }`
-
-const crushConfigPath = ".crush.json"
-const crushConfig = `{
-  "$schema": "https://charm.land/crush.json",
-  "lsp": {
-    "go": {
-      "command": "gopls"
-    }
-  },
-  "mcp": {
-    "filesystem": {
-      "type": "stdio",
-      "command": "go",
-      "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
-	  "env": {}
-    }
-  },
-  "permissions": {
-    "allowed_tools": []
-  }
-}
-`
 
 const geminiConfigPath = ".gemini/settings.json"
 const geminiConfig = `{
@@ -90,7 +186,105 @@ const geminiConfig = `{
 	"WebFetchTool", 
 	"WebSearchTool", 
 	"MemoryTool",
-	"mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
+
+    "mcp__gopls__go_workspace",
+    "mcp__gopls__go_search",
+    "mcp__gopls__go_file_context",
+    "mcp__gopls__go_package_api",
+    "mcp__gopls__go_symbol_references",
+    "mcp__gopls__go_diagnostics",
+
+    "mcp__github__create_issue",
+    "mcp__github__update_issue",
+    "mcp__github__get_issue",
+    "mcp__github__get_issue_comments",
+    "mcp__github__add_issue_comment",
+    "mcp__github__list_issues",
+    "mcp__github__search_issues",
+    "mcp__github__list_issue_types",
+    "mcp__github__add_sub_issue",
+    "mcp__github__remove_sub_issue",
+    "mcp__github__reprioritize_sub_issue",
+    "mcp__github__list_sub_issues",
+    "mcp__github__assign_copilot_to_issue",
+
+    "mcp__github__create_pull_request",
+    "mcp__github__update_pull_request",
+    "mcp__github__update_pull_request_branch",
+    "mcp__github__get_pull_request",
+    "mcp__github__get_pull_request_comments",
+    "mcp__github__get_pull_request_diff",
+    "mcp__github__get_pull_request_files",
+    "mcp__github__get_pull_request_reviews",
+    "mcp__github__get_pull_request_status",
+    "mcp__github__list_pull_requests",
+    "mcp__github__search_pull_requests",
+    "mcp__github__merge_pull_request",
+
+    "mcp__github__create_pending_pull_request_review",
+    "mcp__github__add_comment_to_pending_review",
+    "mcp__github__submit_pending_pull_request_review",
+    "mcp__github__delete_pending_pull_request_review",
+    "mcp__github__create_and_submit_pull_request_review",
+    "mcp__github__request_copilot_review",
+
+    "mcp__github__create_repository",
+    "mcp__github__fork_repository",
+    "mcp__github__search_repositories",
+
+    "mcp__github__create_branch",
+    "mcp__github__list_branches",
+    "mcp__github__get_commit",
+    "mcp__github__list_commits",
+
+    "mcp__github__list_workflows",
+    "mcp__github__run_workflow",
+    "mcp__github__get_workflow_run",
+    "mcp__github__list_workflow_runs",
+    "mcp__github__list_workflow_jobs",
+    "mcp__github__rerun_workflow_run",
+    "mcp__github__rerun_failed_jobs",
+    "mcp__github__cancel_workflow_run",
+    "mcp__github__get_workflow_run_logs",
+    "mcp__github__delete_workflow_run_logs",
+    "mcp__github__get_workflow_run_usage",
+    "mcp__github__list_workflow_run_artifacts",
+    "mcp__github__download_workflow_run_artifact",
+    "mcp__github__get_job_logs",
+
+    "mcp__github__list_code_scanning_alerts",
+    "mcp__github__get_code_scanning_alert",
+    "mcp__github__list_dependabot_alerts",
+    "mcp__github__get_dependabot_alert",
+    "mcp__github__list_secret_scanning_alerts",
+    "mcp__github__get_secret_scanning_alert",
+
+    "mcp__github__list_notifications",
+    "mcp__github__get_notification_details",
+    "mcp__github__dismiss_notification",
+    "mcp__github__manage_notification_subscription",
+    "mcp__github__manage_repository_notification_subscription",
+    "mcp__github__mark_all_notifications_read",
+
+    "mcp__github__search_code",
+    "mcp__github__search_users",
+    "mcp__github__search_orgs",
+
+    "mcp__github__get_discussion",
+    "mcp__github__get_discussion_comments",
+    "mcp__github__list_discussions",
+    "mcp__github__list_discussion_categories",
+
+    "mcp__github__get_tag",
+    "mcp__github__list_tags",
+    "mcp__github__list_releases",
+    "mcp__github__get_latest_release",
+
+    "mcp__github__get_me",
+    "mcp__github__get_teams",
+    "mcp__github__get_team_members",
+
+    "mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
   ],
   "excludeTools": [],
   "maxSessionTurns": 10,
@@ -98,6 +292,31 @@ const geminiConfig = `{
   "checkpointing": {"enabled": true},
   "autoAccept": true,
   "mcpServers": {
+    "gopls": {
+      "command": "gopls",
+      "args": ["mcp"],
+      "env": {},
+      "timeout": 30000,
+      "trust": true
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "-e",
+        "GITHUB_TOOLSETS=all",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GH_MCP_KEY"
+      },
+      "timeout": 30000,
+      "trust": true
+    },
     "kwb": {
       "command": "go",
       "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
@@ -106,15 +325,157 @@ const geminiConfig = `{
       "trust": true
     }
   },
-  "allowMCPServers": ["kwb"],
+  "allowMCPServers": ["gopls", "github", "kwb"],
   "usageStatisticsEnabled": false
+}`
+
+const crushConfigPath = ".crush.json"
+const crushConfig = `{
+  "$schema": "https://charm.land/crush.json",
+  "lsp": {
+    "go": {
+      "command": "gopls"
+    }
+  },
+  "mcp": {
+    "github": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "-e",
+        "GITHUB_TOOLSETS=all",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GH_MCP_KEY}"
+      }
+    },
+    "kwb": {
+      "type": "stdio",
+      "command": "go",
+      "args": ["run", "cmd/genkwb/main.go", "-serve", "-index", "ai/index"],
+	  "env": {}
+    }
+  },
+  "permissions": {
+    "allowed_tools": [
+      "view",
+      "ls",
+      "grep",
+      "edit",
+
+      "mcp__gopls__go_workspace",
+      "mcp__gopls__go_search",
+      "mcp__gopls__go_file_context",
+      "mcp__gopls__go_package_api",
+      "mcp__gopls__go_symbol_references",
+      "mcp__gopls__go_diagnostics",
+
+      "mcp__github__create_issue",
+      "mcp__github__update_issue",
+      "mcp__github__get_issue",
+      "mcp__github__get_issue_comments",
+      "mcp__github__add_issue_comment",
+      "mcp__github__list_issues",
+      "mcp__github__search_issues",
+      "mcp__github__list_issue_types",
+      "mcp__github__add_sub_issue",
+      "mcp__github__remove_sub_issue",
+      "mcp__github__reprioritize_sub_issue",
+      "mcp__github__list_sub_issues",
+      "mcp__github__assign_copilot_to_issue",
+
+      "mcp__github__create_pull_request",
+      "mcp__github__update_pull_request",
+      "mcp__github__update_pull_request_branch",
+      "mcp__github__get_pull_request",
+      "mcp__github__get_pull_request_comments",
+      "mcp__github__get_pull_request_diff",
+      "mcp__github__get_pull_request_files",
+      "mcp__github__get_pull_request_reviews",
+      "mcp__github__get_pull_request_status",
+      "mcp__github__list_pull_requests",
+      "mcp__github__search_pull_requests",
+      "mcp__github__merge_pull_request",
+
+      "mcp__github__create_pending_pull_request_review",
+      "mcp__github__add_comment_to_pending_review",
+      "mcp__github__submit_pending_pull_request_review",
+      "mcp__github__delete_pending_pull_request_review",
+      "mcp__github__create_and_submit_pull_request_review",
+      "mcp__github__request_copilot_review",
+
+      "mcp__github__create_repository",
+      "mcp__github__fork_repository",
+      "mcp__github__search_repositories",
+
+      "mcp__github__create_branch",
+      "mcp__github__list_branches",
+      "mcp__github__get_commit",
+      "mcp__github__list_commits",
+
+      "mcp__github__list_workflows",
+      "mcp__github__run_workflow",
+      "mcp__github__get_workflow_run",
+      "mcp__github__list_workflow_runs",
+      "mcp__github__list_workflow_jobs",
+      "mcp__github__rerun_workflow_run",
+      "mcp__github__rerun_failed_jobs",
+      "mcp__github__cancel_workflow_run",
+      "mcp__github__get_workflow_run_logs",
+      "mcp__github__delete_workflow_run_logs",
+      "mcp__github__get_workflow_run_usage",
+      "mcp__github__list_workflow_run_artifacts",
+      "mcp__github__download_workflow_run_artifact",
+      "mcp__github__get_job_logs",
+
+      "mcp__github__list_code_scanning_alerts",
+      "mcp__github__get_code_scanning_alert",
+      "mcp__github__list_dependabot_alerts",
+      "mcp__github__get_dependabot_alert",
+      "mcp__github__list_secret_scanning_alerts",
+      "mcp__github__get_secret_scanning_alert",
+
+      "mcp__github__list_notifications",
+      "mcp__github__get_notification_details",
+      "mcp__github__dismiss_notification",
+      "mcp__github__manage_notification_subscription",
+      "mcp__github__manage_repository_notification_subscription",
+      "mcp__github__mark_all_notifications_read",
+
+      "mcp__github__search_code",
+      "mcp__github__search_users",
+      "mcp__github__search_orgs",
+
+      "mcp__github__get_discussion",
+      "mcp__github__get_discussion_comments",
+      "mcp__github__list_discussions",
+      "mcp__github__list_discussion_categories",
+
+      "mcp__github__get_tag",
+      "mcp__github__list_tags",
+      "mcp__github__list_releases",
+      "mcp__github__get_latest_release",
+
+      "mcp__github__get_me",
+      "mcp__github__get_teams",
+      "mcp__github__get_team_members",
+
+      "mcp__kwb__search", "mcp__kwb__list_files", "mcp__kwb__get_file"
+    ]
+  }
 }`
 
 var configs = map[string]string{
 	claudeConfigPath:    claudeConfig,
 	claudeMCPConfigPath: claudeMCPConfig,
-	crushConfigPath:     crushConfig,
 	geminiConfigPath:    geminiConfig,
+	crushConfigPath:     crushConfig,
 }
 
 // ----
