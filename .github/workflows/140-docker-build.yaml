@@ -26,6 +26,10 @@ on:
         required: true
         type: string
         description: "image_tag"
+      tag_latest:
+        required: false
+        type: boolean
+        description: "tag_latest"
       platforms:
         required: true
         type: choice
@@ -62,6 +66,9 @@ on:
       image_tag:
         required: true
         type: string
+      tag_latest:
+        required: false
+        type: boolean
       platforms:
         required: true
         type: string
@@ -133,7 +140,7 @@ jobs:
           tags: |
             type=raw,value=${{ inputs.image_tag }}
           flavor: |
-            latest=false
+            latest=${{ inputs.tag_latest }}
           # @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
           labels: |
             org.opencontainers.image.title: ${{ inputs.service_name }}

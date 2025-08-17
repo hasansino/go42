@@ -41,13 +41,14 @@ runs:
         echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
         
         # Generate raw notes via GitHub Releases API (PRs + contributors)
+        NOTES_FILE="${RUNNER_TEMP}/NOTES.md"
         gh api repos/${{ github.repository }}/releases/generate-notes \
           -f tag_name='${{ inputs.head_ref }}' \
           -f previous_tag_name='${{ inputs.base_ref }}' \
-          --jq '.body' > NOTES.md || {
+          --jq '.body' > "$NOTES_FILE" || {
             # Fallback if API fails - get commit messages
             git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
-              "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > NOTES.md
+              "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > "$NOTES_FILE"
           }
 
     - name: 'Install GitHub Models CLI extension'
@@ -64,10 +65,10 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github_token }}
         CONTEXT_TYPE: ${{ inputs.context_type }}
-        SUMMARY_ENABLE: ${{ env.SUMMARY_ENABLE }}
-        SUMMARY_MODEL: ${{ env.SUMMARY_MODEL }}
+        SUMMARY_ENABLE: ${{ env.SUMMARY_ENABLE || true }}
+        SUMMARY_MODEL: ${{ env.SUMMARY_MODEL || 'openai/gpt-5-mini' }}
       run: |
-        # Check if AI summary is enabled
+        NOTES_FILE="${RUNNER_TEMP}/NOTES.md"
         if [ "${{ env.SUMMARY_ENABLE }}" = "false" ]; then
           echo "AI summary generation is disabled via SUMMARY_ENABLE variable"
           # Use simple list format without AI
@@ -76,7 +77,7 @@ runs:
         Summary generation is disabled. See changes below.
         
         ### Changes
-        $(cat NOTES.md)
+        $(cat "$NOTES_FILE")
         EOF
           )
           # Save summary to output
@@ -88,11 +89,7 @@ runs:
           exit 0
         fi
         
-        # Determine which model to use (repo variable or default)
         MODEL="${{ env.SUMMARY_MODEL }}"
-        if [ -z "$MODEL" ]; then
-          MODEL="openai/gpt-5-mini"  # Default model
-        fi
         echo "Using model: $MODEL"
         
         # Prepare context-specific prompt
@@ -119,7 +116,7 @@ runs:
         Keep markdown tight and professional. No emojis.
         
         Changes to summarize:
-        $(cat NOTES.md)
+        $(cat "$NOTES_FILE")
         EOF
         )
         
@@ -148,7 +145,7 @@ runs:
         See changes below for details.
         
         ### Changes
-        $(cat NOTES.md)
+        $(cat "$NOTES_FILE")
         EOF
           )
         else

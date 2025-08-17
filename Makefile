@@ -111,7 +111,7 @@ debug:
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
 	export SERVER_HTTP_STATIC_ROOT=$(shell pwd)/static && \
 	export SERVER_HTTP_SWAGGER_ROOT=$(shell pwd)/api/openapi && \
-	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2 -- ${@:2}
+	dlv debug ./cmd/app --headless --listen=:2345 --accept-multiclient --api-version=2
 
 ## build | build development version of binary
 build:
