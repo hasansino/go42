@@ -131,32 +131,23 @@ image:
 	-t ghcr.io/hasansino/go42:dev \
 	.
 
-## lint | run all linting tools
+## lint | run all validation tools
 lint:
-	@echo "Linting go files..."
 	@golangci-lint run --config etc/.golangci.yml || true
-	@echo "Running security scan..."
-	@gosec -quiet -exclude-generated ./... || true
-	@echo "Linting dockerfile..."
 	@hadolint Dockerfile || true
-	@echo "Linting proto files..."
-	@buf lint api || true
-	@echo "Linting openapi specifications..."
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
-	@echo "Linting markdown files..."
-	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md docs/**/*.md || true
-	@echo "Linting writing..."
-	@vale --no-exit --config etc/vale.ini README.md docs/**/*.md internal/ cmd/ pkg/ tests/ || true
-	@echo "Linting SQL migrations..."
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
-	@echo "Linting github actions..."
-	@actionlint -oneline --config-file etc/actionlint.yaml
-	@echo "Scanning for secrets..."
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
+	@buf lint api || true
+	@gosec -quiet -exclude-generated ./... || true
 	@gitleaks git --config etc/gitleaks.toml --no-banner --redact -v || true
+	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md docs/**/*.md || true
+	@vale --no-exit --config etc/vale.ini README.md docs/**/*.md internal/ cmd/ pkg/ tests/ || true
+	@actionlint -oneline --config-file etc/actionlint.yaml
 
 ## generate | generate code for all modules
+# @note all side effects of this command should to be commited
 generate:
 	@go mod tidy -e
 	@rm -rf api/gen
@@ -165,7 +156,6 @@ generate:
 	@go run cmd/cfg2env/main.go
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
-	@npm --prefix docs/pages run build
 
 ## generate-ai | generate ai-related code and configurations
 generate-ai:
@@ -174,6 +164,7 @@ generate-ai:
 
 ## docs | serve documentation
 serve-docs:
+	@npm --prefix docs/pages install
 	@npm --prefix docs/pages run serve
 
 # ╭────────────────────----------------──────────╮
