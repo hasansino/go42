@@ -17,21 +17,13 @@ help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ## setup | install dependencies
-setup: setup-git-hooks
+setup: setup-git-hooks setup-formatters setup-generators
 	@go mod tidy -e && go mod download
 	@brew install -q \
   		buf sqlfluff \
-  		golangci-lint hadolint markdownlint-cli2 vale gitleaks redocly-cli \
+  		golangci-lint hadolint markdownlint-cli2 vale gitleaks redocly-cli actionlint gosec dlv \
   		jq yq k6
 	@vale --config etc/vale.ini sync
-	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
-	@go install github.com/securego/gosec/v2/cmd/gosec@latest
-	@go install github.com/go-delve/delve/cmd/dlv@latest
-	@go install go.uber.org/mock/mockgen@latest
-	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-	@go install github.com/ogen-go/ogen/cmd/ogen@latest
-	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ## setup-formatters | install code formatters
 # Extra formatters provided by `setup step`: buf (proto), sqlfluff (sql)
@@ -39,6 +31,14 @@ setup-formatters:
 	@go install github.com/daixiang0/gci@latest
 	@go install github.com/segmentio/golines@latest
 	@go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+
+## setup-generators | install code generators
+setup-generators:
+	@go install go.uber.org/mock/mockgen@latest
+	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+	@go install github.com/ogen-go/ogen/cmd/ogen@latest
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ## setup-mcp | setup mcp servers
 setup-mcp: setup

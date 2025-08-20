@@ -83,12 +83,9 @@ jobs:
           MYSQL_PASSWORD: qwerty
           MYSQL_DATABASE: go42
           MYSQL_ROOT_PASSWORD: root
-        options: |
-          --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1"
-          --health-start-period 30s
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+        options: >-
+          --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1" --health-start-period 30s --health-interval
+          10s --health-timeout 5s --health-retries 10
       pgsql:
         image: ${{ matrix.database == 'pgsql' && 'postgres:latest' || '' }}
         ports:
@@ -97,12 +94,9 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: qwerty
           POSTGRES_DB: go42
-        options: |
-          --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1"
-          --health-start-period 10s
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
+        options: >-
+          --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1" --health-start-period
+          10s --health-interval 5s --health-timeout 5s --health-retries 5
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
@@ -120,12 +114,9 @@ jobs:
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
           DATABASE_PGSQL_SLAVE_HOST: pgsql
-        options: |
-          --health-cmd "curl -f http://localhost:8080/health || exit 1"
-          --health-start-period 1s
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+        options: >-
+          --health-cmd "curl -f http://localhost:8080/health || exit 1" --health-start-period 1s --health-interval 5s --health-timeout
+          5s --health-retries 10
     # ----
     steps:
       - name: 'Checkout repository'
