@@ -1,3 +1,5 @@
+---
+
 name: cleanup-registry
 
 # Cleanup GitHub Container Registry.
@@ -55,7 +57,7 @@ jobs:
               echo "dry_run=${{ inputs.dry_run }}"
             } >> "$GITHUB_OUTPUT"
           fi
-      
+
       - name: 'Cleanup old images'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,51 +71,51 @@ jobs:
           echo "Repository: ghcr.io/$OWNER/$PACKAGE_NAME"
           echo "Retention period: $RETENTION_DAYS days"
           echo "Dry run: $DRY_RUN"
-          
+
           # Calculate cutoff date
           CUTOFF_DATE=$(date -u -d "$RETENTION_DAYS days ago" +"%Y-%m-%dT%H:%M:%SZ")
           echo "Cutoff date: $CUTOFF_DATE"
-          
+
           # Detect if this is an org or user repository
           IS_ORG="false"
           if [ "$DEBUG_MODE" = "true" ]; then
             echo "Debug: Checking if $OWNER is an organization..."
           fi
-          
+
           org_check=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/orgs/$OWNER")
-          
+
           org_check_code=$(echo "$org_check" | tail -n1)
-          
+
           if [ "$org_check_code" = "200" ]; then
             IS_ORG="true"
             echo "Repository owner is an organization"
           else
             echo "Repository owner is a user"
           fi
-          
+
           if [ "$DEBUG_MODE" = "true" ]; then
             echo "Debug: IS_ORG=$IS_ORG"
           fi
-          
+
           # Process the package
           total_deleted=0
-          
+
           echo ""
           echo "Processing package: $PACKAGE_NAME"
-          
+
           # Fetch all versions
           page=1
           all_versions="[]"
-          
+
           while true; do
             # Use the appropriate endpoint based on owner type
             if [ "$IS_ORG" = "true" ]; then
               if [ "$DEBUG_MODE" = "true" ]; then
                 echo "Debug: Fetching page $page for $PACKAGE_NAME (org endpoint)..."
               fi
-              
+
               response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/orgs/$OWNER/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
@@ -121,49 +123,49 @@ jobs:
               if [ "$DEBUG_MODE" = "true" ]; then
                 echo "Debug: Fetching page $page for $PACKAGE_NAME (user endpoint)..."
               fi
-              
+
               response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions?per_page=100&page=$page")
             fi
-            
+
             http_code=$(echo "$response" | tail -n1)
             versions=$(echo "$response" | sed '$ d')
-            
+
             if [ "$DEBUG_MODE" = "true" ]; then
               echo "Debug: Response code: $http_code"
               [ "$http_code" != "200" ] && echo "Debug: Response body (first 500 chars): ${response:0:500}..."
             fi
-            
+
             if [ "$http_code" != "200" ]; then
               echo "Error fetching versions for $PACKAGE_NAME: HTTP status $http_code"
               echo "Response: $versions"
               exit 1
             fi
-            
+
             # Check if we got any data
             version_count=$(echo "$versions" | jq '. | length')
             if [ "$version_count" -eq 0 ]; then
               break
             fi
-            
+
             # Merge arrays properly
             if [ "$DEBUG_MODE" = "true" ]; then
               echo "Debug: Merging $version_count versions from page $page"
             fi
-            
+
             all_versions=$(echo "$all_versions" | jq --argjson new "$versions" '. + $new')
             page=$((page + 1))
           done
-          
+
           version_total=$(echo "$all_versions" | jq '. | length')
           if [ "$version_total" -eq 0 ]; then
             echo "No versions found for $PACKAGE_NAME"
             exit 0
           fi
-          
+
           echo "Found $version_total versions total"
-          
+
           # Debug: Check structure of first version
           if [ "$DEBUG_MODE" = "true" ]; then
             echo "Debug: Checking JSON structure of first version..."
@@ -171,11 +173,11 @@ jobs:
             echo "Debug: Sample version object:"
             echo "$all_versions" | jq '.[0]' || echo "Debug: Failed to show sample"
           fi
-          
+
           # Find old versions to delete
           old_versions=$(echo "$all_versions" | jq -c --arg cutoff "$CUTOFF_DATE" '
-            .[] | 
-            select(.updated_at < $cutoff) | 
+            .[] |
+            select(.updated_at < $cutoff) |
             select(
               if has("metadata") and (.metadata | type) == "object" and (.metadata | has("container")) then
                 if (.metadata.container | has("tags")) and (.metadata.container.tags | type) == "array" then
@@ -191,32 +193,32 @@ jobs:
             echo "$old_versions"
             exit 1
           }
-          
+
           if [ -z "$old_versions" ]; then
             echo "No old versions to delete for $PACKAGE_NAME"
             exit 0
           fi
-          
+
           # Process deletions
           package_deleted=0
-          
+
           while IFS= read -r version; do
             version_id=$(echo "$version" | jq -r '.id')
             version_name=$(echo "$version" | jq -r '.name')
             version_tags=$(echo "$version" | jq -r '
-              if has("metadata") and (.metadata | type) == "object" and 
-                 (.metadata | has("container")) and (.metadata.container | has("tags")) and 
+              if has("metadata") and (.metadata | type) == "object" and
+                 (.metadata | has("container")) and (.metadata.container | has("tags")) and
                  (.metadata.container.tags | type) == "array" then
                 .metadata.container.tags | join(", ")
               else
                 ""
               end')
             updated_at=$(echo "$version" | jq -r '.updated_at')
-            
+
             echo "  - Version: $version_name (ID: $version_id)"
             echo "    Updated: $updated_at"
             [ -n "$version_tags" ] && echo "    Tags: $version_tags"
-            
+
             if [ "$DRY_RUN" = "true" ]; then
               echo "    [DRY RUN] Would delete this version"
             else
@@ -225,7 +227,7 @@ jobs:
                 if [ "$DEBUG_MODE" = "true" ]; then
                   echo "Debug: Attempting to delete version $version_id (org endpoint)..."
                 fi
-                
+
                 delete_response=$(curl -s -w "%{http_code}" -X DELETE \
                   -H "Authorization: Bearer $GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
@@ -234,20 +236,20 @@ jobs:
                 if [ "$DEBUG_MODE" = "true" ]; then
                   echo "Debug: Attempting to delete version $version_id (user endpoint)..."
                 fi
-                
+
                 delete_response=$(curl -s -w "%{http_code}" -X DELETE \
                   -H "Authorization: Bearer $GH_TOKEN" \
                   -H "Accept: application/vnd.github+json" \
                   "https://api.github.com/user/packages/container/$PACKAGE_NAME/versions/$version_id")
               fi
-              
+
               delete_http_code=$(echo "$delete_response" | tail -n1)
-              
+
               if [ "$DEBUG_MODE" = "true" ]; then
                 echo "Debug: Delete response code: $delete_http_code"
                 [ "$delete_http_code" != "204" ] && echo "Debug: Delete response: ${delete_response:0:200}..."
               fi
-              
+
               if [ "$delete_http_code" = "204" ]; then
                 echo "    ✓ Deleted successfully"
                 package_deleted=$((package_deleted + 1))
@@ -256,12 +258,12 @@ jobs:
               fi
             fi
           done < <(echo "$old_versions")
-          
+
           if [ "$DRY_RUN" != "true" ] && [ "${package_deleted:-0}" -gt 0 ]; then
             echo "  Deleted ${package_deleted:-0} versions from $PACKAGE_NAME"
             total_deleted=$((total_deleted + package_deleted))
           fi
-          
+
           # Summary
           echo ""
           echo "=========================================="
@@ -274,33 +276,33 @@ jobs:
             echo "Total versions deleted: $total_deleted"
           fi
           echo "=========================================="
-          
+
           # Save summary for job summary step
           {
             echo "cutoff_date=$CUTOFF_DATE"
             echo "total_deleted=$total_deleted"
           } > cleanup_summary.env
-      
+
       - name: 'Generate Job Summary'
         if: always()
         env:
           RETENTION_DAYS: ${{ steps.config.outputs.retention_days }}
           DRY_RUN: ${{ steps.config.outputs.dry_run }}
-        run: |
+        run: |-
           # Load summary data if available
           if [ -f cleanup_summary.env ]; then
             source cleanup_summary.env
           fi
-          
+
           {
-            echo "# 🧹 Registry Cleanup Report"
+            echo "# Registry Cleanup Report"
             echo ""
             echo "**Package:** ghcr.io/${{ github.repository_owner }}/${{ env.SERVICE_NAME }}"
             echo "**Run Type:** ${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }}"
             echo "**Retention Period:** $RETENTION_DAYS days"
             echo "**Mode:** ${{ steps.config.outputs.dry_run == 'true' && 'Dry Run' || 'Live' }}"
             echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-            
+
             if [ -f cleanup_summary.env ]; then
               echo ""
               echo "## 📊 Results"

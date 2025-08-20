@@ -1,3 +1,5 @@
+---
+
 name: markdown-lint
 
 # Markdown linter.
@@ -42,6 +44,6 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v20
         with:
           config: etc/.markdownlint.yaml
-          globs: |
+          globs: |-
             README.md
             docs/**/*.md

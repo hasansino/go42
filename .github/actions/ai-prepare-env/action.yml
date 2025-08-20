@@ -1,3 +1,5 @@
+---
+
 name: ai-prepare-env
 description: Prepare the environment for AI-related tasks (requires checkout to be done first)
 
@@ -67,7 +69,7 @@ runs:
           echo "BRANCH=${HEAD_REF:-$REF_NAME}"
           echo "COMMIT_SHA=${PR_HEAD_SHA:-$SHA}"
           echo "BUILD_URL=${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-          
+
           # PR-specific variables
           if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "pull_request_review" ] || [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
             echo "PR_NUMBER=${PR_NUMBER:-$ISSUE_NUMBER}"

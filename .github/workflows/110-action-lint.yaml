@@ -1,3 +1,5 @@
+---
+
 name: action-lint
 
 # Linter for github actions.

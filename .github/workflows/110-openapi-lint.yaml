@@ -1,3 +1,5 @@
+---
+
 name: openapi-lint
 
 # OpenAPI linter.
@@ -40,7 +42,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
       - name: 'Run Redocly OpenAPI linter'
-        run: |
+        run: |-
           docker run --rm \
             -v "${{ github.workspace }}:/workdir" \
             -w /workdir \

@@ -72,7 +72,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Project `get-the-job-done`'
 
-- research mkdocs + docusaurus
+- https://squidfunk.github.io/mkdocs-material/
 - documentation
 - conventions + validation in ci/cd
 - arch/business/feature documentation generation
@@ -115,6 +115,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://langfuse.com/
 - https://github.com/grafana/mcp-grafana
 - https://github.com/modelcontextprotocol/servers
+- https://github.com/qodo-ai/pr-agent
 
 ## 100% after v1.0.0 release
 
@@ -140,6 +141,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - release rollback automation
 - feature flags system
 - release annotations to grafana dashboards
+- c4 (not that one)
+- renovatebot
 
 ### Explore
 
@@ -155,6 +158,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://www.envoyproxy.io/
 - https://openfeature.dev/
 - https://cloudnative-pg.io/
+- https://github.com/riverqueue/river
 
 ### Security
 

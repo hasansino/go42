@@ -1,3 +1,5 @@
+---
+
 name: security
 
 # Vulnerability / data leak detection.
@@ -156,7 +158,7 @@ jobs:
 
   scorecard:
     name: scorecard
-    runs-on: ubuntu-latest  # MUST be hardcoded for OSSF scorecards
+    runs-on: ubuntu-latest # MUST be hardcoded for OSSF scorecards
     continue-on-error: ${{ inputs.continue_on_error }}
     permissions:
       contents: read

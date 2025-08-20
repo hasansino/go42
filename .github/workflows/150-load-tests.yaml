@@ -1,3 +1,5 @@
+---
+
 name: load-tests
 
 # Load tests.
@@ -75,35 +77,35 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             // Read all k6 summary files
             const files = fs.readdirSync('.').filter(f => f.startsWith('k6-summary-') && f.endsWith('.json'));
-            
+
             let allResults = [];
-            
+
             for (const file of files) {
               const match = file.match(/k6-summary-(\w+)-(\w+)-v1\.json/);
               if (!match) continue;
-              
+
               const [_, protocol, database] = match;
               const results = JSON.parse(fs.readFileSync(file, 'utf8'));
-              
+
               allResults.push({ protocol, database, results });
             }
-            
+
             // Sort results for consistent output
             allResults.sort((a, b) => {
               if (a.protocol !== b.protocol) return a.protocol.localeCompare(b.protocol);
               return a.database.localeCompare(b.database);
             });
-            
+
             // Generate GitHub Job Summary
             let summary = '# 🚀 Load Test Results Summary\n\n';
-            
+
             // Create a summary table
             summary += '| Protocol | Database | VUs Max | Total Requests | Avg Response | P95 Response | Success Rate |\n';
             summary += '|----------|----------|---------|----------------|--------------|--------------|-------------|\n';
-            
+
             for (const { protocol, database, results } of allResults) {
               if (protocol === 'http') {
                 const vusMax = results.metrics.vus_max?.value || 'N/A';
@@ -115,7 +117,7 @@ jobs:
                 const checksFails = results.metrics.checks?.fails || 0;
                 const totalChecks = checksPasses + checksFails;
                 const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
-                
+
                 summary += `| HTTP | ${database} | ${vusMax} | ${httpReqsCount} (${httpReqsRate.toFixed(2)}/s) | ${httpReqDurationAvg.toFixed(2)}ms | ${httpReqDurationP95.toFixed(2)}ms | ${successRate.toFixed(2)}% |\n`;
               } else if (protocol === 'grpc') {
                 const vusMax = results.metrics.vus_max?.value || 'N/A';
@@ -127,17 +129,17 @@ jobs:
                 const checksFails = results.metrics.checks?.fails || 0;
                 const totalChecks = checksPasses + checksFails;
                 const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
-                
+
                 summary += `| gRPC | ${database} | ${vusMax} | ${iterationsCount} (${iterationsRate.toFixed(2)}/s) | ${(grpcReqDurationAvg * 1000).toFixed(2)}ms | ${(grpcReqDurationP95 * 1000).toFixed(2)}ms | ${successRate.toFixed(2)}% |\n`;
               }
             }
-            
+
             // Add detailed breakdowns
             summary += '\n## 📊 Detailed Results\n\n';
-            
+
             for (const { protocol, database, results } of allResults) {
               summary += `<details>\n<summary><b>${protocol.toUpperCase()} - ${database}</b></summary>\n\n`;
-              
+
               if (protocol === 'http') {
                 const vusMax = results.metrics.vus_max?.value || 'N/A';
                 const vusMin = results.metrics.vus?.min || 0;
@@ -156,7 +158,7 @@ jobs:
                 const checksFails = results.metrics.checks?.fails || 0;
                 const totalChecks = checksPasses + checksFails;
                 const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
-                
+
                 summary += '| Metric | Value |\n';
                 summary += '|--------|-------|\n';
                 summary += `| **Virtual Users** | |\n`;
@@ -193,7 +195,7 @@ jobs:
                 const checksFails = results.metrics.checks?.fails || 0;
                 const totalChecks = checksPasses + checksFails;
                 const successRate = totalChecks > 0 ? (checksPasses / totalChecks * 100) : 0;
-                
+
                 summary += '| Metric | Value |\n';
                 summary += '|--------|-------|\n';
                 summary += `| **Virtual Users** | |\n`;
@@ -215,10 +217,10 @@ jobs:
                 summary += `| Passed | ${checksPasses} |\n`;
                 summary += `| Failed | ${checksFails} |\n`;
               }
-              
+
               summary += '\n</details>\n\n';
             }
-            
+
             // Write to GitHub Step Summary
             await core.summary
               .addRaw(summary)
@@ -234,8 +236,13 @@ jobs:
       issues: write
     strategy:
       matrix:
-        protocol: [http, grpc]
-        database: [sqlite, mysql, pgsql]
+        protocol:
+          - http
+          - grpc
+        database:
+          - sqlite
+          - mysql
+          - pgsql
         include:
           # HTTP configurations
           - protocol: http
@@ -308,7 +315,7 @@ jobs:
           MYSQL_PASSWORD: qwerty
           MYSQL_DATABASE: go42
           MYSQL_ROOT_PASSWORD: qwerty
-        options: >-
+        options: |
           --health-cmd "mysql -h localhost -u user -pqwerty -D go42 -e 'SELECT 1' || exit 1"
           --health-start-period 30s
           --health-interval 10s
@@ -322,7 +329,7 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: qwerty
           POSTGRES_DB: go42
-        options: >-
+        options: |
           --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1"
           --health-start-period 10s
           --health-interval 5s
@@ -331,7 +338,7 @@ jobs:
       app:
         image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
         ports:
-          - ${{ matrix.app_port }}:8080  # unique ports to avoid conflicts on self-hosted runners
+          - ${{ matrix.app_port }}:8080 # unique ports to avoid conflicts on self-hosted runners
           - ${{ matrix.grpc_port }}:50051 # unique ports to avoid conflicts on self-hosted runners
         env:
           LOG_LEVEL: warn
@@ -344,9 +351,8 @@ jobs:
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
           DATABASE_PGSQL_SLAVE_HOST: pgsql
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health || exit 1"
-          --health-start-period 1s
+        options: |
+          --health-cmd "curl -f http://localhost:8080/health || exit 1" --health-start-period 1s
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -361,7 +367,8 @@ jobs:
           path: ${{ matrix.test_path }}
           flags: --summary-export=k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
         env:
-          ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port) || format('localhost:{0}', matrix.grpc_port) }}
+          ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port)
+            || format('localhost:{0}', matrix.grpc_port) }}
       - name: 'Upload K6 test results'
         uses: actions/upload-artifact@v4
         with:

@@ -1,3 +1,5 @@
+---
+
 name: copilot-setup-steps
 
 # This workflow is responsible for setting up the environment for Copilot.

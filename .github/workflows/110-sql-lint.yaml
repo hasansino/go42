@@ -1,3 +1,5 @@
+---
+
 name: sql-lint
 
 # Linter for sql migrations.

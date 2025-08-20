@@ -1,3 +1,4 @@
+---
 name: unified-workflow
 
 # Unified workflow - linting, testing, and security scanning.
@@ -23,10 +24,12 @@ on:
   workflow_dispatch:
   # push or merge to master
   push:
-    branches: [ master ]
+    branches:
+      - master
   # pull request targeting master branch created or updated
   pull_request:
-    branches: [ master ]
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -44,8 +47,8 @@ jobs:
 
   git-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-git-lint.yaml
     with:
@@ -54,8 +57,8 @@ jobs:
 
   golangci-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-golangci-lint.yaml
     with:
@@ -64,8 +67,8 @@ jobs:
 
   docker-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-docker-lint.yaml
     with:
@@ -74,8 +77,8 @@ jobs:
 
   proto-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-proto-lint.yaml
     with:
@@ -84,8 +87,8 @@ jobs:
 
   openapi-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-openapi-lint.yaml
     with:
@@ -94,8 +97,8 @@ jobs:
 
   markdown-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-markdown-lint.yaml
     with:
@@ -104,8 +107,8 @@ jobs:
 
   writing-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-writing-lint.yaml
     with:
@@ -114,8 +117,8 @@ jobs:
 
   action-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-action-lint.yaml
     with:
@@ -124,8 +127,8 @@ jobs:
 
   sql-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-sql-lint.yaml
     with:
@@ -134,8 +137,8 @@ jobs:
 
   project-lint:
     if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') && 
-      ( github.event.head_commit.message != 'initial commit' 
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
       && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-project-lint.yaml
     with:
@@ -146,18 +149,17 @@ jobs:
 
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
-    needs: [
-      git-lint,
-      golangci-lint,
-      docker-lint,
-      proto-lint,
-      openapi-lint,
-      markdown-lint,
-      writing-lint,
-      action-lint,
-      sql-lint,
-      project-lint,
-    ]
+    needs:
+      - git-lint
+      - golangci-lint
+      - docker-lint
+      - proto-lint
+      - openapi-lint
+      - markdown-lint
+      - writing-lint
+      - action-lint
+      - sql-lint
+      - project-lint
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -166,7 +168,8 @@ jobs:
 
   security:
     uses: ./.github/workflows/130-security.yaml
-    needs: [ unit-tests ]
+    needs:
+      - unit-tests
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -177,12 +180,13 @@ jobs:
   # because it may contain characters that are not allowed in docker image tags
   docker-prepare-tag:
     runs-on: ubuntu-latest
-    needs: [ unit-tests ]
+    needs:
+      - unit-tests
     outputs:
       tag: ${{ steps.docker-prepare-tag.outputs.tag }}
     steps:
       - name: Prepare Docker image tag
-        id:  docker-prepare-tag
+        id: docker-prepare-tag
         run: |
           REF_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
           IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[\/ @]/-/g')
@@ -192,7 +196,8 @@ jobs:
 
   docker-build:
     uses: ./.github/workflows/140-docker-build.yaml
-    needs: [ docker-prepare-tag ]
+    needs:
+      - docker-prepare-tag
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -209,14 +214,18 @@ jobs:
   security-extra-group:
     name: "Security Scans"
     runs-on: ubuntu-latest
-    needs: [ docker-prepare-tag, docker-build ]
+    needs:
+      - docker-prepare-tag
+      - docker-build
     steps:
       - name: Create security scans group
         run: echo "Grouping job for security scans"
 
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
-    needs: [ docker-prepare-tag, security-extra-group ]
+    needs:
+      - docker-prepare-tag
+      - security-extra-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -229,14 +238,18 @@ jobs:
   functional-tests-group:
     name: "Integration & Load Tests"
     runs-on: ubuntu-latest
-    needs: [ docker-prepare-tag, docker-build ]
+    needs:
+      - docker-prepare-tag
+      - docker-build
     steps:
       - name: Create integration and load tests group
         run: echo "Grouping job for tests"
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
-    needs: [ docker-prepare-tag, functional-tests-group ]
+    needs:
+      - docker-prepare-tag
+      - functional-tests-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -245,7 +258,9 @@ jobs:
 
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
-    needs: [ docker-prepare-tag, functional-tests-group ]
+    needs:
+      - docker-prepare-tag
+      - functional-tests-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
@@ -257,7 +272,11 @@ jobs:
 
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
-    needs: [ docker-prepare-tag, security-extra, integration-tests, load-tests ]
+    needs:
+      - docker-prepare-tag
+      - security-extra
+      - integration-tests
+      - load-tests
     with:
       runs_on: ubuntu-latest
       service_name: "go42"

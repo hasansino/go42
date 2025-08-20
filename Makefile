@@ -20,13 +20,12 @@ help: Makefile
 setup: setup-git-hooks
 	@go mod tidy -e && go mod download
 	@brew install -q \
-  		golangci-lint hadolint markdownlint-cli2 \
-  		vale gitleaks sqlfluff buf redocly-cli \
+  		buf sqlfluff \
+  		golangci-lint hadolint markdownlint-cli2 vale gitleaks redocly-cli \
   		jq yq k6
 	@vale --config etc/vale.ini sync
 	@go install github.com/rhysd/actionlint/cmd/actionlint@latest
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
-	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
 	@go install github.com/go-delve/delve/cmd/dlv@latest
 	@go install go.uber.org/mock/mockgen@latest
 	@go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
@@ -35,9 +34,11 @@ setup: setup-git-hooks
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ## setup-formatters | install code formatters
+# Extra formatters provided by `setup step`: buf (proto), sqlfluff (sql)
 setup-formatters:
-	@go install github.com/segmentio/golines@latest
 	@go install github.com/daixiang0/gci@latest
+	@go install github.com/segmentio/golines@latest
+	@go install github.com/google/yamlfmt/cmd/yamlfmt@latest
 
 ## setup-mcp | setup mcp servers
 setup-mcp: setup
@@ -46,6 +47,7 @@ setup-mcp: setup
 
 ## setup-git-hooks | install git hooks
 setup-git-hooks:
+	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
 	@mkdir -p .git/hooks
 	@cp etc/git-hooks/commit-msg .git/hooks/commit-msg
 	@chmod +x .git/hooks/commit-msg

@@ -10,10 +10,10 @@ version: "2"
 formatters:
 
   enable:
-    - golines    # line length
-    - goimports  # import order
-    - gofmt      # formatting
-    - gci        # stricter import order
+    - golines # line length
+    - goimports # import order
+    - gofmt # formatting
+    - gci # stricter import order
 
   settings:
     golines:
@@ -22,11 +22,11 @@ formatters:
     gci:
       custom-order: true
       sections:
-        - standard                       # Captures all standard packages.
-        - default                        # Contains all imports that could not be matched to another section type.
-        - localmodule                    # Contains all local packages.
-        - blank                          # Contains all blank imports.
-        - dot                            # Contains all dot imports.
+        - standard # Captures all standard packages.
+        - default # Contains all imports that could not be matched to another section type.
+        - localmodule # Contains all local packages.
+        - blank # Contains all blank imports.
+        - dot # Contains all dot imports.
 
 linters:
   # Default set of linters.

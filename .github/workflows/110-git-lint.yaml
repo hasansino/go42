@@ -1,3 +1,5 @@
+---
+
 name: git-lint
 
 # Git linter.
@@ -45,21 +47,21 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           # The short name of the branch or tag that triggered the workflow.
           REF_NAME: ${{ github.ref_name }}
-        run: |
+        run: |-
           # Use HEAD_REF for pull requests, REF_NAME for other events
           # HEAD_REF is empty for non-PR events
           BRANCH_NAME="${HEAD_REF:-$REF_NAME}"
-          
+
           # Clean up the branch name (remove refs/heads/ if present)
           BRANCH_NAME="${BRANCH_NAME#refs/heads/}"
-          
+
           echo "Validating branch name: $BRANCH_NAME"
-          
+
           PATTERN="^[A-Za-z0-9\/_.\-]+$"
           if ! echo "$BRANCH_NAME" | grep -qE "$PATTERN"; then
             echo "Branch names should follow regex ^[A-Za-z0-9\/_.\-]+$"
             echo "Current branch name '$BRANCH_NAME' does not match the pattern"
             exit 1
           fi
-          
+
           echo "Branch name '$BRANCH_NAME' is valid"

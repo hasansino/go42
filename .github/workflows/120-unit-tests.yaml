@@ -1,3 +1,5 @@
+---
+
 name: unit-tests
 
 # Unit tests.
@@ -46,4 +48,4 @@ jobs:
       - name: 'Run unit tests with race detector'
         run: go list ./... | grep -v '/tests/' | xargs go test -count=1 -v -race
         env:
-          CGO_ENABLED: 1  # needed for -race
+          CGO_ENABLED: 1 # needed for -race

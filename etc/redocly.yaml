@@ -1,6 +1,8 @@
+---
+
 extends:
   - recommended
 rules:
-  info-license: off            # warn
-  no-server-example.com: off   # warn
-  operation-4xx-response: off  # warn
+  info-license: off # warn
+  no-server-example.com: off # warn
+  operation-4xx-response: off # warn

@@ -1,3 +1,5 @@
+---
+
 name: golangci-lint
 
 # Golang linter.

@@ -1,17 +1,20 @@
+---
+
 name: release-pr-merge
 
 # After auto-release pull request is merged, create release and delete branch.
 
 on:
   pull_request:
-    types: [closed]
+    types:
+      - closed
 
 permissions: {}
 
 jobs:
   release-pr-merge:
     if: |
-      github.event.pull_request.merged == true && 
+      github.event.pull_request.merged == true &&
       startsWith(github.event.pull_request.title, 'Release') &&
       contains(github.event.pull_request.user.login, format('{0}[bot]', vars.RELEASE_APP_NAME || 'github-actions'))
     name: release-pr-merge
@@ -54,15 +57,15 @@ jobs:
           # Extract the summary part from PR body (everything after the --- separator)
           # The PR body format includes metadata at the top, then ---, then the actual summary
           SUMMARY=$(echo "$PR_BODY" | awk '/^---$/{p=1; next} p' | sed '/^$/d')
-          
+
           if [ -z "$SUMMARY" ]; then
             echo "No summary found in PR body, using default"
             SUMMARY="Release ${{ steps.extract_semver.outputs.version }}"
           fi
-          
+
           # Save summary to file to handle multiline content properly
           echo "$SUMMARY" > release_summary.md
-          
+
           echo "Summary extracted successfully"
       # ----
       - name: 'Create GitHub release'
@@ -81,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
           REPOSITORY: ${{ github.repository }}
-        run: |
+        run: |-
           # Check if branch exists before trying to delete
           if gh api "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}" >/dev/null 2>&1; then
             echo "Branch ${BRANCH_NAME} exists, deleting..."

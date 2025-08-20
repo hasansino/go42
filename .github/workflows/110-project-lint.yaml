@@ -1,3 +1,5 @@
+---
+
 name: project-lint
 
 # Linter specific to current project.
@@ -74,7 +76,7 @@ jobs:
           make setup
           make generate
       - name: 'Check for uncommitted changes'
-        run: |
+        run: |-
           if [[ -n $(git status --porcelain) ]]; then
             echo "❌ Uncommitted changes detected after running 'make generate'"
             echo "The following files have changes:"

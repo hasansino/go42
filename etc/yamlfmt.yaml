@@ -1,0 +1,12 @@
+---
+
+formatter:
+  type: basic
+  indent: 2
+  include_document_start: true
+  max_line_length: 120
+  trim_trailing_whitespace: true
+  force_array_style: block
+  retain_line_breaks: true
+  retain_line_breaks_single: true
+  eof_newline: true
