@@ -21,7 +21,7 @@ require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/getsentry/sentry-go v0.35.1
-	github.com/getsentry/sentry-go/slog v0.35.0
+	github.com/getsentry/sentry-go/slog v0.35.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.1.0
