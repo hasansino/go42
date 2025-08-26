@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.7-20250717185734-6c6e0d3c608e.1
 	buf.build/go/protovalidate v0.14.0
-	github.com/IBM/sarama v1.45.2
+	github.com/IBM/sarama v1.46.0
 	github.com/KimMachineGun/automemlimit v0.7.4
 	github.com/ThreeDotsLabs/watermill v1.4.7
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1
@@ -49,7 +49,7 @@ require (
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/samber/slog-multi v1.4.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/wagslane/go-password-validator v0.3.0
 	go.etcd.io/etcd/client/v3 v3.6.4
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.62.0
@@ -193,7 +193,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/samber/lo v1.51.0 // indirect
@@ -219,7 +219,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/arch v0.4.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
