@@ -17,8 +17,8 @@ github.com/KimMachineGun/automemlimit v0.7.4/go.mod h1:QZxpHaGOQoYvFhv/r4u3U0JTC
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
 github.com/RoaringBitmap/roaring/v2 v2.4.5 h1:uGrrMreGjvAtTBobc0g5IrW1D5ldxDQYe2JW2gggRdg=
 github.com/RoaringBitmap/roaring/v2 v2.4.5/go.mod h1:FiJcsfkGje/nZBZgCu0ZxCPOKD/hVXDS2dXi7/eUFE0=
-github.com/ThreeDotsLabs/watermill v1.4.7 h1:LiF4wMP400/psRTdHL/IcV1YIv9htHYFggbe2d6cLeI=
-github.com/ThreeDotsLabs/watermill v1.4.7/go.mod h1:Ks20MyglVnqjpha1qq0kjaQ+J9ay7bdnjszQ4cW9FMU=
+github.com/ThreeDotsLabs/watermill v1.5.0 h1:lWk8WSBaoQD/GFJRw10jqJvPyOedZUiXyUG7BOXImhM=
+github.com/ThreeDotsLabs/watermill v1.5.0/go.mod h1:qykQ1+u+K9ElNTBKyCWyTANnpFAeP7t3F3bZFw+n1rs=
 github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1 h1:fhjFFXGmxnLUfLw1GwzbEiGoAeFlHUGayNRoYG0mGtQ=
 github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.1/go.mod h1:+8tCh6VCuBcQWhfETCwzRINKQ1uyeg9moH3h7jMKxQk=
 github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6 h1:xK+VLDjYvBrRZDaFZ7WSqiNmZ9lcDG5RIilFVDZOVyQ=
