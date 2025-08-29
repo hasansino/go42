@@ -3,7 +3,7 @@ module github.com/hasansino/go42
 go 1.24.6
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.7-20250717185734-6c6e0d3c608e.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.8-20250717185734-6c6e0d3c608e.1
 	buf.build/go/protovalidate v0.14.0
 	github.com/IBM/sarama v1.46.0
 	github.com/KimMachineGun/automemlimit v0.7.4
