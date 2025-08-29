@@ -46,7 +46,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.24.0
 	github.com/onsi/gomega v1.38.0
 	github.com/orandin/slog-gorm v1.4.0
-	github.com/pressly/goose/v3 v3.24.3
+	github.com/pressly/goose/v3 v3.25.0
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/samber/slog-multi v1.4.1
 	github.com/stretchr/testify v1.11.0
@@ -84,11 +84,11 @@ replace golang.org/x/tools v0.22.0 => golang.org/x/tools v0.35.0
 require (
 	cel.dev/expr v0.24.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/ClickHouse/ch-go v0.65.1 // indirect
-	github.com/ClickHouse/clickhouse-go/v2 v2.34.0 // indirect
+	github.com/ClickHouse/ch-go v0.67.0 // indirect
+	github.com/ClickHouse/clickhouse-go/v2 v2.40.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
-	github.com/andybalholm/brotli v1.1.1 // indirect
+	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
