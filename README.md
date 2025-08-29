@@ -127,6 +127,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - goland / vscode configuration + goenv-scp
 - try https://github.com/docker/bake-action
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
+- wg.Go()
 - try asyncapi (again)
 - release notifications to slack (https://github.com/8398a7/action-slack)
 - k8 hpa/vpa configurations
@@ -143,6 +144,10 @@ Go42 is opinionated approach to develop cloud native golang services.
 - release annotations to grafana dashboards
 - c4 (not that one)
 - renovatebot
+- https://d2lang.com/
+- https://github.com/uber-go/nilaway
+- action timeouts
+- https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518
 
 ### Explore
 
@@ -159,6 +164,12 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://openfeature.dev/
 - https://cloudnative-pg.io/
 - https://github.com/riverqueue/river
+- https://github.com/akuity/kargo
+- https://www.crossplane.io/
+- https://github.com/nektos/act
+- https://github.com/documentdb/documentdb
+- https://github.com/cloudnative-pg/cloudnative-pg
+- https://github.com/coroot/coroot
 
 ### Security
 

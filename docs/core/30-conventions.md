@@ -55,6 +55,10 @@ This document is a repository of conventions and rules used by this project.
 * `fmt.Errorf` vs `errors.Wrap` (collides vs std errors)
 * use power of 2 for buffer sizing, implemented using bitwise shift operator
 * using golines
+* never use anonymous interfaces
+* never use casting to anonymous interfaces
+* never define types inside functions
+* never use anonymous structs
 
 ## Miscellaneous
 

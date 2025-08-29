@@ -49,37 +49,17 @@ runs:
       run: make setup-mcp
       shell: bash
     # -----
-    - name: 'Prepare ai environment variables'
-      shell: bash
-      env:
-        HEAD_REF: ${{ github.head_ref }}
-        REF_NAME: ${{ github.ref_name }}
-        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        SHA: ${{ github.sha }}
-        SERVER_URL: ${{ github.server_url }}
-        REPOSITORY: ${{ github.repository }}
-        RUN_ID: ${{ github.run_id }}
-        EVENT_NAME: ${{ github.event_name }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        ISSUE_NUMBER: ${{ github.event.issue.number }}
-        PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
-      run: |
-        {
-          echo "CI=true"
-          echo "BRANCH=${HEAD_REF:-$REF_NAME}"
-          echo "COMMIT_SHA=${PR_HEAD_SHA:-$SHA}"
-          echo "BUILD_URL=${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
-
-          # PR-specific variables
-          if [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "pull_request_review" ] || [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
-            echo "PR_NUMBER=${PR_NUMBER:-$ISSUE_NUMBER}"
-            echo "TARGET_BRANCH=${PR_BASE_REF:-master}"
-          else
-            echo "PR_NUMBER="
-            echo "TARGET_BRANCH=main"
-          fi
-        } >> "$GITHUB_ENV"
-    # -----
     - name: 'Generate ai agent environment'
+      env:
+        CI: true
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+        GITHUB_HEAD_REF: ${{ github.head_ref }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_SERVER_URL: ${{ github.server_url }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
       run: make generate-ai
       shell: bash

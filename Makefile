@@ -21,7 +21,10 @@ setup: setup-git-hooks setup-formatters setup-generators
 	@go mod tidy -e && go mod download
 	@brew install -q \
   		buf sqlfluff \
-  		golangci-lint hadolint markdownlint-cli2 vale gitleaks redocly-cli actionlint gosec dlv \
+  		golangci-lint hadolint actionlint \
+  		markdownlint-cli2 vale \
+  		gitleaks gosec \
+  		dlv \
   		jq yq k6
 	@vale --config etc/vale.ini sync
 
@@ -31,6 +34,7 @@ setup-formatters:
 	@go install github.com/daixiang0/gci@latest
 	@go install github.com/segmentio/golines@latest
 	@go install github.com/google/yamlfmt/cmd/yamlfmt@latest
+	@go install github.com/caarlos0/jsonfmt@latest
 
 ## setup-generators | install code generators
 setup-generators:
@@ -75,7 +79,7 @@ test-load:
 ## run | run application
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
 # `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
-run:
+run: check-env
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
@@ -87,7 +91,7 @@ run:
 # `-N -l` disables compiler optimizations and inlining, which makes debugging easier.
 # Using golang image version from go.mod file.
 # `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
-run-docker:
+run-docker: check-env
 	@export $(shell grep -v '^#' .env.example | xargs) && \
     export $(shell grep -v '^#' .env | xargs) && \
 	docker run --rm -it --init \
@@ -107,7 +111,7 @@ run-docker:
 	go run -gcflags="all=-N -l" -race ./cmd/app/main.go || [ $$? -eq 1 ]
 
 ## debug | run application with delve debugger
-debug:
+debug: check-env
 	@export $(shell grep -v '^#' .env.example | xargs) && \
 	export $(shell grep -v '^#' .env | xargs) && \
 	export DATABASE_MIGRATE_PATH=$(shell pwd)/migrate && \
@@ -147,7 +151,7 @@ lint:
 	@actionlint -oneline --config-file etc/actionlint.yaml
 
 ## generate | generate code for all modules
-# @note all side effects of this command should to be commited
+# Side effects of this command should to be commited.
 generate:
 	@go mod tidy -e
 	@rm -rf api/gen
@@ -157,11 +161,6 @@ generate:
 	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly join api/openapi/v1/*.yaml -o api/openapi/v1/.combined.yaml
 	@yq eval '.info.title = "v1 combined specification"' -i api/openapi/v1/.combined.yaml
 
-## generate-ai | generate ai-related code and configurations
-generate-ai:
-	@go run cmd/genai/main.go
-	@go run cmd/genkwb/main.go -build
-
 ## docs | serve documentation
 serve-docs:
 	@npm --prefix docs/pages install
@@ -170,6 +169,13 @@ serve-docs:
 # ╭────────────────────----------------──────────╮
 # │                Miscellaneous                 │
 # ╰─────────────────────----------------─────────╯
+
+## check-env | check if .env file exists
+check-env:
+	@if [ ! -f .env ]; then \
+		echo "Error: .env file is missing. Please create it from .env.example"; \
+		exit 1; \
+	fi
 
 ## generate-migration-id | generate migration file prefix
 generate-migration-id:

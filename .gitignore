@@ -5,19 +5,6 @@
 .idea/
 .vscode/
 
-# ai
-ai/index/
-.crush/
-.claude/
-.gemini/
-.mcp.json
-.crush.json
-.github/copilot-instructions.md
-CLAUDE.md
-AGENTS.md
-CRUSH.md
-GEMINI.md
-
 # project
 build/
 .env
