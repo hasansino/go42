@@ -170,6 +170,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/documentdb/documentdb
 - https://github.com/cloudnative-pg/cloudnative-pg
 - https://github.com/coroot/coroot
+- https://connectrpc.com/
 
 ### Security
 

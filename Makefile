@@ -22,7 +22,7 @@ setup: setup-git-hooks setup-formatters setup-generators
 	@brew install -q \
   		buf sqlfluff \
   		golangci-lint hadolint actionlint \
-  		markdownlint-cli2 vale \
+		redocly-cli markdownlint-cli2 vale \
   		gitleaks gosec \
   		dlv \
   		jq yq k6
@@ -164,6 +164,7 @@ generate:
 ## docs | serve documentation
 serve-docs:
 	@npm --prefix docs/pages install
+	@npm --prefix docs/pages run build
 	@npm --prefix docs/pages run serve
 
 # ╭────────────────────----------------──────────╮
