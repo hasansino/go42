@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@v4
       # -----
       - name: 'Setup Go'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
       - name: 'Generate Go module list'
@@ -193,7 +193,7 @@ jobs:
         with:
           ref: master
       - name: 'Setup Go'
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
       - name: 'Install capslock'
