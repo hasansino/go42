@@ -27,6 +27,7 @@ setup: setup-git-hooks setup-formatters setup-generators
   		dlv \
   		jq yq k6
 	@vale --config etc/vale.ini sync
+	@go install github.com/hasansino/go42x@latest
 
 ## setup-formatters | install code formatters
 # Extra formatters provided by `setup step`: buf (proto), sqlfluff (sql)

@@ -1,0 +1,362 @@
+---
+
+version: 1.0
+
+project:
+  name: go42x
+  language: go
+  description: 'Helper tool for go42 project.'
+  tags:
+    - go42
+    - golang
+    - cli
+  metadata:
+    repository: github.com/hasansino/go42
+
+env:
+  - PATH
+
+providers:
+  # -------------------------
+  #          Claude
+  # -------------------------
+  claude:
+    template: claude.tpl.md
+    output: CLAUDE.md
+    chunks:
+      - chunks/10-personality.tpl.md
+      - chunks/20-operation.tpl.md
+      - chunks/30-conventions.tpl.md
+      - chunks/40-development.tpl.md
+      - chunks/50-security.tpl.md
+      - chunks/60-responding.tpl.md
+      - chunks/70-tooling.tpl.md
+    modes:
+      - modes/10-default.tpl.md
+      - modes/20-noop.tpl.md
+      - modes/30-sbs.tpl.md
+      - modes/40-cicd.tpl.md
+      - modes/50-voice.tpl.md
+    workflows:
+      - workflows/10-brainstorm.tpl.md
+      - workflows/20-planning.tpl.md
+      - workflows/30-implementation.tpl.md
+      - workflows/40-debugging.tpl.md
+      - workflows/50-investigation.tpl.md
+      - workflows/60-code-review.tpl.md
+    agents:
+      - claude/agents/george.tpl.md
+      - claude/agents/manager.tpl.md
+    hooks:
+      - voice
+    tools:
+      - Edit
+      - Glob
+      - Grep
+      - LS
+      - MultiEdit
+      - Read
+      - Task
+      - TodoWrite
+      - WebFetch
+      - WebSearch
+      - Write
+      - Bash
+
+  # -------------------------
+  #          Gemini
+  # -------------------------
+  gemini:
+    template: gemini.tpl.md
+    output: GEMINI.md
+    chunks:
+      - chunks/10-personality.tpl.md
+      - chunks/20-operation.tpl.md
+      - chunks/30-conventions.tpl.md
+      - chunks/40-development.tpl.md
+      - chunks/50-security.tpl.md
+      - chunks/60-responding.tpl.md
+      - chunks/70-tooling.tpl.md
+    modes:
+      - modes/10-default.tpl.md
+      - modes/20-noop.tpl.md
+      - modes/30-sbs.tpl.md
+      - modes/40-cicd.tpl.md
+      - modes/50-voice.tpl.md
+    workflows:
+      - workflows/10-brainstorm.tpl.md
+      - workflows/20-planning.tpl.md
+      - workflows/30-implementation.tpl.md
+      - workflows/40-debugging.tpl.md
+      - workflows/50-investigation.tpl.md
+      - workflows/60-code-review.tpl.md
+    tools:
+      - LSTool
+      - ReadFileTool
+      - WriteFileTool
+      - GrepTool
+      - GlobTool
+      - EditTool
+      - ReadManyFilesTool
+      - ShellTool
+      - WebFetchTool
+      - WebSearchTool
+      - MemoryTool
+
+  # -------------------------
+  #           Crush
+  # -------------------------
+  crush:
+    template: crush.tpl.md
+    output: CRUSH.md
+    chunks:
+      - chunks/10-personality.tpl.md
+      - chunks/20-operation.tpl.md
+      - chunks/30-conventions.tpl.md
+      - chunks/40-development.tpl.md
+      - chunks/50-security.tpl.md
+      - chunks/60-responding.tpl.md
+      - chunks/70-tooling.tpl.md
+    modes:
+      - modes/10-default.tpl.md
+      - modes/20-noop.tpl.md
+      - modes/30-sbs.tpl.md
+      - modes/40-cicd.tpl.md
+      - modes/50-voice.tpl.md
+    workflows:
+      - workflows/10-brainstorm.tpl.md
+      - workflows/20-planning.tpl.md
+      - workflows/30-implementation.tpl.md
+      - workflows/40-debugging.tpl.md
+      - workflows/50-investigation.tpl.md
+      - workflows/60-code-review.tpl.md
+    tools:
+      - view
+      - ls
+      - grep
+      - edit
+
+  # -------------------------
+  #      Github Copilot
+  # -------------------------
+  copilot:
+    template: copilot.tpl.md
+    output: .github/copilot-instructions.md
+    chunks:
+      - chunks/10-personality.tpl.md
+      - chunks/20-operation.tpl.md
+      - chunks/30-conventions.tpl.md
+      - chunks/40-development.tpl.md
+      - chunks/50-security.tpl.md
+      - chunks/60-responding.tpl.md
+      - chunks/70-tooling.tpl.md
+    modes:
+      - modes/10-default.tpl.md
+      - modes/20-noop.tpl.md
+      - modes/30-sbs.tpl.md
+      - modes/40-cicd.tpl.md
+      - modes/50-voice.tpl.md
+    workflows:
+      - workflows/10-brainstorm.tpl.md
+      - workflows/20-planning.tpl.md
+      - workflows/30-implementation.tpl.md
+      - workflows/40-debugging.tpl.md
+      - workflows/50-investigation.tpl.md
+      - workflows/60-code-review.tpl.md
+
+mcp:
+  gopls:
+    enabled: true
+    type: stdio
+    name: gopls
+    command: gopls
+    args:
+      - mcp
+    tools:
+      - mcp__gopls__go_workspace
+      - mcp__gopls__go_search
+      - mcp__gopls__go_file_context
+      - mcp__gopls__go_package_api
+      - mcp__gopls__go_symbol_references
+      - mcp__gopls__go_diagnostics
+
+  go42x-kwb:
+    enabled: true
+    type: stdio
+    name: go42-kwb
+    command: go42x
+    args:
+      - kwb
+      - serve
+    tools:
+      - mcp__go42_kwb__search
+      - mcp__go42_kwb__get_file
+      - mcp__go42_kwb__list_files
+
+  github:
+    enabled: true
+    type: stdio
+    name: github
+    command: docker
+    args:
+      - run
+      - -i
+      - --rm
+      - -e
+      - GITHUB_PERSONAL_ACCESS_TOKEN
+      - -e
+      - GITHUB_TOOLSETS=all
+      - ghcr.io/github/github-mcp-server
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "$GH_MCP_KEY"
+    tools:
+      - mcp__gopls__go_workspace
+      - mcp__gopls__go_search
+      - mcp__gopls__go_file_context
+      - mcp__gopls__go_package_api
+      - mcp__gopls__go_symbol_references
+      - mcp__gopls__go_diagnostics
+      - mcp__github__create_issue
+      - mcp__github__update_issue
+      - mcp__github__get_issue
+      - mcp__github__get_issue_comments
+      - mcp__github__add_issue_comment
+      - mcp__github__list_issues
+      - mcp__github__search_issues
+      - mcp__github__list_issue_types
+      - mcp__github__add_sub_issue
+      - mcp__github__remove_sub_issue
+      - mcp__github__reprioritize_sub_issue
+      - mcp__github__list_sub_issues
+      - mcp__github__assign_copilot_to_issue
+      - mcp__github__create_pull_request
+      - mcp__github__update_pull_request
+      - mcp__github__update_pull_request_branch
+      - mcp__github__get_pull_request
+      - mcp__github__get_pull_request_comments
+      - mcp__github__get_pull_request_diff
+      - mcp__github__get_pull_request_files
+      - mcp__github__get_pull_request_reviews
+      - mcp__github__get_pull_request_status
+      - mcp__github__list_pull_requests
+      - mcp__github__search_pull_requests
+      - mcp__github__merge_pull_request
+      - mcp__github__create_pending_pull_request_review
+      - mcp__github__add_comment_to_pending_review
+      - mcp__github__submit_pending_pull_request_review
+      - mcp__github__delete_pending_pull_request_review
+      - mcp__github__create_and_submit_pull_request_review
+      - mcp__github__request_copilot_review
+      - mcp__github__create_repository
+      - mcp__github__fork_repository
+      - mcp__github__search_repositories
+      - mcp__github__create_branch
+      - mcp__github__list_branches
+      - mcp__github__get_commit
+      - mcp__github__list_commits
+      - mcp__github__list_workflows
+      - mcp__github__run_workflow
+      - mcp__github__get_workflow_run
+      - mcp__github__list_workflow_runs
+      - mcp__github__list_workflow_jobs
+      - mcp__github__rerun_workflow_run
+      - mcp__github__rerun_failed_jobs
+      - mcp__github__cancel_workflow_run
+      - mcp__github__get_workflow_run_logs
+      - mcp__github__delete_workflow_run_logs
+      - mcp__github__get_workflow_run_usage
+      - mcp__github__list_workflow_run_artifacts
+      - mcp__github__download_workflow_run_artifact
+      - mcp__github__get_job_logs
+      - mcp__github__list_code_scanning_alerts
+      - mcp__github__get_code_scanning_alert
+      - mcp__github__list_dependabot_alerts
+      - mcp__github__get_dependabot_alert
+      - mcp__github__list_secret_scanning_alerts
+      - mcp__github__get_secret_scanning_alert
+      - mcp__github__list_notifications
+      - mcp__github__get_notification_details
+      - mcp__github__dismiss_notification
+      - mcp__github__manage_notification_subscription
+      - mcp__github__manage_repository_notification_subscription
+      - mcp__github__mark_all_notifications_read
+      - mcp__github__search_code
+      - mcp__github__search_users
+      - mcp__github__search_orgs
+      - mcp__github__get_discussion
+      - mcp__github__get_discussion_comments
+      - mcp__github__list_discussions
+      - mcp__github__list_discussion_categories
+      - mcp__github__get_tag
+      - mcp__github__list_tags
+      - mcp__github__list_releases
+      - mcp__github__get_latest_release
+      - mcp__github__get_me
+      - mcp__github__get_teams
+      - mcp__github__get_team_members
+
+  gitlab:
+    enabled: true
+    type: stdio
+    name: gitlab
+    command: docker
+    args:
+      - run
+      - -i
+      - --rm
+      - -e
+      - GITLAB_PERSONAL_ACCESS_TOKEN
+      - -e
+      - GITLAB_API_URL
+      - -e
+      - GITLAB_READ_ONLY_MODE
+      - -e
+      - USE_GITLAB_WIKI
+      - -e
+      - USE_MILESTONE
+      - -e
+      - USE_PIPELINE
+      - iwakitakuma/gitlab-mcp
+    env:
+      GITLAB_PERSONAL_ACCESS_TOKEN: "$GITLAB_PERSONAL_ACCESS_TOKEN"
+      GITLAB_API_URL: https://gitlab.com/api/v4
+      USE_PIPELINE: true
+
+  jira:
+    enabled: true
+    type: sse
+    name: jira
+    url: https://mcp.atlassian.com/v1/sse
+    tools:
+      - mcp__jira__create_issue
+      - mcp__jira__update_issue
+      - mcp__jira__get_issue
+      - mcp__jira__get_issue_comments
+      - mcp__jira__add_issue_comment
+      - mcp__jira__list_issues
+      - mcp__jira__search_issues
+      - mcp__jira__list_issue_types
+      - mcp__jira__add_sub_issue
+      - mcp__jira__remove_sub_issue
+      - mcp__jira__reprioritize_sub_issue
+      - mcp__jira__list_sub_issues
+      - mcp__jira__assign_copilot_to_issue
+
+  eleven-labs:
+    enabled: true
+    type: stdio
+    name: eleven-labs
+    command: uvx
+    args:
+      - elevenlabs-mcp
+    env:
+      ELEVEN_LABS_API_KEY: "$ELEVEN_LABS_API_KEY"
+    tools:
+      - mcp__eleven_labs__text_to_speech
+      - mcp__eleven_labs__speech_to_text
+      - mcp__eleven_labs__text_to_sound_effects
+      - mcp__eleven_labs__search_voices
+      - mcp__eleven_labs__list_models
+      - mcp__eleven_labs__get_voice
+      - mcp__eleven_labs__text_to_voice
+      - mcp__eleven_labs__play_audio

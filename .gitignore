@@ -10,7 +10,7 @@ build/
 .env
 
 # agentenv
-.agentenv/
+.agentenv/kwb/
 .claude/
 .mcp.json
 CLAUDE.md
