@@ -65,14 +65,17 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    env:
-      GO111MODULE: on
     # -----
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
+      - name: 'Extract Go version'
+        run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Gosec security scanner'
         uses: securego/gosec@master
+        env:
+          GO111MODULE: on # will download go modules
+          GOSECGOVERSION: ${{ env.go_version }}
         with:
           args: -exclude-generated ./...
 
@@ -114,8 +117,6 @@ jobs:
         run: go list -json -m all > go.list
       - name: 'Run Nancy vulnerability scanner'
         uses: sonatype-nexus-community/nancy-github-action@main
-        with:
-          nancyVersion: v1.0.51
 
   codeql:
     name: codeql
