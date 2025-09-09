@@ -31,6 +31,8 @@ providers:
       - chunks/50-security.tpl.md
       - chunks/60-responding.tpl.md
       - chunks/70-tooling.tpl.md
+      - chunks/80-search.tpl.md
+      - chunks/90-search-go.tpl.md
     modes:
       - modes/10-default.tpl.md
       - modes/20-noop.tpl.md
@@ -77,6 +79,8 @@ providers:
       - chunks/50-security.tpl.md
       - chunks/60-responding.tpl.md
       - chunks/70-tooling.tpl.md
+      - chunks/80-search.tpl.md
+      - chunks/90-search-go.tpl.md
     modes:
       - modes/10-default.tpl.md
       - modes/20-noop.tpl.md
@@ -117,6 +121,8 @@ providers:
       - chunks/50-security.tpl.md
       - chunks/60-responding.tpl.md
       - chunks/70-tooling.tpl.md
+      - chunks/80-search.tpl.md
+      - chunks/90-search-go.tpl.md
     modes:
       - modes/10-default.tpl.md
       - modes/20-noop.tpl.md
@@ -150,6 +156,8 @@ providers:
       - chunks/50-security.tpl.md
       - chunks/60-responding.tpl.md
       - chunks/70-tooling.tpl.md
+      - chunks/80-search.tpl.md
+      - chunks/90-search-go.tpl.md
     modes:
       - modes/10-default.tpl.md
       - modes/20-noop.tpl.md
@@ -296,7 +304,7 @@ mcp:
       - mcp__github__get_team_members
 
   gitlab:
-    enabled: true
+    enabled: false
     type: stdio
     name: gitlab
     command: docker

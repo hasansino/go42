@@ -1,6 +1,7 @@
 ---
 
 name: ai-prepare-env
+description: 'Prepares the environment for ai agents'
 
 # Prepares the environment for ai agents.
 

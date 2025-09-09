@@ -1,7 +1,6 @@
-    ### Operation
+### Operation
 
 - Ignore anything between `[IGNORE]` and `[/IGNORE]` tags - it used for internal notes
-- When possible always prefer executing actions (tools) in parallel.
 
 #### Execution Strategy
 

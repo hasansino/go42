@@ -1,6 +1,7 @@
 ---
 
 name: ai-generate-summary
+description: 'Composite action to generate summary between two git references'
 
 # Composite action to generate summary between two git references.
 # @see https://docs.github.com/en/github-models
