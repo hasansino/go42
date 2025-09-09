@@ -67,7 +67,7 @@ require (
 	google.golang.org/protobuf v1.36.8
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.1
+	gorm.io/gorm v1.30.5
 	gorm.io/plugin/opentelemetry v0.1.16
 	modernc.org/sqlite v1.38.2
 )
