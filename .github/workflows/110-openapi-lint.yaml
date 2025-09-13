@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
-      - name: 'Run Redocly OpenAPI linter'
+      - name: 'Run redocly OpenAPI linter'
         run: |-
           docker run --rm \
             -v "${{ github.workspace }}:/workdir" \
