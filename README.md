@@ -128,7 +128,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - goland / vscode configuration + goenv-scp
 - try https://github.com/docker/bake-action
 - https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
-- wg.Go()
+- `wg.Go()`
 - try asyncapi (again)
 - release notifications to slack (https://github.com/8398a7/action-slack)
 - k8 hpa/vpa configurations
