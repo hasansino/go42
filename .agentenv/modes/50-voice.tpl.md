@@ -52,5 +52,5 @@ Use `eleven-labs` mcp server to generate voice responses.
 - Instead of: "Modified /src/components/Header.tsx line 42"
 - Say: "Updated the header component"
 
-- Instead of: "Error: TypeError at line 15"  
+- Instead of: "Error: TypeError at line 15"
 - Say: "Found a type error in the validation function"

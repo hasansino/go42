@@ -207,9 +207,9 @@ jobs:
             version_name=$(echo "$version" | jq -r '.name')
             version_tags=$(echo "$version" | jq -r '
               if has("metadata") and (.metadata | type) == "object" and
-                 (.metadata | has("container")) and (.metadata.container | has("tags")) and
-                 (.metadata.container.tags | type) == "array" then
-                .metadata.container.tags | join(", ")
+                  (.metadata | has("container")) and (.metadata.container | has("tags")) and
+                  (.metadata.container.tags | type) == "array" then
+                  .metadata.container.tags | join(", ")
               else
                 ""
               end')

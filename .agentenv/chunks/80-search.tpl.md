@@ -114,20 +114,20 @@ What do you need to find?
 #### Search Tool Priority Order
 
 1. **Specialized MCP tools** (if available and applicable)
-   - Language servers for semantic understanding
-   - Knowledge base for indexed searches
-   - Domain-specific tools
+    - Language servers for semantic understanding
+    - Knowledge base for indexed searches
+    - Domain-specific tools
 
 2. **Native search tools** (always available)
-   - Grep for content search
-   - Glob for file patterns
-   - Read for direct access
-   - Task for complex searches
+    - Grep for content search
+    - Glob for file patterns
+    - Read for direct access
+    - Task for complex searches
 
 3. **Combination strategies**
-   - Use specialized tools for precision
-   - Use native tools for breadth
-   - Combine both for comprehensive analysis
+    - Use specialized tools for precision
+    - Use native tools for breadth
+    - Combine both for comprehensive analysis
 
 **Key principles:**
 - Start specific (specialized tools) then go broad (native tools)

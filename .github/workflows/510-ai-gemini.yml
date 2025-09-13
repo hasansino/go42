@@ -102,9 +102,9 @@ jobs:
               --arg max_turns "${GEMINI_MAX_TURNS}" \
               --arg timeout "${GEMINI_TIMEOUT}" \
               '.mcpServers.kwb.cwd = $cwd |
-               .mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index] |
-               .maxSessionTurns = ($max_turns | tonumber) |
-               .maxSessionDuration = ($timeout | tonumber)' \
+              .mcpServers.kwb.args = ["run", "cmd/genkwb/main.go", "-serve", "-index", $index] |
+              .maxSessionTurns = ($max_turns | tonumber) |
+              .maxSessionDuration = ($timeout | tonumber)' \
               .gemini/settings.json)
           else
             echo "Error: .gemini/settings.json not found" >&2

@@ -59,6 +59,7 @@ This file outlines conventions for the go42 project.
 * never use casting to anonymous interfaces
 * never define types inside functions
 * never use anonymous structs
+* accessors.go
 
 ## Miscellaneous
 

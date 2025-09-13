@@ -146,6 +146,16 @@ jobs:
       runs_on: ubuntu-latest
       continue_on_error: true
 
+  editorconfig-lint:
+    if: |
+      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
+      ( github.event.head_commit.message != 'initial commit'
+      && !startsWith(github.event.head_commit.message, 'auto-release-'))
+    uses: ./.github/workflows/110-editorconfig-lint.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+
   # stage 2: unit tests
 
   unit-tests:
@@ -161,6 +171,7 @@ jobs:
       - action-lint
       - sql-lint
       - project-lint
+      - editorconfig-lint
     with:
       runs_on: ubuntu-latest
       continue_on_error: true

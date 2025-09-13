@@ -17,25 +17,26 @@ help: Makefile
 	@sed -n 's/^##//p' $< | awk 'BEGIN {FS = "|"}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ## setup | install dependencies
-setup: setup-git-hooks setup-formatters setup-generators
+setup: setup-git-hooks setup-linters setup-generators
 	@go mod tidy -e && go mod download
 	@brew install -q \
-  		buf sqlfluff \
-  		golangci-lint hadolint actionlint \
+		buf sqlfluff \
+		golangci-lint hadolint actionlint \
 		redocly-cli markdownlint-cli2 vale \
-  		gitleaks gosec \
-  		dlv \
-  		jq yq k6
+		gitleaks gosec \
+		dlv \
+		jq yq k6
 	@vale --config etc/vale.ini sync
 	@go install github.com/hasansino/go42x@latest
 
-## setup-formatters | install code formatters
-# Extra formatters provided by `setup step`: buf (proto), sqlfluff (sql)
-setup-formatters:
+## setup-linters | install code linters
+# Extra linters provided by `setup step`: buf (proto), sqlfluff (sql)
+setup-linters:
 	@go install github.com/daixiang0/gci@latest
 	@go install github.com/segmentio/golines@latest
 	@go install github.com/google/yamlfmt/cmd/yamlfmt@latest
 	@go install github.com/caarlos0/jsonfmt@latest
+	@go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
 
 ## setup-generators | install code generators
 setup-generators:
@@ -94,7 +95,7 @@ run: check-env
 # `[ $$? -eq 1 ]` treats exit code 1 as success. Exit after signal will always be != 0.
 run-docker: check-env
 	@export $(shell grep -v '^#' .env.example | xargs) && \
-    export $(shell grep -v '^#' .env | xargs) && \
+	export $(shell grep -v '^#' .env | xargs) && \
 	docker run --rm -it --init \
 	--env-file .env.example \
 	--env-file .env \
@@ -102,8 +103,8 @@ run-docker: check-env
 	--env SERVER_HTTP_STATIC_ROOT=/app/static \
 	--env SERVER_HTTP_SWAGGER_ROOT=/app/api/openapi \
 	-p "$${PPROF_LISTEN#:}:$${PPROF_LISTEN#:}" \
-    -p "$${SERVER_HTTP_LISTEN#:}:$${SERVER_HTTP_LISTEN#:}" \
-    -p "$${SERVER_GRPC_LISTEN#:}:$${SERVER_GRPC_LISTEN#:}" \
+	-p "$${SERVER_HTTP_LISTEN#:}:$${SERVER_HTTP_LISTEN#:}" \
+	-p "$${SERVER_GRPC_LISTEN#:}:$${SERVER_GRPC_LISTEN#:}" \
 	-v go-cache:/root/.cache/go-build \
 	-v go-mod-cache:/go/pkg/mod \
 	-v $(shell pwd):/app \
@@ -130,9 +131,9 @@ build:
 image:
 	@export SOURCE_DATE_EPOCH=0 && \
 	docker buildx build --no-cache --platform linux/amd64,linux/arm64 \
-    --build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
-    --build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
-    --build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
+	--build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
+	--build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
+	--build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
 	-t ghcr.io/hasansino/go42:dev \
 	.
 
@@ -150,6 +151,7 @@ lint:
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md docs/**/*.md || true
 	@vale --no-exit --config etc/vale.ini README.md docs/**/*.md internal/ cmd/ pkg/ tests/ || true
 	@actionlint -oneline --config-file etc/actionlint.yaml
+	@editorconfig-checker
 
 ## generate | generate code for all modules
 # Side effects of this command should to be commited.

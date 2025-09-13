@@ -1,3 +1,5 @@
+---
+
 parser:
   infer_types: true
   allow_remote: true
@@ -20,8 +22,14 @@ generator:
 
   filters:
     path_regex: ".*"
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "PATCH"
+      - "DELETE"
 
-  ignore_not_implemented: ["all"]
+  ignore_not_implemented:
+    - "all"
 
 expand: ""

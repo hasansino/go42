@@ -46,11 +46,6 @@ providers:
       - workflows/40-debugging.tpl.md
       - workflows/50-investigation.tpl.md
       - workflows/60-code-review.tpl.md
-    agents:
-      - claude/agents/george.tpl.md
-      - claude/agents/manager.tpl.md
-    hooks:
-      - voice
     tools:
       - Edit
       - Glob

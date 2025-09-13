@@ -1,11 +1,16 @@
+---
 openapi: 3.0.0
+
 info:
   title: 'auth'
   version: 1.0.0
+
 servers:
   - url: 'http://localhost:8080/api/v1'
     description: local
+
 security: []
+
 paths:
   /auth/signup:
     post:
@@ -108,7 +113,8 @@ paths:
       summary: Retrieve current user information
       operationId: users.me.read
       security:
-        - jwt: [users:read_self]
+        - jwt:
+            - users:read_self
       responses:
         '200':
           description: User information retrieved successfully
@@ -126,7 +132,8 @@ paths:
       summary: Update current user
       operationId: users.me.update
       security:
-        - jwt: [users:update_self]
+        - jwt:
+            - users:update_self
       requestBody:
         required: true
         content:
@@ -149,7 +156,8 @@ paths:
       summary: List users
       operationId: users.list
       security:
-        - jwt: [users:list]
+        - jwt:
+            - users:list
       parameters:
         - name: limit
           in: query
@@ -180,7 +188,8 @@ paths:
       summary: Create a new user
       operationId: users.create
       security:
-        - jwt: [users:create]
+        - jwt:
+            - users:create
       requestBody:
         required: true
         content:
@@ -207,7 +216,8 @@ paths:
       summary: Get user by UUID
       operationId: users.get
       security:
-        - jwt: [users:read_others]
+        - jwt:
+            - users:read_others
       parameters:
         - name: uuid
           in: path
@@ -236,7 +246,8 @@ paths:
       summary: Update user
       operationId: users.update
       security:
-        - jwt: [users:update]
+        - jwt:
+            - users:update
       parameters:
         - name: uuid
           in: path
@@ -267,7 +278,8 @@ paths:
       summary: Delete user
       operationId: users.delete
       security:
-        - jwt: [users:delete]
+        - jwt:
+            - users:delete
       parameters:
         - name: uuid
           in: path

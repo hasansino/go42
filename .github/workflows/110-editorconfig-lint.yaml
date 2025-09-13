@@ -1,0 +1,51 @@
+---
+
+name: editorconfig-lint
+
+# Editorconfig linter.
+# @see https://editorconfig-checker.github.io/
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+        default: ubuntu-latest
+        description: 'runs_on'
+      continue_on_error:
+        required: true
+        type: boolean
+        default: false
+        description: 'continue_on_error'
+  workflow_call:
+    inputs:
+      runs_on:
+        required: true
+        type: string
+      continue_on_error:
+        required: true
+        type: boolean
+
+permissions: {}
+
+jobs:
+  editorconfig-lint:
+    name: editorconfig-lint
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    permissions:
+      contents: read
+    # ----
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v4
+      - name: 'Setup Go'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+      - name: 'Install editorconfig-checker'
+        run: go install github.com/editorconfig-checker/editorconfig-checker/cmd/editorconfig-checker@latest
+      - name: 'Run editorconfig-checker'
+        run: editorconfig-checker -v
+

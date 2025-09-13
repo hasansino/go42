@@ -30,7 +30,7 @@ Architecture Decision Records (ADRs) document important architectural choices ma
 
 [View Architecture Decisions →](/category/architecture-decisions)
 
-## 📋 Business Requirements  
+## 📋 Business Requirements
 
 Business Requirement Documents (BRDs) capture the business needs, objectives, and specifications that drive development.
 

@@ -47,6 +47,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
 - `main.go` -> move init functions out of file and make them modular
 - module init retry
+- GOTRACEBACK
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
@@ -171,6 +172,10 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/cloudnative-pg/cloudnative-pg
 - https://github.com/coroot/coroot
 - https://connectrpc.com/
+- https://github.com/timescale/pgai
+- https://github.com/xataio/pgroll
+- https://github.com/duckdb/pg_duckdb
+- https://github.com/sst/opencode
 
 ### Security
 

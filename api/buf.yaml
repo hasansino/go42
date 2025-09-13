@@ -1,3 +1,5 @@
+---
+
 version: v2
 
 modules:
@@ -5,7 +7,7 @@ modules:
 
 lint:
   use:
-    - STANDARD 
+    - STANDARD
   # Always exclude third-party proto files from linting.
   ignore:
     - proto/third_party/buf/validate/validate.proto

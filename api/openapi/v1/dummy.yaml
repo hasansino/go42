@@ -1,12 +1,18 @@
+---
+
 openapi: 3.0.0
+
 info:
   title: 'dummy'
   version: 1.0.0
   description: 'this file is required for redocly to work'
+
 servers:
   - url: 'http://localhost:8080/api/v1'
     description: local
+
 security: []
+
 paths:
   /dummy:
     get:

@@ -15,36 +15,36 @@ The Knowledge Base server excels at **fast text-based searches** and **initial c
 #### Best Use Cases
 
 1. **Initial Codebase Exploration**
-   - When you need to quickly understand what files exist in a project
-   - Getting an overview of the codebase structure
-   - Finding files by type (code, documentation, config)
-   ```
-   Example: "Show me all configuration files in the project"
-   Tool: mcp__go42x-kwb__list_files with type="config"
-   ```
+    - When you need to quickly understand what files exist in a project
+    - Getting an overview of the codebase structure
+    - Finding files by type (code, documentation, config)
+    ```
+    Example: "Show me all configuration files in the project"
+    Tool: mcp__go42x-kwb__list_files with type="config"
+    ```
 
 2. **Keyword and Pattern Search**
-   - Finding all occurrences of a specific string or pattern
-   - Searching for TODO comments, error messages, or specific text
-   - Looking for configuration values or environment variables
-   ```
-   Example: "Find all files mentioning 'database connection'"
-   Tool: mcp__go42x-kwb__search with query="database connection"
-   ```
+    - Finding all occurrences of a specific string or pattern
+    - Searching for TODO comments, error messages, or specific text
+    - Looking for configuration values or environment variables
+    ```
+    Example: "Find all files mentioning 'database connection'"
+    Tool: mcp__go42x-kwb__search with query="database connection"
+    ```
 
 3. **Quick File Content Retrieval**
-   - When you know the exact file path and need its contents
-   - Reading configuration files, documentation, or scripts
-   - Accessing non-Go files (YAML, JSON, Markdown, etc.)
-   ```
-   Example: "Show me the README file"
-   Tool: mcp__go42x-kwb__get_file with path="README.md"
-   ```
+    - When you know the exact file path and need its contents
+    - Reading configuration files, documentation, or scripts
+    - Accessing non-Go files (YAML, JSON, Markdown, etc.)
+    ```
+    Example: "Show me the README file"
+    Tool: mcp__go42x-kwb__get_file with path="README.md"
+    ```
 
 4. **Cross-Language Searches**
-   - Searching across mixed codebases (Go, JavaScript, Python, etc.)
-   - Finding patterns in build scripts, CI/CD configs, and documentation
-   - Exploring test fixtures and data files
+    - Searching across mixed codebases (Go, JavaScript, Python, etc.)
+    - Finding patterns in build scripts, CI/CD configs, and documentation
+    - Exploring test fixtures and data files
 
 #### Strengths
 
@@ -68,58 +68,58 @@ The Go Language Server provides **deep semantic analysis** and **code intelligen
 #### Best Use Cases
 
 1. **Understanding Go Code Structure**
-   - Analyzing package dependencies and imports
-   - Understanding module and workspace layout
-   - Getting package API summaries
-   ```
-   Example: "What packages does this project contain?"
-   Tool: mcp__gopls__go_workspace
-   ```
+    - Analyzing package dependencies and imports
+    - Understanding module and workspace layout
+    - Getting package API summaries
+    ```
+    Example: "What packages does this project contain?"
+    Tool: mcp__gopls__go_workspace
+    ```
 
 2. **Finding Symbol Definitions and References**
-   - Locating where a function, type, or variable is defined
-   - Finding all usages of a specific symbol
-   - Tracing method calls and type usage
-   ```
-   Example: "Find all references to the Server.Run method"
-   Tool: mcp__gopls__go_symbol_references with symbol="Server.Run"
-   ```
+    - Locating where a function, type, or variable is defined
+    - Finding all usages of a specific symbol
+    - Tracing method calls and type usage
+    ```
+    Example: "Find all references to the Server.Run method"
+    Tool: mcp__gopls__go_symbol_references with symbol="Server.Run"
+    ```
 
 3. **Semantic Code Search**
-   - Finding symbols by name with fuzzy matching
-   - Searching for types, interfaces, functions across packages
-   - Locating implementations of interfaces
-   ```
-   Example: "Find all types with 'Handler' in their name"
-   Tool: mcp__gopls__go_search with query="handler"
-   ```
+    - Finding symbols by name with fuzzy matching
+    - Searching for types, interfaces, functions across packages
+    - Locating implementations of interfaces
+    ```
+    Example: "Find all types with 'Handler' in their name"
+    Tool: mcp__gopls__go_search with query="handler"
+    ```
 
 4. **Code Context and Dependencies**
-   - Understanding file dependencies within a package
-   - Analyzing cross-file relationships
-   - Getting context about imports and usage
-   ```
-   Example: "What does server.go depend on?"
-   Tool: mcp__gopls__go_file_context with file="/path/to/server.go"
-   ```
+    - Understanding file dependencies within a package
+    - Analyzing cross-file relationships
+    - Getting context about imports and usage
+    ```
+    Example: "What does server.go depend on?"
+    Tool: mcp__gopls__go_file_context with file="/path/to/server.go"
+    ```
 
 5. **Package API Analysis**
-   - Understanding public APIs of packages
-   - Exploring third-party dependencies
-   - Reviewing exported types and functions
-   ```
-   Example: "Show me the public API of the storage package"
-   Tool: mcp__gopls__go_package_api with packagePaths=["example.com/storage"]
-   ```
+    - Understanding public APIs of packages
+    - Exploring third-party dependencies
+    - Reviewing exported types and functions
+    ```
+    Example: "Show me the public API of the storage package"
+    Tool: mcp__gopls__go_package_api with packagePaths=["example.com/storage"]
+    ```
 
 6. **Code Quality and Diagnostics**
-   - Finding compilation errors and issues
-   - Checking for type errors
-   - Validating code changes
-   ```
-   Example: "Check for errors in the edited files"
-   Tool: mcp__gopls__go_diagnostics with files=["/path/to/file.go"]
-   ```
+    - Finding compilation errors and issues
+    - Checking for type errors
+    - Validating code changes
+    ```
+    Example: "Check for errors in the edited files"
+    Tool: mcp__gopls__go_diagnostics with files=["/path/to/file.go"]
+    ```
 
 #### Strengths
 
