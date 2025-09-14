@@ -47,4 +47,4 @@ jobs:
             -v "${{ github.workspace }}:/workdir" \
             -w /workdir \
             ghcr.io/redocly/cli:latest \
-            lint --config etc/redocly.yaml --format github-actions "api/openapi/*/*.yml"
+            lint --config etc/redocly.yaml --format github-actions api/openapi/**/*.yaml

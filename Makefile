@@ -2,7 +2,7 @@
 # │                     go42                     │
 # ╰─────────────────────----------------─────────╯
 #
-# Before running any commands, ensure you have the following tools installed:
+# Before running any commands, ensure you have the following tools are installed:
 # - brew @see https://brew.sh/
 # - go @see https://go.dev/
 # - npm @see https://www.npmjs.com/
@@ -21,11 +21,9 @@ setup: setup-git-hooks setup-linters setup-generators
 	@go mod tidy -e && go mod download
 	@brew install -q \
 		buf sqlfluff \
-		golangci-lint hadolint actionlint \
+		hadolint actionlint \
 		redocly-cli markdownlint-cli2 vale \
-		gitleaks gosec \
-		dlv \
-		jq yq k6
+		gitleaks dlv jq yq k6
 	@vale --config etc/vale.ini sync
 	@go install github.com/hasansino/go42x@latest
 
@@ -37,6 +35,8 @@ setup-linters:
 	@go install github.com/google/yamlfmt/cmd/yamlfmt@latest
 	@go install github.com/caarlos0/jsonfmt@latest
 	@go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
+	@go install github.com/securego/gosec/v2/cmd/gosec@latest
+	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 ## setup-generators | install code generators
 setup-generators:
@@ -144,7 +144,7 @@ lint:
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/sqlite/*.sql --dialect sqlite || true
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/mysql/*.sql --dialect mysql || true
 	@sqlfluff lint --config etc/sqlfluff.toml --disable-progress-bar migrate/pgsql/*.sql --dialect postgres || true
-	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/*/*.yaml || true
+	@REDOCLY_SUPPRESS_UPDATE_NOTICE=true REDOCLY_TELEMETRY=false redocly lint --config etc/redocly.yaml --format stylish api/openapi/**/*.yaml || true
 	@buf lint api || true
 	@gosec -quiet -exclude-generated ./... || true
 	@gitleaks git --config etc/gitleaks.toml --no-banner --redact -v || true
