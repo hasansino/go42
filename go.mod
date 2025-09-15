@@ -45,7 +45,7 @@ require (
 	github.com/onsi/gomega v1.38.2
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pressly/goose/v3 v3.25.0
-	github.com/redis/go-redis/v9 v9.13.0
+	github.com/redis/go-redis/v9 v9.14.0
 	github.com/samber/slog-multi v1.5.0
 	github.com/stretchr/testify v1.11.1
 	github.com/wagslane/go-password-validator v0.3.0
