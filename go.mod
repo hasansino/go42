@@ -41,7 +41,7 @@ require (
 	github.com/nats-io/nats.go v1.45.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/ogen-go/ogen v1.14.0
-	github.com/onsi/ginkgo/v2 v2.25.1
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pressly/goose/v3 v3.25.0
