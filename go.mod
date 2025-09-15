@@ -3,7 +3,7 @@ module github.com/hasansino/go42
 go 1.25.0
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.8-20250717185734-6c6e0d3c608e.1
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1
 	buf.build/go/protovalidate v0.14.0
 	github.com/IBM/sarama v1.46.0
 	github.com/KimMachineGun/automemlimit v0.7.4
@@ -64,7 +64,7 @@ require (
 	golang.org/x/crypto v0.42.0
 	golang.org/x/time v0.13.0
 	google.golang.org/grpc v1.75.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.5
