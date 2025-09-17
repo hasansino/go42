@@ -9,7 +9,7 @@ require (
 	github.com/KimMachineGun/automemlimit v0.7.4
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.2
-	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.0
+	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/VictoriaMetrics/metrics v1.39.1
 	github.com/agiledragon/gomonkey/v2 v2.13.0
