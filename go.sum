@@ -94,8 +94,8 @@ github.com/getkin/kin-openapi v0.133.0 h1:pJdmNohVIJ97r4AUFtEXRXwESr8b0bD721u/Tz
 github.com/getkin/kin-openapi v0.133.0/go.mod h1:boAciF6cXk5FhPqe/NQeBTeenbjqU4LhWBf09ILVvWE=
 github.com/getsentry/sentry-go v0.35.3 h1:u5IJaEqZyPdWqe/hKlBKBBnMTSxB/HenCqF3QLabeds=
 github.com/getsentry/sentry-go v0.35.3/go.mod h1:mdL49ixwT2yi57k5eh7mpnDyPybixPzlzEJFu0Z76QA=
-github.com/getsentry/sentry-go/slog v0.35.1 h1:rIMeD6XIH9WdxaBY+8OuUQgiAvAr/b/gBYZZ7HOODH0=
-github.com/getsentry/sentry-go/slog v0.35.1/go.mod h1:9UritRSGIDQxaYWK8dAuCHWFGByrGuUg2zZoowWIxdg=
+github.com/getsentry/sentry-go/slog v0.35.3 h1:4MQEfo3U25jxKhrRYMS6wPXpW3WXSrjSRmDQZroalaw=
+github.com/getsentry/sentry-go/slog v0.35.3/go.mod h1:BhcfZ6LB5VpHAl6kOKf0Bsy2AXJbTl9Nit9Zq4KApus=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/glebarez/go-sqlite v1.21.2 h1:3a6LFC4sKahUunAmynQKLZceZCOzUthkRkEAl9gAXWo=
