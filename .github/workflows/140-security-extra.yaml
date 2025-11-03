@@ -117,12 +117,12 @@ jobs:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
       - name: 'Run OSV Scanner'
-        uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
+        uses: google/osv-scanner-action/osv-scanner-action@v2.2.4
         continue-on-error: true
         with:
           scan-args: --output=results.json --all-vulns --format=json --recursive ./
       - name: 'Generate OSV Scanner report'
-        uses: google/osv-scanner-action/osv-reporter-action@v2.2.2
+        uses: google/osv-scanner-action/osv-reporter-action@v2.2.4
         continue-on-error: true
         with:
           scan-args: |-
