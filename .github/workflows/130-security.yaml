@@ -117,6 +117,8 @@ jobs:
         run: go list -json -m all > go.list
       - name: 'Run Nancy vulnerability scanner'
         uses: sonatype-nexus-community/nancy-github-action@main
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
 
   codeql:
     name: codeql
