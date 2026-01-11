@@ -15,7 +15,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 </pre></div>
 <p align="center">
 <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="licence"></a>
-<a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.25.0-00ADD8?style=flat&logo=go" alt="goversion"></a>
+<a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.25.5-00ADD8?style=flat&logo=go" alt="goversion"></a>
 <a href="https://goreportcard.com/report/github.com/hasansino/go42"><img src="https://goreportcard.com/badge/github.com/hasansino/go42" alt="goreport"></a>
 <a href="https://github.com/hasansino/go42/releases"><img src="https://img.shields.io/github/v/release/hasansino/go42" alt="release"></a>
 <a href="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml"><img src="https://github.com/hasansino/go42/actions/workflows/100-unified-workflow.yaml/badge.svg" alt="ci-status"></a>
