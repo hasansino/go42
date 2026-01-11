@@ -48,9 +48,14 @@ Go42 is opinionated approach to develop cloud native golang services.
 - `main.go` -> move init functions out of file and make them modular
 - module init retry
 - GOTRACEBACK
+- https://threedots.tech/post/watermill-1-5/ - sqlite
+- https://do.samber.dev/docs/about
+- https://go.dev/blog/flight-recorder
+- https://pkg.go.dev/log/slog@master#NewMultiHandler
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
+- https://failsafe-go.dev/
 - circuit breaker (https://github.com/sony/gobreaker)
 - graceful connection recovery
 - outbox table cleanup worker
@@ -176,6 +181,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/xataio/pgroll
 - https://github.com/duckdb/pg_duckdb
 - https://github.com/sst/opencode
+- https://github.com/knadh/koanf
 
 ### Security
 
