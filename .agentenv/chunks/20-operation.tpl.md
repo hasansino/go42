@@ -1,6 +1,6 @@
 ### Operation
 
-- Ignore anything between `[IGNORE]` and `[/IGNORE]` tags - it used for internal notes
+- Ignore anything between `[IGNORE]` and `[/IGNORE]` tags in prompts.
 
 #### Execution Strategy
 
