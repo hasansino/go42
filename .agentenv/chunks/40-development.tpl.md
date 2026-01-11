@@ -7,3 +7,4 @@
 - **Reviews**: Self-review before finishing a task
 - **Documentation**: Comment only complex, difficult-to-read logic, restrain from commenting elsewhere
 - **Commiting**: NEVER commit or stage any files, ALL staging and commiting is done exclusively by the user
+- **Artifacts**: Do not leave any build artifacts, temporary files, or debug logs in the working directory
