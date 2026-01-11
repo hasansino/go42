@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
-
 	"github.com/ogen-go/ogen/conv"
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
@@ -148,8 +147,8 @@ func decodeUsersGetParams(args [1]string, argsEscaped bool, r *http.Request) (pa
 
 // UsersListParams is parameters of users.list operation.
 type UsersListParams struct {
-	Limit  OptInt
-	Offset OptInt
+	Limit  OptInt `json:",omitempty,omitzero"`
+	Offset OptInt `json:",omitempty,omitzero"`
 }
 
 func unpackUsersListParams(packed middleware.Parameters) (params UsersListParams) {

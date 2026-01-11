@@ -27,6 +27,13 @@ setup: setup-git-hooks setup-linters setup-generators
 	@vale --config etc/vale.ini sync
 	@go install github.com/hasansino/go42x@latest
 
+## setup-git-hooks | install git hooks
+setup-git-hooks:
+	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
+	@mkdir -p .git/hooks
+	@cp etc/git-hooks/commit-msg .git/hooks/commit-msg
+	@chmod +x .git/hooks/commit-msg
+
 ## setup-linters | install code linters
 # Extra linters provided by `setup step`: buf (proto), sqlfluff (sql)
 setup-linters:
@@ -47,16 +54,9 @@ setup-generators:
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 ## setup-mcp | setup mcp servers
-setup-mcp: setup
+setup-mcp:
 	@go install golang.org/x/tools/gopls@latest
 	@docker pull ghcr.io/github/github-mcp-server:latest
-
-## setup-git-hooks | install git hooks
-setup-git-hooks:
-	@npm install --silent -g @commitlint/cli @commitlint/config-conventional
-	@mkdir -p .git/hooks
-	@cp etc/git-hooks/commit-msg .git/hooks/commit-msg
-	@chmod +x .git/hooks/commit-msg
 
 # ╭────────────────────----------------──────────╮
 # │               General workflow               │

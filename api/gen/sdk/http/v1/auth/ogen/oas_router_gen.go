@@ -268,12 +268,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Route is route object.
 type Route struct {
-	name        string
-	summary     string
-	operationID string
-	pathPattern string
-	count       int
-	args        [1]string
+	name           string
+	summary        string
+	operationID    string
+	operationGroup string
+	pathPattern    string
+	count          int
+	args           [1]string
 }
 
 // Name returns ogen operation name.
@@ -291,6 +292,11 @@ func (r Route) Summary() string {
 // OperationID returns OpenAPI operationId.
 func (r Route) OperationID() string {
 	return r.operationID
+}
+
+// OperationGroup returns the x-ogen-operation-group value.
+func (r Route) OperationGroup() string {
+	return r.operationGroup
 }
 
 // PathPattern returns OpenAPI path.
@@ -392,6 +398,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								r.name = LoginOperation
 								r.summary = "Login an existing user"
 								r.operationID = "login"
+								r.operationGroup = ""
 								r.pathPattern = "/auth/login"
 								r.args = args
 								r.count = 0
@@ -416,6 +423,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								r.name = LogoutOperation
 								r.summary = "Invalidate user tokens"
 								r.operationID = "logout"
+								r.operationGroup = ""
 								r.pathPattern = "/auth/logout"
 								r.args = args
 								r.count = 0
@@ -442,6 +450,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.name = RefreshOperation
 							r.summary = "Refresh user token"
 							r.operationID = "refresh"
+							r.operationGroup = ""
 							r.pathPattern = "/auth/refresh"
 							r.args = args
 							r.count = 0
@@ -466,6 +475,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.name = SignupOperation
 							r.summary = "Create a new user"
 							r.operationID = "signup"
+							r.operationGroup = ""
 							r.pathPattern = "/auth/signup"
 							r.args = args
 							r.count = 0
@@ -491,6 +501,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.name = UsersListOperation
 						r.summary = "List users"
 						r.operationID = "users.list"
+						r.operationGroup = ""
 						r.pathPattern = "/users"
 						r.args = args
 						r.count = 0
@@ -499,6 +510,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.name = UsersCreateOperation
 						r.summary = "Create a new user"
 						r.operationID = "users.create"
+						r.operationGroup = ""
 						r.pathPattern = "/users"
 						r.args = args
 						r.count = 0
@@ -535,6 +547,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								r.name = UsersMeReadOperation
 								r.summary = "Retrieve current user information"
 								r.operationID = "users.me.read"
+								r.operationGroup = ""
 								r.pathPattern = "/users/me"
 								r.args = args
 								r.count = 0
@@ -543,6 +556,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								r.name = UsersMeUpdateOperation
 								r.summary = "Update current user"
 								r.operationID = "users.me.update"
+								r.operationGroup = ""
 								r.pathPattern = "/users/me"
 								r.args = args
 								r.count = 0
@@ -570,6 +584,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.name = UsersDeleteOperation
 							r.summary = "Delete user"
 							r.operationID = "users.delete"
+							r.operationGroup = ""
 							r.pathPattern = "/users/{uuid}"
 							r.args = args
 							r.count = 1
@@ -578,6 +593,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.name = UsersGetOperation
 							r.summary = "Get user by UUID"
 							r.operationID = "users.get"
+							r.operationGroup = ""
 							r.pathPattern = "/users/{uuid}"
 							r.args = args
 							r.count = 1
@@ -586,6 +602,7 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.name = UsersUpdateOperation
 							r.summary = "Update user"
 							r.operationID = "users.update"
+							r.operationGroup = ""
 							r.pathPattern = "/users/{uuid}"
 							r.args = args
 							r.count = 1

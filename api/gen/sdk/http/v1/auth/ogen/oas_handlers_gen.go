@@ -8,16 +8,15 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"go.opentelemetry.io/otel/trace"
-
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/ogen-go/ogen/otelogen"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type codeRecorder struct {
@@ -28,6 +27,10 @@ type codeRecorder struct {
 func (c *codeRecorder) WriteHeader(status int) {
 	c.status = status
 	c.ResponseWriter.WriteHeader(status)
+}
+
+func (c *codeRecorder) Unwrap() http.ResponseWriter {
+	return c.ResponseWriter
 }
 
 // handleLoginRequest handles login operation.
@@ -86,7 +89,7 @@ func (s *Server) handleLoginRequest(args [0]string, argsEscaped bool, w http.Res
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -104,7 +107,9 @@ func (s *Server) handleLoginRequest(args [0]string, argsEscaped bool, w http.Res
 			ID:   "login",
 		}
 	)
-	request, close, err := s.decodeLoginRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeLoginRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -128,6 +133,7 @@ func (s *Server) handleLoginRequest(args [0]string, argsEscaped bool, w http.Res
 			OperationSummary: "Login an existing user",
 			OperationID:      "login",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -235,7 +241,7 @@ func (s *Server) handleLogoutRequest(args [0]string, argsEscaped bool, w http.Re
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -253,7 +259,9 @@ func (s *Server) handleLogoutRequest(args [0]string, argsEscaped bool, w http.Re
 			ID:   "logout",
 		}
 	)
-	request, close, err := s.decodeLogoutRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeLogoutRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -277,6 +285,7 @@ func (s *Server) handleLogoutRequest(args [0]string, argsEscaped bool, w http.Re
 			OperationSummary: "Invalidate user tokens",
 			OperationID:      "logout",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -384,7 +393,7 @@ func (s *Server) handleRefreshRequest(args [0]string, argsEscaped bool, w http.R
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -402,7 +411,9 @@ func (s *Server) handleRefreshRequest(args [0]string, argsEscaped bool, w http.R
 			ID:   "refresh",
 		}
 	)
-	request, close, err := s.decodeRefreshRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeRefreshRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -426,6 +437,7 @@ func (s *Server) handleRefreshRequest(args [0]string, argsEscaped bool, w http.R
 			OperationSummary: "Refresh user token",
 			OperationID:      "refresh",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -533,7 +545,7 @@ func (s *Server) handleSignupRequest(args [0]string, argsEscaped bool, w http.Re
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -551,7 +563,9 @@ func (s *Server) handleSignupRequest(args [0]string, argsEscaped bool, w http.Re
 			ID:   "signup",
 		}
 	)
-	request, close, err := s.decodeSignupRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeSignupRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -575,6 +589,7 @@ func (s *Server) handleSignupRequest(args [0]string, argsEscaped bool, w http.Re
 			OperationSummary: "Create a new user",
 			OperationID:      "signup",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -682,7 +697,7 @@ func (s *Server) handleUsersCreateRequest(args [0]string, argsEscaped bool, w ht
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -746,7 +761,9 @@ func (s *Server) handleUsersCreateRequest(args [0]string, argsEscaped bool, w ht
 			return
 		}
 	}
-	request, close, err := s.decodeUsersCreateRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeUsersCreateRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -770,6 +787,7 @@ func (s *Server) handleUsersCreateRequest(args [0]string, argsEscaped bool, w ht
 			OperationSummary: "Create a new user",
 			OperationID:      "users.create",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -877,7 +895,7 @@ func (s *Server) handleUsersDeleteRequest(args [1]string, argsEscaped bool, w ht
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -952,6 +970,8 @@ func (s *Server) handleUsersDeleteRequest(args [1]string, argsEscaped bool, w ht
 		return
 	}
 
+	var rawBody []byte
+
 	var response UsersDeleteRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
@@ -960,6 +980,7 @@ func (s *Server) handleUsersDeleteRequest(args [1]string, argsEscaped bool, w ht
 			OperationSummary: "Delete user",
 			OperationID:      "users.delete",
 			Body:             nil,
+			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
 					Name: "uuid",
@@ -1072,7 +1093,7 @@ func (s *Server) handleUsersGetRequest(args [1]string, argsEscaped bool, w http.
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -1147,6 +1168,8 @@ func (s *Server) handleUsersGetRequest(args [1]string, argsEscaped bool, w http.
 		return
 	}
 
+	var rawBody []byte
+
 	var response UsersGetRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
@@ -1155,6 +1178,7 @@ func (s *Server) handleUsersGetRequest(args [1]string, argsEscaped bool, w http.
 			OperationSummary: "Get user by UUID",
 			OperationID:      "users.get",
 			Body:             nil,
+			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
 					Name: "uuid",
@@ -1267,7 +1291,7 @@ func (s *Server) handleUsersListRequest(args [0]string, argsEscaped bool, w http
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -1342,6 +1366,8 @@ func (s *Server) handleUsersListRequest(args [0]string, argsEscaped bool, w http
 		return
 	}
 
+	var rawBody []byte
+
 	var response UsersListRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
@@ -1350,6 +1376,7 @@ func (s *Server) handleUsersListRequest(args [0]string, argsEscaped bool, w http
 			OperationSummary: "List users",
 			OperationID:      "users.list",
 			Body:             nil,
+			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
 					Name: "limit",
@@ -1466,7 +1493,7 @@ func (s *Server) handleUsersMeReadRequest(args [0]string, argsEscaped bool, w ht
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -1531,6 +1558,8 @@ func (s *Server) handleUsersMeReadRequest(args [0]string, argsEscaped bool, w ht
 		}
 	}
 
+	var rawBody []byte
+
 	var response UsersMeReadRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
@@ -1539,6 +1568,7 @@ func (s *Server) handleUsersMeReadRequest(args [0]string, argsEscaped bool, w ht
 			OperationSummary: "Retrieve current user information",
 			OperationID:      "users.me.read",
 			Body:             nil,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -1646,7 +1676,7 @@ func (s *Server) handleUsersMeUpdateRequest(args [0]string, argsEscaped bool, w 
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -1710,7 +1740,9 @@ func (s *Server) handleUsersMeUpdateRequest(args [0]string, argsEscaped bool, w 
 			return
 		}
 	}
-	request, close, err := s.decodeUsersMeUpdateRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeUsersMeUpdateRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -1734,6 +1766,7 @@ func (s *Server) handleUsersMeUpdateRequest(args [0]string, argsEscaped bool, w 
 			OperationSummary: "Update current user",
 			OperationID:      "users.me.update",
 			Body:             request,
+			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
 			Raw:              r,
 		}
@@ -1841,7 +1874,7 @@ func (s *Server) handleUsersUpdateRequest(args [1]string, argsEscaped bool, w ht
 			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
 			// max redirects exceeded), in which case status MUST be set to Error.
 			code := statusWriter.status
-			if code >= 100 && code < 500 {
+			if code < 100 || code >= 500 {
 				span.SetStatus(codes.Error, stage)
 			}
 
@@ -1915,7 +1948,9 @@ func (s *Server) handleUsersUpdateRequest(args [1]string, argsEscaped bool, w ht
 		s.cfg.ErrorHandler(ctx, w, r, err)
 		return
 	}
-	request, close, err := s.decodeUsersUpdateRequest(r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeUsersUpdateRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -1939,6 +1974,7 @@ func (s *Server) handleUsersUpdateRequest(args [1]string, argsEscaped bool, w ht
 			OperationSummary: "Update user",
 			OperationID:      "users.update",
 			Body:             request,
+			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
 					Name: "uuid",
