@@ -6,7 +6,6 @@ name: security
 # @see https://github.com/gitleaks/gitleaks
 # @see https://github.com/securego/gosec
 # @see https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck
-# @see https://github.com/sonatype-nexus-community/nancy
 # @see https://codeql.github.com/
 # @see https://github.com/google/go-licenses
 # @see https://github.com/ossf/scorecard
@@ -97,28 +96,6 @@ jobs:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
           cache: false
-
-  nancy:
-    name: nancy
-    runs-on: ${{ inputs.runs_on }}
-    continue-on-error: ${{ inputs.continue_on_error }}
-    permissions:
-      contents: read
-    # -----
-    steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@v4
-      # -----
-      - name: 'Setup Go'
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: 'go.mod'
-      - name: 'Generate Go module list'
-        run: go list -json -m all > go.list
-      - name: 'Run Nancy vulnerability scanner'
-        uses: sonatype-nexus-community/nancy-github-action@main
-        with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
 
   codeql:
     name: codeql

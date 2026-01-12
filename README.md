@@ -41,7 +41,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- make have error if .env files are not found
 - registry cleanup workflow can delete everything, implement safeguards
 - custom & simple DI container for main.go
 - `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
