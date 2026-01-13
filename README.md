@@ -41,10 +41,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- GOTRACEBACK
 - https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
 - https://threedots.tech/post/watermill-1-5/ - sqlite
-- https://go.dev/blog/flight-recorder
 - https://pkg.go.dev/log/slog@master#NewMultiHandler
 
 ### ദ്ദി( •̀ ᴗ •́ )و
@@ -147,6 +145,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://github.com/uber-go/nilaway
 - action timeouts
 - https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518
+- https://go.dev/blog/flight-recorder
 
 ### Explore
 
