@@ -17,6 +17,11 @@ on:
         required: false
         type: number
         default: 30
+      keep_versions:
+        description: 'Minimum number of versions to keep (regardless of age)'
+        required: false
+        type: number
+        default: 5
       dry_run:
         description: 'Perform dry run (no deletions)'
         required: false
@@ -31,6 +36,7 @@ on:
 env:
   SERVICE_NAME: go42
   DEFAULT_RETENTION_DAYS: 30
+  DEFAULT_KEEP_VERSIONS: 5
   DEBUG_MODE: false
 
 permissions: {}
@@ -49,11 +55,13 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             {
               echo "retention_days=${{ env.DEFAULT_RETENTION_DAYS }}"
+              echo "keep_versions=${{ env.DEFAULT_KEEP_VERSIONS }}"
               echo "dry_run=false"
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "retention_days=${{ inputs.retention_days }}"
+              echo "keep_versions=${{ inputs.keep_versions }}"
               echo "dry_run=${{ inputs.dry_run }}"
             } >> "$GITHUB_OUTPUT"
           fi
@@ -64,12 +72,14 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           PACKAGE_NAME: ${{ env.SERVICE_NAME }}
           RETENTION_DAYS: ${{ steps.config.outputs.retention_days }}
+          KEEP_VERSIONS: ${{ steps.config.outputs.keep_versions }}
           DRY_RUN: ${{ steps.config.outputs.dry_run }}
           DEBUG_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.debug || env.DEBUG_MODE }}
         run: |
           echo "Starting registry cleanup for $PACKAGE_NAME..."
           echo "Repository: ghcr.io/$OWNER/$PACKAGE_NAME"
           echo "Retention period: $RETENTION_DAYS days"
+          echo "Keep versions: $KEEP_VERSIONS"
           echo "Dry run: $DRY_RUN"
 
           # Calculate cutoff date
@@ -174,14 +184,27 @@ jobs:
             echo "$all_versions" | jq '.[0]' || echo "Debug: Failed to show sample"
           fi
 
+          # Sort versions by updated_at descending and get IDs of versions to keep
+          versions_to_keep=$(echo "$all_versions" | jq -r --argjson keep "$KEEP_VERSIONS" '
+            sort_by(.updated_at) | reverse | .[0:$keep] | .[].id
+          ')
+
+          if [ "$DEBUG_MODE" = "true" ]; then
+            echo "Debug: Keeping the $KEEP_VERSIONS most recent versions (IDs): $versions_to_keep"
+          fi
+
           # Find old versions to delete
-          old_versions=$(echo "$all_versions" | jq -c --arg cutoff "$CUTOFF_DATE" '
+          old_versions=$(echo "$all_versions" | jq -c --arg cutoff "$CUTOFF_DATE" --argjson keep "$KEEP_VERSIONS" '
+            sort_by(.updated_at) | reverse |
+            to_entries |
             .[] |
+            select(.key >= $keep) |
+            .value |
             select(.updated_at < $cutoff) |
             select(
               if has("metadata") and (.metadata | type) == "object" and (.metadata | has("container")) then
                 if (.metadata.container | has("tags")) and (.metadata.container.tags | type) == "array" then
-                  (.metadata.container.tags | length == 0 or (all(. != "latest" and . != "master" and . != "main")))
+                  (.metadata.container.tags | length == 0 or (all(. != "latest" and . != "master")))
                 else
                   true
                 end
@@ -269,6 +292,7 @@ jobs:
           echo "=========================================="
           echo "Cleanup Summary:"
           echo "Retention period: $RETENTION_DAYS days"
+          echo "Keep versions: $KEEP_VERSIONS"
           echo "Cutoff date: $CUTOFF_DATE"
           if [ "$DRY_RUN" = "true" ]; then
             echo "Mode: DRY RUN (no deletions performed)"
@@ -280,6 +304,7 @@ jobs:
           # Save summary for job summary step
           {
             echo "cutoff_date=$CUTOFF_DATE"
+            echo "keep_versions=$KEEP_VERSIONS"
             echo "total_deleted=$total_deleted"
           } > cleanup_summary.env
 
@@ -287,6 +312,7 @@ jobs:
         if: always()
         env:
           RETENTION_DAYS: ${{ steps.config.outputs.retention_days }}
+          KEEP_VERSIONS: ${{ steps.config.outputs.keep_versions }}
           DRY_RUN: ${{ steps.config.outputs.dry_run }}
         run: |-
           # Load summary data if available
@@ -300,6 +326,7 @@ jobs:
             echo "**Package:** ghcr.io/${{ github.repository_owner }}/${{ env.SERVICE_NAME }}"
             echo "**Run Type:** ${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }}"
             echo "**Retention Period:** $RETENTION_DAYS days"
+            echo "**Keep Versions:** $KEEP_VERSIONS"
             echo "**Mode:** ${{ steps.config.outputs.dry_run == 'true' && 'Dry Run' || 'Live' }}"
             echo "**Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
 
@@ -310,6 +337,7 @@ jobs:
               echo "| Metric | Value |"
               echo "|--------|-------|"
               echo "| Cutoff Date | ${cutoff_date:-N/A} |"
+              echo "| Versions Kept (minimum) | ${keep_versions:-N/A} |"
               if [ "$DRY_RUN" = "true" ]; then
                 echo "| Status | Dry run - no deletions performed |"
               else
