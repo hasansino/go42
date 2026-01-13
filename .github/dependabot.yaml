@@ -27,3 +27,10 @@ updates:
     pull-request-branch-name:
       separator: "-"
     open-pull-requests-limit: 10
+
+  # Documentation dependencies are managed manually by redocly
+  - package-ecosystem: "npm"
+    directory: "/docs/pages"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
