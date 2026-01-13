@@ -39,7 +39,7 @@ jobs:
       contents: read
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Validate branch name'
         env:
           # The name of the branch or tag being merged into the base in a pull request.

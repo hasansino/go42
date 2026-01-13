@@ -46,7 +46,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: 'Run Gitleaks scan'
@@ -67,7 +67,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Gosec security scanner'
@@ -87,7 +87,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Go vulnerability check'
@@ -108,7 +108,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # -----
       - name: 'Initialize CodeQL'
         uses: github/codeql-action/init@v4
@@ -128,7 +128,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Check Go licenses'
         uses: joeig/go-licenses-action@v1.1
         with:
@@ -147,7 +147,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Run OSSF Scorecard analysis'
         uses: ossf/scorecard-action@v2.4.3
         with:
@@ -168,7 +168,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout master branch'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: master
       - name: 'Setup Go'
@@ -183,6 +183,6 @@ jobs:
         run: mv capabilities.json /tmp/capabilities.json
       # -----
       - name: 'Checkout current branch'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Compare capabilities with master'
         run: capslock -packages ./... -output=compare /tmp/capabilities.json

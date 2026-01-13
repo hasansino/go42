@@ -65,9 +65,9 @@ jobs:
       contents: read
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Download K6 test results'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: k6-summary-*
           merge-multiple: true
@@ -350,7 +350,7 @@ jobs:
           5s --health-retries 10
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Setup K6'
         uses: grafana/setup-k6-action@v1
       - name: 'Run K6 load tests'
@@ -362,7 +362,7 @@ jobs:
           ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port)
             || format('localhost:{0}', matrix.grpc_port) }}
       - name: 'Upload K6 test results'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
           path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json

@@ -90,7 +90,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # ----
       - name: 'Run ZAP API scan'
         uses: zaproxy/action-api-scan@v0.10.0
@@ -110,9 +110,9 @@ jobs:
       security-events: write
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Download SBOM artifact'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
@@ -122,7 +122,7 @@ jobs:
         with:
           scan-args: --output=results.json --all-vulns --format=json --recursive ./
       - name: 'Generate OSV Scanner report'
-        uses: google/osv-scanner-action/osv-reporter-action@v2.2.4
+        uses: google/osv-scanner-action/osv-reporter-action@v2.3.1
         continue-on-error: true
         with:
           scan-args: |-
@@ -132,7 +132,7 @@ jobs:
             --fail-on-vuln=true
             --all-vulns
       - name: 'Upload OSV Scanner results'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif

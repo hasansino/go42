@@ -51,7 +51,7 @@ jobs:
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       # ----
@@ -90,7 +90,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       # ----
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       # ----
@@ -99,7 +99,7 @@ jobs:
           sed -i "s/^appVersion:.*/appVersion: \"${{ github.ref_name }}\"/" infra/helm/app/Chart.yaml
       # ----
       - name: 'Create pull request for release'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           commit-message: "auto-release-${{ github.ref_name }}"
