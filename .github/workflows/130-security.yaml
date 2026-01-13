@@ -155,6 +155,10 @@ jobs:
           results_format: sarif
           # this updates badge, we want it to reflect only master branch
           publish_results: ${{ github.ref == 'refs/heads/master' }}
+      - name: 'Upload Scorecard results to Security tab'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: scorecard-results.sarif
 
   # run capslock only on non-master branches to determine difference
   # between the current branch and master branch in capabilities

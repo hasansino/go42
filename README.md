@@ -44,7 +44,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - GOTRACEBACK
 - https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
 - https://threedots.tech/post/watermill-1-5/ - sqlite
-- https://do.samber.dev/docs/about
 - https://go.dev/blog/flight-recorder
 - https://pkg.go.dev/log/slog@master#NewMultiHandler
 
@@ -151,6 +150,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Explore
 
+- https://github.com/samber/do
 - https://github.com/kreuzberg-dev/kreuzberg
 - https://github.com/tursodatabase/turso
 - https://valkey.io/
