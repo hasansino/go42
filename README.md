@@ -157,6 +157,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### Explore
 
+- https://github.com/kreuzberg-dev/kreuzberg
 - https://github.com/tursodatabase/turso
 - https://valkey.io/
 - https://github.com/hypermodeinc/badger
