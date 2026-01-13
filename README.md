@@ -41,13 +41,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ### 💪(•̀_•́💪)
 
-- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
-- registry cleanup workflow can delete everything, implement safeguards
-- custom & simple DI container for main.go
-- `main.go` -> standardise init functions `func(ctx context.Context, cfg *config.Config) ShutMeDown`
-- `main.go` -> move init functions out of file and make them modular
-- module init retry
 - GOTRACEBACK
+- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
 - https://threedots.tech/post/watermill-1-5/ - sqlite
 - https://do.samber.dev/docs/about
 - https://go.dev/blog/flight-recorder
@@ -132,7 +127,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 - try https://backstage.io/
 - goland / vscode configuration + goenv-scp
 - try https://github.com/docker/bake-action
-- https://tip.golang.org/doc/go1.25#container-aware-gomaxprocs
 - `wg.Go()`
 - try asyncapi (again)
 - release notifications to slack (https://github.com/8398a7/action-slack)

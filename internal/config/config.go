@@ -49,8 +49,6 @@ type Core struct {
 // ╰──────────────────────────────╯
 
 type Limits struct {
-	AutoMaxProcsEnabled bool    `env:"AUTOMAXPROCS_ENABLED" default:"false"`
-	MinMaxProcs         int     `env:"MIN_MAXPROCS"         default:"1"`
 	AutoMemLimitEnabled bool    `env:"AUTOMEMLIMIT_ENABLED" default:"false"`
 	MemLimitRatio       float64 `env:"MEMLIMIT_RATIO"       default:"0.9"   v:"gte=0.2,lte=1.0"`
 }

@@ -33,7 +33,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
-	"go.uber.org/automaxprocs/maxprocs"
 	"google.golang.org/grpc"
 
 	grpcAPI "github.com/hasansino/go42/internal/api/grpc"
@@ -750,17 +749,8 @@ func initEtcd(ctx context.Context, cfg *config.Config) ShutMeDown {
 }
 
 func initLimits(_ context.Context, cfg *config.Config) {
-	var err error
-	if cfg.Limits.AutoMaxProcsEnabled {
-		_, err = maxprocs.Set(maxprocs.Logger(log.Printf))
-		if err != nil {
-			slog.Error("failed to set maxprocs", slog.Any("error", err))
-		}
-	} else {
-		slog.Warn("package `automaxprocs` is disabled")
-	}
 	if cfg.Limits.AutoMemLimitEnabled {
-		_, err = memlimit.SetGoMemLimitWithOpts(
+		_, err := memlimit.SetGoMemLimitWithOpts(
 			memlimit.WithLogger(slog.Default().With(slog.String("component", "memlimit"))),
 			memlimit.WithRatio(cfg.Limits.MemLimitRatio),
 			memlimit.WithProvider(
