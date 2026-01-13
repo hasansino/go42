@@ -90,7 +90,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # ----
       - name: 'Run ZAP API scan'
         uses: zaproxy/action-api-scan@v0.10.0
@@ -110,7 +110,7 @@ jobs:
       security-events: write
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 'Download SBOM artifact'
         uses: actions/download-artifact@v6
         with:
