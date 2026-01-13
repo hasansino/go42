@@ -67,7 +67,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
       - name: 'Download K6 test results'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           pattern: k6-summary-*
           merge-multiple: true
