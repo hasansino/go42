@@ -132,7 +132,7 @@ jobs:
             --fail-on-vuln=true
             --all-vulns
       - name: 'Upload OSV Scanner results'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif

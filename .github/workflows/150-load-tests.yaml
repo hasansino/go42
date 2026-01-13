@@ -362,7 +362,7 @@ jobs:
           ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port)
             || format('localhost:{0}', matrix.grpc_port) }}
       - name: 'Upload K6 test results'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
           path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
