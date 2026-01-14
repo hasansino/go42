@@ -338,12 +338,21 @@ type Memcached struct {
 
 type Events struct {
 	Engine   string `env:"EVENTS_ENGINE" default:"gochan" v:"oneof=none gochan sqlite nats rabbitmq kafka"`
-	NATS     NATS
-	RabbitMQ RabbitMQ
-	Kafka    Kafka
+	SQLite   EventsSQLite
+	NATS     EventsNATS
+	RabbitMQ EventsRabbitMQ
+	Kafka    EventsKafka
 }
 
-type NATS struct {
+type EventsSQLite struct {
+	ConsumerGroup string        `env:"SQLITE_EVENTS_CONSUMER_GROUP" default:"default"`
+	BatchSize     int           `env:"SQLITE_EVENTS_BATCH_SIZE"     default:"100"`
+	PollInterval  time.Duration `env:"SQLITE_EVENTS_POLL_INTERVAL"  default:"1s"`
+	LockTimeout   time.Duration `env:"SQLITE_EVENTS_LOCK_TIMEOUT"   default:"5s"`
+	AckDeadline   time.Duration `env:"SQLITE_EVENTS_ACK_DEADLINE"   default:"30s"`
+}
+
+type EventsNATS struct {
 	DSN         string        `env:"NATS_DSN"          default:"nats://localhost:4222"`
 	ClientName  string        `env:"NATS_CLIENT_NAME"  default:""`
 	Token       string        `env:"NATS_TOKEN"        default:""`
@@ -351,10 +360,10 @@ type NATS struct {
 	ConnRetry   bool          `env:"NATS_CONN_RETRY"   default:"false"`
 	MaxRetry    int           `env:"NATS_MAX_RETRY"    default:"10"`
 	RetryDelay  time.Duration `env:"NATS_RETRY_DELAY"  default:"1s"`
-	Subscriber  NATSSubscriber
+	Subscriber  EventsNATSSubscriber
 }
 
-type NATSSubscriber struct {
+type EventsNATSSubscriber struct {
 	GroupPrefix  string        `env:"NATS_SUB_QUEUE_GROUP_PREFIX" default:""`
 	WorkerCount  int           `env:"NATS_SUB_WORKER_COUNT"       default:"1"`
 	Timeout      time.Duration `env:"NATS_SUB_TIMEOUT"            default:"30s"`
@@ -362,7 +371,7 @@ type NATSSubscriber struct {
 	CloseTimeout time.Duration `env:"NATS_SUB_CLOSE_TIMEOUT"      default:"30s"`
 }
 
-type RabbitMQ struct {
+type EventsRabbitMQ struct {
 	DSN                      string        `env:"RABBITMQ_DSN"                        default:"amqp://guest:guest@localhost:5672/"`
 	ReconnectInitialInterval time.Duration `env:"RABBITMQ_RECONNECT_INITIAL_INTERVAL" default:"500ms"`
 	ReconnectMultiplier      float64       `env:"RABBITMQ_RECONNECT_MULTIPLIER"       default:"1.5"`
@@ -391,7 +400,7 @@ type RabbitMQ struct {
 	MessageUUIDHeader        string        `env:"RABBITMQ_MESSAGE_UUID_HEADER"        default:""`
 }
 
-type Kafka struct {
+type EventsKafka struct {
 	Brokers                   []string      `env:"KAFKA_BROKERS"                      default:"localhost:9092"`
 	ConsumerGroup             string        `env:"KAFKA_CONSUMER_GROUP"               default:"example"`
 	ClientID                  string        `env:"KAFKA_CLIENT_ID"                    default:""`
