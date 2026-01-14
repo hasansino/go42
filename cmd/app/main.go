@@ -60,7 +60,6 @@ import (
 	"github.com/hasansino/go42/internal/events/kafka"
 	"github.com/hasansino/go42/internal/events/nats"
 	"github.com/hasansino/go42/internal/events/rabbitmq"
-	sqliteEvents "github.com/hasansino/go42/internal/events/sqlite"
 	"github.com/hasansino/go42/internal/metrics"
 	metricsAdapterV1 "github.com/hasansino/go42/internal/metrics/adapters/http"
 	"github.com/hasansino/go42/internal/metrics/observers"
@@ -306,27 +305,6 @@ func main() {
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
 		)
 		slog.Info("gochan event engine initialized")
-	case "sqlite":
-		if cfg.Database.Engine != "sqlite" {
-			log.Fatalf("to use sqlite event engine, the main database engine must be sqlite\n")
-		}
-		sqliteDB, err := dbEngine.Master().DB()
-		if err != nil {
-			log.Fatalf("failed to get sqlite db connection for events engine: %v\n", err)
-		}
-		eventsEngine, err = sqliteEvents.New(
-			sqliteDB,
-			sqliteEvents.WithLogger(slog.Default().With(slog.String("component", "events-sqlite"))),
-			sqliteEvents.WithConsumerGroup(cfg.Events.SQLite.ConsumerGroup),
-			sqliteEvents.WithBatchSize(cfg.Events.SQLite.BatchSize),
-			sqliteEvents.WithPollInterval(cfg.Events.SQLite.PollInterval),
-			sqliteEvents.WithLockTimeout(cfg.Events.SQLite.LockTimeout),
-			sqliteEvents.WithAckDeadline(cfg.Events.SQLite.AckDeadline),
-		)
-		if err != nil {
-			log.Fatalf("failed to initialize sqlite event engine: %v\n", err)
-		}
-		slog.Info("sqlite event engine initialized")
 	case "nats":
 		eventsEngine, err = nats.New(
 			cfg.Events.NATS.DSN,

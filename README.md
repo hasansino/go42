@@ -46,7 +46,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 ### 💪(•̀_•́💪)
 
 - https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
-- https://threedots.tech/post/watermill-1-5/ - sqlite
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
