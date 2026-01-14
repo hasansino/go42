@@ -39,14 +39,6 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## Backlog
 
-### go1.26
-
-- https://pkg.go.dev/log/slog@master#NewMultiHandler
-
-### 💪(•̀_•́💪)
-
-- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
-
 ### ദ്ദി( •̀ ᴗ •́ )و
 
 - https://failsafe-go.dev/
@@ -148,6 +140,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 - action timeouts
 - https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518
 - https://go.dev/blog/flight-recorder
+- https://pkg.go.dev/log/slog@master#NewMultiHandler (after go1.26 release)
+- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md (otelecho v5)
 
 ### Explore
 

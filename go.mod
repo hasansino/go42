@@ -11,7 +11,6 @@ require (
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.2
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
-	github.com/ThreeDotsLabs/watermill-sqlite/wmsqlitemodernc v0.1.2
 	github.com/VictoriaMetrics/metrics v1.40.2
 	github.com/agiledragon/gomonkey/v2 v2.14.0
 	github.com/allegro/bigcache v1.2.1
@@ -173,7 +172,6 @@ require (
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
