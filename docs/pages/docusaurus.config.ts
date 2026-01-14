@@ -10,7 +10,11 @@ const config: Config = {
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/go42/',
   favicon: 'img/go42-logo.svg',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],

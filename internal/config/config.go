@@ -337,7 +337,7 @@ type Memcached struct {
 // ╰──────────────────────────────╯
 
 type Events struct {
-	Engine   string `env:"EVENTS_ENGINE" default:"gochan" v:"oneof=none gochan nats rabbitmq kafka"`
+	Engine   string `env:"EVENTS_ENGINE" default:"gochan" v:"oneof=none gochan sqlite nats rabbitmq kafka"`
 	NATS     NATS
 	RabbitMQ RabbitMQ
 	Kafka    Kafka

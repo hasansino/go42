@@ -39,11 +39,14 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## Backlog
 
+### go1.26
+
+- https://pkg.go.dev/log/slog@master#NewMultiHandler
+
 ### 💪(•̀_•́💪)
 
 - https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md
 - https://threedots.tech/post/watermill-1-5/ - sqlite
-- https://pkg.go.dev/log/slog@master#NewMultiHandler
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 

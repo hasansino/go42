@@ -305,6 +305,13 @@ func main() {
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
 		)
 		slog.Info("gochan event engine initialized")
+	case "sqlite":
+		if cfg.Database.Engine == "sqlite" {
+			// if we use sqlite as database engine, we can use same connection for events
+		} else {
+			// otherwise, create a new sqlite connection for events
+		}
+		slog.Info("sqlite event engine initialized")
 	case "nats":
 		eventsEngine, err = nats.New(
 			cfg.Events.NATS.DSN,

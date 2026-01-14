@@ -33,6 +33,7 @@ func New(opts ...Option) *GoChan {
 		gochannel.Config{
 			OutputChannelBuffer: 999,
 			Persistent:          true,
+			PreserveContext:     false,
 		},
 		watermill.NewSlogLogger(engine.logger),
 	)
