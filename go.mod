@@ -20,7 +20,7 @@ require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/getsentry/sentry-go v0.41.0
-	github.com/getsentry/sentry-go/slog v0.40.0
+	github.com/getsentry/sentry-go/slog v0.41.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.2.0
