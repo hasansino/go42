@@ -96,8 +96,8 @@ github.com/getkin/kin-openapi v0.133.0 h1:pJdmNohVIJ97r4AUFtEXRXwESr8b0bD721u/Tz
 github.com/getkin/kin-openapi v0.133.0/go.mod h1:boAciF6cXk5FhPqe/NQeBTeenbjqU4LhWBf09ILVvWE=
 github.com/getsentry/sentry-go v0.41.0 h1:q/dQZOlEIb4lhxQSjJhQqtRr3vwrJ6Ahe1C9zv+ryRo=
 github.com/getsentry/sentry-go v0.41.0/go.mod h1:eRXCoh3uvmjQLY6qu63BjUZnaBu5L5WhMV1RwYO8W5s=
-github.com/getsentry/sentry-go/slog v0.40.0 h1:uR2EPL9w6uHw3XB983IAqzqM9mP+fjJpNY9kfob3/Z8=
-github.com/getsentry/sentry-go/slog v0.40.0/go.mod h1:ArRaP+0rsbnJGyvZwYDo/vDQT/YBbOQeOlO+DGW+F9s=
+github.com/getsentry/sentry-go/slog v0.41.0 h1:tjCFcH9KvG7XFufje4gCZTKVVCTxkuAdX7muwKImvD0=
+github.com/getsentry/sentry-go/slog v0.41.0/go.mod h1:YvnAFFkin7eJ8zNVsfeUC97ZTRw//P6JfeK285Aft+Y=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gkampitakis/ciinfo v0.3.2 h1:JcuOPk8ZU7nZQjdUhctuhQofk7BGHuIy0c9Ez8BNhXs=
