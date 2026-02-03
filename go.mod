@@ -37,7 +37,7 @@ require (
 	github.com/hashicorp/vault-client-go v0.4.3
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/labstack/echo/v4 v4.15.0
-	github.com/lmittmann/tint v1.1.2
+	github.com/lmittmann/tint v1.1.3
 	github.com/nats-io/nats.go v1.48.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/ogen-go/ogen v1.18.0
