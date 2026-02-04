@@ -141,7 +141,7 @@ Go42 is opinionated approach to develop cloud native golang services.
 - https://netflixtechblog.com/practical-api-design-at-netflix-part-1-using-protobuf-fieldmask-35cfdc606518
 - https://go.dev/blog/flight-recorder
 - https://pkg.go.dev/log/slog@master#NewMultiHandler (after go1.26 release)
-- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md (otelecho v5)
+- https://github.com/labstack/echo/blob/v5/API_CHANGES_V5.md (after v5 release)
 
 ### Explore
 
