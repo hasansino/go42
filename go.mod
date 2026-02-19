@@ -79,7 +79,7 @@ replace golang.org/x/tools v0.22.0 => golang.org/x/tools v0.35.0
 
 require (
 	cel.dev/expr v0.25.1 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/ClickHouse/ch-go v0.69.0 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.42.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
