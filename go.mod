@@ -17,7 +17,7 @@ require (
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.15.0
-	github.com/caarlos0/env/v11 v11.3.1
+	github.com/caarlos0/env/v11 v11.4.0
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/getsentry/sentry-go v0.42.0
 	github.com/getsentry/sentry-go/slog v0.42.0
