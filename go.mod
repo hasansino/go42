@@ -40,7 +40,7 @@ require (
 	github.com/lmittmann/tint v1.1.3
 	github.com/nats-io/nats.go v1.49.0
 	github.com/oapi-codegen/runtime v1.2.0
-	github.com/ogen-go/ogen v1.19.0
+	github.com/ogen-go/ogen v1.20.1
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/orandin/slog-gorm v1.4.0
