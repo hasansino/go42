@@ -198,7 +198,7 @@ jobs:
           show-summary: true
       - name: 'Attest SBOM'
         if: ${{ inputs.attestation_sbom }}
-        uses: actions/attest-sbom@v3
+        uses: actions/attest-sbom@v4
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
