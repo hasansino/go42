@@ -81,7 +81,7 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - name: 'Deploy to GitHub Pages'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           artifact_name: 'github-pages'
