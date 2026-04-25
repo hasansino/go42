@@ -40,7 +40,8 @@ Go42 is opinionated approach to develop cloud native golang services.
 ## Backlog
 
 * upgrade all major dependencies
-* make a list of major direct dependancies
+* make a list of major direct dependencies
+* maybe invent storage for such artifacts (build info, dependency graph, etc.)
 
 ### ദ്ദി( •̀ ᴗ •́ )و
 
