@@ -39,8 +39,12 @@ Go42 is opinionated approach to develop cloud native golang services.
 
 ## Backlog
 
+* upgrade all major dependencies
+* make a list of major direct dependancies
+
 ### ദ്ദി( •̀ ᴗ •́ )و
 
+- remove all ThreeDotsLabs packages
 - https://failsafe-go.dev/
 - circuit breaker (https://github.com/sony/gobreaker)
 - graceful connection recovery
