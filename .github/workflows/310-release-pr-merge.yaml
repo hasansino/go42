@@ -69,7 +69,7 @@ jobs:
           echo "Summary extracted successfully"
       # ----
       - name: 'Create GitHub release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           name: Release ${{ steps.extract_semver.outputs.version }}
