@@ -58,7 +58,7 @@ jobs:
     # ----
     steps:
       - name: 'Run Trivy vulnerability scanner'
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
@@ -112,17 +112,17 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v6
       - name: 'Download SBOM artifact'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
       - name: 'Run OSV Scanner'
-        uses: google/osv-scanner-action/osv-scanner-action@v2.3.2
+        uses: google/osv-scanner-action/osv-scanner-action@v2.3.5
         continue-on-error: true
         with:
           scan-args: --output=results.json --all-vulns --format=json --recursive ./
       - name: 'Generate OSV Scanner report'
-        uses: google/osv-scanner-action/osv-reporter-action@v2.3.2
+        uses: google/osv-scanner-action/osv-reporter-action@v2.3.5
         continue-on-error: true
         with:
           scan-args: |-
@@ -132,7 +132,7 @@ jobs:
             --fail-on-vuln=true
             --all-vulns
       - name: 'Upload OSV Scanner results'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: osv-scanner-results.sarif
           path: osv-scanner-results.sarif

@@ -27,7 +27,7 @@ jobs:
       - name: 'Generate GitHub App Token'
         id: generate_token
         if: ${{ vars.RELEASE_APP_ID }}
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -69,7 +69,7 @@ jobs:
           echo "Summary extracted successfully"
       # ----
       - name: 'Create GitHub release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           name: Release ${{ steps.extract_semver.outputs.version }}

@@ -67,7 +67,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v6
       - name: 'Download K6 test results'
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: k6-summary-*
           merge-multiple: true
@@ -362,7 +362,7 @@ jobs:
           ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port)
             || format('localhost:{0}', matrix.grpc_port) }}
       - name: 'Upload K6 test results'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1
           path: k6-summary-${{ matrix.protocol }}-${{ matrix.database }}-v1.json
