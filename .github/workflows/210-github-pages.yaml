@@ -55,7 +55,7 @@ jobs:
         run: npm run build
       # ----
       - name: 'Setup Pages'
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
         with:
           token: ${{ github.token }}
       - name: 'Upload artifact'
