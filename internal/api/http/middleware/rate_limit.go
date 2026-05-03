@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type rateLimiterAcessor interface {
@@ -12,7 +12,7 @@ type rateLimiterAcessor interface {
 
 func NewRateLimiter(limiter rateLimiterAcessor) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if DefaultSkipper(c) {
 				return next(c)
 			}
@@ -27,6 +27,6 @@ func NewRateLimiter(limiter rateLimiterAcessor) echo.MiddlewareFunc {
 	}
 }
 
-func extractRateLimitKeyFromCtx(c echo.Context) string {
+func extractRateLimitKeyFromCtx(c *echo.Context) string {
 	return c.RealIP()
 }

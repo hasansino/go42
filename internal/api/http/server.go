@@ -9,10 +9,11 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
+	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	customMiddleware "github.com/hasansino/go42/internal/api/http/middleware"
 	"github.com/hasansino/go42/internal/metrics"
@@ -28,15 +29,6 @@ type rateLimiterAccessor interface {
 	Limit(key any) bool
 }
 
-type PanicError struct {
-	BaseErr error
-	Stack   []byte
-}
-
-func (e *PanicError) Error() string {
-	return e.BaseErr.Error()
-}
-
 type Server struct {
 	l    *slog.Logger
 	e    *echo.Echo
@@ -49,44 +41,32 @@ type Server struct {
 	readyStatus atomic.Bool
 	rateLimiter rateLimiterAccessor
 
+	shutdownCtx    context.Context
+	shutdownCancel context.CancelFunc
+
 	tracingEnabled   bool
 	swaggerDarkStyle bool
-	bodyLimit        string
+	bodyLimit        int64
+	readTimeout      time.Duration
+	writeTimeout     time.Duration
 	allowOrigins     []string
 }
 
 func New(opts ...Option) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
 	s := &Server{
-		e:            echo.New(),
-		allowOrigins: make([]string, 0),
+		e:              echo.New(),
+		allowOrigins:   make([]string, 0),
+		shutdownCtx:    ctx,
+		shutdownCancel: cancel,
 	}
 
 	for _, opt := range opts {
 		opt(s)
 	}
 
-	s.e.HideBanner = true
-	s.e.HidePort = true
-
-	// goes to http.HTTPServer.ErrorLog
-	// logs low-level errors, like connection or tls errors
-	s.e.StdLogger = slog.NewLogLogger(
-		s.l.Handler().WithAttrs([]slog.Attr{
-			slog.String("who", "echo.StdLogger"),
-		}),
-		slog.LevelError,
-	)
-
-	// can be used my some middleware, but should be avoided
-	s.e.Logger.SetOutput(slog.NewLogLogger(
-		s.l.Handler().WithAttrs([]slog.Attr{
-			slog.String("who", "echo.Logger"),
-		}),
-		slog.LevelError,
-	).Writer())
-
 	// all panics and explicit errors are handled here
-	s.e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+	s.e.HTTPErrorHandler = func(ctx *echo.Context, err error) {
 		var (
 			httpStatus  = http.StatusInternalServerError
 			httpMessage = "Internal HTTPServer Error"
@@ -98,7 +78,7 @@ func New(opts ...Option) *Server {
 			panicStack      []byte
 		)
 
-		if panicErr := new(PanicError); errors.As(err, &panicErr) {
+		if panicErr := new(middleware.PanicStackError); errors.As(err, &panicErr) {
 			logMessage = "http api panic"
 			metricErrorType = "http_api_panic"
 			panicStack = panicErr.Stack
@@ -124,8 +104,7 @@ func New(opts ...Option) *Server {
 			s.l.ErrorContext(ctx.Request().Context(), logMessage, slogAttrs...)
 		}
 
-		// if response is not committed, something unexpected happened
-		if ctx.Response().Committed {
+		if r, _ := echo.UnwrapResponse(ctx.Response()); r != nil && r.Committed {
 			return
 		}
 
@@ -138,36 +117,34 @@ func New(opts ...Option) *Server {
 
 	// panics are handled and passed to the HTTPErrorHandler
 	// this middleware should be always the first one in the chain
-	s.e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(ctx echo.Context, err error, stack []byte) error {
-			return &PanicError{BaseErr: err, Stack: stack}
-		},
-	}))
+	s.e.Use(middleware.Recover())
 
 	s.e.Use(middleware.RemoveTrailingSlash())
 
 	if s.tracingEnabled {
-		s.e.Use(otelecho.Middleware(
+		s.e.Use(echo.WrapMiddleware(otelhttp.NewMiddleware(
 			"http-server",
-			otelecho.WithSkipper(customMiddleware.DefaultSkipper),
-		))
+			otelhttp.WithFilter(func(r *http.Request) bool {
+				return r.URL.Path != "/health" && r.URL.Path != "/metrics"
+			}),
+		)))
 	}
 
 	s.e.Use(customMiddleware.NewRateLimiter(s.rateLimiter))
 
 	s.e.Use(middleware.BodyLimitWithConfig(middleware.BodyLimitConfig{
-		Skipper: customMiddleware.DefaultSkipper,
-		Limit:   s.bodyLimit,
+		Skipper:    customMiddleware.DefaultSkipper,
+		LimitBytes: s.bodyLimit,
 	}))
 
 	s.e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		Skipper:      customMiddleware.DefaultSkipper,
-		LogError:     true,
+		HandleError:  true,
 		LogStatus:    true,
 		LogMethod:    true,
 		LogURI:       true,
 		LogRequestID: true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
 			// log any request with status code < 500 as normal INFO level
 			echoErr := new(echo.HTTPError)
 			if v.Error == nil || errors.As(v.Error, &echoErr) && echoErr.Code < 500 {
@@ -239,7 +216,7 @@ func New(opts ...Option) *Server {
 
 		// embed swagger html template itself
 		tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
-		s.v1.GET("/", func(c echo.Context) error {
+		s.v1.GET("/", func(c *echo.Context) error {
 			return tmpl.Execute(c.Response(), swaggerTemplateData{
 				SpecURLs:  s.parseSpecDir(s.swaggerRoot+"/v1", "/api/v1/"),
 				DarkTheme: s.swaggerDarkStyle,
@@ -251,11 +228,24 @@ func New(opts ...Option) *Server {
 }
 
 func (s *Server) Start(addr string) error {
-	return s.e.Start(addr)
+	sc := echo.StartConfig{
+		Address:    addr,
+		HideBanner: true,
+		HidePort:   true,
+	}
+	if s.readTimeout > 0 || s.writeTimeout > 0 {
+		sc.BeforeServeFunc = func(hs *http.Server) error {
+			hs.ReadTimeout = s.readTimeout
+			hs.WriteTimeout = s.writeTimeout
+			return nil
+		}
+	}
+	return sc.Start(s.shutdownCtx, s.e)
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
-	return s.e.Shutdown(ctx)
+func (s *Server) Shutdown(_ context.Context) error {
+	s.shutdownCancel()
+	return nil
 }
 
 // Register adapters for /
@@ -272,11 +262,11 @@ func (s *Server) RegisterV1(adapters ...adapterAccessor) {
 	}
 }
 
-func (s *Server) health(ctx echo.Context) error {
+func (s *Server) health(ctx *echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (s *Server) ready(ctx echo.Context) error {
+func (s *Server) ready(ctx *echo.Context) error {
 	if !s.readyStatus.Load() {
 		return ctx.NoContent(http.StatusServiceUnavailable)
 	}

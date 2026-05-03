@@ -4,14 +4,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/hasansino/go42/internal/metrics"
 )
 
 func NewMetricsCollector() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (returnErr error) {
+		return func(c *echo.Context) (returnErr error) {
 			if DefaultSkipper(c) {
 				return next(c)
 			}
@@ -25,8 +25,8 @@ func NewMetricsCollector() echo.MiddlewareFunc {
 
 			metrics.Counter("application_http_requests_count", labels).Inc()
 
-			resRecorder := newResponseRecorder(c.Response().Writer, false)
-			c.Response().Writer = resRecorder
+			resRecorder := newResponseRecorder(c.Response(), false)
+			c.SetResponse(resRecorder)
 
 			err := next(c)
 

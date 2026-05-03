@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth/domain"
 )
 
-func (a *Adapter) processError(ctx echo.Context, err error) error {
+func (a *Adapter) processError(ctx *echo.Context, err error) error {
 	switch {
 	case errors.Is(err, domain.ErrEntityNotFound):
 		return httpAPI.SendJSONError(ctx,

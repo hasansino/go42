@@ -27,14 +27,14 @@ func WithTracing(enabled bool) Option {
 // WithReadTimeout sets the read timeout.
 func WithReadTimeout(d time.Duration) Option {
 	return func(s *Server) {
-		s.e.Server.ReadTimeout = d
+		s.readTimeout = d
 	}
 }
 
 // WithWriteTimeout sets the write timeout.
 func WithWriteTimeout(d time.Duration) Option {
 	return func(s *Server) {
-		s.e.Server.WriteTimeout = d
+		s.writeTimeout = d
 	}
 }
 
@@ -71,9 +71,8 @@ func WithRateLimiter(rate int, burst int) Option {
 	}
 }
 
-// WithBodyLimit sets the maximum allowed size of the request body.
-// Limit can be specified as 4x or 4xB, where x is one of the multiple from K, M, G, T or P.
-func WithBodyLimit(limit string) Option {
+// WithBodyLimit sets the maximum allowed size of the request body in bytes.
+func WithBodyLimit(limit int64) Option {
 	return func(s *Server) {
 		s.bodyLimit = limit
 	}

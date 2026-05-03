@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const (
@@ -23,7 +23,7 @@ type cacheAccessor interface {
 
 func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if ttl == 0 {
 				return next(c)
 			}
@@ -50,8 +50,8 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueMISS)
 			}
 
-			resRecorder := newResponseRecorder(c.Response().Writer, true)
-			c.Response().Writer = resRecorder
+			resRecorder := newResponseRecorder(c.Response(), true)
+			c.SetResponse(resRecorder)
 
 			if err := next(c); err != nil {
 				return err

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
-var DefaultSkipper = func(c echo.Context) bool {
+var DefaultSkipper = func(c *echo.Context) bool {
 	if c.Path() == "/health" || c.Path() == "/metrics" {
 		return true
 	}
@@ -39,4 +39,8 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.size += size
 	return size, err
+}
+
+func (r *responseRecorder) Unwrap() http.ResponseWriter {
+	return r.ResponseWriter
 }

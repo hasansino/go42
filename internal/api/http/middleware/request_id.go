@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	echoMiddleware "github.com/labstack/echo/v5/middleware"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
@@ -19,7 +19,7 @@ func NewRequestID() echo.MiddlewareFunc {
 			return uuid.New().String()
 		},
 		TargetHeader: headerNameRequestID,
-		RequestIDHandler: func(ctx echo.Context, requestID string) {
+		RequestIDHandler: func(ctx *echo.Context, requestID string) {
 			newCtx := tools.SetRequestIDToContext(ctx.Request().Context(), requestID)
 			ctx.SetRequest(ctx.Request().WithContext(newCtx))
 			if span := trace.SpanFromContext(newCtx); span.SpanContext().IsValid() && span.IsRecording() {

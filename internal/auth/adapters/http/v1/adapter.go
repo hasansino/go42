@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/api/http/middleware"
@@ -98,7 +98,7 @@ type SignupRequest struct {
 	Password string `json:"password" v:"required,min=8,max=24"`
 }
 
-func (a *Adapter) signup(ctx echo.Context) error {
+func (a *Adapter) signup(ctx *echo.Context) error {
 	req := new(SignupRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -128,7 +128,7 @@ type LoginRequest struct {
 	Password string `json:"password" v:"required,min=8,max=24"`
 }
 
-func (a *Adapter) login(ctx echo.Context) error {
+func (a *Adapter) login(ctx *echo.Context) error {
 	req := new(LoginRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -156,7 +156,7 @@ type RefreshTokenRequest struct {
 	Token string `json:"token" v:"required"`
 }
 
-func (a *Adapter) refresh(ctx echo.Context) error {
+func (a *Adapter) refresh(ctx *echo.Context) error {
 	req := new(RefreshTokenRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -185,7 +185,7 @@ type LogoutTokenRequest struct {
 	RefreshToken string `json:"refresh_token" v:"required"`
 }
 
-func (a *Adapter) logout(ctx echo.Context) error {
+func (a *Adapter) logout(ctx *echo.Context) error {
 	req := new(LogoutTokenRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -211,7 +211,7 @@ func (a *Adapter) logout(ctx echo.Context) error {
 
 // ----
 
-func (a *Adapter) readSelf(ctx echo.Context) error {
+func (a *Adapter) readSelf(ctx *echo.Context) error {
 	authInfo := auth.RetrieveAuthFromContext(ctx.Request().Context())
 	if authInfo == nil {
 		return httpAPI.SendJSONError(ctx,
@@ -231,7 +231,7 @@ type UpdateSelfRequest struct {
 	Password string `json:"password" v:"omitempty,min=8,max=24"`
 }
 
-func (a *Adapter) updateSelf(ctx echo.Context) error {
+func (a *Adapter) updateSelf(ctx *echo.Context) error {
 	authInfo := auth.RetrieveAuthFromContext(ctx.Request().Context())
 	if authInfo == nil {
 		return httpAPI.SendJSONError(ctx,
@@ -274,7 +274,7 @@ func (a *Adapter) updateSelf(ctx echo.Context) error {
 
 // ----
 
-func (a *Adapter) listUsers(ctx echo.Context) error {
+func (a *Adapter) listUsers(ctx *echo.Context) error {
 	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
 	if err != nil || limit < 0 {
 		limit = 10
@@ -294,7 +294,7 @@ func (a *Adapter) listUsers(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, resp)
 }
 
-func (a *Adapter) userByUUID(ctx echo.Context) error {
+func (a *Adapter) userByUUID(ctx *echo.Context) error {
 	userUUID := ctx.Param("uuid")
 	if err := uuid.Validate(userUUID); err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -312,7 +312,7 @@ type CreateUserRequest struct {
 	Password string `json:"password" v:"required,min=8,max=24"`
 }
 
-func (a *Adapter) createUser(ctx echo.Context) error {
+func (a *Adapter) createUser(ctx *echo.Context) error {
 	req := new(CreateUserRequest)
 
 	if err := ctx.Bind(req); err != nil {
@@ -346,7 +346,7 @@ type UpdateUserRequest struct {
 	Password string `json:"password" v:"omitempty,min=8,max=24"`
 }
 
-func (a *Adapter) updateUser(ctx echo.Context) error {
+func (a *Adapter) updateUser(ctx *echo.Context) error {
 	userUUID := ctx.Param("uuid")
 	if err := uuid.Validate(userUUID); err != nil {
 		return httpAPI.SendJSONError(ctx,
@@ -387,7 +387,7 @@ func (a *Adapter) updateUser(ctx echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (a *Adapter) deleteUser(ctx echo.Context) error {
+func (a *Adapter) deleteUser(ctx *echo.Context) error {
 	userUUID := ctx.Param("uuid")
 	if err := uuid.Validate(userUUID); err != nil {
 		return httpAPI.SendJSONError(ctx,

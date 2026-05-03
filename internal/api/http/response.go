@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 const MIMEApplicationProblemJSON = "application/problem+json"
@@ -18,7 +18,7 @@ type Error struct {
 	Errors   []interface{} `json:"errors,omitempty"`
 }
 
-func SendJSONError(ctx echo.Context, status int, title string, opts ...ErrorOption) error {
+func SendJSONError(ctx *echo.Context, status int, title string, opts ...ErrorOption) error {
 	errorResponse := Error{
 		Type:   ctx.Request().RequestURI,
 		Title:  title,
@@ -27,7 +27,7 @@ func SendJSONError(ctx echo.Context, status int, title string, opts ...ErrorOpti
 	for _, opt := range opts {
 		opt(&errorResponse)
 	}
-	ctx.Set(echo.HeaderContentType, MIMEApplicationProblemJSON)
+	ctx.Response().Header().Set(echo.HeaderContentType, MIMEApplicationProblemJSON)
 	return ctx.JSON(errorResponse.Status, errorResponse)
 }
 

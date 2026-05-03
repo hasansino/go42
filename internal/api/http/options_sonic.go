@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bytedance/sonic"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 // sonicJSONSerializer is alternative json serializer
@@ -16,7 +16,7 @@ type sonicJSONSerializer struct {
 	api sonic.API
 }
 
-func (s sonicJSONSerializer) Serialize(c echo.Context, i any, indent string) error {
+func (s sonicJSONSerializer) Serialize(c *echo.Context, i any, indent string) error {
 	enc := s.api.NewEncoder(c.Response())
 	if indent != "" {
 		enc.SetIndent("", indent)
@@ -24,7 +24,7 @@ func (s sonicJSONSerializer) Serialize(c echo.Context, i any, indent string) err
 	return enc.Encode(i)
 }
 
-func (s sonicJSONSerializer) Deserialize(c echo.Context, i any) error {
+func (s sonicJSONSerializer) Deserialize(c *echo.Context, i any) error {
 	err := s.api.NewDecoder(c.Request().Body).Decode(i)
 	if err == nil {
 		return nil
@@ -37,7 +37,7 @@ func (s sonicJSONSerializer) Deserialize(c echo.Context, i any) error {
 				"Unmarshal error: got=%s, expected=%v, field=%s, offset=%d",
 				ute.Value, ute.Type, ute.Field, ute.Offset,
 			),
-		).SetInternal(err)
+		).Wrap(err)
 	}
 
 	if se := (*json.SyntaxError)(nil); errors.As(err, &se) {
@@ -47,7 +47,7 @@ func (s sonicJSONSerializer) Deserialize(c echo.Context, i any) error {
 				"Syntax error: offset=%d, error=%s",
 				se.Offset, se.Error(),
 			),
-		).SetInternal(err)
+		).Wrap(err)
 	}
 
 	return err

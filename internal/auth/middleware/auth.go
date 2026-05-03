@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
 	"github.com/hasansino/go42/internal/auth"
@@ -35,7 +35,7 @@ type authServiceAccessor interface {
 
 func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
+		return func(ctx *echo.Context) error {
 			switch {
 			case ctx.Request().Header.Get(headerAuthorization) != "":
 				token, err := extractBearerToken(
@@ -77,7 +77,7 @@ func extractBearerToken(authHeader string) (string, error) {
 	return token, nil
 }
 
-func processUserAuth(ctx echo.Context, svc authServiceAccessor, token string) error {
+func processUserAuth(ctx *echo.Context, svc authServiceAccessor, token string) error {
 	claims, err := svc.ValidateJWTToken(ctx.Request().Context(), token)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
@@ -117,7 +117,7 @@ func processUserAuth(ctx echo.Context, svc authServiceAccessor, token string) er
 	return nil
 }
 
-func processTokenAuth(ctx echo.Context, svc authServiceAccessor, token string) error {
+func processTokenAuth(ctx *echo.Context, svc authServiceAccessor, token string) error {
 	apiToken, err := svc.ValidateAPIToken(ctx.Request().Context(), token)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
