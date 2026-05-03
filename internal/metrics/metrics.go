@@ -106,7 +106,7 @@ func constructMetric(name string, labels map[string]interface{}) string {
 		}
 
 		// fmt.Sprintf may be slow, but it is trade off for convenience
-		builder.WriteString(fmt.Sprintf("%v", v))
+		builder.WriteString(fmt.Sprintf("%v", v)) //nolint:staticcheck
 		builder.WriteByte('"')
 	}
 

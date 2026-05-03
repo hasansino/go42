@@ -18,7 +18,7 @@ func SlogContextWrapper(h slog.Handler) slog.Handler {
 func (h *ContextFieldsHandler) Handle(ctx context.Context, r slog.Record) error {
 	requestID := GetRequestIDFromContext(ctx)
 	if requestID != "" {
-		r.Add(slog.String("request-id", GetRequestIDFromContext(ctx)))
+		r.Add(slog.String("request_id", GetRequestIDFromContext(ctx)))
 	}
 	return h.Handler.Handle(ctx, r)
 }
