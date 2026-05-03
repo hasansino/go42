@@ -65,6 +65,9 @@ func New(opts ...Option) *Server {
 		opt(s)
 	}
 
+	// route echo's internal logs through the project's slog logger
+	s.e.Logger = s.l.With(slog.String("who", "echo.Logger"))
+
 	// all panics and explicit errors are handled here
 	s.e.HTTPErrorHandler = func(ctx *echo.Context, err error) {
 		var (
@@ -82,9 +85,9 @@ func New(opts ...Option) *Server {
 			logMessage = "http api panic"
 			metricErrorType = "http_api_panic"
 			panicStack = panicErr.Stack
-		} else if echoErr := new(echo.HTTPError); errors.As(err, &echoErr) {
-			httpStatus = echoErr.Code
-			httpMessage = http.StatusText(httpStatus)
+		} else if code := echo.StatusCode(err); code != 0 {
+			httpStatus = code
+			httpMessage = http.StatusText(code)
 		}
 
 		if httpStatus >= 500 {
@@ -146,8 +149,7 @@ func New(opts ...Option) *Server {
 		LogRequestID: true,
 		LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
 			// log any request with status code < 500 as normal INFO level
-			echoErr := new(echo.HTTPError)
-			if v.Error == nil || errors.As(v.Error, &echoErr) && echoErr.Code < 500 {
+			if code := echo.StatusCode(v.Error); v.Error == nil || (code != 0 && code < 500) {
 				s.l.DebugContext(
 					c.Request().Context(),
 					"request",
@@ -233,12 +235,21 @@ func (s *Server) Start(addr string) error {
 		HideBanner: true,
 		HidePort:   true,
 	}
-	if s.readTimeout > 0 || s.writeTimeout > 0 {
-		sc.BeforeServeFunc = func(hs *http.Server) error {
+	sc.BeforeServeFunc = func(hs *http.Server) error {
+		if s.readTimeout > 0 {
 			hs.ReadTimeout = s.readTimeout
-			hs.WriteTimeout = s.writeTimeout
-			return nil
 		}
+		if s.writeTimeout > 0 {
+			hs.WriteTimeout = s.writeTimeout
+		}
+		// route low-level connection/tls errors through the project's slog
+		hs.ErrorLog = slog.NewLogLogger(
+			s.l.Handler().WithAttrs([]slog.Attr{
+				slog.String("who", "echo.StdLogger"),
+			}),
+			slog.LevelError,
+		)
+		return nil
 	}
 	return sc.Start(s.shutdownCtx, s.e)
 }
