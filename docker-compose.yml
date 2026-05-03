@@ -40,7 +40,10 @@ services:
 
   nats:
     image: nats:2
-    command: ["-js", "-m", "8222"]
+    command:
+      - "-js"
+      - "-m"
+      - "8222"
     ports:
       - "4222:4222"
       - "8222:8222" # ui
@@ -113,20 +116,13 @@ services:
     ports:
       - "3333:3000" # ui
 
-  zipkin:
-    image: openzipkin/zipkin:latest
-    ports:
-      - "9411:9411" # ui
-
   jaeger:
     image: jaegertracing/all-in-one:latest
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
       - "16686:16686" # ui
-      - "14268:14268" # collector (legacy)
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "4317:4317" # OTLP gRPC
 
 # ---
 

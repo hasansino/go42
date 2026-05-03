@@ -28,7 +28,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -904,32 +903,21 @@ func initTracing(ctx context.Context, cfg *config.Config) ShutMeDown {
 	var exporter sdktrace.SpanExporter
 
 	switch cfg.Tracing.Provider {
-	case "zipkin":
-		exporter, err = zipkin.New(
-			cfg.Tracing.Zipkin.DSN,
-			zipkin.WithClient(&http.Client{
-				Timeout: cfg.Tracing.Timeout,
-			}),
-		)
-		if err != nil {
-			log.Fatalf("failed to create zipkin exporter: %v", err)
-		}
-		slog.Info("initialized zipkin tracing exporter", slog.String("dsn", cfg.Tracing.Zipkin.DSN))
-	case "jaeger":
+	case "otel":
 		exporter, err = otlptrace.New(
 			ctx,
 			otlptracegrpc.NewClient(
-				otlptracegrpc.WithEndpoint(cfg.Tracing.Jaeger.GrpcHost),
+				otlptracegrpc.WithEndpoint(cfg.Tracing.Otel.GrpcHost),
 				otlptracegrpc.WithTimeout(cfg.Tracing.Timeout),
 				otlptracegrpc.WithInsecure(),
 			),
 		)
 		if err != nil {
-			log.Fatalf("failed to create jaeger OTLP exporter: %v", err)
+			log.Fatalf("failed to create OTLP exporter: %v", err)
 		}
 		slog.InfoContext(
-			ctx, "initialized jaeger OTLP tracing exporter",
-			slog.String("endpoint", cfg.Tracing.Jaeger.GrpcHost))
+			ctx, "initialized OTLP tracing exporter",
+			slog.String("endpoint", cfg.Tracing.Otel.GrpcHost))
 	default:
 		log.Fatalf("unsupported tracing provider: %s", cfg.Tracing.Provider)
 	}
