@@ -456,7 +456,7 @@ type HTTP struct {
 	StaticRoot       string        `env:"SERVER_HTTP_STATIC_ROOT"        default:"/usr/share/www"`
 	SwaggerRoot      string        `env:"SERVER_HTTP_SWAGGER_ROOT"       default:"/usr/share/www/api"`
 	SwaggerDark      bool          `env:"SERVER_HTTP_SWAGGER_DARK"       default:"true"`
-	BodyLimitKB      int           `env:"SERVER_HTTP_BODY_LIMIT_KB"      default:"1024"`
+	BodyLimitKB      int64         `env:"SERVER_HTTP_BODY_LIMIT_KB"      default:"1024"`
 	CORSAllowOrigins []string      `env:"SERVER_HTTP_CORS_ALLOW_ORIGINS" default:"*"`
 	RateLimiter      HTTPRateLimiter
 }

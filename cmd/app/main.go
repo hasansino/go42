@@ -489,7 +489,7 @@ func main() {
 		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
 		httpAPI.WithStaticRoot(cfg.Server.HTTP.StaticRoot),
 		httpAPI.WithSwaggerRoot(cfg.Server.HTTP.SwaggerRoot),
-		httpAPI.WithBodyLimit(int64(cfg.Server.HTTP.BodyLimitKB) * 1024),
+		httpAPI.WithBodyLimit(cfg.Server.HTTP.BodyLimitKB * 1024),
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
 	}
