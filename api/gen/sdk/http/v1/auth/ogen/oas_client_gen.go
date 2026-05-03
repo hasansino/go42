@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -102,14 +102,6 @@ type Client struct {
 	sec       SecuritySource
 	baseClient
 }
-type errorHandler interface {
-	NewError(ctx context.Context, err error) *UnexpectedResponseStatusCode
-}
-
-var _ Handler = struct {
-	errorHandler
-	*Client
-}{}
 
 // NewClient initializes new Client defined by OAS.
 func NewClient(serverURL string, sec SecuritySource, opts ...ClientOption) (*Client, error) {
@@ -210,7 +202,8 @@ func (c *Client) sendLogin(ctx context.Context, request *LoginRequest) (res Logi
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeLoginResponse(resp)
@@ -286,7 +279,8 @@ func (c *Client) sendLogout(ctx context.Context, request *LogoutRequest) (res Lo
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeLogoutResponse(resp)
@@ -362,7 +356,8 @@ func (c *Client) sendRefresh(ctx context.Context, request *RefreshRequest) (res 
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeRefreshResponse(resp)
@@ -438,7 +433,8 @@ func (c *Client) sendSignup(ctx context.Context, request *SignUpRequest) (res Si
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeSignupResponse(resp)
@@ -547,7 +543,8 @@ func (c *Client) sendUsersCreate(ctx context.Context, request *CreateUserRequest
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersCreateResponse(resp)
@@ -671,7 +668,8 @@ func (c *Client) sendUsersDelete(ctx context.Context, params UsersDeleteParams) 
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersDeleteResponse(resp)
@@ -795,7 +793,8 @@ func (c *Client) sendUsersGet(ctx context.Context, params UsersGetParams) (res U
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersGetResponse(resp)
@@ -939,7 +938,8 @@ func (c *Client) sendUsersList(ctx context.Context, params UsersListParams) (res
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersListResponse(resp)
@@ -1045,7 +1045,8 @@ func (c *Client) sendUsersMeRead(ctx context.Context) (res UsersMeReadRes, err e
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersMeReadResponse(resp)
@@ -1154,7 +1155,8 @@ func (c *Client) sendUsersMeUpdate(ctx context.Context, request *UpdateSelfReque
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersMeUpdateResponse(resp)
@@ -1281,7 +1283,8 @@ func (c *Client) sendUsersUpdate(ctx context.Context, request *UpdateUserRequest
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUsersUpdateResponse(resp)

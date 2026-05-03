@@ -33,6 +33,7 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 	return "", false
 }
 
+// operationRolesJwt is a private map storing roles per operation.
 var operationRolesJwt = map[string][]string{
 	UsersCreateOperation: []string{
 		"users:create",
@@ -55,6 +56,27 @@ var operationRolesJwt = map[string][]string{
 	UsersUpdateOperation: []string{
 		"users:update",
 	},
+}
+
+// GetRolesForJwt returns the required roles for the given operation.
+//
+// This is useful for authorization scenarios where you need to know which roles
+// are required for an operation.
+//
+// Example:
+//
+//	requiredRoles := GetRolesForJwt(AddPetOperation)
+//
+// Returns nil if the operation has no role requirements or if the operation is unknown.
+func GetRolesForJwt(operation string) []string {
+	roles, ok := operationRolesJwt[operation]
+	if !ok {
+		return nil
+	}
+	// Return a copy to prevent external modification
+	result := make([]string, len(roles))
+	copy(result, roles)
+	return result
 }
 
 func (s *Server) securityJwt(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
