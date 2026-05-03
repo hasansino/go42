@@ -1,6 +1,6 @@
 module github.com/hasansino/go42
 
-go 1.25.5
+go 1.26.2
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
@@ -35,7 +35,7 @@ require (
 	github.com/hasansino/etcd2cfg v1.4.0
 	github.com/hasansino/vault2cfg v1.1.0
 	github.com/hashicorp/vault-client-go v0.4.3
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/labstack/echo/v5 v5.1.1
 	github.com/lmittmann/tint v1.1.3
 	github.com/nats-io/nats.go v1.49.0
@@ -61,7 +61,7 @@ require (
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/time v0.15.0
-	google.golang.org/grpc v1.79.1
+	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
