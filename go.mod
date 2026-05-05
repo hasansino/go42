@@ -42,7 +42,7 @@ require (
 	github.com/oapi-codegen/runtime v1.4.0
 	github.com/ogen-go/ogen v1.20.1
 	github.com/onsi/ginkgo/v2 v2.28.1
-	github.com/onsi/gomega v1.39.1
+	github.com/onsi/gomega v1.40.0
 	github.com/orandin/slog-gorm v1.4.0
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/redis/go-redis/v9 v9.18.0
