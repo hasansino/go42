@@ -25,7 +25,7 @@ G0LANG PR0JECT 0PERATION BLUEPRINT
 
 # go42
 
-Go42 is opinionated approach to develop cloud native golang services.
+Go42 is opinionated approach to develop cloud native golang services. 
 
 ## Goals
 
