@@ -34,7 +34,7 @@ func TestReadSelf_CacheIsIsolatedByAuthenticatedUser(t *testing.T) {
 	service := mocks.NewMockserviceAccessor(ctrl)
 	gomock.InOrder(
 		service.EXPECT().
-			ValidateJWTToken(gomock.Any(), "token-a").
+			ValidateJWTToken(gomock.Any(), "token-a", domain.JWTTokenPurposeAccess).
 			Return(claimsFor(userA), nil),
 		service.EXPECT().
 			GetUserByUUID(gomock.Any(), userA.UUID.String()).
@@ -43,7 +43,7 @@ func TestReadSelf_CacheIsIsolatedByAuthenticatedUser(t *testing.T) {
 			GetUserByID(gomock.Any(), userA.ID).
 			Return(userA, nil),
 		service.EXPECT().
-			ValidateJWTToken(gomock.Any(), "token-b").
+			ValidateJWTToken(gomock.Any(), "token-b", domain.JWTTokenPurposeAccess).
 			Return(claimsFor(userB), nil),
 		service.EXPECT().
 			GetUserByUUID(gomock.Any(), userB.UUID.String()).

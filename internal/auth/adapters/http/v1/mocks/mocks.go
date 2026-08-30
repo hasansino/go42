@@ -220,83 +220,16 @@ func (mr *MockserviceAccessorMockRecorder) ValidateAPIToken(ctx, token any) *gom
 }
 
 // ValidateJWTToken mocks base method.
-func (m *MockserviceAccessor) ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (m *MockserviceAccessor) ValidateJWTToken(ctx context.Context, token string, expectedPurpose domain.JWTTokenPurpose) (*domain.JWTClaims, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateJWTToken", ctx, token)
+	ret := m.ctrl.Call(m, "ValidateJWTToken", ctx, token, expectedPurpose)
 	ret0, _ := ret[0].(*domain.JWTClaims)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ValidateJWTToken indicates an expected call of ValidateJWTToken.
-func (mr *MockserviceAccessorMockRecorder) ValidateJWTToken(ctx, token any) *gomock.Call {
+func (mr *MockserviceAccessorMockRecorder) ValidateJWTToken(ctx, token, expectedPurpose any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateJWTToken", reflect.TypeOf((*MockserviceAccessor)(nil).ValidateJWTToken), ctx, token)
-}
-
-// MockcacheAccessor is a mock of cacheAccessor interface.
-type MockcacheAccessor struct {
-	ctrl     *gomock.Controller
-	recorder *MockcacheAccessorMockRecorder
-	isgomock struct{}
-}
-
-// MockcacheAccessorMockRecorder is the mock recorder for MockcacheAccessor.
-type MockcacheAccessorMockRecorder struct {
-	mock *MockcacheAccessor
-}
-
-// NewMockcacheAccessor creates a new mock instance.
-func NewMockcacheAccessor(ctrl *gomock.Controller) *MockcacheAccessor {
-	mock := &MockcacheAccessor{ctrl: ctrl}
-	mock.recorder = &MockcacheAccessorMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockcacheAccessor) EXPECT() *MockcacheAccessorMockRecorder {
-	return m.recorder
-}
-
-// Get mocks base method.
-func (m *MockcacheAccessor) Get(ctx context.Context, key string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, key)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Get indicates an expected call of Get.
-func (mr *MockcacheAccessorMockRecorder) Get(ctx, key any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockcacheAccessor)(nil).Get), ctx, key)
-}
-
-// Invalidate mocks base method.
-func (m *MockcacheAccessor) Invalidate(ctx context.Context, key string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Invalidate", ctx, key)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Invalidate indicates an expected call of Invalidate.
-func (mr *MockcacheAccessorMockRecorder) Invalidate(ctx, key any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invalidate", reflect.TypeOf((*MockcacheAccessor)(nil).Invalidate), ctx, key)
-}
-
-// Set mocks base method.
-func (m *MockcacheAccessor) Set(ctx context.Context, key, value string, ttl time.Duration) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set", ctx, key, value, ttl)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Set indicates an expected call of Set.
-func (mr *MockcacheAccessorMockRecorder) Set(ctx, key, value, ttl any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockcacheAccessor)(nil).Set), ctx, key, value, ttl)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateJWTToken", reflect.TypeOf((*MockserviceAccessor)(nil).ValidateJWTToken), ctx, token, expectedPurpose)
 }

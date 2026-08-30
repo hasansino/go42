@@ -280,7 +280,7 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		}).Update(time.Since(startTime).Seconds())
 	}()
 
-	claims, err := s.ValidateJWTToken(ctx, token)
+	claims, err := s.ValidateJWTToken(ctx, token, domain.JWTTokenPurposeRefresh)
 	if err != nil {
 		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
 			"result": "invalid_token",
@@ -331,11 +331,11 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken)
+	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken, domain.JWTTokenPurposeAccess)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken)
+	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken, domain.JWTTokenPurposeRefresh)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -530,19 +530,31 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	metrics.Counter("auth_jwt_secret_rotations_total", nil).Inc()
 }
 
-func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (s *Service) ValidateJWTToken(
+	ctx context.Context,
+	token string,
+	expectedPurpose domain.JWTTokenPurpose,
+) (*domain.JWTClaims, error) {
 	return tools.TraceReturnTWithErr[*domain.JWTClaims](
 		ctx, "auth.service", "validate_jwt_token",
 		func(ctx context.Context) (*domain.JWTClaims, error) {
-			return s.validateJWTToken(ctx, token)
+			return s.validateJWTToken(ctx, token, expectedPurpose)
 		})
 }
 
-func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (s *Service) validateJWTToken(
+	ctx context.Context,
+	token string,
+	expectedPurpose domain.JWTTokenPurpose,
+) (*domain.JWTClaims, error) {
 	startTime := time.Now()
 	defer func() {
 		metrics.Histogram("auth_jwt_validation_duration_seconds", nil).Update(time.Since(startTime).Seconds())
 	}()
+	if expectedPurpose != domain.JWTTokenPurposeAccess &&
+		expectedPurpose != domain.JWTTokenPurposeRefresh {
+		return nil, domain.ErrInvalidToken
+	}
 
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -569,6 +581,12 @@ func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.J
 	if !ok || !t.Valid {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
 			"result": "invalid_token",
+		}).Inc()
+		return nil, domain.ErrInvalidToken
+	}
+	if claims.TokenUse != expectedPurpose {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "invalid_token_use",
 		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
@@ -647,7 +665,8 @@ func (s *Service) generateAccessToken(userUUID string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
 		},
-		KID: token.sha256,
+		KID:      token.sha256,
+		TokenUse: domain.JWTTokenPurposeAccess,
 	}).SignedString([]byte(token.secret))
 }
 
@@ -664,7 +683,8 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
 		},
-		KID: token.sha256,
+		KID:      token.sha256,
+		TokenUse: domain.JWTTokenPurposeRefresh,
 	}).SignedString([]byte(token.secret))
 }
 

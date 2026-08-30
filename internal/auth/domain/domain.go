@@ -75,8 +75,16 @@ var (
 
 type JWTClaims struct {
 	jwt.RegisteredClaims
-	KID string `json:"kid,omitempty"`
+	KID      string          `json:"kid,omitempty"`
+	TokenUse JWTTokenPurpose `json:"token_use"`
 }
+
+type JWTTokenPurpose string
+
+const (
+	JWTTokenPurposeAccess  JWTTokenPurpose = "access"
+	JWTTokenPurposeRefresh JWTTokenPurpose = "refresh"
+)
 
 // Tokens represents the structure of JWT authentication tokens.
 type Tokens struct {
