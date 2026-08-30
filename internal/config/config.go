@@ -499,7 +499,6 @@ type Auth struct {
 	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
 	Cache                  struct {
-		API        time.Duration `env:"AUTH_CACHE_API"                 default:"1m"`
 		Repository struct {
 			Users   time.Duration `env:"AUTH_CACHE_REPOSITORY_USERS" default:"1m"`
 			Secrets time.Duration `env:"AUTH_CACHE_REPOSITORY_SECRETS" default:"1m"`

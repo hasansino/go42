@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -45,7 +46,7 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 
 			if len(cached) > 0 {
 				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueHit)
-				return c.JSONBlob(200, []byte(cached))
+				return c.JSONBlob(http.StatusOK, []byte(cached))
 			} else {
 				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueMISS)
 			}
@@ -55,6 +56,9 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 
 			if err := next(c); err != nil {
 				return err
+			}
+			if resRecorder.status != http.StatusOK {
+				return nil
 			}
 
 			err = cache.Set(c.Request().Context(), key, resRecorder.body.String(), ttl)

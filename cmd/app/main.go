@@ -505,10 +505,7 @@ func main() {
 	httpServer := httpAPI.New(httpServerOpts...)
 	httpServer.Register(metricsAdapterV1.New(metricsHandler))
 
-	authHttpAdapter := authHttpAdapterV1.New(
-		authService,
-		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.Cache.API),
-	)
+	authHttpAdapter := authHttpAdapterV1.New(authService)
 	httpServer.RegisterV1(authHttpAdapter)
 
 	// run server

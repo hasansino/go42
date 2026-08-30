@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo/v5"
 
 	httpAPI "github.com/hasansino/go42/internal/api/http"
-	"github.com/hasansino/go42/internal/api/http/middleware"
 	"github.com/hasansino/go42/internal/auth"
 	"github.com/hasansino/go42/internal/auth/domain"
 	authMiddleware "github.com/hasansino/go42/internal/auth/middleware"
@@ -39,34 +38,15 @@ type serviceAccessor interface {
 	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
 }
 
-type cacheAccessor interface {
-	Get(ctx context.Context, key string) (string, error)
-	Set(ctx context.Context, key string, value string, ttl time.Duration) error
-	Invalidate(ctx context.Context, key string) error
-}
-
 type Adapter struct {
-	service  serviceAccessor
-	cache    cacheAccessor
-	cacheTTL time.Duration
+	service serviceAccessor
 }
 
-func New(service serviceAccessor, opts ...Option) *Adapter {
-	a := &Adapter{
-		service: service,
-	}
-	for _, opt := range opts {
-		opt(a)
-	}
-	return a
+func New(service serviceAccessor) *Adapter {
+	return &Adapter{service: service}
 }
 
 func (a *Adapter) Register(g *echo.Group) {
-	var cacheMiddleware echo.MiddlewareFunc
-	if a.cache != nil && a.cacheTTL > 0 {
-		cacheMiddleware = middleware.CacheMiddleware(a.cache, a.cacheTTL)
-	}
-
 	authGroup := g.Group("/auth")
 
 	authGroup.POST("/signup", a.signup)
@@ -77,7 +57,7 @@ func (a *Adapter) Register(g *echo.Group) {
 	userGroup := g.Group("/users", authMiddleware.NewAuthMiddleware(a.service))
 
 	userGroup.GET("/me", a.readSelf,
-		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersReadSelf), cacheMiddleware)
+		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersReadSelf))
 	userGroup.PUT("/me", a.updateSelf,
 		authMiddleware.NewAccessMiddleware(domain.RBACPermissionUsersUpdateSelf))
 
