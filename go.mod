@@ -1,6 +1,6 @@
 module github.com/hasansino/go42
 
-go 1.26.2
+go 1.27
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
