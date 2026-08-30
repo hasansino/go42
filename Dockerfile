@@ -66,7 +66,7 @@ RUN readelf -h app && du -h app && sha256sum app && go tool buildid app
 # For packaging stage, we use minimal(slim) image.
 # This reduces resulting image size and potential security risks.
 # @warn dependabot will update image version automatically, but it will not update package versions.
-FROM alpine:3.23
+FROM alpine:3.24
 
 # Install dependencies.
 #   * ca-certificates - required for https requests
@@ -77,7 +77,7 @@ FROM alpine:3.23
 # Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.22
 # When updating image version, make sure to re-check package availability and versions
 # for that specific alpine version you are updating to.
-RUN apk add --no-cache ca-certificates=20260413-r0 tzdata=2026b-r0 tini=0.19.0-r3 curl=8.17.0-r1
+RUN apk add --no-cache ca-certificates=20260611-r0 tzdata=2026c-r0 tini=0.19.0-r3 curl=8.21.0-r0
 
 # We are running service as non-root user.
 RUN addgroup -g 1000 appuser && \
