@@ -145,7 +145,18 @@ func signTestJWT(
 		TokenUse: purpose,
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
+	return signTestJWTWithClaims(t, jwt.SigningMethodHS256, secret, claims)
+}
+
+func signTestJWTWithClaims(
+	t *testing.T,
+	method jwt.SigningMethod,
+	secret string,
+	claims domain.JWTClaims,
+) string {
+	t.Helper()
+
+	token, err := jwt.NewWithClaims(method, claims).SignedString([]byte(secret))
 	if err != nil {
 		t.Fatalf("sign test JWT: %v", err)
 	}
@@ -974,6 +985,98 @@ func TestService_ValidateJWTToken(t *testing.T) {
 	}
 	if claims.KID != sha256Hex(testJWTSecret) {
 		t.Errorf("kid = %q, want %q", claims.KID, sha256Hex(testJWTSecret))
+	}
+}
+
+func TestService_ValidateJWTTokenEnforcesSecurityContract(t *testing.T) {
+	validClaims := func() domain.JWTClaims {
+		return domain.JWTClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ID:        uuid.NewString(),
+				Audience:  testJWTAudience,
+				Issuer:    testJWTIssuer,
+				Subject:   "subject",
+				IssuedAt:  jwt.NewNumericDate(time.Now().Add(-time.Minute)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			},
+			KID:      sha256Hex(testJWTSecret),
+			TokenUse: domain.JWTTokenPurposeAccess,
+		}
+	}
+
+	tests := []struct {
+		name   string
+		method jwt.SigningMethod
+		mutate func(*domain.JWTClaims)
+	}{
+		{
+			name:   "HS512 algorithm",
+			method: jwt.SigningMethodHS512,
+			mutate: func(*domain.JWTClaims) {},
+		},
+		{
+			name:   "missing issuer",
+			method: jwt.SigningMethodHS256,
+			mutate: func(claims *domain.JWTClaims) { claims.Issuer = "" },
+		},
+		{
+			name:   "wrong issuer",
+			method: jwt.SigningMethodHS256,
+			mutate: func(claims *domain.JWTClaims) { claims.Issuer = "other-service" },
+		},
+		{
+			name:   "missing audience",
+			method: jwt.SigningMethodHS256,
+			mutate: func(claims *domain.JWTClaims) { claims.Audience = nil },
+		},
+		{
+			name:   "wrong audience",
+			method: jwt.SigningMethodHS256,
+			mutate: func(claims *domain.JWTClaims) {
+				claims.Audience = jwt.ClaimStrings{"other-service"}
+			},
+		},
+		{
+			name:   "missing expiration",
+			method: jwt.SigningMethodHS256,
+			mutate: func(claims *domain.JWTClaims) { claims.ExpiresAt = nil },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := newServiceHarness(t)
+			h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
+			claims := validClaims()
+			tt.mutate(&claims)
+			token := signTestJWTWithClaims(t, tt.method, testJWTSecret, claims)
+
+			var (
+				got       *domain.JWTClaims
+				err       error
+				recovered any
+			)
+			func() {
+				defer func() {
+					recovered = recover()
+				}()
+				got, err = h.service.ValidateJWTToken(
+					context.Background(),
+					token,
+					domain.JWTTokenPurposeAccess,
+				)
+			}()
+
+			if recovered != nil {
+				t.Fatalf("ValidateJWTToken() panicked: %v", recovered)
+			}
+			if err == nil {
+				t.Fatal("ValidateJWTToken() error = nil, want validation error")
+			}
+			if got != nil {
+				t.Errorf("ValidateJWTToken() claims = %#v, want nil", got)
+			}
+		})
 	}
 }
 

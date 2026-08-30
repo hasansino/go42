@@ -14,6 +14,10 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS builder
 ARG SOURCE_DATE_EPOCH=0
 ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 
+# Passed by buildx for cross-compilation.
+ARG TARGETOS
+ARG TARGETARCH
+
 # FROM resets arguments, so we need to declare them after.
 ARG COMMIT_HASH
 ARG RELEASE_TAG
@@ -38,9 +42,8 @@ ENV GOGC=100
 
 # Build.
 #
-# `docker buildx` automates cross-complation and handles GOOS and GOARCH automatically.
-# It creates a single multi-arch image manifest that points to platform-specific
-# image layers, each built with the correct GOOS and GOARCH.
+# `docker buildx` provides TARGETOS and TARGETARCH for cross-compilation. These values
+# must be passed to the Go toolchain explicitly as GOOS and GOARCH.
 #
 # -trimpath removes file system paths from the binary, improves build reproducibility.
 #
@@ -54,6 +57,7 @@ ENV GOGC=100
 #
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomodcache \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuildcache \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -v -trimpath -buildvcs=false \
     -ldflags "-s -w -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
     -o app cmd/app/main.go
