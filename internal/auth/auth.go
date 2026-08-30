@@ -557,7 +557,7 @@ func (s *Service) validateJWTToken(
 	}
 
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		claims, _ := token.Claims.(*domain.JWTClaims)
@@ -569,7 +569,12 @@ func (s *Service) validateJWTToken(
 			}
 		}
 		return []byte(s.jwtSecrets[len(s.jwtSecrets)-1].secret), nil
-	})
+	},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithIssuer(s.jwtIssuer),
+		jwt.WithAudience(s.jwtAudience...),
+		jwt.WithExpirationRequired(),
+	)
 	if err != nil {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
 			"result": "parse_error",
@@ -587,13 +592,6 @@ func (s *Service) validateJWTToken(
 	if claims.TokenUse != expectedPurpose {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
 			"result": "invalid_token_use",
-		}).Inc()
-		return nil, domain.ErrInvalidToken
-	}
-
-	if claims.ExpiresAt.Before(time.Now()) {
-		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
-			"result": "expired",
 		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
