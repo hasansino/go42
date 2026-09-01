@@ -26,13 +26,13 @@ local now = (tonumber(now_parts[1]) * 1000000) + tonumber(now_parts[2])
 local tat = tonumber(redis.call('GET', KEYS[1]))
 
 if not tat or tat < now then
-    tat = now
+	tat = now
 end
 
 local allow_at = tat - ((burst - 1) * interval)
 if now < allow_at then
-    redis.call('PEXPIRE', KEYS[1], ttl_ms)
-    return 0
+	redis.call('PEXPIRE', KEYS[1], ttl_ms)
+	return 0
 end
 
 redis.call('SET', KEYS[1], string.format('%.0f', tat + interval), 'PX', ttl_ms)

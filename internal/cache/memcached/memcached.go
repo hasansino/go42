@@ -179,5 +179,17 @@ func newItem(key string, value string, ttl time.Duration) *memcache.Item {
 }
 
 func expirationSeconds(ttl time.Duration) int32 {
-	return int32((ttl + time.Second - 1) / time.Second)
+	if ttl <= 0 {
+		return 0
+	}
+
+	seconds := ttl / time.Second
+	if ttl%time.Second != 0 {
+		seconds++
+	}
+	if seconds > time.Duration(1<<31-1) {
+		return 1<<31 - 1
+	}
+
+	return int32(seconds)
 }

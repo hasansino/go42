@@ -77,11 +77,18 @@ FROM alpine:3.24
 #   * tzdata - required for time zone operations
 #   * tini - proper signal handling for child processes
 #   * curl - required for docker health checks in ci/cd workflows
+#   * libcrypto3, libssl3 - patched OpenSSL runtime libraries
 #
-# Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.22
+# Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.24
 # When updating image version, make sure to re-check package availability and versions
 # for that specific alpine version you are updating to.
-RUN apk add --no-cache ca-certificates=20260611-r0 tzdata=2026c-r0 tini=0.19.0-r3 curl=8.21.0-r0
+RUN apk add --no-cache \
+    ca-certificates=20260611-r0 \
+    curl=8.21.0-r0 \
+    libcrypto3=3.5.8-r0 \
+    libssl3=3.5.8-r0 \
+    tini=0.19.0-r3 \
+    tzdata=2026c-r0
 
 # We are running service as non-root user.
 RUN addgroup -g 1000 appuser && \
