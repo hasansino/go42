@@ -1401,9 +1401,7 @@ func TestService_ValidateJWTTokenRejectsMalformedExpiredAndInvalidSignature(t *t
 			claims, err := h.service.ValidateJWTToken(
 				context.Background(), tt.token(t), domain.JWTTokenPurposeAccess,
 			)
-			if err == nil {
-				t.Fatal("ValidateJWTToken() error = nil, want validation error")
-			}
+			assertErrorIs(t, err, domain.ErrInvalidToken)
 			if claims != nil {
 				t.Errorf("ValidateJWTToken() claims = %#v, want nil", claims)
 			}
