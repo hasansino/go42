@@ -73,6 +73,21 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 	if err != nil {
 		return nil, err
 	}
+	masterConnDB, err := masterConn.DB()
+	if err != nil {
+		return nil, err
+	}
+	var slaveConnDB *sql.DB
+	initializationComplete := false
+	defer func() {
+		if initializationComplete {
+			return
+		}
+		if slaveConnDB != nil && slaveConnDB != masterConnDB {
+			_ = slaveConnDB.Close()
+		}
+		_ = masterConnDB.Close()
+	}()
 
 	if err := masterConn.Use(tracing.NewPlugin(
 		tracing.WithDBSystem("postgresql"),
@@ -80,11 +95,6 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 		tracing.WithoutServerAddress(),
 		tracing.WithoutMetrics(),
 	)); err != nil {
-		return nil, err
-	}
-
-	masterConnDB, err := masterConn.DB()
-	if err != nil {
 		return nil, err
 	}
 
@@ -109,17 +119,17 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 			return nil, err
 		}
 
+		slaveConnDB, err = slaveConn.DB()
+		if err != nil {
+			return nil, err
+		}
+
 		if err := slaveConn.Use(tracing.NewPlugin(
 			tracing.WithDBSystem("postgresql"),
 			tracing.WithAttributes(attribute.String("db.role", "slave")),
 			tracing.WithoutServerAddress(),
 			tracing.WithoutMetrics(),
 		)); err != nil {
-			return nil, err
-		}
-
-		slaveConnDB, err := slaveConn.DB()
-		if err != nil {
 			return nil, err
 		}
 
@@ -135,6 +145,7 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 		w.slaveConn = masterConnDB
 	}
 
+	initializationComplete = true
 	return w, nil
 }
 
@@ -143,6 +154,7 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 	if err != nil {
 		return nil, err
 	}
+	config.DisableAutomaticPing = true
 
 	db, err := retry.DoWithData[*gorm.DB](func() (*gorm.DB, error) {
 		conn, err := gorm.Open(postgres.New(postgres.Config{DSN: dsn}), config)
@@ -153,8 +165,15 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get database instance: %w", err)
 		}
-		if err := connDB.Ping(); err != nil {
-			return nil, fmt.Errorf("failed to ping database: %w", err)
+		if err := connDB.PingContext(ctx); err != nil {
+			pingErr := fmt.Errorf("failed to ping database: %w", err)
+			if closeErr := connDB.Close(); closeErr != nil {
+				return nil, errors.Join(
+					pingErr,
+					fmt.Errorf("failed to close database after ping failure: %w", closeErr),
+				)
+			}
+			return nil, pingErr
 		}
 		return conn, nil
 	},
