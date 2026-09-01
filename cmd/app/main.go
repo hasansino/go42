@@ -42,7 +42,7 @@ import (
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
 	authWorkers "github.com/hasansino/go42/internal/auth/workers"
 	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/cache/bigcache"
+	"github.com/hasansino/go42/internal/cache/local"
 	"github.com/hasansino/go42/internal/cache/memcached"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
@@ -236,19 +236,12 @@ func main() {
 		cacheEngine cache.Engine
 	)
 	switch cfg.Cache.Engine {
-	case "bigcache":
-		cacheEngine, err = bigcache.New(
-			bigcache.WithShards(cfg.Cache.BigCache.Shards),
-			bigcache.WithLifeWindow(cfg.Cache.BigCache.LifeWindow),
-			bigcache.WithMaxEntriesInWindow(cfg.Cache.BigCache.MaxEntriesInWindow),
-			bigcache.WithMaxEntrySizeBytes(cfg.Cache.BigCache.MaxEntrySizeBytes),
-			bigcache.WithHardMaxCacheSize(cfg.Cache.BigCache.HardMaxCacheSize),
-			bigcache.WithVerbose(cfg.Cache.BigCache.Verbose),
+	case "local":
+		cacheEngine = local.New(
+			local.WithCapacity(cfg.Cache.Local.Capacity),
+			local.WithMaxCostBytes(cfg.Cache.Local.MaxCostBytes),
 		)
-		if err != nil {
-			log.Fatalf("failed to initialize bigcache: %v\n", err)
-		}
-		slog.Info("bigcache engine initialized")
+		slog.Info("local cache engine initialized")
 	case "memcached":
 		var err error
 		cacheEngine, err = memcached.Open(
@@ -289,8 +282,7 @@ func main() {
 		}
 		slog.Info("redis cache initialized")
 	default:
-		cacheEngine = cache.NewNoop()
-		slog.Info("no cache engine initialized")
+		log.Fatalf("unknown cache engine: %s", cfg.Cache.Engine)
 	}
 
 	// event engine

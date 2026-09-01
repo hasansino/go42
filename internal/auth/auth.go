@@ -3,7 +3,9 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -28,6 +30,8 @@ import (
 const (
 	cacheKeyInvalidatedToken   = "auth_invalidated_"
 	cacheValueInvalidatedToken = "_"
+	apiTokenPrefix             = "api_"
+	apiTokenSecretBytes        = 32
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
@@ -49,8 +53,9 @@ type repository interface {
 }
 
 type cache interface {
-	Get(ctx context.Context, key string) (string, error)
+	Get(ctx context.Context, key string) (value string, found bool, err error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	SetIfAbsent(ctx context.Context, key string, value string, ttl time.Duration) (stored bool, err error)
 }
 
 type outboxService interface {
@@ -282,6 +287,12 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 
 	claims, err := s.ValidateJWTToken(ctx, token, domain.JWTTokenPurposeRefresh)
 	if err != nil {
+		if errors.Is(err, domain.ErrAuthenticationUnavailable) {
+			metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+				"result": "cache_error",
+			}).Inc()
+			return nil, err
+		}
 		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
 			"result": "invalid_token",
 		}).Inc()
@@ -300,6 +311,25 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 				slog.Any("err", err),
 			)
 		}
+		return nil, domain.ErrInvalidToken
+	}
+
+	claimed, err := s.cache.SetIfAbsent(
+		ctx,
+		cacheKeyInvalidatedToken+strToSHA256(token),
+		cacheValueInvalidatedToken,
+		time.Until(claims.ExpiresAt.Time)+time.Second,
+	)
+	if err != nil {
+		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+			"result": "cache_error",
+		}).Inc()
+		return nil, fmt.Errorf("failed to consume refresh token: %w", err)
+	}
+	if !claimed {
+		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+			"result": "replayed",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -576,9 +606,15 @@ func (s *Service) validateJWTToken(
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
-		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
-			"result": "parse_error",
-		}).Inc()
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			metrics.Counter("auth_jwt_validations_total", map[string]any{
+				"result": "expired",
+			}).Inc()
+		} else {
+			metrics.Counter("auth_jwt_validations_total", map[string]any{
+				"result": "parse_error",
+			}).Inc()
+		}
 		return nil, err
 	}
 
@@ -596,11 +632,23 @@ func (s *Service) validateJWTToken(
 		return nil, domain.ErrInvalidToken
 	}
 
-	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+strToSHA256(token)); err != nil {
+	v, found, err := s.cache.Get(
+		ctx, cacheKeyInvalidatedToken+strToSHA256(token),
+	)
+	if err != nil {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "cache_error",
+		}).Inc()
 		s.logger.ErrorContext(
-			ctx, "failed to fetch cache: %w",
+			ctx, "failed to fetch cache",
 			slog.Any("error", err))
-	} else if v == cacheValueInvalidatedToken {
+		return nil, fmt.Errorf(
+			"%w: revocation lookup failed: %w",
+			domain.ErrAuthenticationUnavailable,
+			err,
+		)
+	}
+	if found && v == cacheValueInvalidatedToken {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
 			"result": "invalidated",
 		}).Inc()
@@ -690,13 +738,17 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
 	return tools.TraceReturnTWithErr[*models.Token](
-		ctx, "auth.service", "validate_jwt_token",
+		ctx, "auth.service", "validate_api_token",
 		func(ctx context.Context) (*models.Token, error) {
 			return s.validateAPIToken(ctx, token)
 		})
 }
 
 func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.Token, error) {
+	if err := validateAPITokenFormat(token); err != nil {
+		return nil, fmt.Errorf("invalid api token format: %w", err)
+	}
+
 	apiToken, err := s.repository.GetToken(ctx, strToSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
@@ -714,7 +766,7 @@ func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.T
 	}
 
 	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
-		span.AddEvent("jwt_token_validated",
+		span.AddEvent("api_token_validated",
 			trace.WithAttributes(
 				attribute.Int("token.id", apiToken.ID),
 				attribute.Int("token.user_id", apiToken.UserID),
@@ -747,4 +799,26 @@ func (s *Service) CheckPasswordStrength(password string) error {
 func strToSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func validateAPITokenFormat(token string) error {
+	secret, ok := strings.CutPrefix(token, apiTokenPrefix)
+	if !ok {
+		return fmt.Errorf("missing %q prefix", apiTokenPrefix)
+	}
+
+	expectedLength := base64.RawURLEncoding.EncodedLen(apiTokenSecretBytes)
+	if len(secret) != expectedLength {
+		return fmt.Errorf("invalid secret length: got %d, want %d", len(secret), expectedLength)
+	}
+
+	decoded, err := base64.RawURLEncoding.Strict().DecodeString(secret)
+	if err != nil {
+		return fmt.Errorf("invalid base64url secret: %w", err)
+	}
+	if len(decoded) != apiTokenSecretBytes {
+		return fmt.Errorf("invalid decoded secret length: got %d, want %d", len(decoded), apiTokenSecretBytes)
+	}
+
+	return nil
 }

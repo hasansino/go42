@@ -69,20 +69,39 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Wrapper) Get(ctx context.Context, key string) (string, error) {
+func (w *Wrapper) Get(ctx context.Context, key string) (string, bool, error) {
 	cmd := w.client.Get(ctx, key)
 	if cmd.Err() != nil {
 		if errors.Is(cmd.Err(), redis.Nil) {
-			return "", nil
+			return "", false, nil
 		}
-		return "", cmd.Err()
+		return "", false, cmd.Err()
 	}
-	return cmd.Val(), nil
+	return cmd.Val(), true, nil
 }
 
 func (w *Wrapper) Set(ctx context.Context, key string, value string, ttl time.Duration) error {
 	cmd := w.client.Set(ctx, key, value, ttl)
 	return cmd.Err()
+}
+
+func (w *Wrapper) SetIfAbsent(
+	ctx context.Context,
+	key string,
+	value string,
+	ttl time.Duration,
+) (bool, error) {
+	err := w.client.SetArgs(ctx, key, value, redis.SetArgs{
+		Mode: "NX",
+		TTL:  ttl,
+	}).Err()
+	if errors.Is(err, redis.Nil) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (w *Wrapper) Invalidate(ctx context.Context, key string) error {

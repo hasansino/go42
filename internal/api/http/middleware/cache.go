@@ -16,8 +16,10 @@ const (
 	cacheHeaderValueMISS = "MISS"
 )
 
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
+
 type cacheAccessor interface {
-	Get(ctx context.Context, key string) (string, error)
+	Get(ctx context.Context, key string) (value string, found bool, err error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
 	Invalidate(ctx context.Context, key string) error
 }
@@ -34,7 +36,7 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 				c.Request().Method, c.Request().URL.Path, c.Request().URL.RawQuery,
 			)
 
-			cached, err := cache.Get(c.Request().Context(), key)
+			cached, found, err := cache.Get(c.Request().Context(), key)
 			if err != nil {
 				slog.Default().
 					With(slog.String("component", "echo-middleware-cache")).
@@ -44,12 +46,11 @@ func CacheMiddleware(cache cacheAccessor, ttl time.Duration) echo.MiddlewareFunc
 				return next(c)
 			}
 
-			if len(cached) > 0 {
+			if found {
 				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueHit)
 				return c.JSONBlob(http.StatusOK, []byte(cached))
-			} else {
-				c.Response().Header().Add(cacheHeaderName, cacheHeaderValueMISS)
 			}
+			c.Response().Header().Add(cacheHeaderName, cacheHeaderValueMISS)
 
 			resRecorder := newResponseRecorder(c.Response(), true)
 			c.SetResponse(resRecorder)

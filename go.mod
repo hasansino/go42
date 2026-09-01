@@ -13,7 +13,6 @@ require (
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.3
 	github.com/VictoriaMetrics/metrics v1.41.2
 	github.com/agiledragon/gomonkey/v2 v2.14.0
-	github.com/allegro/bigcache v1.2.1
 	github.com/avast/retry-go/v4 v4.7.0
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
 	github.com/bytedance/sonic v1.15.0
@@ -36,6 +35,7 @@ require (
 	github.com/hasansino/vault2cfg v1.1.0
 	github.com/hashicorp/vault-client-go v0.4.3
 	github.com/jackc/pgx/v5 v5.9.0
+	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/labstack/echo/v5 v5.1.1
 	github.com/lmittmann/tint v1.1.3
 	github.com/nats-io/nats.go v1.49.0

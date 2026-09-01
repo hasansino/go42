@@ -8,16 +8,4 @@
 # project
 build/
 .env
-
-# agentenv
-.agentenv/kwb/
-.claude/
-.mcp.json
-CLAUDE.md
-.gemini/
-GEMINI.md
-.crush/
-.crush.json
-CRUSH.md
-.github/copilot-instructions.md
-.github/.copilot.mcp.json
+__debug*

@@ -50,6 +50,11 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
 				if err := processUserAuth(ctx, svc, token); err != nil {
+					if errors.Is(err, domain.ErrAuthenticationUnavailable) {
+						return httpAPI.SendJSONError(ctx,
+							http.StatusServiceUnavailable,
+							http.StatusText(http.StatusServiceUnavailable))
+					}
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
@@ -139,8 +144,8 @@ func processTokenAuth(ctx *echo.Context, svc authServiceAccessor, token string) 
 	}
 
 	authInfo := domain.ContextAuthInfo{
-		ID:   apiToken.ID,
-		UUID: apiToken.UUID.String(),
+		ID:   user.ID,
+		UUID: user.UUID.String(),
 		Type: domain.AuthenticationTypeApiToken,
 	}
 

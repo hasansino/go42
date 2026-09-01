@@ -56,21 +56,45 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (w *Wrapper) Get(_ context.Context, key string) (string, error) {
+func (w *Wrapper) Get(_ context.Context, key string) (string, bool, error) {
 	item, err := w.client.Get(key)
 	if err != nil {
-		return "", err
+		if errors.Is(err, memcache.ErrCacheMiss) {
+			return "", false, nil
+		}
+		return "", false, err
 	}
-	return string(item.Value), nil
+	return string(item.Value), true, nil
 }
 
 func (w *Wrapper) Set(_ context.Context, key string, value string, ttl time.Duration) error {
-	if ttl > 0 {
-		return w.client.Set(&memcache.Item{Key: key, Value: []byte(value), Expiration: int32(ttl.Seconds())})
+	return w.client.Set(newItem(key, value, ttl))
+}
+
+func (w *Wrapper) SetIfAbsent(
+	_ context.Context,
+	key string,
+	value string,
+	ttl time.Duration,
+) (bool, error) {
+	err := w.client.Add(newItem(key, value, ttl))
+	if err == nil {
+		return true, nil
 	}
-	return w.client.Set(&memcache.Item{Key: key, Value: []byte(value)})
+	if errors.Is(err, memcache.ErrNotStored) {
+		return false, nil
+	}
+	return false, err
 }
 
 func (w *Wrapper) Invalidate(_ context.Context, key string) error {
 	return w.client.Delete(key)
+}
+
+func newItem(key string, value string, ttl time.Duration) *memcache.Item {
+	item := &memcache.Item{Key: key, Value: []byte(value)}
+	if ttl > 0 {
+		item.Expiration = int32(ttl.Seconds())
+	}
+	return item
 }

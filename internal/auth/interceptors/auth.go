@@ -85,8 +85,8 @@ func authenticateRequest(ctx context.Context, authService authServiceAccessor) (
 	}
 
 	authInfo := domain.ContextAuthInfo{
-		ID:   tokenInfo.ID,
-		UUID: tokenInfo.UUID.String(),
+		ID:   user.ID,
+		UUID: user.UUID.String(),
 		Type: domain.AuthenticationTypeApiToken,
 	}
 	authInfo.SetPermissions(tokenInfo.PermissionList())

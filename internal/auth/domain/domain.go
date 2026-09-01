@@ -64,11 +64,12 @@ const (
 )
 
 var (
-	ErrEntityNotFound     = errors.New("entity not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrPasswordWeak       = errors.New("password is too weak")
+	ErrEntityNotFound            = errors.New("entity not found")
+	ErrUserAlreadyExists         = errors.New("user already exists")
+	ErrInvalidCredentials        = errors.New("invalid credentials")
+	ErrInvalidToken              = errors.New("invalid token")
+	ErrAuthenticationUnavailable = errors.New("authentication unavailable")
+	ErrPasswordWeak              = errors.New("password is too weak")
 )
 
 // ----
@@ -109,7 +110,7 @@ const (
 )
 
 // ContextAuthInfo holds authentication information in the request context.
-// ID field stores authenticated subject id which is described by Type field.
+// ID and UUID identify the authenticated user; Type identifies the authentication method.
 type ContextAuthInfo struct {
 	ID            int
 	UUID          string

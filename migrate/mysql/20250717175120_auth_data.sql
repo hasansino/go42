@@ -14,7 +14,7 @@ insert ignore into auth_permissions (resource, action) values
 ('users', 'read_others'),
 ('users', 'create'),
 ('users', 'update'),
-('users', 'update');
+('users', 'delete');
 
 -- admins have all permissions
 insert ignore into auth_role_permissions (role_id, permission_id)
@@ -51,8 +51,36 @@ insert ignore into auth_role_permissions (role_id, permission_id) values
     )
 );
 
+insert ignore into auth_api_tokens (uuid, user_id, token)
+select
+    '00000000-0000-0000-0000-000000000001' as uuid,
+    auth_users.id as user_id,
+    -- api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA
+    '67778026319f8a10160230483f9f43a960f3724807ccd04a7c856ade5d09f800' as token
+from auth_users
+where auth_users.uuid = '00000000-0000-0000-0000-000000000000';
+
+insert ignore into auth_api_tokens_permissions (token_id, permission_id)
+select
+    auth_api_tokens.id as token_id,
+    auth_permissions.id as permission_id
+from auth_api_tokens
+cross join auth_permissions
+where
+    auth_api_tokens.uuid = '00000000-0000-0000-0000-000000000001'
+    and auth_permissions.resource = 'users'
+    and auth_permissions.action in (
+        'list',
+        'read_others',
+        'create',
+        'update',
+        'delete'
+    );
+
 -- +goose Down
 
+truncate table auth_api_tokens_permissions;
+truncate table auth_api_tokens;
 truncate table auth_role_permissions;
 truncate table auth_permissions;
 truncate table auth_roles;

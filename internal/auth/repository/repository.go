@@ -15,7 +15,7 @@ import (
 )
 
 type cacheAccessor interface {
-	Get(ctx context.Context, key string) (string, error)
+	Get(ctx context.Context, key string) (value string, found bool, err error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
 	Invalidate(ctx context.Context, key string) error
 }
@@ -317,12 +317,24 @@ func (r *Repository) GetToken(ctx context.Context, hashedToken string) (*models.
 
 	var apiToken models.Token
 	err = r.GetReadDB(ctx).
-		Preload("Permissions").
 		Where("token = ?", hashedToken).
 		First(&apiToken).Error
 
 	if r.IsNotFoundError(err) {
 		return nil, domain.ErrEntityNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error fetching api token: %w", err)
+	}
+
+	err = r.GetReadDB(ctx).
+		Table("auth_permissions").
+		Select("auth_permissions.*").
+		Joins("JOIN auth_api_tokens_permissions ON auth_api_tokens_permissions.permission_id = auth_permissions.id").
+		Where("auth_api_tokens_permissions.token_id = ?", apiToken.ID).
+		Scan(&apiToken.Permissions).Error
+	if err != nil {
+		return nil, fmt.Errorf("error fetching api token permissions: %w", err)
 	}
 
 	if err := cache.SetEncode[*models.Token](

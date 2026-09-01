@@ -2,6 +2,8 @@ package middleware_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -83,10 +85,77 @@ func TestAuthMiddleware_RequiresAccessToken(t *testing.T) {
 	}
 }
 
+func TestAuthMiddleware_APITokenUsesOwnerIdentityAndTokenPermissions(t *testing.T) {
+	const rawToken = "api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA"
+	user := &models.User{
+		ID:     42,
+		UUID:   uuid.MustParse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
+		Status: domain.UserStatusActive,
+		Roles: []models.Role{{
+			Permissions: []models.Permission{{Resource: "users", Action: "delete"}},
+		}},
+	}
+	apiToken := &models.Token{
+		ID:     7,
+		UUID:   uuid.MustParse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+		UserID: user.ID,
+		Permissions: []models.Permission{{
+			Resource: "users",
+			Action:   "list",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	repository := authMocks.NewMockrepository(ctrl)
+	repository.EXPECT().GetToken(gomock.Any(), sha256String(rawToken)).Return(apiToken, nil)
+	repository.EXPECT().GetUserByID(gomock.Any(), user.ID).Return(user, nil)
+	service := auth.NewService(
+		repository,
+		authMocks.NewMockoutboxService(ctrl),
+		cache.NewNoop(),
+	)
+
+	e := echo.New()
+	e.GET("/protected", func(c *echo.Context) error {
+		authInfo := auth.RetrieveAuthFromContext(c.Request().Context())
+		if authInfo == nil {
+			t.Fatal("authentication context is nil")
+		}
+		if authInfo.ID != user.ID || authInfo.UUID != user.UUID.String() {
+			t.Errorf(
+				"authentication identity = (%d, %q), want (%d, %q)",
+				authInfo.ID, authInfo.UUID, user.ID, user.UUID.String(),
+			)
+		}
+		if authInfo.Type != domain.AuthenticationTypeApiToken {
+			t.Errorf("authentication type = %q, want %q", authInfo.Type, domain.AuthenticationTypeApiToken)
+		}
+		if !authInfo.HasPermission(domain.RBACPermissionUsersList) {
+			t.Error("API-token permission is missing")
+		}
+		if authInfo.HasPermission(domain.RBACPermissionUsersDelete) {
+			t.Error("owner role permission leaked into API-token permissions")
+		}
+		return c.NoContent(http.StatusNoContent)
+	}, middleware.NewAuthMiddleware(service))
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/protected", nil)
+	request.Header.Set("x-api-key", rawToken)
+	e.ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusNoContent {
+		t.Errorf("API-token status = %d, want %d", recorder.Code, http.StatusNoContent)
+	}
+}
+
 func performAuthenticatedRequest(e *echo.Echo, token string) *httptest.ResponseRecorder {
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	request.Header.Set("Authorization", "Bearer "+token)
 	e.ServeHTTP(recorder, request)
 	return recorder
+}
+
+func sha256String(value string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(value)))
 }

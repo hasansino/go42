@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ const (
 	testJWTIssuer  = "go42-test"
 	testPassword   = "correct horse battery staple"
 	testUserEmail  = "alice@example.com"
+	testAPIKey     = "api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA"
 	testAccessTTL  = 15 * time.Minute
 	testRefreshTTL = 24 * time.Hour
 )
@@ -41,6 +43,12 @@ type serviceHarness struct {
 	service    *auth.Service
 }
 
+type serviceCache interface {
+	Get(context.Context, string) (value string, found bool, err error)
+	Set(context.Context, string, string, time.Duration) error
+	SetIfAbsent(context.Context, string, string, time.Duration) (stored bool, err error)
+}
+
 func newServiceHarness(t *testing.T, extraOptions ...auth.Option) *serviceHarness {
 	t.Helper()
 
@@ -51,6 +59,17 @@ func newServiceHarness(t *testing.T, extraOptions ...auth.Option) *serviceHarnes
 		outbox:     authMocks.NewMockoutboxService(ctrl),
 	}
 
+	h.service = newTestService(h.repository, h.outbox, h.cache, extraOptions...)
+
+	return h
+}
+
+func newTestService(
+	repository *authMocks.Mockrepository,
+	outbox *authMocks.MockoutboxService,
+	cache serviceCache,
+	extraOptions ...auth.Option,
+) *auth.Service {
 	options := []auth.Option{
 		auth.WithJWTSecrets([]string{testJWTSecret}),
 		auth.WithJWTAccessTokenTTL(testAccessTTL),
@@ -60,9 +79,46 @@ func newServiceHarness(t *testing.T, extraOptions ...auth.Option) *serviceHarnes
 		auth.WithMinPasswordEntropyBits(60),
 	}
 	options = append(options, extraOptions...)
-	h.service = auth.NewService(h.repository, h.outbox, h.cache, options...)
+	return auth.NewService(repository, outbox, cache, options...)
+}
 
-	return h
+type statefulTestCache struct {
+	mu     sync.Mutex
+	values map[string]string
+}
+
+func (c *statefulTestCache) Get(_ context.Context, key string) (string, bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	value, found := c.values[key]
+	return value, found, nil
+}
+
+func (c *statefulTestCache) Set(
+	_ context.Context,
+	key string,
+	value string,
+	_ time.Duration,
+) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.values[key] = value
+	return nil
+}
+
+func (c *statefulTestCache) SetIfAbsent(
+	_ context.Context,
+	key string,
+	value string,
+	_ time.Duration,
+) (bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if _, found := c.values[key]; found {
+		return false, nil
+	}
+	c.values[key] = value
+	return true, nil
 }
 
 func newTestUser(t *testing.T, status string) *models.User {
@@ -308,7 +364,7 @@ func TestService_Login(t *testing.T) {
 	user := newTestUser(t, domain.UserStatusActive)
 	h.repository.EXPECT().GetUserByEmail(gomock.Any(), testUserEmail).Return(user, nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeAuthLogin, nil)
-	h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", nil).Times(2)
+	h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", false, nil).Times(2)
 
 	tokens, err := h.service.Login(context.Background(), "  ALICE@EXAMPLE.COM ", testPassword)
 	if err != nil {
@@ -718,8 +774,11 @@ func TestService_Refresh(t *testing.T) {
 		user.UUID.String(),
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
+	h.cache.EXPECT().SetIfAbsent(
+		gomock.Any(), invalidatedTokenKey(refreshToken), "_", gomock.Any(),
+	).Return(true, nil)
 
 	tokens, err := h.service.Refresh(context.Background(), refreshToken)
 	if err != nil {
@@ -733,6 +792,129 @@ func TestService_Refresh(t *testing.T) {
 	}
 	if tokens.AccessToken == refreshToken || tokens.RefreshToken == refreshToken {
 		t.Error("Refresh() reused the input refresh token")
+	}
+}
+
+func TestService_RefreshConsumesPresentedToken(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repository := authMocks.NewMockrepository(ctrl)
+	outbox := authMocks.NewMockoutboxService(ctrl)
+	cache := &statefulTestCache{values: make(map[string]string)}
+	service := newTestService(repository, outbox, cache)
+	user := newTestUser(t, domain.UserStatusActive)
+	refreshToken := signTestJWT(
+		t,
+		testJWTSecret,
+		domain.JWTTokenPurposeRefresh,
+		user.UUID.String(),
+		time.Now().Add(time.Hour),
+	)
+	repository.EXPECT().
+		GetUserByUUID(gomock.Any(), user.UUID.String()).
+		Return(user, nil).
+		AnyTimes()
+
+	firstTokens, err := service.Refresh(context.Background(), refreshToken)
+	if err != nil {
+		t.Fatalf("first Refresh() error = %v", err)
+	}
+	if firstTokens == nil {
+		t.Fatal("first Refresh() tokens = nil")
+	}
+
+	replayedTokens, err := service.Refresh(context.Background(), refreshToken)
+	assertErrorIs(t, err, domain.ErrInvalidToken)
+	if replayedTokens != nil {
+		t.Errorf("replayed Refresh() tokens = %#v, want nil", replayedTokens)
+	}
+}
+
+func TestService_RefreshAllowsOnlyOneConcurrentUse(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repository := authMocks.NewMockrepository(ctrl)
+	outbox := authMocks.NewMockoutboxService(ctrl)
+	cache := &statefulTestCache{values: make(map[string]string)}
+	service := newTestService(repository, outbox, cache)
+	user := newTestUser(t, domain.UserStatusActive)
+	refreshToken := signTestJWT(
+		t,
+		testJWTSecret,
+		domain.JWTTokenPurposeRefresh,
+		user.UUID.String(),
+		time.Now().Add(time.Hour),
+	)
+	repository.EXPECT().
+		GetUserByUUID(gomock.Any(), user.UUID.String()).
+		Return(user, nil).
+		AnyTimes()
+
+	const attempts = 16
+	type result struct {
+		tokens *domain.Tokens
+		err    error
+	}
+	start := make(chan struct{})
+	results := make(chan result, attempts)
+	var wg sync.WaitGroup
+	for range attempts {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			tokens, err := service.Refresh(context.Background(), refreshToken)
+			results <- result{tokens: tokens, err: err}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(results)
+
+	var succeeded, replayed int
+	for result := range results {
+		switch {
+		case result.err == nil:
+			succeeded++
+			if result.tokens == nil {
+				t.Error("successful Refresh() tokens = nil")
+			}
+		case errors.Is(result.err, domain.ErrInvalidToken):
+			replayed++
+			if result.tokens != nil {
+				t.Errorf("replayed Refresh() tokens = %#v, want nil", result.tokens)
+			}
+		default:
+			t.Errorf("Refresh() error = %v", result.err)
+		}
+	}
+	if succeeded != 1 || replayed != attempts-1 {
+		t.Errorf(
+			"Refresh() outcomes = %d succeeded, %d replayed; want 1 succeeded, %d replayed",
+			succeeded, replayed, attempts-1,
+		)
+	}
+}
+
+func TestService_RefreshFailsClosedWhenTokenClaimFails(t *testing.T) {
+	h := newServiceHarness(t)
+	user := newTestUser(t, domain.UserStatusActive)
+	refreshToken := signTestJWT(
+		t,
+		testJWTSecret,
+		domain.JWTTokenPurposeRefresh,
+		user.UUID.String(),
+		time.Now().Add(time.Hour),
+	)
+	cacheErr := errors.New("cache unavailable")
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
+	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
+	h.cache.EXPECT().SetIfAbsent(
+		gomock.Any(), invalidatedTokenKey(refreshToken), "_", gomock.Any(),
+	).Return(false, cacheErr)
+
+	tokens, err := h.service.Refresh(context.Background(), refreshToken)
+	assertErrorIs(t, err, cacheErr)
+	if tokens != nil {
+		t.Errorf("Refresh() tokens = %#v, want nil", tokens)
 	}
 }
 
@@ -775,7 +957,7 @@ func TestService_RefreshPropagatesUserLookupError(t *testing.T) {
 		time.Now().Add(time.Hour),
 	)
 	lookupError := errors.New("repository unavailable")
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(nil, lookupError)
 
 	tokens, err := h.service.Refresh(context.Background(), refreshToken)
@@ -795,7 +977,7 @@ func TestService_RefreshRejectsInactiveUserAndInvalidatesToken(t *testing.T) {
 		user.UUID.String(),
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	h.cache.EXPECT().Set(
 		gomock.Any(),
@@ -821,8 +1003,8 @@ func TestService_Logout(t *testing.T) {
 	refreshToken := signTestJWT(
 		t, testJWTSecret, domain.JWTTokenPurposeRefresh, user.UUID.String(), expiresAt,
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", nil)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", false, nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 	h.cache.EXPECT().Set(
 		gomock.Any(), invalidatedTokenKey(accessToken), "_", gomock.Any(),
 	).Return(nil)
@@ -862,7 +1044,7 @@ func TestService_LogoutRejectsInvalidRefreshTokenAfterValidAccessToken(t *testin
 		user.UUID.String(),
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", false, nil)
 
 	err := h.service.Logout(context.Background(), accessToken, "not-a-jwt")
 	if err == nil {
@@ -895,8 +1077,8 @@ func TestService_LogoutStopsWhenTokenInvalidationFails(t *testing.T) {
 			refreshToken := signTestJWT(
 				t, testJWTSecret, domain.JWTTokenPurposeRefresh, user.UUID.String(), expiresAt,
 			)
-			h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", nil)
-			h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+			h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", false, nil)
+			h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 
 			if tt.failAccess {
 				h.cache.EXPECT().Set(
@@ -928,8 +1110,8 @@ func TestService_LogoutPropagatesUserLookupError(t *testing.T) {
 		t, testJWTSecret, domain.JWTTokenPurposeRefresh, user.UUID.String(), expiresAt,
 	)
 	lookupError := errors.New("repository unavailable")
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", nil)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(accessToken)).Return("", false, nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(refreshToken)).Return("", false, nil)
 	h.cache.EXPECT().Set(gomock.Any(), gomock.Any(), "_", gomock.Any()).Return(nil).Times(2)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(nil, lookupError)
 
@@ -947,7 +1129,7 @@ func TestService_LogoutIgnoresOutboxFailure(t *testing.T) {
 	refreshToken := signTestJWT(
 		t, testJWTSecret, domain.JWTTokenPurposeRefresh, user.UUID.String(), expiresAt,
 	)
-	h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", nil).Times(2)
+	h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", false, nil).Times(2)
 	h.cache.EXPECT().Set(gomock.Any(), gomock.Any(), "_", gomock.Any()).Return(nil).Times(2)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeAuthLogout, errors.New("outbox unavailable"))
@@ -966,7 +1148,7 @@ func TestService_ValidateJWTToken(t *testing.T) {
 		user.UUID.String(),
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(token)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(token)).Return("", false, nil)
 
 	claims, err := h.service.ValidateJWTToken(
 		context.Background(), token, domain.JWTTokenPurposeAccess,
@@ -1046,7 +1228,7 @@ func TestService_ValidateJWTTokenEnforcesSecurityContract(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := newServiceHarness(t)
-			h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
+			h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", false, nil).AnyTimes()
 			claims := validClaims()
 			tt.mutate(&claims)
 			token := signTestJWTWithClaims(t, tt.method, testJWTSecret, claims)
@@ -1204,12 +1386,34 @@ func TestService_ValidateJWTTokenRejectsRevokedToken(t *testing.T) {
 		"subject",
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(token)).Return("_", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(token)).Return("_", true, nil)
 
 	claims, err := h.service.ValidateJWTToken(
 		context.Background(), token, domain.JWTTokenPurposeAccess,
 	)
 	assertErrorIs(t, err, domain.ErrInvalidToken)
+	if claims != nil {
+		t.Errorf("ValidateJWTToken() claims = %#v, want nil", claims)
+	}
+}
+
+func TestService_ValidateJWTTokenFailsClosedWhenRevocationLookupFails(t *testing.T) {
+	h := newServiceHarness(t)
+	token := signTestJWT(
+		t,
+		testJWTSecret,
+		domain.JWTTokenPurposeAccess,
+		"subject",
+		time.Now().Add(time.Hour),
+	)
+	cacheErr := errors.New("cache unavailable")
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(token)).Return("", false, cacheErr)
+
+	claims, err := h.service.ValidateJWTToken(
+		context.Background(), token, domain.JWTTokenPurposeAccess,
+	)
+	assertErrorIs(t, err, domain.ErrAuthenticationUnavailable)
+	assertErrorIs(t, err, cacheErr)
 	if claims != nil {
 		t.Errorf("ValidateJWTToken() claims = %#v, want nil", claims)
 	}
@@ -1257,7 +1461,7 @@ func TestService_RotateJWTSecretRetainsThreeMostRecentSecrets(t *testing.T) {
 
 	h.service.RotateJWTSecret("second-secret")
 	h.service.RotateJWTSecret("third-secret")
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(oldToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(oldToken)).Return("", false, nil)
 	if _, err := h.service.ValidateJWTToken(
 		context.Background(), oldToken, domain.JWTTokenPurposeAccess,
 	); err != nil {
@@ -1278,7 +1482,7 @@ func TestService_RotateJWTSecretRetainsThreeMostRecentSecrets(t *testing.T) {
 		"subject",
 		time.Now().Add(time.Hour),
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(newToken)).Return("", nil)
+	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(newToken)).Return("", false, nil)
 	if _, err := h.service.ValidateJWTToken(
 		context.Background(), newToken, domain.JWTTokenPurposeAccess,
 	); err != nil {
@@ -1287,7 +1491,7 @@ func TestService_RotateJWTSecretRetainsThreeMostRecentSecrets(t *testing.T) {
 }
 func TestService_ValidateAPIToken(t *testing.T) {
 	h := newServiceHarness(t)
-	rawToken := "api-token-secret"
+	rawToken := testAPIKey
 	apiToken := &models.Token{
 		ID:     17,
 		UserID: 42,
@@ -1323,7 +1527,7 @@ func TestService_ValidateAPIToken(t *testing.T) {
 
 func TestService_ValidateAPITokenAcceptsTokenWithoutExpiration(t *testing.T) {
 	h := newServiceHarness(t)
-	rawToken := "non-expiring-api-token"
+	rawToken := testAPIKey
 	apiToken := &models.Token{ID: 18, UserID: 42}
 	h.repository.EXPECT().GetToken(gomock.Any(), sha256Hex(rawToken)).Return(apiToken, nil)
 
@@ -1338,7 +1542,7 @@ func TestService_ValidateAPITokenAcceptsTokenWithoutExpiration(t *testing.T) {
 
 func TestService_ValidateAPITokenRejectsExpiredToken(t *testing.T) {
 	h := newServiceHarness(t)
-	rawToken := "expired-api-token"
+	rawToken := testAPIKey
 	apiToken := &models.Token{
 		ID: 19,
 		ExpiresAt: sql.Null[time.Time]{
@@ -1364,7 +1568,7 @@ func TestService_ValidateAPITokenRejectsExpiredToken(t *testing.T) {
 
 func TestService_ValidateAPITokenPropagatesRepositoryError(t *testing.T) {
 	h := newServiceHarness(t)
-	rawToken := "unknown-api-token"
+	rawToken := testAPIKey
 	repositoryError := errors.New("token not found")
 	h.repository.EXPECT().GetToken(gomock.Any(), sha256Hex(rawToken)).
 		Return(nil, repositoryError)
@@ -1373,5 +1577,33 @@ func TestService_ValidateAPITokenPropagatesRepositoryError(t *testing.T) {
 	assertErrorIs(t, err, repositoryError)
 	if got != nil {
 		t.Errorf("ValidateAPIToken() token = %#v, want nil", got)
+	}
+}
+
+func TestService_ValidateAPITokenRejectsInvalidFormat(t *testing.T) {
+	tests := []struct {
+		name  string
+		token string
+	}{
+		{name: "empty", token: ""},
+		{name: "missing prefix", token: strings.TrimPrefix(testAPIKey, "api_")},
+		{name: "empty secret", token: "api_"},
+		{name: "short secret", token: "api_" + strings.Repeat("a", 42)},
+		{name: "long secret", token: "api_" + strings.Repeat("a", 44)},
+		{name: "invalid base64url", token: "api_" + strings.Repeat("a", 42) + "*"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := newServiceHarness(t)
+
+			got, err := h.service.ValidateAPIToken(context.Background(), tt.token)
+			if err == nil {
+				t.Fatal("ValidateAPIToken() error = nil, want format error")
+			}
+			if got != nil {
+				t.Errorf("ValidateAPIToken() token = %#v, want nil", got)
+			}
+		})
 	}
 }

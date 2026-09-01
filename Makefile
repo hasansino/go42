@@ -196,7 +196,7 @@ generate-dep-graph:
 # Dependencies:
 #   * brew install grpcui
 grpcui:
-	@grpcui -plaintext localhost:50051
+	@grpcui -plaintext localhost:9090
 
 ## show-asm | visualise assembly
 # Dependencies:

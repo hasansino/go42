@@ -285,19 +285,15 @@ func (db PgsqlSlave) DSN() string {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none bigcache memcached redis"`
-	BigCache  BigCache
+	Engine    string `env:"CACHE_ENGINE" default:"local" v:"oneof=local memcached redis"`
+	Local     Local
 	Redis     Redis
 	Memcached Memcached
 }
 
-type BigCache struct {
-	Shards             int           `env:"CACHE_BIGCACHE_SHARDS"                default:"1"`
-	LifeWindow         time.Duration `env:"CACHE_BIGCACHE_LIFE_WINDOW"           default:"5m"`
-	MaxEntriesInWindow int           `env:"CACHE_BIGCACHE_MAX_ENTRIES_IN_WINDOW" default:"1000"`
-	MaxEntrySizeBytes  int           `env:"CACHE_BIGCACHE_MAX_ENTRY_SIZE_BYTES"  default:"512000"`
-	HardMaxCacheSize   int           `env:"CACHE_BIGCACHE_HARD_MAX_CACHE_SIZE"   default:"1000"`
-	Verbose            bool          `env:"CACHE_BIGCACHE_VERBOSE"               default:"true"`
+type Local struct {
+	Capacity     uint64 `env:"CACHE_LOCAL_CAPACITY"       default:"10000"`
+	MaxCostBytes uint64 `env:"CACHE_LOCAL_MAX_COST_BYTES" default:"1073741824"`
 }
 
 type Redis struct {
