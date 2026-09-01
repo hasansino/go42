@@ -24,6 +24,9 @@ type Cache interface {
 	Getter
 	Setter
 	SetIfAbsent(ctx context.Context, key string, value string, ttl time.Duration) (stored bool, err error)
+	AllowRateLimit(
+		ctx context.Context, key string, rate int, burst int, ttl time.Duration,
+	) (allowed bool, err error)
 	Invalidate(ctx context.Context, key string) error
 }
 
@@ -57,6 +60,16 @@ func (NoopCache) SetIfAbsent(
 	_ time.Duration,
 ) (bool, error) {
 	return false, ErrSetIfAbsentUnsupported
+}
+
+func (NoopCache) AllowRateLimit(
+	_ context.Context,
+	_ string,
+	_ int,
+	_ int,
+	_ time.Duration,
+) (bool, error) {
+	return true, nil
 }
 
 func (NoopCache) Invalidate(_ context.Context, _ string) error {

@@ -458,9 +458,10 @@ type HTTP struct {
 }
 
 type HTTPRateLimiter struct {
-	Enabled bool `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"false"`
-	Rate    int  `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
-	Burst   int  `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
+	Enabled bool          `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"false"`
+	Rate    int           `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int           `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
+	TTL     time.Duration `env:"SERVER_HTTP_RATE_LIMITER_TTL"     default:"10m"`
 }
 
 type GRPC struct {
@@ -473,9 +474,10 @@ type GRPC struct {
 }
 
 type GRPCRateLimiter struct {
-	Enabled bool `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"false"`
-	Rate    int  `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
-	Burst   int  `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
+	Enabled bool          `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"false"`
+	Rate    int           `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int           `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
+	TTL     time.Duration `env:"SERVER_GRPC_RATE_LIMITER_TTL"     default:"10m"`
 }
 
 // ╭──────────────────────────────╮

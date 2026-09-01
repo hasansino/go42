@@ -17,9 +17,7 @@ type GoChan struct {
 }
 
 func New(opts ...Option) *GoChan {
-	var (
-		engine = new(GoChan)
-	)
+	engine := new(GoChan)
 
 	for _, opt := range opts {
 		opt(engine)
@@ -38,7 +36,8 @@ func New(opts ...Option) *GoChan {
 		watermill.NewSlogLogger(engine.logger),
 	)
 
-	return &GoChan{channel: goch}
+	engine.channel = goch
+	return engine
 }
 
 func (g *GoChan) Publish(topic string, event []byte) error {

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -13,6 +14,30 @@ import (
 type Wrapper struct {
 	client *redis.Client
 }
+
+// allowRateLimitScript implements GCRA atomically inside Redis.
+var allowRateLimitScript = redis.NewScript(`
+local rate = tonumber(ARGV[1])
+local burst = tonumber(ARGV[2])
+local ttl_ms = tonumber(ARGV[3])
+local interval = math.max(1, math.floor(1000000 / rate))
+local now_parts = redis.call('TIME')
+local now = (tonumber(now_parts[1]) * 1000000) + tonumber(now_parts[2])
+local tat = tonumber(redis.call('GET', KEYS[1]))
+
+if not tat or tat < now then
+    tat = now
+end
+
+local allow_at = tat - ((burst - 1) * interval)
+if now < allow_at then
+    redis.call('PEXPIRE', KEYS[1], ttl_ms)
+    return 0
+end
+
+redis.call('SET', KEYS[1], string.format('%.0f', tat + interval), 'PX', ttl_ms)
+return 1
+`)
 
 func Open(ctx context.Context, host string, db int, opts ...Option) (*Wrapper, error) {
 	w := new(Wrapper)
@@ -102,6 +127,42 @@ func (w *Wrapper) SetIfAbsent(
 		return false, err
 	}
 	return true, nil
+}
+
+func (w *Wrapper) AllowRateLimit(
+	ctx context.Context,
+	key string,
+	rate int,
+	burst int,
+	ttl time.Duration,
+) (bool, error) {
+	if rate <= 0 {
+		return false, fmt.Errorf("rate must be positive")
+	}
+	if burst <= 0 {
+		return false, fmt.Errorf("burst must be positive")
+	}
+	if ttl <= 0 {
+		return false, fmt.Errorf("ttl must be positive")
+	}
+
+	ttlMilliseconds := ttl.Milliseconds()
+	if ttlMilliseconds < 1 {
+		ttlMilliseconds = 1
+	}
+
+	allowed, err := allowRateLimitScript.Run(
+		ctx,
+		w.client,
+		[]string{key},
+		rate,
+		burst,
+		ttlMilliseconds,
+	).Int()
+	if err != nil {
+		return false, err
+	}
+	return allowed == 1, nil
 }
 
 func (w *Wrapper) Invalidate(ctx context.Context, key string) error {

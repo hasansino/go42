@@ -2,15 +2,19 @@ package local
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
+	ratepkg "golang.org/x/time/rate"
 )
 
 type Wrapper struct {
-	cache       *ttlcache.Cache[string, string]
-	cleanupDone chan struct{}
+	cache                *ttlcache.Cache[string, string]
+	rateLimitCache       *ttlcache.Cache[string, *ratepkg.Limiter]
+	cleanupDone          chan struct{}
+	rateLimitCleanupDone chan struct{}
 }
 
 func New(opts ...Option) *Wrapper {
@@ -38,31 +42,63 @@ func New(opts ...Option) *Wrapper {
 	}
 
 	c := ttlcache.New[string, string](cacheOpts...)
+	rateLimitCacheOpts := make([]ttlcache.Option[string, *ratepkg.Limiter], 0, 1)
+	if cfg.capacity > 0 {
+		rateLimitCacheOpts = append(
+			rateLimitCacheOpts,
+			ttlcache.WithCapacity[string, *ratepkg.Limiter](cfg.capacity),
+		)
+	}
+	rateLimitCache := ttlcache.New[string, *ratepkg.Limiter](rateLimitCacheOpts...)
+
 	cleanupDone := make(chan struct{})
+	rateLimitCleanupDone := make(chan struct{})
 
 	go func() {
 		c.Start()
 		close(cleanupDone)
 	}()
+	go func() {
+		rateLimitCache.Start()
+		close(rateLimitCleanupDone)
+	}()
 
 	return &Wrapper{
-		cache:       c,
-		cleanupDone: cleanupDone,
+		cache:                c,
+		rateLimitCache:       rateLimitCache,
+		cleanupDone:          cleanupDone,
+		rateLimitCleanupDone: rateLimitCleanupDone,
 	}
 }
 
 func (w *Wrapper) Shutdown(ctx context.Context) error {
 	for {
 		w.cache.Stop()
-		select {
-		case <-w.cleanupDone:
+		w.rateLimitCache.Stop()
+
+		cacheStopped := channelClosed(w.cleanupDone)
+		rateLimitCacheStopped := channelClosed(w.rateLimitCleanupDone)
+		if cacheStopped && rateLimitCacheStopped {
 			w.cache.DeleteAll()
+			w.rateLimitCache.DeleteAll()
 			return nil
+		}
+
+		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 			runtime.Gosched()
 		}
+	}
+}
+
+func channelClosed(channel <-chan struct{}) bool {
+	select {
+	case <-channel:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -91,6 +127,30 @@ func (w *Wrapper) SetIfAbsent(
 		ttlcache.WithTTL[string, string](normalizedTTL(ttl)),
 	)
 	return !found, nil
+}
+
+func (w *Wrapper) AllowRateLimit(
+	_ context.Context,
+	key string,
+	rate int,
+	burst int,
+	ttl time.Duration,
+) (bool, error) {
+	if rate <= 0 {
+		return false, fmt.Errorf("rate must be positive")
+	}
+	if burst <= 0 {
+		return false, fmt.Errorf("burst must be positive")
+	}
+
+	item, _ := w.rateLimitCache.GetOrSetFunc(
+		key,
+		func() *ratepkg.Limiter {
+			return ratepkg.NewLimiter(ratepkg.Limit(rate), burst)
+		},
+		ttlcache.WithTTL[string, *ratepkg.Limiter](normalizedTTL(ttl)),
+	)
+	return item.Value().Allow(), nil
 }
 
 func (w *Wrapper) Invalidate(_ context.Context, key string) error {

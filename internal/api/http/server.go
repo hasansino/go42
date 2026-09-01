@@ -26,7 +26,7 @@ type adapterAccessor interface {
 }
 
 type rateLimiterAccessor interface {
-	Limit(key any) bool
+	Limit(ctx context.Context, key string) (bool, error)
 }
 
 type Server struct {

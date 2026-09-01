@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/tools"
 )
 
@@ -65,9 +66,9 @@ func WitHealthCheckCtx(ctx context.Context) Option {
 }
 
 // WithRateLimiter enables/disables rate limiting.
-func WithRateLimiter(rate int, burst int) Option {
+func WithRateLimiter(cacheEngine cache.Engine, rate int, burst int, ttl time.Duration) Option {
 	return func(s *Server) {
-		s.rateLimiter = tools.NewRateLimiter(rate, burst)
+		s.rateLimiter = tools.NewRateLimiter(cacheEngine, "http", rate, burst, ttl)
 	}
 }
 

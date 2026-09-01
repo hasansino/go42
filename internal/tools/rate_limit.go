@@ -1,40 +1,81 @@
 package tools
 
 import (
-	"sync"
-
-	ratepkg "golang.org/x/time/rate"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"time"
 )
 
-// RateLimiter is a simple rate limiter that allows limiting requests based on a key.
+const rateLimitCacheKeyPrefix = "rate_limit:"
+
+//go:generate mockgen -source $GOFILE -package mocks -destination mocks/rate_limit.go
+
+type cacheAccessor interface {
+	AllowRateLimit(
+		ctx context.Context,
+		key string,
+		rate int,
+		burst int,
+		ttl time.Duration,
+	) (allowed bool, err error)
+}
+
+// RateLimiter applies a cache-backed rate limit to hashed, namespaced client keys.
 type RateLimiter struct {
-	sync.RWMutex
-	rate     int
-	burst    int
-	limiters map[any]*ratepkg.Limiter
+	cache     cacheAccessor
+	namespace string
+	rate      int
+	burst     int
+	ttl       time.Duration
 }
 
-func NewRateLimiter(rate, burst int) *RateLimiter {
+func NewRateLimiter(
+	cache cacheAccessor,
+	namespace string,
+	rate int,
+	burst int,
+	ttl time.Duration,
+) *RateLimiter {
+	if namespace == "" {
+		namespace = "default"
+	}
+	if ttl <= 0 {
+		ttl = 10 * time.Minute
+	}
+	if rate > 0 && burst > 0 {
+		minimumTTL := time.Duration(burst) * time.Second / time.Duration(rate)
+		if ttl < minimumTTL {
+			ttl = minimumTTL
+		}
+	}
+
 	return &RateLimiter{
-		rate:     rate,
-		burst:    burst,
-		limiters: make(map[any]*ratepkg.Limiter),
+		cache:     cache,
+		namespace: namespace,
+		rate:      rate,
+		burst:     burst,
+		ttl:       ttl,
 	}
 }
 
-func (m *RateLimiter) Limit(key any) bool {
-	if key == nil || key == "" {
+func (m *RateLimiter) Limit(ctx context.Context, key string) (bool, error) {
+	if key == "" {
 		// forbid empty keys - treat them as mistake
-		return false
+		return false, nil
+	}
+	if m.cache == nil {
+		return false, fmt.Errorf("rate limiter cache is nil")
+	}
+	if m.rate <= 0 {
+		return false, fmt.Errorf("rate must be positive")
+	}
+	if m.burst <= 0 {
+		return false, fmt.Errorf("burst must be positive")
 	}
 
-	m.Lock()
-	_, ok := m.limiters[key]
-	if !ok {
-		m.limiters[key] = ratepkg.NewLimiter(ratepkg.Limit(m.rate), m.burst)
-	}
-	m.Unlock()
-
-	// limiter itself is thread-safe
-	return m.limiters[key].Allow()
+	sum := sha256.Sum256([]byte(key))
+	cacheKey := rateLimitCacheKeyPrefix + m.namespace + ":" + hex.EncodeToString(sum[:])
+	return m.cache.AllowRateLimit(ctx, cacheKey, m.rate, m.burst, m.ttl)
 }

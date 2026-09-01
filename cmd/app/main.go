@@ -488,8 +488,10 @@ func main() {
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {
 		httpServerOpts = append(httpServerOpts, httpAPI.WithRateLimiter(
+			cacheEngine,
 			cfg.Server.HTTP.RateLimiter.Rate,
 			cfg.Server.HTTP.RateLimiter.Burst,
+			cfg.Server.HTTP.RateLimiter.TTL,
 		))
 	}
 
@@ -523,8 +525,10 @@ func main() {
 
 	if cfg.Server.GRPC.RateLimiter.Enabled {
 		grpcServerOpts = append(grpcServerOpts, grpcAPI.WithRateLimiter(
+			cacheEngine,
 			cfg.Server.GRPC.RateLimiter.Rate,
 			cfg.Server.GRPC.RateLimiter.Burst,
+			cfg.Server.GRPC.RateLimiter.TTL,
 		))
 	}
 
