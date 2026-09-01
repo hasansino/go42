@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 	"github.com/hasansino/go42/internal/metrics"
@@ -39,16 +41,25 @@ func (s *AuthEventSubscriber) Subscribe(ctx context.Context, subscriber subscrib
 
 func (s *AuthEventSubscriber) handleEvent(ctx context.Context, eventData []byte) error {
 	event := new(outboxDomain.Event)
-	err := json.Unmarshal(eventData, &event)
+	err := json.Unmarshal(eventData, event)
 	if err != nil {
-		s.logger.Error("failed to unmarshal event data")
+		s.logger.ErrorContext(ctx, "failed to unmarshal event data", slog.Any("error", err))
 		metrics.Counter("application_errors", map[string]interface{}{
 			"type": "auth_event_subscriber_error",
 		}).Inc()
 		return fmt.Errorf("failed to unmarshal event: %w", err)
 	}
 
-	s.logger.Debug("received event", slog.Any("event", nil))
+	if err := s.validateEvent(ctx, event); err != nil {
+		return err
+	}
+
+	eventLogAttrs := []any{
+		slog.String("event_id", event.ID.String()),
+		slog.Int("aggregate_id", event.AggregateID),
+		slog.String("aggregate_type", event.AggregateType),
+	}
+	s.logger.DebugContext(ctx, "received event", eventLogAttrs...)
 
 	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		eventLog := &models.UserHistoryRecord{
@@ -67,10 +78,27 @@ func (s *AuthEventSubscriber) handleEvent(ctx context.Context, eventData []byte)
 			}).Inc()
 			return fmt.Errorf("failed to save log: %w", err)
 		}
-		s.logger.Debug("event saved", slog.Any("event", eventLog))
+		s.logger.DebugContext(ctx, "event saved", eventLogAttrs...)
 		metrics.Counter("application_auth_event_subscriber_processed", nil).Inc()
 		return nil
 	})
+}
+
+func (s *AuthEventSubscriber) validateEvent(ctx context.Context, event *outboxDomain.Event) error {
+	if event.ID != uuid.Nil && !event.CreatedAt.IsZero() &&
+		event.AggregateID > 0 && event.AggregateType != "" {
+		return nil
+	}
+
+	err := fmt.Errorf("event is missing required fields")
+
+	s.logger.ErrorContext(ctx, "invalid event data", slog.Any("error", err))
+
+	metrics.Counter("application_errors", map[string]interface{}{
+		"type": "auth_event_subscriber_error",
+	}).Inc()
+
+	return fmt.Errorf("invalid event: %w", err)
 }
 
 type AuthEventSubscriberOption func(*AuthEventSubscriber)
