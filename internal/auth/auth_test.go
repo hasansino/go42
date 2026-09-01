@@ -146,6 +146,21 @@ func expectTransaction(repository *authMocks.Mockrepository) *gomock.Call {
 		})
 }
 
+func expectUserCacheInvalidation(
+	repository *authMocks.Mockrepository,
+	user *models.User,
+	err error,
+	emails ...string,
+) *gomock.Call {
+	emailArgs := make([]any, len(emails))
+	for i, email := range emails {
+		emailArgs[i] = email
+	}
+	return repository.EXPECT().InvalidateUserCache(
+		gomock.Any(), user.ID, user.UUID.String(), emailArgs...,
+	).Return(err)
+}
+
 type outboxEventMatcher struct {
 	aggregateID   int
 	aggregateType string
@@ -553,6 +568,7 @@ func TestService_UpdateUserSkipsUnchangedData(t *testing.T) {
 func TestService_UpdateUserEmail(t *testing.T) {
 	h := newServiceHarness(t)
 	user := newTestUser(t, domain.UserStatusActive)
+	oldEmail := user.Email
 	newEmail := "new@example.com"
 	expectTransaction(h.repository)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
@@ -564,6 +580,7 @@ func TestService_UpdateUserEmail(t *testing.T) {
 			return nil
 		})
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
+	expectUserCacheInvalidation(h.repository, user, nil, oldEmail, newEmail)
 
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Email: &newEmail,
@@ -588,6 +605,7 @@ func TestService_UpdateUserPassword(t *testing.T) {
 			return nil
 		})
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
+	expectUserCacheInvalidation(h.repository, user, nil, user.Email, user.Email)
 
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Password: &newPassword,
@@ -657,6 +675,7 @@ func TestService_UpdateUserIgnoresOutboxFailure(t *testing.T) {
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	h.repository.EXPECT().UpdateUser(gomock.Any(), user).Return(nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, errors.New("outbox unavailable"))
+	expectUserCacheInvalidation(h.repository, user, nil, testUserEmail, newEmail)
 
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Email: &newEmail,
@@ -672,10 +691,51 @@ func TestService_DeleteUser(t *testing.T) {
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	h.repository.EXPECT().DeleteUser(gomock.Any(), user).Return(nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserDelete, nil)
+	expectUserCacheInvalidation(h.repository, user, nil, user.Email)
 
 	if err := h.service.DeleteUser(context.Background(), user.UUID.String()); err != nil {
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
+}
+
+func TestService_UpdateUserReportsCacheInvalidationFailure(t *testing.T) {
+	h := newServiceHarness(t)
+	user := newTestUser(t, domain.UserStatusActive)
+	oldEmail := user.Email
+	newEmail := "new@example.com"
+	invalidateError := errors.New("cache unavailable")
+	expectTransaction(h.repository)
+	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
+	h.repository.EXPECT().UpdateUser(gomock.Any(), user).Return(nil)
+	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
+	expectUserCacheInvalidation(h.repository, user, invalidateError, oldEmail, newEmail)
+
+	err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
+		Email: &newEmail,
+	})
+	assertErrorIs(t, err, invalidateError)
+}
+
+func TestService_UpdateUserDoesNotInvalidateCacheWhenCommitFails(t *testing.T) {
+	h := newServiceHarness(t)
+	user := newTestUser(t, domain.UserStatusActive)
+	newEmail := "new@example.com"
+	commitError := errors.New("commit failed")
+	h.repository.EXPECT().WithTransaction(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
+			if err := fn(ctx); err != nil {
+				return err
+			}
+			return commitError
+		})
+	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
+	h.repository.EXPECT().UpdateUser(gomock.Any(), user).Return(nil)
+	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
+
+	err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
+		Email: &newEmail,
+	})
+	assertErrorIs(t, err, commitError)
 }
 
 func TestService_DeleteUserFailures(t *testing.T) {

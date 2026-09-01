@@ -36,6 +36,11 @@ func (r *BaseRepository) GetReadDB(ctx context.Context) *gorm.DB {
 	return r.db.Slave().WithContext(ctx)
 }
 
+func (r *BaseRepository) InTransaction(ctx context.Context) bool {
+	_, ok := ctx.Value(ctxKeyTx).(*gorm.DB)
+	return ok
+}
+
 func (r *BaseRepository) Begin(
 	ctx context.Context, isolationLvl sql.IsolationLevel,
 ) (context.Context, error) {

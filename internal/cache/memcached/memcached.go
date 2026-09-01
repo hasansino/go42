@@ -163,7 +163,11 @@ func (w *Wrapper) AllowRateLimit(
 }
 
 func (w *Wrapper) Invalidate(_ context.Context, key string) error {
-	return w.client.Delete(key)
+	err := w.client.Delete(key)
+	if errors.Is(err, memcache.ErrCacheMiss) {
+		return nil
+	}
+	return err
 }
 
 func newItem(key string, value string, ttl time.Duration) *memcache.Item {

@@ -46,6 +46,7 @@ type repository interface {
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	InvalidateUserCache(ctx context.Context, userID int, userUUID string, emails ...string) error
 
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
 
@@ -452,11 +453,16 @@ func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (
 }
 
 func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
-	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	var (
+		updatedUser *models.User
+		oldEmail    string
+	)
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
+		oldEmail = user.Email
 
 		var doUpdate bool
 
@@ -483,6 +489,7 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 		if err := s.repository.UpdateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
+		updatedUser = user
 
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
@@ -500,10 +507,27 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if updatedUser == nil {
+		return nil
+	}
+	if err := s.repository.InvalidateUserCache(
+		ctx,
+		updatedUser.ID,
+		updatedUser.UUID.String(),
+		oldEmail,
+		updatedUser.Email,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate updated user cache: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
-	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	var deletedUser *models.User
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		var err error
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
@@ -513,6 +537,7 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete user: %w", err)
 		}
+		deletedUser = user
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeUserDelete,
@@ -523,6 +548,18 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if err := s.repository.InvalidateUserCache(
+		ctx,
+		deletedUser.ID,
+		deletedUser.UUID.String(),
+		deletedUser.Email,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate deleted user cache: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
