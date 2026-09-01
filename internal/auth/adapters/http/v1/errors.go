@@ -28,7 +28,6 @@ func (a *Adapter) processError(ctx *echo.Context, err error) error {
 		return httpAPI.SendJSONError(ctx,
 			http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 	default:
-		return httpAPI.SendJSONError(ctx,
-			http.StatusInternalServerError, err.Error())
+		return echo.ErrInternalServerError.Wrap(err)
 	}
 }
