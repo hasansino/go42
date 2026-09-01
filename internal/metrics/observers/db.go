@@ -93,7 +93,7 @@ func (o *DatabaseObserver) updateDBMetrics(labels map[string]interface{}) {
 		Set(uint64(sqlStats.WaitCount))
 	metrics.
 		Counter("go_sql_wait_duration_seconds_total", labels).
-		Set(uint64(sqlStats.WaitDuration))
+		Set(uint64(sqlStats.WaitDuration.Seconds()))
 	metrics.
 		Counter("go_sql_max_idle_closed_total", labels).
 		Set(uint64(sqlStats.MaxIdleClosed))
