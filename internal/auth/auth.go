@@ -652,7 +652,7 @@ func (s *Service) validateJWTToken(
 				"result": "parse_error",
 			}).Inc()
 		}
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", domain.ErrInvalidToken, err)
 	}
 
 	claims, ok := t.Claims.(*domain.JWTClaims)

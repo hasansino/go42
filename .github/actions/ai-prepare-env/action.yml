@@ -1,10 +1,6 @@
----
-
 name: ai-prepare-env
 description: 'Prepares the environment for ai agents'
-
 # Prepares the environment for ai agents.
-
 runs:
   using: composite
   steps:
@@ -22,7 +18,7 @@ runs:
       shell: bash
     # -----
     - name: 'Cache Homebrew and formulae'
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: |
           /home/linuxbrew/.linuxbrew

@@ -1,11 +1,7 @@
----
-
 name: project-lint
-
 # Linter specific to current project.
 # This workflow checks for uncommitted changes after running 'make generate'.
 # It is used to ensure that the relevant generated files are committed to the repository.
-
 on:
   workflow_dispatch:
     inputs:
@@ -27,9 +23,7 @@ on:
       continue_on_error:
         required: true
         type: boolean
-
 permissions: {}
-
 jobs:
   project-lint:
     name: project-lint
@@ -58,7 +52,7 @@ jobs:
         run: go mod tidy && go mod download
       # -----
       - name: 'Cache Homebrew and formulae'
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             /home/linuxbrew/.linuxbrew

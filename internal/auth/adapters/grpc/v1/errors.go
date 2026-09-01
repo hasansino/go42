@@ -17,6 +17,8 @@ func (a *Adapter) processError(err error) error {
 		return status.Error(codes.AlreadyExists, "user already exists")
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		return status.Error(codes.InvalidArgument, "invalid credentials")
+	case errors.Is(err, domain.ErrPasswordWeak):
+		return status.Error(codes.InvalidArgument, "password is too weak")
 	case errors.Is(err, domain.ErrAuthenticationUnavailable):
 		return status.Error(codes.Unavailable, "authentication unavailable")
 	case errors.Is(err, domain.ErrInvalidToken):
