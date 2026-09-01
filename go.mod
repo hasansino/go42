@@ -3,8 +3,8 @@ module github.com/hasansino/go42
 go 1.27
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1
-	buf.build/go/protovalidate v1.1.3
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1
+	buf.build/go/protovalidate v1.2.0
 	github.com/IBM/sarama v1.47.0
 	github.com/KimMachineGun/automemlimit v0.7.5
 	github.com/ThreeDotsLabs/watermill v1.5.3
@@ -18,7 +18,7 @@ require (
 	github.com/bytedance/sonic v1.15.0
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/getkin/kin-openapi v0.133.0
-	github.com/getsentry/sentry-go v0.43.0
+	github.com/getsentry/sentry-go v0.46.2
 	github.com/getsentry/sentry-go/slog v0.43.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-faster/errors v0.7.1
@@ -26,7 +26,7 @@ require (
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.30.1
-	github.com/go-sql-driver/mysql v1.9.3
+	github.com/go-sql-driver/mysql v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
@@ -114,7 +114,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/cel-go v0.27.0 // indirect
+	github.com/google/cel-go v0.28.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260115054156-294ebfa9ad83 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.7 // indirect
