@@ -11,6 +11,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/jackc/pgx/v5/pgconn"
 	slogGorm "github.com/orandin/slog-gorm"
+	"go.opentelemetry.io/otel/attribute"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/plugin/opentelemetry/tracing"
@@ -70,7 +71,8 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 	}
 
 	if err := masterConn.Use(tracing.NewPlugin(
-		tracing.WithDBSystem("mysql-master"),
+		tracing.WithDBSystem("postgresql"),
+		tracing.WithAttributes(attribute.String("db.role", "master")),
 		tracing.WithoutServerAddress(),
 		tracing.WithoutMetrics(),
 	)); err != nil {
@@ -104,7 +106,8 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 		}
 
 		if err := slaveConn.Use(tracing.NewPlugin(
-			tracing.WithDBSystem("pgsql-slave"),
+			tracing.WithDBSystem("postgresql"),
+			tracing.WithAttributes(attribute.String("db.role", "slave")),
 			tracing.WithoutServerAddress(),
 			tracing.WithoutMetrics(),
 		)); err != nil {
