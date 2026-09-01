@@ -228,6 +228,9 @@ type MysqlSlave struct {
 }
 
 func (db MysqlSlave) DSN() string {
+	if db.Host == "" {
+		return ""
+	}
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
 		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,
