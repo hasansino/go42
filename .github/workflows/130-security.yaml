@@ -50,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: 'Run Gitleaks scan'
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
@@ -130,7 +130,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Check Go licenses'
-        uses: joeig/go-licenses-action@v1.1
+        uses: joeig/go-licenses-action@v1.2
         with:
           # some packages may miss license files, or they are linked to outside libraries
           # for stricter checks, add `unknown` to this list
