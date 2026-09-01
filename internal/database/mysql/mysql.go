@@ -29,6 +29,7 @@ type Mysql struct {
 	connMaxLifetime time.Duration
 	maxOpenConns    int
 	maxIdleConns    int
+	queryTimeout    time.Duration
 
 	queryLogging bool
 }
@@ -135,6 +136,11 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 }
 
 func (w *Mysql) connect(ctx context.Context, dsn string, config *gorm.Config) (*gorm.DB, error) {
+	dsn, err := withQueryTimeout(dsn, w.queryTimeout)
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := retry.DoWithData[*gorm.DB](func() (*gorm.DB, error) {
 		conn, err := gorm.Open(mysql.Open(dsn), config)
 		if err != nil {
@@ -167,6 +173,20 @@ func (w *Mysql) connect(ctx context.Context, dsn string, config *gorm.Config) (*
 		return nil, err
 	}
 	return db, nil
+}
+
+func withQueryTimeout(dsn string, timeout time.Duration) (string, error) {
+	if timeout <= 0 {
+		return dsn, nil
+	}
+
+	config, err := libMysql.ParseDSN(dsn)
+	if err != nil {
+		return "", fmt.Errorf("failed to configure query timeout: %w", err)
+	}
+	config.ReadTimeout = timeout
+	config.WriteTimeout = timeout
+	return config.FormatDSN(), nil
 }
 
 func (w *Mysql) Shutdown(ctx context.Context) error {

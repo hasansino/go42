@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -29,6 +32,7 @@ type Postgres struct {
 	connMaxLifetime time.Duration
 	maxOpenConns    int
 	maxIdleConns    int
+	queryTimeout    time.Duration
 
 	queryLogging bool
 }
@@ -135,6 +139,11 @@ func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option
 }
 
 func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config) (*gorm.DB, error) {
+	dsn, err := withQueryTimeout(dsn, w.queryTimeout)
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := retry.DoWithData[*gorm.DB](func() (*gorm.DB, error) {
 		conn, err := gorm.Open(postgres.New(postgres.Config{DSN: dsn}), config)
 		if err != nil {
@@ -167,6 +176,28 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 		return nil, err
 	}
 	return db, nil
+}
+
+func withQueryTimeout(dsn string, timeout time.Duration) (string, error) {
+	if timeout <= 0 {
+		return dsn, nil
+	}
+
+	timeoutMilliseconds := int64((timeout + time.Millisecond - 1) / time.Millisecond)
+	timeoutValue := strconv.FormatInt(timeoutMilliseconds, 10)
+
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		parsedDSN, err := url.Parse(dsn)
+		if err != nil {
+			return "", fmt.Errorf("failed to configure query timeout: %w", err)
+		}
+		query := parsedDSN.Query()
+		query.Set("statement_timeout", timeoutValue)
+		parsedDSN.RawQuery = query.Encode()
+		return parsedDSN.String(), nil
+	}
+
+	return strings.TrimSpace(dsn) + " statement_timeout=" + timeoutValue, nil
 }
 
 func (w *Postgres) Shutdown(ctx context.Context) error {

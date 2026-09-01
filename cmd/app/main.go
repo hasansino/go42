@@ -161,6 +161,7 @@ func main() {
 			mysql.WithConnMaxLifetime(cfg.Database.Mysql.ConnMaxLifetime),
 			mysql.WithMaxOpenConns(cfg.Database.Mysql.MaxOpenConns),
 			mysql.WithMaxIdleConns(cfg.Database.Mysql.MaxIdleConns),
+			mysql.WithQueryTimeout(cfg.Database.Mysql.QueryTimeout),
 		)
 		if mysqlConnErr != nil {
 			log.Fatalf("failed to connect to mysql: %v\n", mysqlConnErr)
@@ -192,6 +193,7 @@ func main() {
 			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
+			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)
