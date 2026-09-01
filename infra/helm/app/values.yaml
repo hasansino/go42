@@ -27,7 +27,16 @@ service:
 env:
   ENVIRONMENT: development
   LOG_LEVEL: debug
+  DATABASE_ENGINE: sqlite
+  DATABASE_SQLITE_MODE: rwc
+  DATABASE_SQLITE_PATH: /data/go42.db
   SERVER_HTTP_LISTEN: ":8080"
   SERVER_GRPC_LISTEN: ":50051"
 
-volumeSize: 100Mi
+persistence:
+  enabled: true
+  existingClaim: ""
+  storageClass: standard
+  accessModes:
+    - ReadWriteOnce
+  size: 100Mi
