@@ -145,6 +145,25 @@ func (mr *MockrepositoryMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*Mockrepository)(nil).GetUserByUUID), ctx, uuid)
 }
 
+// InvalidateUserCache mocks base method.
+func (m *Mockrepository) InvalidateUserCache(ctx context.Context, userID int, userUUID string, emails ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, userID, userUUID}
+	for _, a := range emails {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "InvalidateUserCache", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InvalidateUserCache indicates an expected call of InvalidateUserCache.
+func (mr *MockrepositoryMockRecorder) InvalidateUserCache(ctx, userID, userUUID any, emails ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, userID, userUUID}, emails...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InvalidateUserCache", reflect.TypeOf((*Mockrepository)(nil).InvalidateUserCache), varargs...)
+}
+
 // ListUsers mocks base method.
 func (m *Mockrepository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	m.ctrl.T.Helper()
@@ -213,12 +232,13 @@ func (m *Mockcache) EXPECT() *MockcacheMockRecorder {
 }
 
 // Get mocks base method.
-func (m *Mockcache) Get(ctx context.Context, key string) (string, error) {
+func (m *Mockcache) Get(ctx context.Context, key string) (string, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, key)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Get indicates an expected call of Get.
@@ -239,6 +259,21 @@ func (m *Mockcache) Set(ctx context.Context, key, value string, ttl time.Duratio
 func (mr *MockcacheMockRecorder) Set(ctx, key, value, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*Mockcache)(nil).Set), ctx, key, value, ttl)
+}
+
+// SetIfAbsent mocks base method.
+func (m *Mockcache) SetIfAbsent(ctx context.Context, key, value string, ttl time.Duration) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetIfAbsent", ctx, key, value, ttl)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetIfAbsent indicates an expected call of SetIfAbsent.
+func (mr *MockcacheMockRecorder) SetIfAbsent(ctx, key, value, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIfAbsent", reflect.TypeOf((*Mockcache)(nil).SetIfAbsent), ctx, key, value, ttl)
 }
 
 // MockoutboxService is a mock of outboxService interface.

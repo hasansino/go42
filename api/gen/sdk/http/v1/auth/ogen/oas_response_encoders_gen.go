@@ -17,7 +17,6 @@ func encodeLoginResponse(response LoginRes, w http.ResponseWriter, span trace.Sp
 	case *Tokens:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -29,13 +28,11 @@ func encodeLoginResponse(response LoginRes, w http.ResponseWriter, span trace.Sp
 
 	case *LoginBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *LoginForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -48,13 +45,11 @@ func encodeLogoutResponse(response LogoutRes, w http.ResponseWriter, span trace.
 	switch response := response.(type) {
 	case *LogoutOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *LogoutBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
@@ -68,7 +63,6 @@ func encodeRefreshResponse(response RefreshRes, w http.ResponseWriter, span trac
 	case *Tokens:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -80,13 +74,11 @@ func encodeRefreshResponse(response RefreshRes, w http.ResponseWriter, span trac
 
 	case *RefreshBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *RefreshForbidden:
 		w.WriteHeader(403)
-		span.SetStatus(codes.Error, http.StatusText(403))
 
 		return nil
 
@@ -100,7 +92,6 @@ func encodeSignupResponse(response SignupRes, w http.ResponseWriter, span trace.
 	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
-		span.SetStatus(codes.Ok, http.StatusText(201))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -112,13 +103,11 @@ func encodeSignupResponse(response SignupRes, w http.ResponseWriter, span trace.
 
 	case *SignupBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *SignupConflict:
 		w.WriteHeader(409)
-		span.SetStatus(codes.Error, http.StatusText(409))
 
 		return nil
 
@@ -132,7 +121,6 @@ func encodeUsersCreateResponse(response UsersCreateRes, w http.ResponseWriter, s
 	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
-		span.SetStatus(codes.Ok, http.StatusText(201))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -144,13 +132,11 @@ func encodeUsersCreateResponse(response UsersCreateRes, w http.ResponseWriter, s
 
 	case *UsersCreateBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *UsersCreateUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -163,25 +149,21 @@ func encodeUsersDeleteResponse(response UsersDeleteRes, w http.ResponseWriter, s
 	switch response := response.(type) {
 	case *UsersDeleteOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *UsersDeleteBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *UsersDeleteUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
 	case *UsersDeleteNotFound:
 		w.WriteHeader(404)
-		span.SetStatus(codes.Error, http.StatusText(404))
 
 		return nil
 
@@ -195,7 +177,6 @@ func encodeUsersGetResponse(response UsersGetRes, w http.ResponseWriter, span tr
 	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -207,19 +188,16 @@ func encodeUsersGetResponse(response UsersGetRes, w http.ResponseWriter, span tr
 
 	case *UsersGetBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *UsersGetUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
 	case *UsersGetNotFound:
 		w.WriteHeader(404)
-		span.SetStatus(codes.Error, http.StatusText(404))
 
 		return nil
 
@@ -241,7 +219,6 @@ func encodeUsersListResponse(response UsersListRes, w http.ResponseWriter, span 
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -253,7 +230,6 @@ func encodeUsersListResponse(response UsersListRes, w http.ResponseWriter, span 
 
 	case *UsersListUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -267,7 +243,6 @@ func encodeUsersMeReadResponse(response UsersMeReadRes, w http.ResponseWriter, s
 	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -279,7 +254,6 @@ func encodeUsersMeReadResponse(response UsersMeReadRes, w http.ResponseWriter, s
 
 	case *UsersMeReadUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -292,19 +266,16 @@ func encodeUsersMeUpdateResponse(response UsersMeUpdateRes, w http.ResponseWrite
 	switch response := response.(type) {
 	case *UsersMeUpdateOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *UsersMeUpdateBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *UsersMeUpdateUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
@@ -317,25 +288,21 @@ func encodeUsersUpdateResponse(response UsersUpdateRes, w http.ResponseWriter, s
 	switch response := response.(type) {
 	case *UsersUpdateOK:
 		w.WriteHeader(200)
-		span.SetStatus(codes.Ok, http.StatusText(200))
 
 		return nil
 
 	case *UsersUpdateBadRequest:
 		w.WriteHeader(400)
-		span.SetStatus(codes.Error, http.StatusText(400))
 
 		return nil
 
 	case *UsersUpdateUnauthorized:
 		w.WriteHeader(401)
-		span.SetStatus(codes.Error, http.StatusText(401))
 
 		return nil
 
 	case *UsersUpdateNotFound:
 		w.WriteHeader(404)
-		span.SetStatus(codes.Error, http.StatusText(404))
 
 		return nil
 
@@ -352,10 +319,8 @@ func encodeErrorResponse(response *UnexpectedResponseStatusCode, w http.Response
 		code = http.StatusOK
 	}
 	w.WriteHeader(code)
-	if st := http.StatusText(code); code >= http.StatusBadRequest {
-		span.SetStatus(codes.Error, st)
-	} else {
-		span.SetStatus(codes.Ok, st)
+	if code >= http.StatusInternalServerError {
+		span.SetStatus(codes.Error, http.StatusText(code))
 	}
 
 	e := new(jx.Encoder)

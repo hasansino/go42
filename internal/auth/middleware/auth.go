@@ -28,7 +28,11 @@ type authServiceAccessor interface {
 	Logout(ctx context.Context, accessToken, refreshToken string) error
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
-	ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error)
+	ValidateJWTToken(
+		ctx context.Context,
+		token string,
+		expectedPurpose domain.JWTTokenPurpose,
+	) (*domain.JWTClaims, error)
 	InvalidateJWTToken(ctx context.Context, token string, until time.Time) error
 	ValidateAPIToken(ctx context.Context, token string) (*models.Token, error)
 }
@@ -46,6 +50,11 @@ func NewAuthMiddleware(svc authServiceAccessor) func(next echo.HandlerFunc) echo
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
 				if err := processUserAuth(ctx, svc, token); err != nil {
+					if errors.Is(err, domain.ErrAuthenticationUnavailable) {
+						return httpAPI.SendJSONError(ctx,
+							http.StatusServiceUnavailable,
+							http.StatusText(http.StatusServiceUnavailable))
+					}
 					return httpAPI.SendJSONError(ctx,
 						http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 				}
@@ -78,7 +87,9 @@ func extractBearerToken(authHeader string) (string, error) {
 }
 
 func processUserAuth(ctx *echo.Context, svc authServiceAccessor, token string) error {
-	claims, err := svc.ValidateJWTToken(ctx.Request().Context(), token)
+	claims, err := svc.ValidateJWTToken(
+		ctx.Request().Context(), token, domain.JWTTokenPurposeAccess,
+	)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
@@ -133,8 +144,8 @@ func processTokenAuth(ctx *echo.Context, svc authServiceAccessor, token string) 
 	}
 
 	authInfo := domain.ContextAuthInfo{
-		ID:   apiToken.ID,
-		UUID: apiToken.UUID.String(),
+		ID:   user.ID,
+		UUID: user.UUID.String(),
 		Type: domain.AuthenticationTypeApiToken,
 	}
 

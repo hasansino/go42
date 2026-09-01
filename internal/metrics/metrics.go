@@ -12,6 +12,11 @@ import (
 var (
 	mutex        sync.RWMutex
 	globalLabels map[string]interface{}
+	labelEscaper = strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+		"\n", `\n`,
+	)
 )
 
 func init() {
@@ -105,12 +110,16 @@ func constructMetric(name string, labels map[string]interface{}) string {
 			v = globalLabels[k]
 		}
 
-		// fmt.Sprintf may be slow, but it is trade off for convenience
-		builder.WriteString(fmt.Sprintf("%v", v)) //nolint:staticcheck
+		builder.WriteString(escapeLabelValue(v))
 		builder.WriteByte('"')
 	}
 
 	builder.WriteByte('}')
 
 	return builder.String()
+}
+
+func escapeLabelValue(value interface{}) string {
+	// fmt.Sprintf may be slow, but it is a trade-off for accepting arbitrary label values.
+	return labelEscaper.Replace(fmt.Sprintf("%v", value)) //nolint:staticcheck
 }

@@ -2,6 +2,8 @@ package interceptors
 
 import (
 	"context"
+	"net"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -10,7 +12,33 @@ import (
 )
 
 type rateLimiterAcessor interface {
-	Limit(key any) bool
+	Limit(ctx context.Context, key string) (bool, error)
+}
+
+const clientRateLimitNamespace = "grpc-client"
+
+type ClientRateLimitKeyFunc func(ctx context.Context, target string, method string) string
+
+type ClientRateLimiterOption func(*clientRateLimiterConfig)
+
+type clientRateLimiterConfig struct {
+	keyFunc ClientRateLimitKeyFunc
+}
+
+func WithClientRateLimitKeyFunc(keyFunc ClientRateLimitKeyFunc) ClientRateLimiterOption {
+	return func(config *clientRateLimiterConfig) {
+		if keyFunc != nil {
+			config.keyFunc = keyFunc
+		}
+	}
+}
+
+// WithClientRateLimitScope replaces the transport target with a stable logical
+// upstream name while retaining per-method buckets.
+func WithClientRateLimitScope(scope string) ClientRateLimiterOption {
+	return WithClientRateLimitKeyFunc(func(_ context.Context, _ string, method string) string {
+		return buildClientRateLimitKey(scope, method)
+	})
 }
 
 func UnaryServerRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnaryServerInterceptor {
@@ -23,7 +51,11 @@ func UnaryServerRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnarySer
 		if limiter == nil {
 			return handler(ctx, req)
 		}
-		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
+		allowed, err := limiter.Limit(ctx, extractRateLimitKeyFromCtx(ctx))
+		if err != nil {
+			return nil, status.Error(codes.Unavailable, "rate limiter unavailable")
+		}
+		if !allowed {
 			return nil, status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
 		return handler(ctx, req)
@@ -40,14 +72,23 @@ func StreamServerRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.StreamS
 		if limiter == nil {
 			return handler(srv, stream)
 		}
-		if !limiter.Limit(extractRateLimitKeyFromCtx(stream.Context())) {
+		allowed, err := limiter.Limit(stream.Context(), extractRateLimitKeyFromCtx(stream.Context()))
+		if err != nil {
+			return status.Error(codes.Unavailable, "rate limiter unavailable")
+		}
+		if !allowed {
 			return status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
 		return handler(srv, stream)
 	}
 }
 
-func UnaryClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnaryClientInterceptor {
+func UnaryClientRateLimiterInterceptor(
+	limiter rateLimiterAcessor,
+	opts ...ClientRateLimiterOption,
+) grpc.UnaryClientInterceptor {
+	config := newClientRateLimiterConfig(opts...)
+
 	return func(
 		ctx context.Context,
 		method string,
@@ -59,14 +100,24 @@ func UnaryClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.UnaryCli
 		if limiter == nil {
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}
-		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
+		key := config.keyFunc(ctx, cc.CanonicalTarget(), method)
+		allowed, err := limiter.Limit(ctx, key)
+		if err != nil {
+			return status.Error(codes.Unavailable, "rate limiter unavailable")
+		}
+		if !allowed {
 			return status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
-func StreamClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.StreamClientInterceptor {
+func StreamClientRateLimiterInterceptor(
+	limiter rateLimiterAcessor,
+	opts ...ClientRateLimiterOption,
+) grpc.StreamClientInterceptor {
+	config := newClientRateLimiterConfig(opts...)
+
 	return func(
 		ctx context.Context,
 		desc *grpc.StreamDesc,
@@ -78,16 +129,50 @@ func StreamClientRateLimiterInterceptor(limiter rateLimiterAcessor) grpc.StreamC
 		if limiter == nil {
 			return streamer(ctx, desc, cc, method, opts...)
 		}
-		if !limiter.Limit(extractRateLimitKeyFromCtx(ctx)) {
+		key := config.keyFunc(ctx, cc.CanonicalTarget(), method)
+		allowed, err := limiter.Limit(ctx, key)
+		if err != nil {
+			return nil, status.Error(codes.Unavailable, "rate limiter unavailable")
+		}
+		if !allowed {
 			return nil, status.Errorf(codes.ResourceExhausted, "rate limit exceeded")
 		}
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 }
 
-func extractRateLimitKeyFromCtx(ctx context.Context) string {
-	if p, ok := peer.FromContext(ctx); ok {
-		return p.Addr.String()
+func newClientRateLimiterConfig(opts ...ClientRateLimiterOption) clientRateLimiterConfig {
+	config := clientRateLimiterConfig{keyFunc: defaultClientRateLimitKey}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&config)
+		}
 	}
-	return ""
+	return config
+}
+
+func defaultClientRateLimitKey(_ context.Context, target string, method string) string {
+	return buildClientRateLimitKey(target, method)
+}
+
+func buildClientRateLimitKey(scope string, method string) string {
+	return strings.Join([]string{clientRateLimitNamespace, scope, method}, "|")
+}
+
+func extractRateLimitKeyFromCtx(ctx context.Context) string {
+	p, ok := peer.FromContext(ctx)
+	if !ok || p.Addr == nil {
+		return ""
+	}
+
+	if tcpAddr, ok := p.Addr.(*net.TCPAddr); ok {
+		return tcpAddr.IP.String()
+	}
+
+	host, _, err := net.SplitHostPort(p.Addr.String())
+	if err == nil {
+		return host
+	}
+
+	return p.Addr.String()
 }

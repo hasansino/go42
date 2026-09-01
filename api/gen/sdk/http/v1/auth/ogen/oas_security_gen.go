@@ -14,7 +14,7 @@ import (
 // SecurityHandler is handler for security parameters.
 type SecurityHandler interface {
 	// HandleJwt handles jwt security.
-	// JWT token in Authorization header (format: Bearer <token>).
+	// JWT token in Authorization header (format: Bearer ).
 	HandleJwt(ctx context.Context, operationName OperationName, t Jwt) (context.Context, error)
 }
 
@@ -100,7 +100,7 @@ func (s *Server) securityJwt(ctx context.Context, operationName OperationName, r
 // SecuritySource is provider of security values (tokens, passwords, etc.).
 type SecuritySource interface {
 	// Jwt provides jwt security value.
-	// JWT token in Authorization header (format: Bearer <token>).
+	// JWT token in Authorization header (format: Bearer ).
 	Jwt(ctx context.Context, operationName OperationName, client *Client) (Jwt, error)
 }
 

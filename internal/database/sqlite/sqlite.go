@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/glebarez/sqlite"
@@ -77,6 +78,16 @@ func Open(dbPath string, opts ...Option) (*Sqlite, error) {
 		return nil, err
 	}
 
+	var foreignKeysEnabled int
+	if err := gormDB.Raw("PRAGMA foreign_keys").Scan(&foreignKeysEnabled).Error; err != nil {
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("failed to verify sqlite foreign keys: %w", err)
+	}
+	if foreignKeysEnabled != 1 {
+		_ = sqlDB.Close()
+		return nil, errors.New("sqlite foreign keys are disabled")
+	}
+
 	sqlDB.SetMaxOpenConns(1)
 
 	return &Sqlite{gormDB: gormDB, sqlDB: sqlDB}, nil
@@ -104,17 +115,11 @@ func (w *Sqlite) Slave() *gorm.DB {
 }
 
 func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
-	if len(connOpts) == 0 {
-		return dbPath
-	}
 	dbPath += "?"
-	for i := range connOpts {
-		dbPath += connOpts[i].Key + "=" + connOpts[i].Value
-		if i < len(connOpts)-1 {
-			dbPath += "&"
-		}
+	for _, option := range connOpts {
+		dbPath += option.Key + "=" + option.Value + "&"
 	}
-	return dbPath
+	return dbPath + "_pragma=foreign_keys(1)"
 }
 
 func (w *Sqlite) IsNotFoundError(err error) bool {

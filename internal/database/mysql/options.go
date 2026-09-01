@@ -42,3 +42,9 @@ func WithMaxOpenConns(n int) Option {
 		w.maxOpenConns = n
 	}
 }
+
+func WithQueryTimeout(timeout time.Duration) Option {
+	return func(w *Mysql) {
+		w.queryTimeout = timeout
+	}
+}

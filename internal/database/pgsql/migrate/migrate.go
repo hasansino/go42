@@ -3,6 +3,7 @@ package migrate
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -21,7 +22,7 @@ const (
 	lockAttemptCnt = 15
 )
 
-func Migrate(ctx context.Context, uri string, schemaPath string) error {
+func Migrate(ctx context.Context, uri string, schemaPath string) (returnErr error) {
 	logger := slog.With(slog.String("component", "migrate"))
 
 	db, err := retry.DoWithData[*sql.DB](func() (*sql.DB, error) {
@@ -30,7 +31,14 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 			return nil, fmt.Errorf("failed to open database connection: %w", err)
 		}
 		if err := db.PingContext(ctx); err != nil {
-			return nil, fmt.Errorf("failed to ping database: %w", err)
+			pingErr := fmt.Errorf("failed to ping database: %w", err)
+			if closeErr := db.Close(); closeErr != nil {
+				return nil, errors.Join(
+					pingErr,
+					fmt.Errorf("failed to close migration database: %w", closeErr),
+				)
+			}
+			return nil, pingErr
 		}
 		return db, nil
 	},
@@ -53,7 +61,14 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 	}
 
 	// migrations have independent connections, so we can close the connection after migration
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			returnErr = errors.Join(
+				returnErr,
+				fmt.Errorf("failed to close migration database: %w", err),
+			)
+		}
+	}()
 
 	// locker is used to ensure that only one migration process runs at a time
 	// this is required to prevent concurrent migrations that could lead to database inconsistencies
@@ -82,5 +97,5 @@ func Migrate(ctx context.Context, uri string, schemaPath string) error {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 
-	return db.Close()
+	return nil
 }

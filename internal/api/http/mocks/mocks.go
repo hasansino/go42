@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	echo "github.com/labstack/echo/v5"
@@ -77,15 +78,16 @@ func (m *MockrateLimiterAccessor) EXPECT() *MockrateLimiterAccessorMockRecorder 
 }
 
 // Limit mocks base method.
-func (m *MockrateLimiterAccessor) Limit(key any) bool {
+func (m *MockrateLimiterAccessor) Limit(ctx context.Context, key string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Limit", key)
+	ret := m.ctrl.Call(m, "Limit", ctx, key)
 	ret0, _ := ret[0].(bool)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Limit indicates an expected call of Limit.
-func (mr *MockrateLimiterAccessorMockRecorder) Limit(key any) *gomock.Call {
+func (mr *MockrateLimiterAccessorMockRecorder) Limit(ctx, key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Limit", reflect.TypeOf((*MockrateLimiterAccessor)(nil).Limit), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Limit", reflect.TypeOf((*MockrateLimiterAccessor)(nil).Limit), ctx, key)
 }

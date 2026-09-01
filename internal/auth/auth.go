@@ -3,7 +3,9 @@ package auth
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -28,6 +30,8 @@ import (
 const (
 	cacheKeyInvalidatedToken   = "auth_invalidated_"
 	cacheValueInvalidatedToken = "_"
+	apiTokenPrefix             = "api_"
+	apiTokenSecretBytes        = 32
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
@@ -42,6 +46,7 @@ type repository interface {
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	InvalidateUserCache(ctx context.Context, userID int, userUUID string, emails ...string) error
 
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
 
@@ -49,8 +54,9 @@ type repository interface {
 }
 
 type cache interface {
-	Get(ctx context.Context, key string) (string, error)
+	Get(ctx context.Context, key string) (value string, found bool, err error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	SetIfAbsent(ctx context.Context, key string, value string, ttl time.Duration) (stored bool, err error)
 }
 
 type outboxService interface {
@@ -280,8 +286,14 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 		}).Update(time.Since(startTime).Seconds())
 	}()
 
-	claims, err := s.ValidateJWTToken(ctx, token)
+	claims, err := s.ValidateJWTToken(ctx, token, domain.JWTTokenPurposeRefresh)
 	if err != nil {
+		if errors.Is(err, domain.ErrAuthenticationUnavailable) {
+			metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+				"result": "cache_error",
+			}).Inc()
+			return nil, err
+		}
 		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
 			"result": "invalid_token",
 		}).Inc()
@@ -300,6 +312,25 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 				slog.Any("err", err),
 			)
 		}
+		return nil, domain.ErrInvalidToken
+	}
+
+	claimed, err := s.cache.SetIfAbsent(
+		ctx,
+		cacheKeyInvalidatedToken+strToSHA256(token),
+		cacheValueInvalidatedToken,
+		time.Until(claims.ExpiresAt.Time)+time.Second,
+	)
+	if err != nil {
+		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+			"result": "cache_error",
+		}).Inc()
+		return nil, fmt.Errorf("failed to consume refresh token: %w", err)
+	}
+	if !claimed {
+		metrics.Counter("auth_token_refresh_total", map[string]interface{}{
+			"result": "replayed",
+		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
@@ -331,11 +362,11 @@ func (s *Service) Refresh(ctx context.Context, token string) (*domain.Tokens, er
 }
 
 func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
-	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken)
+	accessTokenClaims, err := s.ValidateJWTToken(ctx, accessToken, domain.JWTTokenPurposeAccess)
 	if err != nil {
 		return fmt.Errorf("invalid access token: %w", err)
 	}
-	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken)
+	refreshTokenClaims, err := s.ValidateJWTToken(ctx, refreshToken, domain.JWTTokenPurposeRefresh)
 	if err != nil {
 		return fmt.Errorf("invalid refresh token: %w", err)
 	}
@@ -422,11 +453,16 @@ func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (
 }
 
 func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
-	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	var (
+		updatedUser *models.User
+		oldEmail    string
+	)
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
+		oldEmail = user.Email
 
 		var doUpdate bool
 
@@ -453,6 +489,7 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 		if err := s.repository.UpdateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
+		updatedUser = user
 
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
@@ -470,10 +507,27 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if updatedUser == nil {
+		return nil
+	}
+	if err := s.repository.InvalidateUserCache(
+		ctx,
+		updatedUser.ID,
+		updatedUser.UUID.String(),
+		oldEmail,
+		updatedUser.Email,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate updated user cache: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
-	return s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
+	var deletedUser *models.User
+	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		var err error
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
@@ -483,6 +537,7 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete user: %w", err)
 		}
+		deletedUser = user
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeUserDelete,
@@ -493,6 +548,18 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if err := s.repository.InvalidateUserCache(
+		ctx,
+		deletedUser.ID,
+		deletedUser.UUID.String(),
+		deletedUser.Email,
+	); err != nil {
+		return fmt.Errorf("failed to invalidate deleted user cache: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
@@ -530,22 +597,34 @@ func (s *Service) RotateJWTSecret(newSecret string) {
 	metrics.Counter("auth_jwt_secret_rotations_total", nil).Inc()
 }
 
-func (s *Service) ValidateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (s *Service) ValidateJWTToken(
+	ctx context.Context,
+	token string,
+	expectedPurpose domain.JWTTokenPurpose,
+) (*domain.JWTClaims, error) {
 	return tools.TraceReturnTWithErr[*domain.JWTClaims](
 		ctx, "auth.service", "validate_jwt_token",
 		func(ctx context.Context) (*domain.JWTClaims, error) {
-			return s.validateJWTToken(ctx, token)
+			return s.validateJWTToken(ctx, token, expectedPurpose)
 		})
 }
 
-func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.JWTClaims, error) {
+func (s *Service) validateJWTToken(
+	ctx context.Context,
+	token string,
+	expectedPurpose domain.JWTTokenPurpose,
+) (*domain.JWTClaims, error) {
 	startTime := time.Now()
 	defer func() {
 		metrics.Histogram("auth_jwt_validation_duration_seconds", nil).Update(time.Since(startTime).Seconds())
 	}()
+	if expectedPurpose != domain.JWTTokenPurposeAccess &&
+		expectedPurpose != domain.JWTTokenPurposeRefresh {
+		return nil, domain.ErrInvalidToken
+	}
 
 	t, err := jwt.ParseWithClaims(token, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		claims, _ := token.Claims.(*domain.JWTClaims)
@@ -557,11 +636,22 @@ func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.J
 			}
 		}
 		return []byte(s.jwtSecrets[len(s.jwtSecrets)-1].secret), nil
-	})
+	},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithIssuer(s.jwtIssuer),
+		jwt.WithAudience(s.jwtAudience...),
+		jwt.WithExpirationRequired(),
+	)
 	if err != nil {
-		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
-			"result": "parse_error",
-		}).Inc()
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			metrics.Counter("auth_jwt_validations_total", map[string]any{
+				"result": "expired",
+			}).Inc()
+		} else {
+			metrics.Counter("auth_jwt_validations_total", map[string]any{
+				"result": "parse_error",
+			}).Inc()
+		}
 		return nil, err
 	}
 
@@ -572,19 +662,30 @@ func (s *Service) validateJWTToken(ctx context.Context, token string) (*domain.J
 		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
-
-	if claims.ExpiresAt.Before(time.Now()) {
+	if claims.TokenUse != expectedPurpose {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
-			"result": "expired",
+			"result": "invalid_token_use",
 		}).Inc()
 		return nil, domain.ErrInvalidToken
 	}
 
-	if v, err := s.cache.Get(ctx, cacheKeyInvalidatedToken+strToSHA256(token)); err != nil {
+	v, found, err := s.cache.Get(
+		ctx, cacheKeyInvalidatedToken+strToSHA256(token),
+	)
+	if err != nil {
+		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
+			"result": "cache_error",
+		}).Inc()
 		s.logger.ErrorContext(
-			ctx, "failed to fetch cache: %w",
+			ctx, "failed to fetch cache",
 			slog.Any("error", err))
-	} else if v == cacheValueInvalidatedToken {
+		return nil, fmt.Errorf(
+			"%w: revocation lookup failed: %w",
+			domain.ErrAuthenticationUnavailable,
+			err,
+		)
+	}
+	if found && v == cacheValueInvalidatedToken {
 		metrics.Counter("auth_jwt_validations_total", map[string]interface{}{
 			"result": "invalidated",
 		}).Inc()
@@ -647,7 +748,8 @@ func (s *Service) generateAccessToken(userUUID string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessTokenTTL)),
 		},
-		KID: token.sha256,
+		KID:      token.sha256,
+		TokenUse: domain.JWTTokenPurposeAccess,
 	}).SignedString([]byte(token.secret))
 }
 
@@ -664,7 +766,8 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshTokenTTL)),
 		},
-		KID: token.sha256,
+		KID:      token.sha256,
+		TokenUse: domain.JWTTokenPurposeRefresh,
 	}).SignedString([]byte(token.secret))
 }
 
@@ -672,13 +775,17 @@ func (s *Service) generateRefreshToken(userUUID string) (string, error) {
 
 func (s *Service) ValidateAPIToken(ctx context.Context, token string) (*models.Token, error) {
 	return tools.TraceReturnTWithErr[*models.Token](
-		ctx, "auth.service", "validate_jwt_token",
+		ctx, "auth.service", "validate_api_token",
 		func(ctx context.Context) (*models.Token, error) {
 			return s.validateAPIToken(ctx, token)
 		})
 }
 
 func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.Token, error) {
+	if err := validateAPITokenFormat(token); err != nil {
+		return nil, fmt.Errorf("invalid api token format: %w", err)
+	}
+
 	apiToken, err := s.repository.GetToken(ctx, strToSHA256(token))
 	if err != nil {
 		return nil, fmt.Errorf("invalid api token: %w", err)
@@ -696,7 +803,7 @@ func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.T
 	}
 
 	if span := trace.SpanFromContext(ctx); span.SpanContext().IsValid() && span.IsRecording() {
-		span.AddEvent("jwt_token_validated",
+		span.AddEvent("api_token_validated",
 			trace.WithAttributes(
 				attribute.Int("token.id", apiToken.ID),
 				attribute.Int("token.user_id", apiToken.UserID),
@@ -729,4 +836,26 @@ func (s *Service) CheckPasswordStrength(password string) error {
 func strToSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func validateAPITokenFormat(token string) error {
+	secret, ok := strings.CutPrefix(token, apiTokenPrefix)
+	if !ok {
+		return fmt.Errorf("missing %q prefix", apiTokenPrefix)
+	}
+
+	expectedLength := base64.RawURLEncoding.EncodedLen(apiTokenSecretBytes)
+	if len(secret) != expectedLength {
+		return fmt.Errorf("invalid secret length: got %d, want %d", len(secret), expectedLength)
+	}
+
+	decoded, err := base64.RawURLEncoding.Strict().DecodeString(secret)
+	if err != nil {
+		return fmt.Errorf("invalid base64url secret: %w", err)
+	}
+	if len(decoded) != apiTokenSecretBytes {
+		return fmt.Errorf("invalid decoded secret length: got %d, want %d", len(decoded), apiTokenSecretBytes)
+	}
+
+	return nil
 }

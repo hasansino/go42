@@ -42,7 +42,7 @@ import (
 	authRepositoryPkg "github.com/hasansino/go42/internal/auth/repository"
 	authWorkers "github.com/hasansino/go42/internal/auth/workers"
 	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/cache/bigcache"
+	"github.com/hasansino/go42/internal/cache/local"
 	"github.com/hasansino/go42/internal/cache/memcached"
 	"github.com/hasansino/go42/internal/cache/redis"
 	"github.com/hasansino/go42/internal/config"
@@ -97,7 +97,7 @@ func main() {
 	initVault(ctx, cfg)
 	etcdCloser := initEtcd(ctx, cfg)
 	initLimits(ctx, cfg)
-	initSentry(ctx, cfg)
+	sentryCloser := initSentry(ctx, cfg)
 	pprofCloser := initProfiling(ctx, cfg)
 	metricsHandler := initMetrics(ctx, cfg)
 	tracingCloser := initTracing(ctx, cfg)
@@ -161,6 +161,7 @@ func main() {
 			mysql.WithConnMaxLifetime(cfg.Database.Mysql.ConnMaxLifetime),
 			mysql.WithMaxOpenConns(cfg.Database.Mysql.MaxOpenConns),
 			mysql.WithMaxIdleConns(cfg.Database.Mysql.MaxIdleConns),
+			mysql.WithQueryTimeout(cfg.Database.Mysql.QueryTimeout),
 		)
 		if mysqlConnErr != nil {
 			log.Fatalf("failed to connect to mysql: %v\n", mysqlConnErr)
@@ -192,6 +193,7 @@ func main() {
 			pgsql.WithConnMaxLifetime(cfg.Database.Pgsql.ConnMaxLifetime),
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
+			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)
@@ -236,19 +238,12 @@ func main() {
 		cacheEngine cache.Engine
 	)
 	switch cfg.Cache.Engine {
-	case "bigcache":
-		cacheEngine, err = bigcache.New(
-			bigcache.WithShards(cfg.Cache.BigCache.Shards),
-			bigcache.WithLifeWindow(cfg.Cache.BigCache.LifeWindow),
-			bigcache.WithMaxEntriesInWindow(cfg.Cache.BigCache.MaxEntriesInWindow),
-			bigcache.WithMaxEntrySizeBytes(cfg.Cache.BigCache.MaxEntrySizeBytes),
-			bigcache.WithHardMaxCacheSize(cfg.Cache.BigCache.HardMaxCacheSize),
-			bigcache.WithVerbose(cfg.Cache.BigCache.Verbose),
+	case "local":
+		cacheEngine = local.New(
+			local.WithCapacity(cfg.Cache.Local.Capacity),
+			local.WithMaxCostBytes(cfg.Cache.Local.MaxCostBytes),
 		)
-		if err != nil {
-			log.Fatalf("failed to initialize bigcache: %v\n", err)
-		}
-		slog.Info("bigcache engine initialized")
+		slog.Info("local cache engine initialized")
 	case "memcached":
 		var err error
 		cacheEngine, err = memcached.Open(
@@ -289,8 +284,7 @@ func main() {
 		}
 		slog.Info("redis cache initialized")
 	default:
-		cacheEngine = cache.NewNoop()
-		slog.Info("no cache engine initialized")
+		log.Fatalf("unknown cache engine: %s", cfg.Cache.Engine)
 	}
 
 	// event engine
@@ -492,12 +486,15 @@ func main() {
 		httpAPI.WithBodyLimit(cfg.Server.HTTP.BodyLimitKB * 1024),
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
+		httpAPI.WithGracefulTimeout(cfg.Core.ShutdownComponentTimeout),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {
 		httpServerOpts = append(httpServerOpts, httpAPI.WithRateLimiter(
+			cacheEngine,
 			cfg.Server.HTTP.RateLimiter.Rate,
 			cfg.Server.HTTP.RateLimiter.Burst,
+			cfg.Server.HTTP.RateLimiter.TTL,
 		))
 	}
 
@@ -505,10 +502,7 @@ func main() {
 	httpServer := httpAPI.New(httpServerOpts...)
 	httpServer.Register(metricsAdapterV1.New(metricsHandler))
 
-	authHttpAdapter := authHttpAdapterV1.New(
-		authService,
-		authHttpAdapterV1.WithCache(cacheEngine, cfg.Auth.Cache.API),
-	)
+	authHttpAdapter := authHttpAdapterV1.New(authService)
 	httpServer.RegisterV1(authHttpAdapter)
 
 	// run server
@@ -534,8 +528,10 @@ func main() {
 
 	if cfg.Server.GRPC.RateLimiter.Enabled {
 		grpcServerOpts = append(grpcServerOpts, grpcAPI.WithRateLimiter(
+			cacheEngine,
 			cfg.Server.GRPC.RateLimiter.Rate,
 			cfg.Server.GRPC.RateLimiter.Burst,
+			cfg.Server.GRPC.RateLimiter.TTL,
 		))
 	}
 
@@ -585,6 +581,7 @@ func main() {
 		etcdCloser, pprofCloser,
 		httpServer, grpcServer, eventsEngine,
 		cacheEngine, dbEngine, tracingCloser,
+		sentryCloser,
 	)
 }
 

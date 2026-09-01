@@ -64,7 +64,7 @@ func (r *Repository) SaveFailedMessages(ctx context.Context, messages []models.M
 	for _, message := range messages {
 		result := r.GetTx(ctx).Save(&message)
 		if result.Error != nil {
-			return fmt.Errorf("error saving message with ID %d: %w", message.ID, result.Error)
+			return fmt.Errorf("error saving message with ID %s: %w", message.ID, result.Error)
 		}
 	}
 	return nil

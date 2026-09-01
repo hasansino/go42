@@ -47,6 +47,14 @@ func TestConstructMetric(t *testing.T) {
 			want: `mixed_metric{bool="true",int="42",string="value"}`,
 		},
 		{
+			name:       "escaped label value",
+			metricName: "escaped_metric",
+			labels: map[string]interface{}{
+				"value": "path\\to\"thing\"\nnext",
+			},
+			want: `escaped_metric{value="path\\to\"thing\"\nnext"}`,
+		},
+		{
 			name:       "with global labels",
 			metricName: "test_metric",
 			labels: map[string]interface{}{
@@ -82,6 +90,28 @@ func TestConstructMetric(t *testing.T) {
 			got := constructMetric(tt.metricName, tt.labels)
 			if got != tt.want {
 				t.Errorf("constructMetric() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEscapeLabelValue(t *testing.T) {
+	tests := []struct {
+		name  string
+		value interface{}
+		want  string
+	}{
+		{name: "plain", value: "value", want: "value"},
+		{name: "backslash", value: `path\file`, want: `path\\file`},
+		{name: "quote", value: `say "hello"`, want: `say \"hello\"`},
+		{name: "newline", value: "first\nsecond", want: `first\nsecond`},
+		{name: "non-string", value: 42, want: "42"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := escapeLabelValue(tt.value); got != tt.want {
+				t.Errorf("escapeLabelValue() = %q, want %q", got, tt.want)
 			}
 		})
 	}

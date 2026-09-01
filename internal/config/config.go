@@ -228,6 +228,9 @@ type MysqlSlave struct {
 }
 
 func (db MysqlSlave) DSN() string {
+	if db.Host == "" {
+		return ""
+	}
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=UTC",
 		db.User, db.Password, db.Host, db.Port, db.Name, db.Charset,
@@ -285,19 +288,15 @@ func (db PgsqlSlave) DSN() string {
 // ╰──────────────────────────────╯
 
 type Cache struct {
-	Engine    string `env:"CACHE_ENGINE" default:"none" v:"oneof=none bigcache memcached redis"`
-	BigCache  BigCache
+	Engine    string `env:"CACHE_ENGINE" default:"local" v:"oneof=local memcached redis"`
+	Local     Local
 	Redis     Redis
 	Memcached Memcached
 }
 
-type BigCache struct {
-	Shards             int           `env:"CACHE_BIGCACHE_SHARDS"                default:"1"`
-	LifeWindow         time.Duration `env:"CACHE_BIGCACHE_LIFE_WINDOW"           default:"5m"`
-	MaxEntriesInWindow int           `env:"CACHE_BIGCACHE_MAX_ENTRIES_IN_WINDOW" default:"1000"`
-	MaxEntrySizeBytes  int           `env:"CACHE_BIGCACHE_MAX_ENTRY_SIZE_BYTES"  default:"512000"`
-	HardMaxCacheSize   int           `env:"CACHE_BIGCACHE_HARD_MAX_CACHE_SIZE"   default:"1000"`
-	Verbose            bool          `env:"CACHE_BIGCACHE_VERBOSE"               default:"true"`
+type Local struct {
+	Capacity     uint64 `env:"CACHE_LOCAL_CAPACITY"       default:"10000"`
+	MaxCostBytes uint64 `env:"CACHE_LOCAL_MAX_COST_BYTES" default:"1073741824"`
 }
 
 type Redis struct {
@@ -462,9 +461,10 @@ type HTTP struct {
 }
 
 type HTTPRateLimiter struct {
-	Enabled bool `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"false"`
-	Rate    int  `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
-	Burst   int  `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
+	Enabled bool          `env:"SERVER_HTTP_RATE_LIMITER_ENABLED" default:"false"`
+	Rate    int           `env:"SERVER_HTTP_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int           `env:"SERVER_HTTP_RATE_LIMITER_BURST"   default:"10"`
+	TTL     time.Duration `env:"SERVER_HTTP_RATE_LIMITER_TTL"     default:"10m"`
 }
 
 type GRPC struct {
@@ -477,9 +477,10 @@ type GRPC struct {
 }
 
 type GRPCRateLimiter struct {
-	Enabled bool `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"false"`
-	Rate    int  `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
-	Burst   int  `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
+	Enabled bool          `env:"SERVER_GRPC_RATE_LIMITER_ENABLED" default:"false"`
+	Rate    int           `env:"SERVER_GRPC_RATE_LIMITER_RATE"    default:"100"`
+	Burst   int           `env:"SERVER_GRPC_RATE_LIMITER_BURST"   default:"10"`
+	TTL     time.Duration `env:"SERVER_GRPC_RATE_LIMITER_TTL"     default:"10m"`
 }
 
 // ╭──────────────────────────────╮
@@ -499,7 +500,6 @@ type Auth struct {
 	TokenUpdaterInterval   time.Duration `env:"AUTH_TOKEN_UPDATER_INTERVAL"    default:"5m"`
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
 	Cache                  struct {
-		API        time.Duration `env:"AUTH_CACHE_API"                 default:"1m"`
 		Repository struct {
 			Users   time.Duration `env:"AUTH_CACHE_REPOSITORY_USERS" default:"1m"`
 			Secrets time.Duration `env:"AUTH_CACHE_REPOSITORY_SECRETS" default:"1m"`

@@ -14,6 +14,10 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS builder
 ARG SOURCE_DATE_EPOCH=0
 ENV SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}
 
+# Passed by buildx for cross-compilation.
+ARG TARGETOS
+ARG TARGETARCH
+
 # FROM resets arguments, so we need to declare them after.
 ARG COMMIT_HASH
 ARG RELEASE_TAG
@@ -38,9 +42,8 @@ ENV GOGC=100
 
 # Build.
 #
-# `docker buildx` automates cross-complation and handles GOOS and GOARCH automatically.
-# It creates a single multi-arch image manifest that points to platform-specific
-# image layers, each built with the correct GOOS and GOARCH.
+# `docker buildx` provides TARGETOS and TARGETARCH for cross-compilation. These values
+# must be passed to the Go toolchain explicitly as GOOS and GOARCH.
 #
 # -trimpath removes file system paths from the binary, improves build reproducibility.
 #
@@ -54,6 +57,7 @@ ENV GOGC=100
 #
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomodcache \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuildcache \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -v -trimpath -buildvcs=false \
     -ldflags "-s -w -X main.xBuildCommit=${COMMIT_HASH} -X main.xBuildTag=${RELEASE_TAG}" \
     -o app cmd/app/main.go
@@ -66,18 +70,25 @@ RUN readelf -h app && du -h app && sha256sum app && go tool buildid app
 # For packaging stage, we use minimal(slim) image.
 # This reduces resulting image size and potential security risks.
 # @warn dependabot will update image version automatically, but it will not update package versions.
-FROM alpine:3.23
+FROM alpine:3.24
 
 # Install dependencies.
 #   * ca-certificates - required for https requests
 #   * tzdata - required for time zone operations
 #   * tini - proper signal handling for child processes
 #   * curl - required for docker health checks in ci/cd workflows
+#   * libcrypto3, libssl3 - patched OpenSSL runtime libraries
 #
-# Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.22
+# Check for versions @ https://pkgs.alpinelinux.org/packages?branch=v3.24
 # When updating image version, make sure to re-check package availability and versions
 # for that specific alpine version you are updating to.
-RUN apk add --no-cache ca-certificates=20260413-r0 tzdata=2026b-r0 tini=0.19.0-r3 curl=8.17.0-r1
+RUN apk add --no-cache \
+    ca-certificates=20260611-r0 \
+    curl=8.21.0-r0 \
+    libcrypto3=3.5.8-r0 \
+    libssl3=3.5.8-r0 \
+    tini=0.19.0-r3 \
+    tzdata=2026c-r0
 
 # We are running service as non-root user.
 RUN addgroup -g 1000 appuser && \

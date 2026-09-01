@@ -46,11 +46,11 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: 'Run Gitleaks scan'
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
@@ -67,7 +67,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Gosec security scanner'
@@ -87,7 +87,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Go vulnerability check'
@@ -108,7 +108,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       # -----
       - name: 'Initialize CodeQL'
         uses: github/codeql-action/init@v4
@@ -128,7 +128,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Check Go licenses'
         uses: joeig/go-licenses-action@v1.2
         with:
@@ -147,7 +147,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Run OSSF Scorecard analysis'
         uses: ossf/scorecard-action@v2.4.3
         with:
@@ -172,7 +172,7 @@ jobs:
     # -----
     steps:
       - name: 'Checkout master branch'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: master
       - name: 'Setup Go'
@@ -187,6 +187,6 @@ jobs:
         run: mv capabilities.json /tmp/capabilities.json
       # -----
       - name: 'Checkout current branch'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Compare capabilities with master'
         run: capslock -packages ./... -output=compare /tmp/capabilities.json

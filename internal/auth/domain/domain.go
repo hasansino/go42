@@ -64,19 +64,28 @@ const (
 )
 
 var (
-	ErrEntityNotFound     = errors.New("entity not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrPasswordWeak       = errors.New("password is too weak")
+	ErrEntityNotFound            = errors.New("entity not found")
+	ErrUserAlreadyExists         = errors.New("user already exists")
+	ErrInvalidCredentials        = errors.New("invalid credentials")
+	ErrInvalidToken              = errors.New("invalid token")
+	ErrAuthenticationUnavailable = errors.New("authentication unavailable")
+	ErrPasswordWeak              = errors.New("password is too weak")
 )
 
 // ----
 
 type JWTClaims struct {
 	jwt.RegisteredClaims
-	KID string `json:"kid,omitempty"`
+	KID      string          `json:"kid,omitempty"`
+	TokenUse JWTTokenPurpose `json:"token_use"`
 }
+
+type JWTTokenPurpose string
+
+const (
+	JWTTokenPurposeAccess  JWTTokenPurpose = "access"
+	JWTTokenPurposeRefresh JWTTokenPurpose = "refresh"
+)
 
 // Tokens represents the structure of JWT authentication tokens.
 type Tokens struct {
@@ -101,7 +110,7 @@ const (
 )
 
 // ContextAuthInfo holds authentication information in the request context.
-// ID field stores authenticated subject id which is described by Type field.
+// ID and UUID identify the authenticated user; Type identifies the authentication method.
 type ContextAuthInfo struct {
 	ID            int
 	UUID          string

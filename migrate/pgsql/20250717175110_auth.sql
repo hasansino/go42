@@ -141,4 +141,5 @@ drop table if exists auth_user_roles;
 drop table if exists auth_role_permissions;
 drop table if exists auth_permissions;
 drop table if exists auth_roles;
+drop table if exists auth_users_history;
 drop table if exists auth_users;

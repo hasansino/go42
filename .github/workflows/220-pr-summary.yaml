@@ -61,7 +61,7 @@ jobs:
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: 'Generate AI Summary'
@@ -80,7 +80,7 @@ jobs:
     if: needs.generate-summary.outputs.summary != ''
     steps:
       - name: 'Update PR Description'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           SUMMARY: ${{ needs.generate-summary.outputs.summary }}
         with:

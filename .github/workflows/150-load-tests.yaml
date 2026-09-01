@@ -65,14 +65,14 @@ jobs:
       contents: read
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Download K6 test results'
         uses: actions/download-artifact@v8
         with:
           pattern: k6-summary-*
           merge-multiple: true
       - name: 'Generate load test report'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -350,7 +350,7 @@ jobs:
           5s --health-retries 10
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: 'Setup K6'
         uses: grafana/setup-k6-action@v1
       - name: 'Run K6 load tests'

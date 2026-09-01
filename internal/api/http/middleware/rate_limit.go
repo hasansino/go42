@@ -1,13 +1,15 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
 )
 
 type rateLimiterAcessor interface {
-	Limit(key any) bool
+	Limit(ctx context.Context, key string) (bool, error)
 }
 
 func NewRateLimiter(limiter rateLimiterAcessor) echo.MiddlewareFunc {
@@ -19,7 +21,11 @@ func NewRateLimiter(limiter rateLimiterAcessor) echo.MiddlewareFunc {
 			if limiter == nil {
 				return next(c)
 			}
-			if !limiter.Limit(extractRateLimitKeyFromCtx(c)) {
+			allowed, err := limiter.Limit(c.Request().Context(), extractRateLimitKeyFromCtx(c))
+			if err != nil {
+				return fmt.Errorf("rate limiter unavailable: %w", err)
+			}
+			if !allowed {
 				return c.NoContent(http.StatusTooManyRequests)
 			}
 			return next(c)
