@@ -486,6 +486,7 @@ func main() {
 		httpAPI.WithBodyLimit(cfg.Server.HTTP.BodyLimitKB * 1024),
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
+		httpAPI.WithGracefulTimeout(cfg.Core.ShutdownComponentTimeout),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {

@@ -41,6 +41,8 @@ type Server struct {
 	readyStatus atomic.Bool
 	rateLimiter rateLimiterAccessor
 
+	serveDone chan struct{}
+
 	shutdownCtx    context.Context
 	shutdownCancel context.CancelFunc
 
@@ -49,6 +51,7 @@ type Server struct {
 	bodyLimit        int64
 	readTimeout      time.Duration
 	writeTimeout     time.Duration
+	gracefulTimeout  time.Duration
 	allowOrigins     []string
 }
 
@@ -57,6 +60,7 @@ func New(opts ...Option) *Server {
 	s := &Server{
 		e:              echo.New(),
 		allowOrigins:   make([]string, 0),
+		serveDone:      make(chan struct{}),
 		shutdownCtx:    ctx,
 		shutdownCancel: cancel,
 	}
@@ -230,11 +234,14 @@ func New(opts ...Option) *Server {
 }
 
 func (s *Server) Start(addr string) error {
-	sc := echo.StartConfig{
-		Address:    addr,
-		HideBanner: true,
-		HidePort:   true,
-	}
+	return s.start(echo.StartConfig{Address: addr})
+}
+
+func (s *Server) start(sc echo.StartConfig) error {
+	defer close(s.serveDone)
+	sc.HideBanner = true
+	sc.HidePort = true
+	sc.GracefulTimeout = s.gracefulTimeout
 	sc.BeforeServeFunc = func(hs *http.Server) error {
 		if s.readTimeout > 0 {
 			hs.ReadTimeout = s.readTimeout
@@ -251,12 +258,19 @@ func (s *Server) Start(addr string) error {
 		)
 		return nil
 	}
+
 	return sc.Start(s.shutdownCtx, s.e)
 }
 
-func (s *Server) Shutdown(_ context.Context) error {
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.readyStatus.Store(false)
 	s.shutdownCancel()
-	return nil
+	select {
+	case <-s.serveDone:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Register adapters for /

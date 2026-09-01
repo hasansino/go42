@@ -39,6 +39,13 @@ func WithWriteTimeout(d time.Duration) Option {
 	}
 }
 
+// WithGracefulTimeout sets how long Echo waits for active requests during shutdown.
+func WithGracefulTimeout(d time.Duration) Option {
+	return func(s *Server) {
+		s.gracefulTimeout = d
+	}
+}
+
 // WithStaticRoot sets the root directory for static files.
 func WithStaticRoot(root string) Option {
 	return func(s *Server) {

@@ -166,9 +166,23 @@ func (s *Server) Serve(listen string) error {
 	return s.grpcServer.Serve(lis)
 }
 
-func (s *Server) Shutdown(_ context.Context) error {
-	s.grpcServer.GracefulStop()
-	return nil
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+
+	stopped := make(chan struct{})
+	go func() {
+		s.grpcServer.GracefulStop()
+		close(stopped)
+	}()
+
+	select {
+	case <-stopped:
+		return nil
+	case <-ctx.Done():
+		s.grpcServer.Stop()
+		<-stopped
+		return ctx.Err()
+	}
 }
 
 func (s *Server) Register(adapters ...adapterAccessor) {
