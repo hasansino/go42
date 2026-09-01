@@ -41,7 +41,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Run Vale prose linter'
-        uses: errata-ai/vale-action@v2.1.1
+        uses: errata-ai/vale-action@2.1.2
         with:
           fail_on_error: true
           files: '["README.md","docs/adr","docs/brd","docs/core","internal/","cmd/","pkg/","tests/"]'
