@@ -97,7 +97,7 @@ func main() {
 	initVault(ctx, cfg)
 	etcdCloser := initEtcd(ctx, cfg)
 	initLimits(ctx, cfg)
-	initSentry(ctx, cfg)
+	sentryCloser := initSentry(ctx, cfg)
 	pprofCloser := initProfiling(ctx, cfg)
 	metricsHandler := initMetrics(ctx, cfg)
 	tracingCloser := initTracing(ctx, cfg)
@@ -581,6 +581,7 @@ func main() {
 		etcdCloser, pprofCloser,
 		httpServer, grpcServer, eventsEngine,
 		cacheEngine, dbEngine, tracingCloser,
+		sentryCloser,
 	)
 }
 
