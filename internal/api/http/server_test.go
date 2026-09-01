@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"net"
 	nethttp "net/http"
@@ -97,7 +96,7 @@ func TestShutdownReturnsAfterEchoGracefulTimeout(t *testing.T) {
 func newTestServer(t *testing.T, extraOptions ...Option) *Server {
 	t.Helper()
 	options := []Option{
-		WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))),
+		WithLogger(slog.New(slog.DiscardHandler)),
 		WithStaticRoot(t.TempDir()),
 		WithSwaggerRoot(t.TempDir()),
 		WithCORSAllowOrigins([]string{"*"}),

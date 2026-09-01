@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"net"
 	"testing"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestShutdownForcesGRPCServerAfterDeadline(t *testing.T) {
-	server := New(WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
+	server := New(WithLogger(slog.New(slog.DiscardHandler)))
 	listener := bufconn.Listen(1024 * 1024)
 	serveResult := make(chan error, 1)
 	go func() {
@@ -66,7 +65,7 @@ func TestShutdownForcesGRPCServerAfterDeadline(t *testing.T) {
 }
 
 func TestShutdownGracefullyStopsIdleGRPCServer(t *testing.T) {
-	server := New(WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil))))
+	server := New(WithLogger(slog.New(slog.DiscardHandler)))
 	listener := bufconn.Listen(1024 * 1024)
 	serveResult := make(chan error, 1)
 	go func() {
