@@ -101,7 +101,7 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       # ----
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
