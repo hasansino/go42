@@ -85,6 +85,7 @@ create table if not exists auth_api_tokens (
     uuid char(36) not null,
     user_id bigint unsigned not null,
     token varchar(255) not null,
+    name varchar(100) not null,
     last_used_at timestamp null default null,
     expires_at timestamp null default null,
     created_at timestamp default current_timestamp,

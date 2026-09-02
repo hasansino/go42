@@ -51,12 +51,13 @@ insert ignore into auth_role_permissions (role_id, permission_id) values
     )
 );
 
-insert ignore into auth_api_tokens (uuid, user_id, token)
+insert ignore into auth_api_tokens (uuid, user_id, token, name)
 select
     '00000000-0000-0000-0000-000000000001' as uuid,
     auth_users.id as user_id,
     -- api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA
-    '67778026319f8a10160230483f9f43a960f3724807ccd04a7c856ade5d09f800' as token
+    '67778026319f8a10160230483f9f43a960f3724807ccd04a7c856ade5d09f800' as token,
+    'local-development' as name
 from auth_users
 where auth_users.uuid = '00000000-0000-0000-0000-000000000000';
 
