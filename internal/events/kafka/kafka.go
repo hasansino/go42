@@ -80,7 +80,7 @@ func (k *Kafka) Subscriber() message.Subscriber {
 }
 
 func (k *Kafka) Shutdown(ctx context.Context) error {
-	done := make(chan error)
+	done := make(chan error, 1)
 	go func() {
 		var errs []error
 		if err := k.publisher.Close(); err != nil {

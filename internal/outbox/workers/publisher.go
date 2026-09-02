@@ -128,7 +128,8 @@ func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
 		return nil
 	})
 	if err != nil {
-		p.logger.Error("failed to run outbox publisher job")
+		p.logger.ErrorContext(ctx,
+			"failed to run outbox publisher job", slog.Any("error", err))
 		metrics.Counter("application_errors", map[string]interface{}{
 			"type": "outbox_publisher_error",
 		}).Inc()

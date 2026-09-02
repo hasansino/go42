@@ -94,7 +94,7 @@ func Open(dbPath string, opts ...Option) (*Sqlite, error) {
 }
 
 func (w *Sqlite) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	doneChan := make(chan error, 1)
 	go func() {
 		doneChan <- w.sqlDB.Close()
 	}()

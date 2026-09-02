@@ -82,7 +82,7 @@ func Open(ctx context.Context, host string, db int, opts ...Option) (*Wrapper, e
 }
 
 func (w *Wrapper) Shutdown(ctx context.Context) error {
-	done := make(chan error)
+	done := make(chan error, 1)
 	go func() {
 		done <- w.client.Close()
 	}()

@@ -220,7 +220,7 @@ func withQueryTimeout(dsn string, timeout time.Duration) (string, error) {
 }
 
 func (w *Postgres) Shutdown(ctx context.Context) error {
-	doneChan := make(chan error)
+	doneChan := make(chan error, 1)
 	go func() {
 		masterErr := w.masterConn.Close()
 		slaveErr := w.slaveConn.Close()

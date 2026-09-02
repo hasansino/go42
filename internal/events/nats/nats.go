@@ -82,7 +82,7 @@ func (n *NATS) Subscriber() message.Subscriber {
 }
 
 func (n *NATS) Shutdown(ctx context.Context) error {
-	done := make(chan error)
+	done := make(chan error, 1)
 	go func() {
 		var errs []error
 		if err := n.publisher.Close(); err != nil {

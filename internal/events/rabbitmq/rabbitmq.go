@@ -75,7 +75,7 @@ func (rmq *AMQP) InitializeTopic(topic string) error {
 }
 
 func (rmq *AMQP) Shutdown(ctx context.Context) error {
-	done := make(chan error)
+	done := make(chan error, 1)
 	go func() {
 		var errs []error
 		if err := rmq.publisher.Close(); err != nil {

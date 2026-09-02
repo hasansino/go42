@@ -1011,7 +1011,7 @@ type ShutMeDownWrap struct {
 // Shutdown implements graceful shutdown for specific component.
 // It should be blocking and final.
 func (s *ShutMeDownWrap) Shutdown(ctx context.Context) error {
-	done := make(chan error)
+	done := make(chan error, 1)
 	go func() {
 		if s.closer != nil {
 			done <- s.closer.Close()
