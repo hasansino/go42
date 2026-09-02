@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	"gorm.io/gorm/clause"
+
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
 	"github.com/hasansino/go42/internal/cache"
@@ -329,5 +331,11 @@ func (r *Repository) UpdateTokenLastUsed(ctx context.Context, tokenID int, when 
 }
 
 func (r *Repository) SaveUserHistoryRecord(ctx context.Context, record *models.UserHistoryRecord) error {
-	return r.GetTx(ctx).Create(record).Error
+	return r.GetTx(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoNothing: true,
+		}).
+		Create(record).
+		Error
 }
