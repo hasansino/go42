@@ -135,6 +135,7 @@ type Sentry struct {
 	Enabled    bool    `env:"SENTRY_ENABLED"     default:"false"`
 	DSN        string  `env:"SENTRY_DSN"         default:""`
 	Debug      bool    `env:"SENTRY_DEBUG"       default:"false"`
+	AddSource  bool    `env:"SENTRY_ADD_SOURCE"  default:"true"`
 	Stacktrace bool    `env:"SENTRY_STACKTRACE"  default:"false"`
 	SampleRate float64 `env:"SENTRY_SAMPLE_RATE" default:"1.0"   v:"gte=0.0,lte=1.0"`
 }

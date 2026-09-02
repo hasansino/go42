@@ -793,7 +793,8 @@ func initSentry(ctx context.Context, cfg *config.Config) ShutMeDown {
 	}
 
 	sentryHandler := sentryslog.Option{
-		EventLevel: []slog.Level{slog.LevelError},
+		LogLevel:  []slog.Level{slog.LevelError},
+		AddSource: cfg.Sentry.AddSource,
 	}.NewSentryHandler(ctx)
 
 	multiLogger := slog.New(
