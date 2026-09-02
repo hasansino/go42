@@ -5,10 +5,10 @@ This file outlines conventions for the go42 project.
 **Core**
 
 * Semver: https://semver.org/
+* Conventional Commits: https://www.conventionalcommits.org/en/v1.0.0/
 * Google Engineering Practices: https://google.github.io/eng-practices/
 * Google Go Style Guide: https://google.github.io/styleguide/go/decisions.html
 * Google SRE Book: https://sre.google/sre-book/table-of-contents/
-* Conventional Commits: https://www.conventionalcommits.org/en/v1.0.0/
 
 ## Review
 
@@ -36,6 +36,7 @@ This file outlines conventions for the go42 project.
 
 ### General
 
+* Use cmd/cfg2env to regenerate .env.example
 * When using //go:generate mockgen, always use local binary
 * Use v for validation tag
 * Use db for db column name tag

@@ -792,7 +792,7 @@ func (s *Service) validateAPIToken(ctx context.Context, token string) (*models.T
 	}
 
 	if apiToken.ExpiresAt.Valid && apiToken.ExpiresAt.V.Before(time.Now()) {
-		return nil, fmt.Errorf("expired api token: %w", err)
+		return nil, errors.New("expired api token")
 	}
 
 	select {
