@@ -5,13 +5,14 @@ help: Makefile
 ## apply | create terraform resources
 # Dependencies:
 #   * brew install terraform
+#   * brew install kubectl
 apply:
 	@terraform init && \
 	terraform apply -auto-approve -target=kind_cluster.this && \
 	terraform apply -auto-approve -target=helm_release.ingress_nginx_http && \
 	terraform apply -auto-approve -target=helm_release.ingress_nginx_grpc && \
 	terraform apply -auto-approve -target=helm_release.argocd && \
-	terraform apply -auto-approve -target=kubernetes_manifest.application
+	terraform apply -auto-approve -target=kubernetes_manifest.application && \
 
 ## destroy | destroy terraform resources
 # Dependencies:

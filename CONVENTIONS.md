@@ -28,6 +28,11 @@ This file outlines conventions for the go42 project.
 * always prefer merge commits to rebase (disable rebase)
 * .gitignore -> current dir / .gitkeep
 
+## CI/CD
+
+* Use `gh` client to access github resources
+* Any destructive operation should require user confirmation in interactive mode, or not be allowed in non-interactive mode.
+
 ## Golang
 
 ### Upgrading Go version
@@ -65,7 +70,7 @@ This file outlines conventions for the go42 project.
 
 ### Observability
 
-* pass logger as dependancy injection with component field, but can be used globally where needed
+* Pass logger as dependancy injection with component field, but can be used globally where needed
 * Log fields with dash, metric labels with underscore
 * Logger should be passed as option, if not passed, must default to noop logger
 * log.fatal can be used only during init phase in main functions

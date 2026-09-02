@@ -143,6 +143,10 @@ resource "helm_release" "argocd" {
         - --insecure
       service:
         type: ClusterIP
+    configs:
+      cm:
+        timeout.reconciliation: 30s
+        timeout.reconciliation.jitter: 10s
     controller:
       resources:
         limits:
