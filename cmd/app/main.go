@@ -427,7 +427,6 @@ func main() {
 		authRepository := authRepositoryPkg.New(
 			database.NewBaseRepository(dbEngine),
 			cacheEngine,
-			cfg.Auth.Cache.Repository.Users,
 			cfg.Auth.Cache.Repository.Secrets,
 		)
 		authService = auth.NewService(
@@ -451,15 +450,6 @@ func main() {
 			),
 		)
 		go authTokenLastUsedUpdater.Run(ctx, cfg.Auth.TokenUpdaterInterval)
-
-		authSecretRotationWorker := authWorkers.NewSecretRotationWorker(
-			authService,
-			authWorkers.SecretRotationWorkerWithLogger(
-				slog.Default().With(slog.String("component", "auth-secret-rotation")),
-			),
-			authWorkers.SecretRotationWorkerWithSecretLength(cfg.Auth.Rotation.SecretLength),
-		)
-		go authSecretRotationWorker.Run(ctx, cfg.Auth.Rotation.Period)
 
 		authEventsSubscriber := authWorkers.NewAuthEventSubscriber(
 			authRepository,

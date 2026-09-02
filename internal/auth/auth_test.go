@@ -146,21 +146,6 @@ func expectTransaction(repository *authMocks.Mockrepository) *gomock.Call {
 		})
 }
 
-func expectUserCacheInvalidation(
-	repository *authMocks.Mockrepository,
-	user *models.User,
-	err error,
-	emails ...string,
-) *gomock.Call {
-	emailArgs := make([]any, len(emails))
-	for i, email := range emails {
-		emailArgs[i] = email
-	}
-	return repository.EXPECT().InvalidateUserCache(
-		gomock.Any(), user.ID, user.UUID.String(), emailArgs...,
-	).Return(err)
-}
-
 type outboxEventMatcher struct {
 	aggregateID   int
 	aggregateType string
@@ -568,7 +553,6 @@ func TestService_UpdateUserSkipsUnchangedData(t *testing.T) {
 func TestService_UpdateUserEmail(t *testing.T) {
 	h := newServiceHarness(t)
 	user := newTestUser(t, domain.UserStatusActive)
-	oldEmail := user.Email
 	newEmail := "new@example.com"
 	expectTransaction(h.repository)
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
@@ -580,8 +564,6 @@ func TestService_UpdateUserEmail(t *testing.T) {
 			return nil
 		})
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
-	expectUserCacheInvalidation(h.repository, user, nil, oldEmail, newEmail)
-
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Email: &newEmail,
 	}); err != nil {
@@ -605,8 +587,6 @@ func TestService_UpdateUserPassword(t *testing.T) {
 			return nil
 		})
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
-	expectUserCacheInvalidation(h.repository, user, nil, user.Email, user.Email)
-
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Password: &newPassword,
 	}); err != nil {
@@ -675,8 +655,6 @@ func TestService_UpdateUserIgnoresOutboxFailure(t *testing.T) {
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	h.repository.EXPECT().UpdateUser(gomock.Any(), user).Return(nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, errors.New("outbox unavailable"))
-	expectUserCacheInvalidation(h.repository, user, nil, testUserEmail, newEmail)
-
 	if err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
 		Email: &newEmail,
 	}); err != nil {
@@ -691,32 +669,12 @@ func TestService_DeleteUser(t *testing.T) {
 	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
 	h.repository.EXPECT().DeleteUser(gomock.Any(), user).Return(nil)
 	expectOutboxEvent(h, user.ID, domain.EventTypeUserDelete, nil)
-	expectUserCacheInvalidation(h.repository, user, nil, user.Email)
-
 	if err := h.service.DeleteUser(context.Background(), user.UUID.String()); err != nil {
 		t.Fatalf("DeleteUser() error = %v", err)
 	}
 }
 
-func TestService_UpdateUserReportsCacheInvalidationFailure(t *testing.T) {
-	h := newServiceHarness(t)
-	user := newTestUser(t, domain.UserStatusActive)
-	oldEmail := user.Email
-	newEmail := "new@example.com"
-	invalidateError := errors.New("cache unavailable")
-	expectTransaction(h.repository)
-	h.repository.EXPECT().GetUserByUUID(gomock.Any(), user.UUID.String()).Return(user, nil)
-	h.repository.EXPECT().UpdateUser(gomock.Any(), user).Return(nil)
-	expectOutboxEvent(h, user.ID, domain.EventTypeUserUpdate, nil)
-	expectUserCacheInvalidation(h.repository, user, invalidateError, oldEmail, newEmail)
-
-	err := h.service.UpdateUser(context.Background(), user.UUID.String(), &domain.UpdateUserData{
-		Email: &newEmail,
-	})
-	assertErrorIs(t, err, invalidateError)
-}
-
-func TestService_UpdateUserDoesNotInvalidateCacheWhenCommitFails(t *testing.T) {
+func TestService_UpdateUserReportsCommitFailure(t *testing.T) {
 	h := newServiceHarness(t)
 	user := newTestUser(t, domain.UserStatusActive)
 	newEmail := "new@example.com"
@@ -1507,44 +1465,44 @@ func TestService_InvalidateJWTTokenPropagatesCacheError(t *testing.T) {
 	assertErrorIs(t, err, cacheError)
 }
 
-func TestService_RotateJWTSecretRetainsThreeMostRecentSecrets(t *testing.T) {
-	h := newServiceHarness(t)
-	oldToken := signTestJWT(
-		t,
-		testJWTSecret,
-		domain.JWTTokenPurposeAccess,
-		"subject",
-		time.Now().Add(time.Hour),
+func TestService_ConfiguredJWTKeyRing(t *testing.T) {
+	const (
+		previousSecret = "previous-secret"
+		currentSecret  = "current-secret"
 	)
+	h := newServiceHarness(t, auth.WithJWTSecrets([]string{previousSecret, currentSecret}))
+	h.cache.EXPECT().Get(gomock.Any(), gomock.Any()).Return("", false, nil).AnyTimes()
 
-	h.service.RotateJWTSecret("second-secret")
-	h.service.RotateJWTSecret("third-secret")
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(oldToken)).Return("", false, nil)
-	if _, err := h.service.ValidateJWTToken(
-		context.Background(), oldToken, domain.JWTTokenPurposeAccess,
-	); err != nil {
-		t.Fatalf("token signed by third-most-recent secret was rejected: %v", err)
+	for _, secret := range []string{testJWTSecret, previousSecret, currentSecret} {
+		token := signTestJWT(
+			t,
+			secret,
+			domain.JWTTokenPurposeAccess,
+			"subject",
+			time.Now().Add(time.Hour),
+		)
+		if _, err := h.service.ValidateJWTToken(
+			context.Background(), token, domain.JWTTokenPurposeAccess,
+		); err != nil {
+			t.Fatalf("token signed by configured secret %q was rejected: %v", secret, err)
+		}
 	}
 
-	h.service.RotateJWTSecret("fourth-secret")
-	if _, err := h.service.ValidateJWTToken(
-		context.Background(), oldToken, domain.JWTTokenPurposeAccess,
-	); err == nil {
-		t.Fatal("token signed by evicted secret was accepted")
+	user := newTestUser(t, domain.UserStatusActive)
+	h.repository.EXPECT().GetUserByEmail(gomock.Any(), testUserEmail).Return(user, nil)
+	expectOutboxEvent(h, user.ID, domain.EventTypeAuthLogin, nil)
+	tokens, err := h.service.Login(context.Background(), testUserEmail, testPassword)
+	if err != nil {
+		t.Fatalf("Login() error = %v", err)
 	}
-
-	newToken := signTestJWT(
-		t,
-		"fourth-secret",
-		domain.JWTTokenPurposeAccess,
-		"subject",
-		time.Now().Add(time.Hour),
+	claims, err := h.service.ValidateJWTToken(
+		context.Background(), tokens.AccessToken, domain.JWTTokenPurposeAccess,
 	)
-	h.cache.EXPECT().Get(gomock.Any(), invalidatedTokenKey(newToken)).Return("", false, nil)
-	if _, err := h.service.ValidateJWTToken(
-		context.Background(), newToken, domain.JWTTokenPurposeAccess,
-	); err != nil {
-		t.Fatalf("token signed by current secret was rejected: %v", err)
+	if err != nil {
+		t.Fatalf("validate generated access token: %v", err)
+	}
+	if claims.KID != sha256Hex(currentSecret) {
+		t.Errorf("generated token KID = %q, want current configured secret %q", claims.KID, sha256Hex(currentSecret))
 	}
 }
 func TestService_ValidateAPIToken(t *testing.T) {

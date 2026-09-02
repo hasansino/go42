@@ -145,25 +145,6 @@ func (mr *MockrepositoryMockRecorder) GetUserByUUID(ctx, uuid any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUUID", reflect.TypeOf((*Mockrepository)(nil).GetUserByUUID), ctx, uuid)
 }
 
-// InvalidateUserCache mocks base method.
-func (m *Mockrepository) InvalidateUserCache(ctx context.Context, userID int, userUUID string, emails ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, userID, userUUID}
-	for _, a := range emails {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "InvalidateUserCache", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InvalidateUserCache indicates an expected call of InvalidateUserCache.
-func (mr *MockrepositoryMockRecorder) InvalidateUserCache(ctx, userID, userUUID any, emails ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, userID, userUUID}, emails...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InvalidateUserCache", reflect.TypeOf((*Mockrepository)(nil).InvalidateUserCache), varargs...)
-}
-
 // ListUsers mocks base method.
 func (m *Mockrepository) ListUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	m.ctrl.T.Helper()

@@ -502,7 +502,6 @@ type Auth struct {
 	MinPasswordEntropyBits int           `env:"AUTH_MIN_PASSWORD_ENTROPY_BITS" default:"50"`
 	Cache                  struct {
 		Repository struct {
-			Users   time.Duration `env:"AUTH_CACHE_REPOSITORY_USERS" default:"1m"`
 			Secrets time.Duration `env:"AUTH_CACHE_REPOSITORY_SECRETS" default:"1m"`
 		}
 	}
@@ -512,10 +511,6 @@ type Auth struct {
 		RefreshTokenTTL time.Duration `env:"AUTH_JWT_REFRESH_TOKEN_TTL"     default:"168h"`
 		Issuer          string        `env:"AUTH_JWT_ISSUER"                default:"go42"`
 		Audience        []string      `env:"AUTH_JWT_AUDIENCE"              default:"go42"`
-	}
-	Rotation struct {
-		Period       time.Duration `env:"AUTH_ROTATION_PERIOD"  default:"24h"`
-		SecretLength int           `env:"AUTH_ROTATION_SECRET_LENGTH" default:"32"`
 	}
 }
 

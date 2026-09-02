@@ -17,26 +17,22 @@ import (
 type cacheAccessor interface {
 	Get(ctx context.Context, key string) (value string, found bool, err error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
-	Invalidate(ctx context.Context, key string) error
 }
 
 type Repository struct {
 	*database.BaseRepository
 	cache          cacheAccessor
-	userCacheTTL   time.Duration
 	secretCacheTTL time.Duration
 }
 
 func New(
 	baseRepository *database.BaseRepository,
 	cache cacheAccessor,
-	userCacheTTL time.Duration,
 	secretCacheTTL time.Duration,
 ) *Repository {
 	return &Repository{
 		BaseRepository: baseRepository,
 		cache:          cache,
-		userCacheTTL:   userCacheTTL,
 		secretCacheTTL: secretCacheTTL,
 	}
 }
@@ -183,21 +179,6 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*models.
 }
 
 func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*models.User, error) {
-	cacheKey := generateUserCacheKey(filter)
-	useCache := !r.InTransaction(ctx)
-	if useCache {
-		cachedUser, err := cache.GetDecode[*models.User](ctx, r.cache, cacheKey)
-		if err != nil {
-			slog.Default().ErrorContext(
-				ctx, "error retrieving cached user",
-				slog.Any("err", err),
-			)
-		}
-		if cachedUser != nil {
-			return cachedUser, nil
-		}
-	}
-
 	tx := r.GetReadDB(ctx)
 	for key, value := range filter {
 		tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
@@ -257,61 +238,7 @@ func (r *Repository) getUser(ctx context.Context, filter map[string]any) (*model
 	}
 
 	user.Roles = roles
-
-	if useCache {
-		if err := cache.SetEncode[*models.User](
-			ctx, r.cache, cacheKey, &user, r.userCacheTTL,
-		); err != nil {
-			slog.Default().ErrorContext(
-				ctx, "error caching user",
-				slog.Int("user_id", user.ID),
-				slog.Any("err", err),
-			)
-		}
-	}
-
 	return &user, nil
-}
-
-const userCacheKeyPrefix = "cache:user"
-
-func generateUserCacheKey(filter map[string]any) string {
-	key := userCacheKeyPrefix
-	for k, v := range filter {
-		key += fmt.Sprintf(":%s=%v", k, v)
-	}
-	return key
-}
-
-func (r *Repository) InvalidateUserCache(
-	ctx context.Context,
-	userID int,
-	userUUID string,
-	emails ...string,
-) error {
-	keys := make(map[string]struct{}, len(emails)+2)
-	if userID > 0 {
-		keys[generateUserCacheKey(map[string]any{"id": userID})] = struct{}{}
-	}
-	if userUUID != "" {
-		keys[generateUserCacheKey(map[string]any{"uuid": userUUID})] = struct{}{}
-	}
-	for _, email := range emails {
-		if email != "" {
-			keys[generateUserCacheKey(map[string]any{"email": email})] = struct{}{}
-		}
-	}
-
-	var invalidateErr error
-	for key := range keys {
-		if err := r.cache.Invalidate(ctx, key); err != nil {
-			invalidateErr = errors.Join(
-				invalidateErr,
-				fmt.Errorf("error invalidating user cache key %q: %w", key, err),
-			)
-		}
-	}
-	return invalidateErr
 }
 
 func (r *Repository) AssignRoleToUser(ctx context.Context, userID int, roleName string) error {

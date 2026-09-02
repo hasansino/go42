@@ -17,7 +17,6 @@ type repository interface {
 }
 
 type authService interface {
-	RotateJWTSecret(newSecret string)
 	RecentlyUsedTokensChan() <-chan domain.TokenWasUsed
 }
 

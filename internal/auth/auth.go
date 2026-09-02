@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -46,7 +45,6 @@ type repository interface {
 	GetUserByID(ctx context.Context, id int) (*models.User, error)
 	GetUserByUUID(ctx context.Context, uuid string) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-	InvalidateUserCache(ctx context.Context, userID int, userUUID string, emails ...string) error
 
 	AssignRoleToUser(ctx context.Context, userID int, role string) error
 
@@ -77,8 +75,7 @@ type Service struct {
 	cache         cache
 	outboxService outboxService
 
-	jwtSecrets   []jwtSecret
-	jwtSecretsMu sync.RWMutex
+	jwtSecrets []jwtSecret
 
 	jwtIssuer   string
 	jwtAudience []string
@@ -453,16 +450,11 @@ func (s *Service) CreateUser(ctx context.Context, data *domain.CreateUserData) (
 }
 
 func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.UpdateUserData) error {
-	var (
-		updatedUser *models.User
-		oldEmail    string
-	)
 	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
 		if err != nil {
 			return fmt.Errorf("failed to get user: %w", err)
 		}
-		oldEmail = user.Email
 
 		var doUpdate bool
 
@@ -489,7 +481,6 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 		if err := s.repository.UpdateUser(txCtx, user); err != nil {
 			return fmt.Errorf("failed to update user: %w", err)
 		}
-		updatedUser = user
 
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
@@ -510,23 +501,10 @@ func (s *Service) UpdateUser(ctx context.Context, uuid string, data *domain.Upda
 	if err != nil {
 		return err
 	}
-	if updatedUser == nil {
-		return nil
-	}
-	if err := s.repository.InvalidateUserCache(
-		ctx,
-		updatedUser.ID,
-		updatedUser.UUID.String(),
-		oldEmail,
-		updatedUser.Email,
-	); err != nil {
-		return fmt.Errorf("failed to invalidate updated user cache: %w", err)
-	}
 	return nil
 }
 
 func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
-	var deletedUser *models.User
 	err := s.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		var err error
 		user, err := s.repository.GetUserByUUID(txCtx, uuid)
@@ -537,7 +515,6 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete user: %w", err)
 		}
-		deletedUser = user
 		event := outboxDomain.Message{
 			AggregateID:   user.ID,
 			AggregateType: domain.EventTypeUserDelete,
@@ -550,14 +527,6 @@ func (s *Service) DeleteUser(ctx context.Context, uuid string) error {
 	})
 	if err != nil {
 		return err
-	}
-	if err := s.repository.InvalidateUserCache(
-		ctx,
-		deletedUser.ID,
-		deletedUser.UUID.String(),
-		deletedUser.Email,
-	); err != nil {
-		return fmt.Errorf("failed to invalidate deleted user cache: %w", err)
 	}
 	return nil
 }
@@ -575,27 +544,6 @@ func (s *Service) GetUserByUUID(ctx context.Context, uuid string) (*models.User,
 }
 
 // ----
-
-func (s *Service) RotateJWTSecret(newSecret string) {
-	s.jwtSecretsMu.Lock()
-	defer s.jwtSecretsMu.Unlock()
-
-	hash := sha256.Sum256([]byte(newSecret))
-	newJWTSecret := jwtSecret{
-		sha256: hex.EncodeToString(hash[:]),
-		secret: newSecret,
-	}
-
-	s.jwtSecrets = append(s.jwtSecrets, newJWTSecret)
-
-	// only 3 secrets are kept in memory
-	if len(s.jwtSecrets) > 3 {
-		s.jwtSecrets = s.jwtSecrets[len(s.jwtSecrets)-3:]
-	}
-
-	metrics.Gauge("auth_jwt_secrets_count", nil).Set(float64(len(s.jwtSecrets)))
-	metrics.Counter("auth_jwt_secret_rotations_total", nil).Inc()
-}
 
 func (s *Service) ValidateJWTToken(
 	ctx context.Context,
@@ -628,8 +576,6 @@ func (s *Service) validateJWTToken(
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		claims, _ := token.Claims.(*domain.JWTClaims)
-		s.jwtSecretsMu.RLock()
-		defer s.jwtSecretsMu.RUnlock()
 		for _, secret := range s.jwtSecrets {
 			if claims.KID == secret.sha256 {
 				return []byte(secret.secret), nil
@@ -736,9 +682,7 @@ func (s *Service) generateTokens(userUUID string) (*domain.Tokens, error) {
 }
 
 func (s *Service) generateAccessToken(userUUID string) (string, error) {
-	s.jwtSecretsMu.RLock()
 	token := s.jwtSecrets[len(s.jwtSecrets)-1]
-	s.jwtSecretsMu.RUnlock()
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, domain.JWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.New().String(),
@@ -754,9 +698,7 @@ func (s *Service) generateAccessToken(userUUID string) (string, error) {
 }
 
 func (s *Service) generateRefreshToken(userUUID string) (string, error) {
-	s.jwtSecretsMu.RLock()
 	token := s.jwtSecrets[len(s.jwtSecrets)-1]
-	s.jwtSecretsMu.RUnlock()
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, domain.JWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.New().String(),
