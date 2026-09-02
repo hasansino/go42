@@ -117,9 +117,11 @@ paths:
         - users
       summary: Retrieve current user information
       operationId: users.me.read
+      x-required-permissions:
+        - users:read_self
       security:
-        - jwt:
-            - users:read_self
+        - jwt: []
+        - apiKey: []
       responses:
         '200':
           description: User information retrieved successfully
@@ -136,9 +138,11 @@ paths:
         - users
       summary: Update current user
       operationId: users.me.update
+      x-required-permissions:
+        - users:update_self
       security:
-        - jwt:
-            - users:update_self
+        - jwt: []
+        - apiKey: []
       requestBody:
         required: true
         content:
@@ -160,9 +164,11 @@ paths:
         - users
       summary: List users
       operationId: users.list
+      x-required-permissions:
+        - users:list
       security:
-        - jwt:
-            - users:list
+        - jwt: []
+        - apiKey: []
       parameters:
         - name: limit
           in: query
@@ -192,9 +198,11 @@ paths:
         - users
       summary: Create a new user
       operationId: users.create
+      x-required-permissions:
+        - users:create
       security:
-        - jwt:
-            - users:create
+        - jwt: []
+        - apiKey: []
       requestBody:
         required: true
         content:
@@ -220,9 +228,11 @@ paths:
         - users
       summary: Get user by UUID
       operationId: users.get
+      x-required-permissions:
+        - users:read_others
       security:
-        - jwt:
-            - users:read_others
+        - jwt: []
+        - apiKey: []
       parameters:
         - name: uuid
           in: path
@@ -250,9 +260,11 @@ paths:
         - users
       summary: Update user
       operationId: users.update
+      x-required-permissions:
+        - users:update
       security:
-        - jwt:
-            - users:update
+        - jwt: []
+        - apiKey: []
       parameters:
         - name: uuid
           in: path
@@ -282,9 +294,11 @@ paths:
         - users
       summary: Delete user
       operationId: users.delete
+      x-required-permissions:
+        - users:delete
       security:
-        - jwt:
-            - users:delete
+        - jwt: []
+        - apiKey: []
       parameters:
         - name: uuid
           in: path
@@ -324,10 +338,13 @@ paths:
 components:
   securitySchemes:
     jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKey:
       type: apiKey
       in: header
-      name: Authorization
-      description: 'JWT token in Authorization header (format: Bearer <token>)'
+      name: X-API-Key
   responses:
     UnexpectedResponse:
       description: Unexpected response

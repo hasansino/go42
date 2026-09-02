@@ -15,10 +15,11 @@ const updateUserErrors = new Counter('update_user_errors');
 const deleteUserErrors = new Counter('delete_user_errors');
 
 const ADDR = helpers.GRPCServerAddress();
+const API_KEY = helpers.GRPCAPIKey();
 
-// Note: We need a pre-created test user with admin permissions to run these tests
-// The auth service (signup/login) is only available via HTTP, not gRPC
-const TEST_ACCESS_TOKEN = 'test-admin-token'; // This should be replaced with a valid token
+if (!API_KEY) {
+    throw new Error('GRPC_API_KEY must contain the load-test API key');
+}
 
 const client = new grpc.Client();
 
@@ -48,9 +49,9 @@ export const options = {
         'grpc_req_duration{rpc:CreateUser}': ['p(95)<300'],
         'grpc_req_duration{rpc:UpdateUser}': ['p(95)<300'],
         'grpc_req_duration{rpc:DeleteUser}': ['p(95)<200'],
-        'success_rate': ['rate>=0.7'], // Allow some failures
+        'success_rate': ['rate>=0.95'],
         'connection_errors': ['count<20'],
-        'auth_errors': ['count<50'], // Auth errors are expected if token is invalid
+        'auth_errors': ['count==0'],
     },
 };
 
@@ -127,7 +128,7 @@ function listUsers() {
     
     const params = {
         metadata: {
-            'authorization': `Bearer ${TEST_ACCESS_TOKEN}`,
+            'x-api-key': API_KEY,
         },
         tags: { rpc: 'ListUsers' },
         timeout: '5s',
@@ -168,7 +169,7 @@ function createUser() {
     
     const params = {
         metadata: {
-            'authorization': `Bearer ${TEST_ACCESS_TOKEN}`,
+            'x-api-key': API_KEY,
         },
         tags: { rpc: 'CreateUser' },
         timeout: '5s',
@@ -208,7 +209,7 @@ function getUserByUUID(uuid) {
     
     const params = {
         metadata: {
-            'authorization': `Bearer ${TEST_ACCESS_TOKEN}`,
+            'x-api-key': API_KEY,
         },
         tags: { rpc: 'GetUserByUUID' },
         timeout: '5s',
@@ -244,7 +245,7 @@ function updateUser(uuid) {
     
     const params = {
         metadata: {
-            'authorization': `Bearer ${TEST_ACCESS_TOKEN}`,
+            'x-api-key': API_KEY,
         },
         tags: { rpc: 'UpdateUser' },
         timeout: '5s',
@@ -279,7 +280,7 @@ function deleteUser(uuid) {
     
     const params = {
         metadata: {
-            'authorization': `Bearer ${TEST_ACCESS_TOKEN}`,
+            'x-api-key': API_KEY,
         },
         tags: { rpc: 'DeleteUser' },
         timeout: '5s',

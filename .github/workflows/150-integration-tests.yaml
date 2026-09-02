@@ -108,7 +108,7 @@ jobs:
           ENVIRONMENT: ci-integration-tests
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
-          SERVER_GRPC_AUTHORIZATION_ENABLED: false
+          SERVER_GRPC_AUTHORIZATION_ENABLED: true
           DATABASE_ENGINE: ${{ matrix.database_engine }}
           DATABASE_MYSQL_MASTER_HOST: mysql
           DATABASE_MYSQL_SLAVE_HOST: mysql
@@ -134,3 +134,4 @@ jobs:
           CGO_ENABLED: 1 # needed for -race
           HTTP_SERVER_ADDRESS: http://localhost:${{ matrix.app_port }}
           GRPC_SERVER_ADDRESS: localhost:${{ matrix.grpc_port }}
+          GRPC_API_KEY: api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA

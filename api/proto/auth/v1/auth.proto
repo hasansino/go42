@@ -35,7 +35,7 @@ message ListUsersResponse {
 message GetUserByUUIDRequest {
   string uuid = 1 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string.len = 36
+    (buf.validate.field).string.uuid = true
   ];
 }
 
@@ -62,7 +62,7 @@ message CreateUserResponse {
 message UpdateUserRequest {
   string uuid = 1 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string.len = 36
+    (buf.validate.field).string.uuid = true
   ];
   optional string email = 2 [(buf.validate.field).string.email = true];
   optional string password = 3 [
@@ -76,7 +76,7 @@ message UpdateUserResponse {}
 message DeleteUserRequest {
   string uuid = 1 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string.len = 36
+    (buf.validate.field).string.uuid = true
   ];
 }
 

@@ -24,17 +24,17 @@ var (
 		"POST": "Content-Type",
 	}
 	rn8AllowedHeaders = map[string]string{
-		"GET":  "Authorization",
-		"POST": "Authorization,Content-Type",
+		"GET":  "Authorization,X-Api-Key",
+		"POST": "Authorization,Content-Type,X-Api-Key",
 	}
 	rn11AllowedHeaders = map[string]string{
-		"GET": "Authorization",
-		"PUT": "Authorization,Content-Type",
+		"GET": "Authorization,X-Api-Key",
+		"PUT": "Authorization,Content-Type,X-Api-Key",
 	}
 	rn10AllowedHeaders = map[string]string{
-		"DELETE": "Authorization",
-		"GET":    "Authorization",
-		"PUT":    "Authorization,Content-Type",
+		"DELETE": "Authorization,X-Api-Key",
+		"GET":    "Authorization,X-Api-Key",
+		"PUT":    "Authorization,Content-Type,X-Api-Key",
 	}
 )
 

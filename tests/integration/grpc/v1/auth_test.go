@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
@@ -33,7 +34,9 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 		client = pb.NewAuthServiceClient(conn)
-		ctx = context.Background()
+		apiKey := integration.GRPCAPIKey()
+		Expect(apiKey).NotTo(BeEmpty(), "GRPC_API_KEY must contain the integration API key")
+		ctx = metadata.AppendToOutgoingContext(context.Background(), "x-api-key", apiKey)
 	})
 
 	AfterEach(func() {
@@ -44,6 +47,15 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 
 	Describe("User Management Service", func() {
 		Describe("ListUsers", func() {
+			It("should reject a request without authentication", func() {
+				_, err := client.ListUsers(context.Background(), &pb.ListUsersRequest{})
+				Expect(err).To(HaveOccurred())
+
+				st, ok := status.FromError(err)
+				Expect(ok).To(BeTrue())
+				Expect(st.Code()).To(Equal(codes.Unauthenticated))
+			})
+
 			It("should list users", func() {
 				req := &pb.ListUsersRequest{
 					Limit:  10,
@@ -60,7 +72,7 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 		Describe("GetUserByUUID", func() {
 			It("should return InvalidArgument for invalid UUID", func() {
 				req := &pb.GetUserByUUIDRequest{
-					Uuid: "invalid-uuid",
+					Uuid: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
 				}
 
 				_, err := client.GetUserByUUID(ctx, req)
@@ -189,7 +201,7 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 			It("should return InvalidArgument for invalid UUID", func() {
 				newEmail := fmt.Sprintf("updated-%s@example.com", integration.GenerateRandomString("user"))
 				req := &pb.UpdateUserRequest{
-					Uuid:  "invalid-uuid",
+					Uuid:  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
 					Email: &newEmail,
 				}
 
@@ -258,7 +270,7 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 
 			It("should return InvalidArgument for invalid UUID", func() {
 				req := &pb.DeleteUserRequest{
-					Uuid: "invalid-uuid",
+					Uuid: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
 				}
 
 				_, err := client.DeleteUser(ctx, req)

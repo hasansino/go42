@@ -10,6 +10,31 @@ func (s *UnexpectedResponseStatusCode) Error() string {
 	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
 }
 
+type ApiKey struct {
+	APIKey string
+	Roles  []string
+}
+
+// GetAPIKey returns the value of APIKey.
+func (s *ApiKey) GetAPIKey() string {
+	return s.APIKey
+}
+
+// GetRoles returns the value of Roles.
+func (s *ApiKey) GetRoles() []string {
+	return s.Roles
+}
+
+// SetAPIKey sets the value of APIKey.
+func (s *ApiKey) SetAPIKey(val string) {
+	s.APIKey = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *ApiKey) SetRoles(val []string) {
+	s.Roles = val
+}
+
 // Ref: #/components/schemas/CreateUserRequest
 type CreateUserRequest struct {
 	Email    string `json:"email"`
@@ -115,13 +140,13 @@ func (s *Error) SetErrors(val []ErrorErrorsItem) {
 type ErrorErrorsItem struct{}
 
 type Jwt struct {
-	APIKey string
-	Roles  []string
+	Token string
+	Roles []string
 }
 
-// GetAPIKey returns the value of APIKey.
-func (s *Jwt) GetAPIKey() string {
-	return s.APIKey
+// GetToken returns the value of Token.
+func (s *Jwt) GetToken() string {
+	return s.Token
 }
 
 // GetRoles returns the value of Roles.
@@ -129,9 +154,9 @@ func (s *Jwt) GetRoles() []string {
 	return s.Roles
 }
 
-// SetAPIKey sets the value of APIKey.
-func (s *Jwt) SetAPIKey(val string) {
-	s.APIKey = val
+// SetToken sets the value of Token.
+func (s *Jwt) SetToken(val string) {
+	s.Token = val
 }
 
 // SetRoles sets the value of Roles.

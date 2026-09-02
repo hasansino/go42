@@ -281,7 +281,7 @@ jobs:
             test_path: ./tests/load/grpc/v1/auth_test.js
             env_name: ci-load-tests
             server_address_env: GRPC_SERVER_ADDRESS
-            grpc_auth_enabled: false
+            grpc_auth_enabled: true
           - protocol: grpc
             database: mysql
             database_engine: mysql
@@ -290,7 +290,7 @@ jobs:
             test_path: ./tests/load/grpc/v1/auth_test.js
             env_name: ci-load-tests
             server_address_env: GRPC_SERVER_ADDRESS
-            grpc_auth_enabled: false
+            grpc_auth_enabled: true
           - protocol: grpc
             database: pgsql
             database_engine: pgsql
@@ -299,7 +299,7 @@ jobs:
             test_path: ./tests/load/grpc/v1/auth_test.js
             env_name: ci-load-tests
             server_address_env: GRPC_SERVER_ADDRESS
-            grpc_auth_enabled: false
+            grpc_auth_enabled: true
         exclude:
           # Exclude combinations if specific database_engine is requested
           - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'sqlite' && 'sqlite' || '' }}
@@ -361,6 +361,7 @@ jobs:
         env:
           ${{ matrix.server_address_env }}: ${{ matrix.protocol == 'http' && format('http://localhost:{0}', matrix.app_port)
             || format('localhost:{0}', matrix.grpc_port) }}
+          GRPC_API_KEY: api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA
       - name: 'Upload K6 test results'
         uses: actions/upload-artifact@v7
         with:

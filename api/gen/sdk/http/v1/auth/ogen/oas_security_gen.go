@@ -13,8 +13,9 @@ import (
 
 // SecurityHandler is handler for security parameters.
 type SecurityHandler interface {
+	// HandleApiKey handles apiKey security.
+	HandleApiKey(ctx context.Context, operationName OperationName, t ApiKey) (context.Context, error)
 	// HandleJwt handles jwt security.
-	// JWT token in Authorization header (format: Bearer ).
 	HandleJwt(ctx context.Context, operationName OperationName, t Jwt) (context.Context, error)
 }
 
@@ -33,29 +34,47 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 	return "", false
 }
 
+// operationRolesApiKey is a private map storing roles per operation.
+var operationRolesApiKey = map[string][]string{
+	UsersCreateOperation:   []string{},
+	UsersDeleteOperation:   []string{},
+	UsersGetOperation:      []string{},
+	UsersListOperation:     []string{},
+	UsersMeReadOperation:   []string{},
+	UsersMeUpdateOperation: []string{},
+	UsersUpdateOperation:   []string{},
+}
+
+// GetRolesForApiKey returns the required roles for the given operation.
+//
+// This is useful for authorization scenarios where you need to know which roles
+// are required for an operation.
+//
+// Example:
+//
+//	requiredRoles := GetRolesForApiKey(AddPetOperation)
+//
+// Returns nil if the operation has no role requirements or if the operation is unknown.
+func GetRolesForApiKey(operation string) []string {
+	roles, ok := operationRolesApiKey[operation]
+	if !ok {
+		return nil
+	}
+	// Return a copy to prevent external modification
+	result := make([]string, len(roles))
+	copy(result, roles)
+	return result
+}
+
 // operationRolesJwt is a private map storing roles per operation.
 var operationRolesJwt = map[string][]string{
-	UsersCreateOperation: []string{
-		"users:create",
-	},
-	UsersDeleteOperation: []string{
-		"users:delete",
-	},
-	UsersGetOperation: []string{
-		"users:read_others",
-	},
-	UsersListOperation: []string{
-		"users:list",
-	},
-	UsersMeReadOperation: []string{
-		"users:read_self",
-	},
-	UsersMeUpdateOperation: []string{
-		"users:update_self",
-	},
-	UsersUpdateOperation: []string{
-		"users:update",
-	},
+	UsersCreateOperation:   []string{},
+	UsersDeleteOperation:   []string{},
+	UsersGetOperation:      []string{},
+	UsersListOperation:     []string{},
+	UsersMeReadOperation:   []string{},
+	UsersMeUpdateOperation: []string{},
+	UsersUpdateOperation:   []string{},
 }
 
 // GetRolesForJwt returns the required roles for the given operation.
@@ -79,14 +98,31 @@ func GetRolesForJwt(operation string) []string {
 	return result
 }
 
-func (s *Server) securityJwt(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
-	var t Jwt
-	const parameterName = "Authorization"
+func (s *Server) securityApiKey(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	var t ApiKey
+	const parameterName = "X-API-Key"
 	value := req.Header.Get(parameterName)
 	if value == "" {
 		return ctx, false, nil
 	}
 	t.APIKey = value
+	t.Roles = operationRolesApiKey[operationName]
+	rctx, err := s.sec.HandleApiKey(ctx, operationName, t)
+	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	return rctx, true, err
+}
+
+func (s *Server) securityJwt(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	var t Jwt
+	token, ok := findAuthorization(req.Header, "Bearer")
+	if !ok {
+		return ctx, false, nil
+	}
+	t.Token = token
 	t.Roles = operationRolesJwt[operationName]
 	rctx, err := s.sec.HandleJwt(ctx, operationName, t)
 	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
@@ -99,16 +135,25 @@ func (s *Server) securityJwt(ctx context.Context, operationName OperationName, r
 
 // SecuritySource is provider of security values (tokens, passwords, etc.).
 type SecuritySource interface {
+	// ApiKey provides apiKey security value.
+	ApiKey(ctx context.Context, operationName OperationName, client *Client) (ApiKey, error)
 	// Jwt provides jwt security value.
-	// JWT token in Authorization header (format: Bearer ).
 	Jwt(ctx context.Context, operationName OperationName, client *Client) (Jwt, error)
 }
 
+func (s *Client) securityApiKey(ctx context.Context, operationName OperationName, req *http.Request) error {
+	t, err := s.sec.ApiKey(ctx, operationName, s)
+	if err != nil {
+		return errors.Wrap(err, "security source \"ApiKey\"")
+	}
+	req.Header.Set("X-API-Key", t.APIKey)
+	return nil
+}
 func (s *Client) securityJwt(ctx context.Context, operationName OperationName, req *http.Request) error {
 	t, err := s.sec.Jwt(ctx, operationName, s)
 	if err != nil {
 		return errors.Wrap(err, "security source \"Jwt\"")
 	}
-	req.Header.Set("Authorization", t.APIKey)
+	req.Header.Set("Authorization", "Bearer "+t.Token)
 	return nil
 }

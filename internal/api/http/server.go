@@ -205,7 +205,7 @@ func New(opts ...Option) *Server {
 			http.MethodDelete,
 		},
 		// allowed headers for CORS requests
-		AllowHeaders: []string{"Authorization", "Content-Type"},
+		AllowHeaders: []string{"Authorization", "Content-Type", "X-API-Key"},
 		// allow javascript to read extra response headers
 		ExposeHeaders: []string{"Content-Length", "x-request-id"},
 		// allow JWT to be sent by cross-origin requests

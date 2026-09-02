@@ -544,11 +544,23 @@ func (c *Client) sendUsersCreate(ctx context.Context, request *CreateUserRequest
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersCreateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -675,11 +687,23 @@ func (c *Client) sendUsersDelete(ctx context.Context, params UsersDeleteParams) 
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersDeleteOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -806,11 +830,23 @@ func (c *Client) sendUsersGet(ctx context.Context, params UsersGetParams) (res U
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -957,11 +993,23 @@ func (c *Client) sendUsersList(ctx context.Context, params UsersListParams) (res
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1070,11 +1118,23 @@ func (c *Client) sendUsersMeRead(ctx context.Context) (res UsersMeReadRes, err e
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersMeReadOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1186,11 +1246,23 @@ func (c *Client) sendUsersMeUpdate(ctx context.Context, request *UpdateSelfReque
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersMeUpdateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1320,11 +1392,23 @@ func (c *Client) sendUsersUpdate(ctx context.Context, request *UpdateUserRequest
 				return res, errors.Wrap(err, "security \"Jwt\"")
 			}
 		}
+		{
+			stage = "Security:ApiKey"
+			switch err := c.securityApiKey(ctx, UsersUpdateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 1
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKey\"")
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {

@@ -746,11 +746,30 @@ func (s *Server) handleUsersCreateRequest(args [0]string, argsEscaped bool, w ht
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersCreateOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -946,11 +965,30 @@ func (s *Server) handleUsersDeleteRequest(args [1]string, argsEscaped bool, w ht
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersDeleteOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1146,11 +1184,30 @@ func (s *Server) handleUsersGetRequest(args [1]string, argsEscaped bool, w http.
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersGetOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1346,11 +1403,30 @@ func (s *Server) handleUsersListRequest(args [0]string, argsEscaped bool, w http
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersListOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1550,11 +1626,30 @@ func (s *Server) handleUsersMeReadRequest(args [0]string, argsEscaped bool, w ht
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersMeReadOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1735,11 +1830,30 @@ func (s *Server) handleUsersMeUpdateRequest(args [0]string, argsEscaped bool, w 
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersMeUpdateOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {
@@ -1935,11 +2049,30 @@ func (s *Server) handleUsersUpdateRequest(args [1]string, argsEscaped bool, w ht
 				ctx = sctx
 			}
 		}
+		{
+			sctx, ok, err := s.securityApiKey(ctx, UsersUpdateOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKey",
+					Err:              err,
+				}
+				if encodeErr := encodeErrorResponse(s.h.NewError(ctx, err), w, span); encodeErr != nil {
+					defer recordError("Security:ApiKey", err)
+				}
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 1
+				ctx = sctx
+			}
+		}
 
 		if ok := func() bool {
 		nextRequirement:
 			for _, requirement := range []bitset{
 				{0b00000001},
+				{0b00000010},
 			} {
 				for i, mask := range requirement {
 					if satisfied[i]&mask != mask {

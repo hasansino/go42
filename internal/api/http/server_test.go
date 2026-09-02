@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	nethttp "net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -90,6 +91,47 @@ func TestShutdownReturnsAfterEchoGracefulTimeout(t *testing.T) {
 	close(releaseRequest)
 	if err := <-requestResult; err != nil {
 		t.Fatalf("HTTP request error = %v", err)
+	}
+}
+
+func TestCORSAllowsAPIKeyHeader(t *testing.T) {
+	server := newTestServer(t, WithCORSAllowOrigins([]string{"https://example.com"}))
+	server.root.GET("/protected", func(c *echo.Context) error {
+		return c.NoContent(nethttp.StatusNoContent)
+	})
+
+	address, serveResult := startTestServer(t, server)
+	req, err := nethttp.NewRequest(
+		nethttp.MethodOptions,
+		"http://"+address+"/protected",
+		strings.NewReader(""),
+	)
+	if err != nil {
+		t.Fatalf("NewRequest() error = %v", err)
+	}
+	req.Header.Set("Origin", "https://example.com")
+	req.Header.Set("Access-Control-Request-Method", nethttp.MethodGet)
+	req.Header.Set("Access-Control-Request-Headers", "x-api-key")
+
+	resp, err := nethttp.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("preflight request error = %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != nethttp.StatusNoContent {
+		t.Errorf("preflight status = %d, want %d", resp.StatusCode, nethttp.StatusNoContent)
+	}
+	allowedHeaders := resp.Header.Get("Access-Control-Allow-Headers")
+	if !strings.Contains(strings.ToLower(allowedHeaders), "x-api-key") {
+		t.Errorf("Access-Control-Allow-Headers = %q, want x-api-key", allowedHeaders)
+	}
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() error = %v", err)
+	}
+	if err := <-serveResult; err != nil {
+		t.Fatalf("Start() error = %v", err)
 	}
 }
 

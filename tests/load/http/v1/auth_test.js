@@ -16,11 +16,17 @@ const updateMeErrors = new Counter('update_me_errors');
 const listUsersErrors = new Counter('list_users_errors');
 
 const ADDR = helpers.HTTPServerAddress();
+const API_KEY = helpers.GRPCAPIKey();
+
+if (!API_KEY) {
+    throw new Error('GRPC_API_KEY must contain the load-test API key');
+}
 
 export const options = {
     scenarios: {
         auth_flow: {
             executor: 'ramping-vus',
+            exec: 'authFlow',
             startVUs: 1,
             stages: [
                 { duration: '10s', target: 2 },
@@ -30,6 +36,7 @@ export const options = {
         },
         api_operations: {
             executor: 'constant-arrival-rate',
+            exec: 'apiOperations',
             rate: 2,
             timeUnit: '1s',
             duration: '40s',
@@ -53,7 +60,7 @@ export const options = {
 
 const activeUsers = [];
 
-export default function() {
+function serverIsReachable() {
     // Check if the server is reachable
     const healthCheck = http.get(ADDR + '/health', { 
         timeout: '3s',
@@ -63,10 +70,23 @@ export default function() {
     if (healthCheck.status === 0) {
         connectionErrors.add(1);
         helpers.randomSleep(2);
-        return;
+        return false;
     }
 
+    return true;
+}
+
+export function authFlow() {
+    if (!serverIsReachable()) {
+        return;
+    }
     runAuthFlow();
+}
+
+export function apiOperations() {
+    if (!serverIsReachable()) {
+        return;
+    }
     runApiOperations();
 }
 
@@ -87,34 +107,26 @@ function runAuthFlow() {
             return;
         }
         
-        activeUsers.push({
+        const user = {
             email: email,
             accessToken: loginData.access_token,
             refreshToken: loginData.refresh_token,
-        });
+        };
         
         helpers.randomSleep(1);
         
         if (Math.random() < 0.3) {
-            const newTokens = refresh(loginData.refresh_token);
+            const newTokens = refresh(user.refreshToken);
             if (newTokens) {
-                // Update tokens in activeUsers
-                const userIndex = activeUsers.findIndex(u => u.email === email);
-                if (userIndex >= 0) {
-                    activeUsers[userIndex].accessToken = newTokens.access_token;
-                    activeUsers[userIndex].refreshToken = newTokens.refresh_token;
-                }
+                user.accessToken = newTokens.access_token;
+                user.refreshToken = newTokens.refresh_token;
             }
         }
         
         helpers.randomSleep(0.5);
         
         if (Math.random() < 0.2) {
-            logout(loginData.access_token, loginData.refresh_token);
-            const index = activeUsers.findIndex(u => u.email === email);
-            if (index > -1) {
-                activeUsers.splice(index, 1);
-            }
+            logout(user.accessToken, user.refreshToken);
         }
     });
 }
@@ -153,7 +165,7 @@ function runApiOperations() {
         }
         
         if (Math.random() < 0.1) {
-            listUsers(randomUser.accessToken);
+            listUsers();
         }
     });
 }
@@ -389,23 +401,23 @@ function updateMe(accessToken) {
     }
     
     const success = check(res, {
-        'update me status is 200 or 500': (r) => r.status === 200 || r.status === 500, // 500 might occur due to duplicate email
+        'update me status is 200': (r) => r.status === 200,
     });
     
     successRate.add(success);
     if (!success) {
         updateMeErrors.add(1);
-        if (res.status !== 401 && res.status !== 403 && res.status !== 500) {
+        if (res.status !== 401 && res.status !== 403) {
             console.log(`Failed to update me: ${res.status} ${res.body}`);
         }
     }
 }
 
-function listUsers(accessToken) {
+function listUsers() {
     const url = `${ADDR}/api/v1/users?limit=10&offset=0`;
     const params = {
         headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'X-API-Key': API_KEY,
         },
         tags: { name: 'list_users' },
         timeout: '5s',
@@ -419,9 +431,8 @@ function listUsers(accessToken) {
     }
     
     const success = check(res, {
-        'list users status is 200 or 403 or 404': (r) => r.status === 200 || r.status === 403 || r.status === 404,
-        'list users returns array if 200': (r) => {
-            if (r.status !== 200) return true;
+        'list users status is 200': (r) => r.status === 200,
+        'list users returns array': (r) => {
             try {
                 const body = JSON.parse(r.body);
                 return Array.isArray(body);
@@ -434,8 +445,6 @@ function listUsers(accessToken) {
     successRate.add(success);
     if (!success) {
         listUsersErrors.add(1);
-        if (res.status !== 401 && res.status !== 403 && res.status !== 404) {
-            console.log(`Failed to list users: ${res.status} ${res.body}`);
-        }
+        console.log(`Failed to list users: ${res.status} ${res.body}`);
     }
 }

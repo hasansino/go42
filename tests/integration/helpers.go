@@ -12,11 +12,13 @@ import (
 const (
 	httpServerAddressEnvVarName = "HTTP_SERVER_ADDRESS"
 	grpcServerAddressEnvVarName = "GRPC_SERVER_ADDRESS"
+	grpcAPIKeyEnvVarName        = "GRPC_API_KEY"
 )
 
 const (
 	defaultHttpServerAddress = "http://localhost:8080"
 	defaultGrpcServerAddress = "localhost:50051"
+	defaultGrpcAPIKey        = "api_kXqdf2uQ7hmOARp-pZrhA6_IsZSeKCmSEM4YFKBGIzA"
 )
 
 var (
@@ -47,6 +49,13 @@ func GRPCServerAddress() string {
 		return customGrpcServerAddress
 	}
 	return defaultGrpcServerAddress
+}
+
+func GRPCAPIKey() string {
+	if apiKey := os.Getenv(grpcAPIKeyEnvVarName); apiKey != "" {
+		return apiKey
+	}
+	return defaultGrpcAPIKey
 }
 
 // ---
