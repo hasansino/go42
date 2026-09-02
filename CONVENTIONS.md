@@ -37,6 +37,7 @@ This file outlines conventions for the go42 project.
 ### General
 
 * Use cmd/cfg2env to regenerate .env.example
+* Use `make generate` to regenerate code, e.g., mocks, protobufs, etc.
 * When using //go:generate mockgen, always use local binary
 * Use v for validation tag
 * Use db for db column name tag

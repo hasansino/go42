@@ -4,8 +4,6 @@ package nats
 // without error and will try to reconnect (according to reconnection options). If all
 // attempts will fail, driver will call ClosedHandler(), but not fail in any way.
 
-// @todo jetstream support
-
 import (
 	"context"
 	"errors"
@@ -26,15 +24,24 @@ type NATS struct {
 
 func New(dsn string, opts ...Option) (*NATS, error) {
 	var (
-		engine = new(NATS)
+		engine          = new(NATS)
+		jetStreamConfig = wnats.JetStreamConfig{
+			AutoProvision: true,
+			SubscribeOptions: []natsgo.SubOpt{
+				natsgo.DeliverAll(),
+				natsgo.AckExplicit(),
+			},
+			TrackMsgID: true,
+			AckAsync:   false,
+		}
 		pubCfg = &wnats.PublisherConfig{
 			URL:       dsn,
-			JetStream: wnats.JetStreamConfig{Disabled: true},
+			JetStream: jetStreamConfig,
 			Marshaler: new(wnats.GobMarshaler),
 		}
 		subCfg = &wnats.SubscriberConfig{
 			URL:         dsn,
-			JetStream:   wnats.JetStreamConfig{Disabled: true},
+			JetStream:   jetStreamConfig,
 			Unmarshaler: new(wnats.GobMarshaler),
 		}
 	)
@@ -48,7 +55,7 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	}
 
 	pubCfg.NatsOptions = append(pubCfg.NatsOptions, handlers(engine.logger)...)
-	subCfg.NatsOptions = append(pubCfg.NatsOptions, handlers(engine.logger)...)
+	subCfg.NatsOptions = append(subCfg.NatsOptions, handlers(engine.logger)...)
 
 	publisher, err := wnats.NewPublisher(*pubCfg, watermill.NewSlogLogger(engine.logger))
 	if err != nil {

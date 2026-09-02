@@ -58,9 +58,20 @@ func WithReconnectDelay(delay time.Duration) Option {
 	}
 }
 
+func WithJetStreamAutoProvision(autoProvision bool) Option {
+	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
+		pubCfg.JetStream.AutoProvision = autoProvision
+		subCfg.JetStream.AutoProvision = autoProvision
+	}
+}
+
 func WithSubGroupPrefix(prefix string) Option {
 	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
 		subCfg.QueueGroupPrefix = prefix
+		subCfg.JetStream.DurablePrefix = prefix
+		subCfg.JetStream.DurableCalculator = func(prefix string, topic string) string {
+			return prefix + "_" + topic
+		}
 	}
 }
 
@@ -80,6 +91,10 @@ func WithSubTimeout(timeout time.Duration) Option {
 func WithSubAckTimeout(timeout time.Duration) Option {
 	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
 		subCfg.AckWaitTimeout = timeout
+		subCfg.JetStream.SubscribeOptions = append(
+			subCfg.JetStream.SubscribeOptions,
+			natsgo.AckWait(timeout),
+		)
 	}
 }
 

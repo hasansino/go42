@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/IBM/sarama"
 	"github.com/ThreeDotsLabs/watermill"
 	wkafka "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -27,6 +28,13 @@ func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
 	for _, opt := range opts {
 		opt(engine, pubCfg, subCfg)
 	}
+
+	pubCfg.Net.MaxOpenRequests = 1
+	pubCfg.Producer.RequiredAcks = sarama.WaitForAll
+	if pubCfg.Producer.Retry.Max < 1 {
+		pubCfg.Producer.Retry.Max = 1
+	}
+	pubCfg.Producer.Idempotent = true
 
 	if engine.logger == nil {
 		engine.logger = slog.New(slog.DiscardHandler)

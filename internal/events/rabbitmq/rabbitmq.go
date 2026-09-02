@@ -17,11 +17,20 @@ type AMQP struct {
 	subscriber *amqp.Subscriber
 }
 
-func New(dsn string, opts ...Option) (*AMQP, error) {
+func New(dsn string, consumerGroup string, opts ...Option) (*AMQP, error) {
+	if len(consumerGroup) == 0 {
+		return nil, errors.New("consumer group is required")
+	}
+
 	var (
 		engine     = new(AMQP)
-		amqpConfig = amqp.NewDurableQueueConfig(dsn)
+		amqpConfig = amqp.NewDurablePubSubConfig(
+			dsn,
+			amqp.GenerateQueueNameTopicNameWithSuffix(consumerGroup),
+		)
 	)
+
+	amqpConfig.Publish.ConfirmDelivery = true
 
 	for _, opt := range opts {
 		opt(engine, &amqpConfig)
@@ -59,6 +68,10 @@ func (rmq *AMQP) Publisher() message.Publisher {
 
 func (rmq *AMQP) Subscriber() message.Subscriber {
 	return rmq.subscriber
+}
+
+func (rmq *AMQP) InitializeTopic(topic string) error {
+	return rmq.subscriber.SubscribeInitialize(topic)
 }
 
 func (rmq *AMQP) Shutdown(ctx context.Context) error {

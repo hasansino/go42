@@ -23,6 +23,10 @@ type Backend interface {
 	Shutdown(ctx context.Context) error
 }
 
+type TopicInitializer interface {
+	InitializeTopic(topic string) error
+}
+
 // ---
 
 type NoopEngine struct{}

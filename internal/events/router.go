@@ -100,6 +100,16 @@ func (r *Router) Subscribe(
 ) error {
 	deadLetterTopic := topic + r.policy.DeadLetterTopicSuffix
 
+	if initializer, ok := r.backend.(TopicInitializer); ok {
+		if err := initializer.InitializeTopic(deadLetterTopic); err != nil {
+			return fmt.Errorf(
+				"failed to initialize dead-letter topic %q: %w",
+				deadLetterTopic,
+				err,
+			)
+		}
+	}
+
 	poisonQueue, err := middleware.PoisonQueue(
 		&deadLetterPublisher{
 			publisher: r.backend.Publisher(),

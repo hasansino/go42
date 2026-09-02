@@ -46,7 +46,7 @@ services:
       - "8222"
     ports:
       - "4222:4222"
-      - "8222:8222" # ui
+      - "8222:8222" # monitoring
 
   rabbitmq:
     image: rabbitmq:3-management

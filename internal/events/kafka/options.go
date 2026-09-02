@@ -52,12 +52,6 @@ func WithKeepAlive(keepAlive time.Duration) Option {
 	}
 }
 
-func WithProducerRetryMax(retries int) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.Retry.Max = retries
-	}
-}
-
 func WithProducerRetryBackoff(backoff time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		pubCfg.Producer.Retry.Backoff = backoff
@@ -67,12 +61,6 @@ func WithProducerRetryBackoff(backoff time.Duration) Option {
 func WithProducerMaxMessageBytes(bytes int) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		pubCfg.Producer.MaxMessageBytes = bytes
-	}
-}
-
-func WithProducerCompressionLevel(level int) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.CompressionLevel = level
 	}
 }
 
@@ -93,51 +81,9 @@ func WithProducerCompression(compression string) Option {
 	}
 }
 
-func WithProducerFlushMessages(messages int) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.Flush.Messages = messages
-	}
-}
-
-func WithProducerFlushFrequency(frequency time.Duration) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.Flush.Frequency = frequency
-	}
-}
-
-func WithProducerRequiredAcks(acks int16) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.RequiredAcks = sarama.RequiredAcks(acks)
-	}
-}
-
-func WithProducerIdempotent(idempotent bool) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Producer.Idempotent = idempotent
-	}
-}
-
 func WithConsumerRetryBackoff(backoff time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		subCfg.Consumer.Retry.Backoff = backoff
-	}
-}
-
-func WithConsumerFetchMin(bytes int32) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		subCfg.Consumer.Fetch.Min = bytes
-	}
-}
-
-func WithConsumerFetchDefault(bytes int32) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		subCfg.Consumer.Fetch.Default = bytes
-	}
-}
-
-func WithConsumerFetchMax(bytes int32) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		subCfg.Consumer.Fetch.Max = bytes
 	}
 }
 
@@ -150,12 +96,6 @@ func WithConsumerMaxWaitTime(duration time.Duration) Option {
 func WithConsumerMaxProcessingTime(duration time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		subCfg.Consumer.MaxProcessingTime = duration
-	}
-}
-
-func WithConsumerReturnErrors(returnErrors bool) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		subCfg.Consumer.Return.Errors = returnErrors
 	}
 }
 
@@ -194,20 +134,6 @@ func WithMetadataRefreshFrequency(frequency time.Duration) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		pubCfg.Metadata.RefreshFrequency = frequency
 		subCfg.Metadata.RefreshFrequency = frequency
-	}
-}
-
-func WithMetadataRetryMax(retries int) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Metadata.Retry.Max = retries
-		subCfg.Metadata.Retry.Max = retries
-	}
-}
-
-func WithMetadataRetryBackoff(backoff time.Duration) Option {
-	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
-		pubCfg.Metadata.Retry.Backoff = backoff
-		subCfg.Metadata.Retry.Backoff = backoff
 	}
 }
 
