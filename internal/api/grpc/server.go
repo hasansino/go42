@@ -170,11 +170,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
 
 	stopped := make(chan struct{})
+
 	go func() {
 		s.grpcServer.GracefulStop()
 		close(stopped)
 	}()
 
+	// wait until graceful shutdown is done (stopped channel is closed)
+	// or we reach the context deadline (ctx.Done() is closed)
 	select {
 	case <-stopped:
 		return nil

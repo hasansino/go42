@@ -67,7 +67,7 @@ func WitHealthCheckCtx(ctx context.Context) Option {
 	return func(s *Server) {
 		go func() {
 			<-ctx.Done()
-			s.readyStatus.Store(false)
+			s.readyStatus.Store(ReadyStatusShuttingDown)
 		}()
 	}
 }

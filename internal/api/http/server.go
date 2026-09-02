@@ -19,6 +19,12 @@ import (
 	"github.com/hasansino/go42/internal/metrics"
 )
 
+const (
+	ReadyStatusStarting int32 = iota
+	ReadyStatusServing
+	ReadyStatusShuttingDown
+)
+
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type adapterAccessor interface {
@@ -38,7 +44,7 @@ type Server struct {
 	staticRoot  string
 	swaggerRoot string
 
-	readyStatus atomic.Bool
+	readyStatus atomic.Int32
 	rateLimiter rateLimiterAccessor
 
 	serveDone chan struct{}
@@ -57,6 +63,7 @@ type Server struct {
 
 func New(opts ...Option) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	s := &Server{
 		e:              echo.New(),
 		allowOrigins:   make([]string, 0),
@@ -212,7 +219,6 @@ func New(opts ...Option) *Server {
 
 	s.root.GET("/health", s.health)
 	s.root.GET("/ready", s.ready)
-	s.readyStatus.Store(true)
 
 	{
 		s.v1 = s.e.Group("/api/v1")
@@ -230,15 +236,17 @@ func New(opts ...Option) *Server {
 		})
 	}
 
+	s.readyStatus.Store(ReadyStatusStarting)
+
 	return s
 }
 
 func (s *Server) Start(addr string) error {
-	return s.start(echo.StartConfig{Address: addr})
+	cfg := echo.StartConfig{Address: addr}
+	return s.start(cfg)
 }
 
 func (s *Server) start(sc echo.StartConfig) error {
-	defer close(s.serveDone)
 	sc.HideBanner = true
 	sc.HidePort = true
 	sc.GracefulTimeout = s.gracefulTimeout
@@ -256,15 +264,27 @@ func (s *Server) start(sc echo.StartConfig) error {
 			}),
 			slog.LevelError,
 		)
+		// mark the server as ready to serve requests just before launch
+		s.readyStatus.CompareAndSwap(
+			ReadyStatusStarting,
+			ReadyStatusServing,
+		)
 		return nil
 	}
+
+	// By closing this channel we are confident that sc.Start() exited,
+	// which means that the server is no longer serving requests.
+	// This is important for graceful shutdown, because we want to wait until all requests are finished before exiting the process.
+	defer close(s.serveDone)
 
 	return sc.Start(s.shutdownCtx, s.e)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	s.readyStatus.Store(false)
+	s.readyStatus.Store(ReadyStatusShuttingDown)
+
 	s.shutdownCancel()
+
 	select {
 	case <-s.serveDone:
 		return nil
@@ -292,10 +312,10 @@ func (s *Server) health(ctx *echo.Context) error {
 }
 
 func (s *Server) ready(ctx *echo.Context) error {
-	if !s.readyStatus.Load() {
-		return ctx.NoContent(http.StatusServiceUnavailable)
+	if s.readyStatus.Load() == ReadyStatusServing {
+		return ctx.NoContent(http.StatusOK)
 	}
-	return ctx.NoContent(http.StatusOK)
+	return ctx.NoContent(http.StatusServiceUnavailable)
 }
 
 // parseSpecDir Reads the directory with OpenAPI spec files and returns a map.
