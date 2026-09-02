@@ -3,7 +3,6 @@ package gochan
 import (
 	"context"
 	"log/slog"
-	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -13,7 +12,6 @@ import (
 type GoChan struct {
 	logger  *slog.Logger
 	channel *gochannel.GoChannel
-	subwg   sync.WaitGroup
 }
 
 func New(opts ...Option) *GoChan {
@@ -40,36 +38,14 @@ func New(opts ...Option) *GoChan {
 	return engine
 }
 
-func (g *GoChan) Publish(topic string, event []byte) error {
-	msg := message.NewMessage(watermill.NewUUID(), event)
-	return g.channel.Publish(topic, msg)
+func (g *GoChan) Publisher() message.Publisher {
+	return g.channel
 }
 
-func (g *GoChan) Subscribe(
-	ctx context.Context, topic string,
-	handler func(ctx context.Context, event []byte) error,
-) error {
-	messages, err := g.channel.Subscribe(ctx, topic)
-	if err != nil {
-		return err
-	}
-	g.subwg.Add(1)
-	go func() {
-		for msg := range messages {
-			err := handler(ctx, msg.Payload)
-			if err != nil {
-				msg.Nack()
-			} else {
-				msg.Ack()
-			}
-		}
-		g.subwg.Done()
-	}()
-	return nil
+func (g *GoChan) Subscriber() message.Subscriber {
+	return g.channel
 }
 
 func (g *GoChan) Shutdown(_ context.Context) error {
-	err := g.channel.Close()
-	g.subwg.Wait()
-	return err
+	return g.channel.Close()
 }

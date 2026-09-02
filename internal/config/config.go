@@ -41,7 +41,7 @@ type Core struct {
 	Environment              string        `env:"ENVIRONMENT"                default:"default"`
 	ShutdownGracePeriod      time.Duration `env:"SHUTDOWN_GRACE_PERIOD"      default:"10s"`
 	ShutdownWaitForProbe     time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"    default:"2s"`
-	ShutdownComponentTimeout time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT" default:"3s"`
+	ShutdownComponentTimeout time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT" default:"3s"      v:"gt=0"`
 }
 
 // ╭──────────────────────────────╮
@@ -333,9 +333,17 @@ type Memcached struct {
 
 type Events struct {
 	Engine   string `env:"EVENTS_ENGINE" default:"gochan" v:"oneof=none gochan nats rabbitmq kafka"`
+	Consumer EventsConsumer
 	NATS     EventsNATS
 	RabbitMQ EventsRabbitMQ
 	Kafka    EventsKafka
+}
+
+type EventsConsumer struct {
+	MaxRetries            int           `env:"EVENTS_CONSUMER_MAX_RETRIES"     default:"3"     v:"gte=0,lte=100"`
+	InitialBackoff        time.Duration `env:"EVENTS_CONSUMER_INITIAL_BACKOFF" default:"250ms" v:"gt=0"`
+	MaxBackoff            time.Duration `env:"EVENTS_CONSUMER_MAX_BACKOFF"     default:"5s"    v:"gt=0"`
+	DeadLetterTopicSuffix string        `env:"EVENTS_CONSUMER_DLQ_SUFFIX"      default:".dlq"  v:"required"`
 }
 
 type EventsSQLite struct {

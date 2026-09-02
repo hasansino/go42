@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	wnats "github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
@@ -23,7 +22,6 @@ type NATS struct {
 	logger     *slog.Logger
 	publisher  *wnats.Publisher
 	subscriber *wnats.Subscriber
-	subwg      sync.WaitGroup
 }
 
 func New(dsn string, opts ...Option) (*NATS, error) {
@@ -68,32 +66,12 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	return engine, nil
 }
 
-func (n *NATS) Publish(topic string, event []byte) error {
-	msg := message.NewMessage(watermill.NewUUID(), event)
-	return n.publisher.Publish(topic, msg)
+func (n *NATS) Publisher() message.Publisher {
+	return n.publisher
 }
 
-func (n *NATS) Subscribe(
-	ctx context.Context, topic string,
-	handler func(ctx context.Context, event []byte) error,
-) error {
-	messages, err := n.subscriber.Subscribe(ctx, topic)
-	if err != nil {
-		return err
-	}
-	n.subwg.Add(1)
-	go func() {
-		for msg := range messages {
-			err := handler(ctx, msg.Payload)
-			if err != nil {
-				msg.Nack()
-			} else {
-				msg.Ack()
-			}
-		}
-		n.subwg.Done()
-	}()
-	return nil
+func (n *NATS) Subscriber() message.Subscriber {
+	return n.subscriber
 }
 
 func (n *NATS) Shutdown(ctx context.Context) error {
@@ -106,7 +84,6 @@ func (n *NATS) Shutdown(ctx context.Context) error {
 		if err := n.subscriber.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
-		n.subwg.Wait()
 		done <- errors.Join(errs...)
 	}()
 	select {

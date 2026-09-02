@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-amqp/v3/pkg/amqp"
@@ -16,7 +15,6 @@ type AMQP struct {
 	logger     *slog.Logger
 	publisher  *amqp.Publisher
 	subscriber *amqp.Subscriber
-	subwg      sync.WaitGroup
 }
 
 func New(dsn string, opts ...Option) (*AMQP, error) {
@@ -55,32 +53,12 @@ func New(dsn string, opts ...Option) (*AMQP, error) {
 	return engine, nil
 }
 
-func (rmq *AMQP) Publish(topic string, event []byte) error {
-	msg := message.NewMessage(watermill.NewUUID(), event)
-	return rmq.publisher.Publish(topic, msg)
+func (rmq *AMQP) Publisher() message.Publisher {
+	return rmq.publisher
 }
 
-func (rmq *AMQP) Subscribe(
-	ctx context.Context, topic string,
-	handler func(ctx context.Context, event []byte) error,
-) error {
-	messages, err := rmq.subscriber.Subscribe(ctx, topic)
-	if err != nil {
-		return err
-	}
-	rmq.subwg.Add(1)
-	go func() {
-		for msg := range messages {
-			err := handler(ctx, msg.Payload)
-			if err != nil {
-				msg.Nack()
-			} else {
-				msg.Ack()
-			}
-		}
-		rmq.subwg.Done()
-	}()
-	return nil
+func (rmq *AMQP) Subscriber() message.Subscriber {
+	return rmq.subscriber
 }
 
 func (rmq *AMQP) Shutdown(ctx context.Context) error {
@@ -93,7 +71,6 @@ func (rmq *AMQP) Shutdown(ctx context.Context) error {
 		if err := rmq.subscriber.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
-		rmq.subwg.Wait()
 		done <- errors.Join(errs...)
 	}()
 	select {

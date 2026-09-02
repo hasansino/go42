@@ -10,6 +10,7 @@ import (
 
 	"github.com/hasansino/go42/internal/auth/domain"
 	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/hasansino/go42/internal/events"
 	"github.com/hasansino/go42/internal/metrics"
 	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
 )
@@ -35,8 +36,8 @@ func NewAuthEventSubscriber(
 	return sub
 }
 
-func (s *AuthEventSubscriber) Subscribe(ctx context.Context, subscriber subscriber) error {
-	return subscriber.Subscribe(ctx, domain.TopicNameAuthEvents, s.handleEvent)
+func (s *AuthEventSubscriber) Subscribe(subscriber subscriber) error {
+	return subscriber.Subscribe(domain.TopicNameAuthEvents, s.handleEvent)
 }
 
 func (s *AuthEventSubscriber) handleEvent(ctx context.Context, eventData []byte) error {
@@ -47,7 +48,7 @@ func (s *AuthEventSubscriber) handleEvent(ctx context.Context, eventData []byte)
 		metrics.Counter("application_errors", map[string]interface{}{
 			"type": "auth_event_subscriber_error",
 		}).Inc()
-		return fmt.Errorf("failed to unmarshal event: %w", err)
+		return events.Permanent(fmt.Errorf("failed to unmarshal event: %w", err))
 	}
 
 	if err := s.validateEvent(ctx, event); err != nil {
@@ -98,7 +99,7 @@ func (s *AuthEventSubscriber) validateEvent(ctx context.Context, event *outboxDo
 		"type": "auth_event_subscriber_error",
 	}).Inc()
 
-	return fmt.Errorf("invalid event: %w", err)
+	return events.Permanent(fmt.Errorf("invalid event: %w", err))
 }
 
 type AuthEventSubscriberOption func(*AuthEventSubscriber)

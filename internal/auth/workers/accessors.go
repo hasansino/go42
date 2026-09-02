@@ -22,7 +22,7 @@ type authService interface {
 
 type subscriber interface {
 	Subscribe(
-		ctx context.Context, topic string,
+		topic string,
 		handler func(ctx context.Context, event []byte) error,
 	) error
 }

@@ -287,18 +287,18 @@ func main() {
 		log.Fatalf("unknown cache engine: %s", cfg.Cache.Engine)
 	}
 
-	// event engine
+	// events engine
 	var (
-		eventsEngine events.Eventer
+		eventsBackend events.Backend
 	)
 	switch cfg.Events.Engine {
 	case "gochan":
-		eventsEngine = gochan.New(
+		eventsBackend = gochan.New(
 			gochan.WithLogger(slog.Default().With(slog.String("component", "events-gochan"))),
 		)
 		slog.Info("gochan event engine initialized")
 	case "nats":
-		eventsEngine, err = nats.New(
+		eventsBackend, err = nats.New(
 			cfg.Events.NATS.DSN,
 			nats.WithLogger(slog.Default().With(slog.String("component", "events-nats"))),
 			nats.WithClientName(cfg.Events.NATS.ClientName),
@@ -318,7 +318,7 @@ func main() {
 		}
 		slog.Info("nats event engine initialized")
 	case "rabbitmq":
-		eventsEngine, err = rabbitmq.New(
+		eventsBackend, err = rabbitmq.New(
 			cfg.Events.RabbitMQ.DSN,
 			rabbitmq.WithLogger(slog.Default().With(slog.String("component", "events-rabbitmq"))),
 			rabbitmq.WithReconnectBackoffInitialInterval(
@@ -354,7 +354,7 @@ func main() {
 		}
 		slog.Info("rabbitmq event engine initialized")
 	case "kafka":
-		eventsEngine, err = kafka.New(
+		eventsBackend, err = kafka.New(
 			cfg.Events.Kafka.Brokers,
 			cfg.Events.Kafka.ConsumerGroup,
 			kafka.WithLogger(slog.Default().With(slog.String("component", "events-kafka"))),
@@ -393,8 +393,23 @@ func main() {
 		}
 		slog.Info("kafka event engine initialized")
 	default:
-		eventsEngine = events.NewNoop()
+		eventsBackend = events.NewNoop()
 		slog.Info("no event engine initialized")
+	}
+
+	eventsEngine, err := events.NewRouter(
+		eventsBackend,
+		events.DeliveryPolicy{
+			MaxRetries:            cfg.Events.Consumer.MaxRetries,
+			InitialBackoff:        cfg.Events.Consumer.InitialBackoff,
+			MaxBackoff:            cfg.Events.Consumer.MaxBackoff,
+			DeadLetterTopicSuffix: cfg.Events.Consumer.DeadLetterTopicSuffix,
+			CloseTimeout:          cfg.Core.ShutdownComponentTimeout,
+		},
+		events.WithLogger(slog.Default().With(slog.String("component", "events-router"))),
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize event delivery policy: %v\n", err)
 	}
 
 	// service layer
@@ -419,8 +434,6 @@ func main() {
 				slog.Default().With(slog.String("component", "outbox-publisher")),
 			),
 		)
-
-		go outboxPublisher.Run(ctx, cfg.Outbox.WorkerRunInterval, cfg.Outbox.WorkerBatchSize)
 
 		// auth domain
 		authLogger := slog.Default().With(slog.String("component", "auth-service"))
@@ -457,10 +470,20 @@ func main() {
 				slog.Default().With(slog.String("component", "auth-events-subscriber")),
 			),
 		)
-		err := authEventsSubscriber.Subscribe(ctx, eventsEngine)
+		err := authEventsSubscriber.Subscribe(eventsEngine)
 		if err != nil {
 			log.Fatalf("failed to subscribe to events: %v\n", err)
 		}
+
+		// no more subscriber registrations after this point
+
+		if err := eventsEngine.Start(ctx); err != nil {
+			log.Fatalf("failed to start event router: %v\n", err)
+		}
+
+		// register publishers
+
+		go outboxPublisher.Run(ctx, cfg.Outbox.WorkerRunInterval, cfg.Outbox.WorkerBatchSize)
 	}
 
 	// http server

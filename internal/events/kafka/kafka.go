@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	wkafka "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
@@ -16,7 +15,6 @@ type Kafka struct {
 	logger     *slog.Logger
 	publisher  *wkafka.Publisher
 	subscriber *wkafka.Subscriber
-	subwg      sync.WaitGroup
 }
 
 func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
@@ -65,32 +63,12 @@ func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
 	return engine, nil
 }
 
-func (k *Kafka) Publish(topic string, event []byte) error {
-	msg := message.NewMessage(watermill.NewUUID(), event)
-	return k.publisher.Publish(topic, msg)
+func (k *Kafka) Publisher() message.Publisher {
+	return k.publisher
 }
 
-func (k *Kafka) Subscribe(
-	ctx context.Context, topic string,
-	handler func(ctx context.Context, event []byte) error,
-) error {
-	messages, err := k.subscriber.Subscribe(ctx, topic)
-	if err != nil {
-		return err
-	}
-	k.subwg.Add(1)
-	go func() {
-		for msg := range messages {
-			err := handler(ctx, msg.Payload)
-			if err != nil {
-				msg.Nack()
-			} else {
-				msg.Ack()
-			}
-		}
-		k.subwg.Done()
-	}()
-	return nil
+func (k *Kafka) Subscriber() message.Subscriber {
+	return k.subscriber
 }
 
 func (k *Kafka) Shutdown(ctx context.Context) error {
@@ -103,7 +81,6 @@ func (k *Kafka) Shutdown(ctx context.Context) error {
 		if err := k.subscriber.Close(); err != nil {
 			errs = append(errs, fmt.Errorf("subscriber close: %w", err))
 		}
-		k.subwg.Wait()
 		done <- errors.Join(errs...)
 	}()
 	select {
