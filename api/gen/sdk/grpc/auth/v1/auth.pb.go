@@ -633,10 +633,10 @@ const file_auth_v1_auth_proto_rawDesc = "" +
 	"\vpermissions\x18\x06 \x03(\tR\vpermissions\x12\x1b\n" +
 	"\tis_system\x18\a \x01(\bR\bisSystem\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"@\n" +
-	"\x10ListUsersRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset\"8\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"T\n" +
+	"\x10ListUsersRequest\x12\x1f\n" +
+	"\x05limit\x18\x01 \x01(\x05B\t\xbaH\x06\x1a\x04\x18d(\x00R\x05limit\x12\x1f\n" +
+	"\x06offset\x18\x02 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00R\x06offset\"8\n" +
 	"\x11ListUsersResponse\x12#\n" +
 	"\x05users\x18\x01 \x03(\v2\r.auth.v1.UserR\x05users\"7\n" +
 	"\x14GetUserByUUIDRequest\x12\x1f\n" +

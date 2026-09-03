@@ -175,11 +175,14 @@ paths:
           schema:
             type: integer
             default: 10
+            minimum: 0
+            maximum: 100
         - name: offset
           in: query
           schema:
             type: integer
             default: 0
+            minimum: 0
       responses:
         '200':
           description: List of users
@@ -189,6 +192,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid pagination
         '401':
           description: Unauthorized
         default:

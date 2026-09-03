@@ -616,6 +616,11 @@ type UsersGetUnauthorized struct{}
 
 func (*UsersGetUnauthorized) usersGetRes() {}
 
+// UsersListBadRequest is response for UsersList operation.
+type UsersListBadRequest struct{}
+
+func (*UsersListBadRequest) usersListRes() {}
+
 type UsersListOKApplicationJSON []User
 
 func (*UsersListOKApplicationJSON) usersListRes() {}

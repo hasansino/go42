@@ -228,6 +228,11 @@ func encodeUsersListResponse(response UsersListRes, w http.ResponseWriter, span 
 
 		return nil
 
+	case *UsersListBadRequest:
+		w.WriteHeader(400)
+
+		return nil
+
 	case *UsersListUnauthorized:
 		w.WriteHeader(401)
 

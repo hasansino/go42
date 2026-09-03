@@ -621,6 +621,9 @@ func decodeUsersListResponse(resp *http.Response) (res UsersListRes, _ error) {
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	case 400:
+		// Code 400.
+		return &UsersListBadRequest{}, nil
 	case 401:
 		// Code 401.
 		return &UsersListUnauthorized{}, nil

@@ -59,12 +59,12 @@ func (a *Adapter) Register(grpcServer *grpc.Server) {
 
 func (a *Adapter) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
 	limit := int(req.Limit)
-	if limit <= 0 {
-		limit = 10
+	if limit == 0 {
+		limit = domain.UserListDefaultLimit
 	}
 	offset := int(req.Offset)
-	if offset < 0 {
-		offset = 0
+	if limit < 0 || limit > domain.UserListMaximumLimit || offset < 0 {
+		return nil, a.processError(domain.ErrInvalidPagination)
 	}
 
 	users, err := a.service.ListUsers(ctx, limit, offset)

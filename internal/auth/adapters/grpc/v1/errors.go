@@ -19,6 +19,8 @@ func (a *Adapter) processError(err error) error {
 		return status.Error(codes.InvalidArgument, "invalid credentials")
 	case errors.Is(err, domain.ErrPasswordWeak):
 		return status.Error(codes.InvalidArgument, "password is too weak")
+	case errors.Is(err, domain.ErrInvalidPagination):
+		return status.Error(codes.InvalidArgument, "invalid pagination")
 	case errors.Is(err, domain.ErrAuthenticationUnavailable):
 		return status.Error(codes.Unavailable, "authentication unavailable")
 	case errors.Is(err, domain.ErrInvalidToken):

@@ -44,8 +44,10 @@ var RBACAllPermissions = []string{
 // ---- RBAC END
 
 const (
-	UserStatusActive   = "active"
-	UserStatusInactive = "inactive"
+	UserStatusActive     = "active"
+	UserStatusInactive   = "inactive"
+	UserListDefaultLimit = 10
+	UserListMaximumLimit = 100
 )
 
 var UserStatuses = []string{
@@ -70,6 +72,7 @@ var (
 	ErrInvalidToken              = errors.New("invalid token")
 	ErrAuthenticationUnavailable = errors.New("authentication unavailable")
 	ErrPasswordWeak              = errors.New("password is too weak")
+	ErrInvalidPagination         = errors.New("invalid pagination")
 )
 
 // ----

@@ -259,15 +259,29 @@ func (a *Adapter) updateSelf(ctx *echo.Context) error {
 // ----
 
 func (a *Adapter) listUsers(ctx *echo.Context) error {
-	limit, err := strconv.Atoi(ctx.QueryParam("limit"))
-	if err != nil || limit < 0 {
-		limit = 10
+	limit := 0
+	if value := ctx.QueryParam("limit"); len(value) > 0 {
+		var err error
+		limit, err = strconv.Atoi(value)
+		if err != nil {
+			return a.processError(ctx, domain.ErrInvalidPagination)
+		}
 	}
-	offSet, err := strconv.Atoi(ctx.QueryParam("offset"))
-	if err != nil || offSet < 0 {
-		offSet = 0
+	offset := 0
+	if value := ctx.QueryParam("offset"); len(value) > 0 {
+		var err error
+		offset, err = strconv.Atoi(value)
+		if err != nil {
+			return a.processError(ctx, domain.ErrInvalidPagination)
+		}
 	}
-	r, err := a.service.ListUsers(ctx.Request().Context(), limit, offSet)
+	if limit == 0 {
+		limit = domain.UserListDefaultLimit
+	}
+	if limit < 0 || limit > domain.UserListMaximumLimit || offset < 0 {
+		return a.processError(ctx, domain.ErrInvalidPagination)
+	}
+	r, err := a.service.ListUsers(ctx.Request().Context(), limit, offset)
 	if err != nil {
 		return a.processError(ctx, err)
 	}
