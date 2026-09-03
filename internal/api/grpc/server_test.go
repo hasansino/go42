@@ -10,8 +10,10 @@ import (
 	"time"
 
 	grpcpkg "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -41,6 +43,18 @@ func TestHealthStatusTracksDependencyAvailability(t *testing.T) {
 
 	cancelHealth()
 	waitForHealthStatus(t, server, healthpb.HealthCheckResponse_NOT_SERVING)
+}
+
+func TestPanicRecoveryDoesNotExposePanicDetails(t *testing.T) {
+	server := New(WithLogger(slog.New(slog.DiscardHandler)))
+	err := server.handlePanic("database password: secret")
+
+	if got := status.Code(err); got != codes.Internal {
+		t.Errorf("panic status code = %s, want %s", got, codes.Internal)
+	}
+	if got := status.Convert(err).Message(); got != "internal server error" {
+		t.Errorf("panic status message = %q, want %q", got, "internal server error")
+	}
 }
 
 func TestShutdownForcesGRPCServerAfterDeadline(t *testing.T) {

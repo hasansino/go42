@@ -82,21 +82,10 @@ func New(opts ...Option) *Server {
 		s.logger = slog.New(slog.DiscardHandler)
 	}
 
-	grpcPanicRecoveryHandler := func(p any) error {
-		metrics.Counter("application_errors", map[string]interface{}{
-			"type": "grpc_panic",
-		}).Inc()
-		s.logger.Error("grpc panic",
-			slog.Any("panic", p),
-			slog.Any("stack", debug.Stack()),
-		)
-		return status.Errorf(codes.Internal, "%s", p)
-	}
-
 	unaryPriorityQueue := tools.NewPriorityQueue[grpc.UnaryServerInterceptor]()
 	unaryPriorityQueue.Enqueue(
 		InterceptorPriorityPreprocess,
-		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
+		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(s.handlePanic)))
 	unaryPriorityQueue.Enqueue(
 		InterceptorPriorityPreprocess, interceptors.UnaryServerRateLimiterInterceptor(s.rateLimiter))
 	unaryPriorityQueue.Enqueue(
@@ -115,7 +104,7 @@ func New(opts ...Option) *Server {
 	streamPriorityQueue := tools.NewPriorityQueue[grpc.StreamServerInterceptor]()
 	streamPriorityQueue.Enqueue(
 		InterceptorPriorityPreprocess,
-		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)))
+		recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(s.handlePanic)))
 	streamPriorityQueue.Enqueue(
 		InterceptorPriorityPreprocess,
 		interceptors.StreamServerRateLimiterInterceptor(s.rateLimiter))
@@ -171,6 +160,17 @@ func New(opts ...Option) *Server {
 	s.startHealthMonitor()
 
 	return s
+}
+
+func (s *Server) handlePanic(p any) error {
+	metrics.Counter("application_errors", map[string]interface{}{
+		"type": "grpc_panic",
+	}).Inc()
+	s.logger.Error("grpc panic",
+		slog.Any("panic", p),
+		slog.Any("stack", debug.Stack()),
+	)
+	return status.Error(codes.Internal, "internal server error")
 }
 
 func (s *Server) Serve(listen string) error {
