@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,11 +20,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const grpcRequestTimeout = 10 * time.Second
+
 var _ = Describe("Auth gRPC Integration Tests", func() {
 	var (
-		conn   *grpc.ClientConn
-		client pb.AuthServiceClient
-		ctx    context.Context
+		conn      *grpc.ClientConn
+		client    pb.AuthServiceClient
+		ctx       context.Context
+		cancelCtx context.CancelFunc
 	)
 
 	BeforeEach(func() {
@@ -31,15 +35,22 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 		conn, err = grpc.NewClient(
 			integration.GRPCServerAddress(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDisableServiceConfig(),
 		)
 		Expect(err).NotTo(HaveOccurred())
 		client = pb.NewAuthServiceClient(conn)
 		apiKey := integration.GRPCAPIKey()
 		Expect(apiKey).NotTo(BeEmpty(), "GRPC_API_KEY must contain the integration API key")
-		ctx = metadata.AppendToOutgoingContext(context.Background(), "x-api-key", apiKey)
+		ctx, cancelCtx = context.WithTimeout(
+			metadata.AppendToOutgoingContext(context.Background(), "x-api-key", apiKey),
+			grpcRequestTimeout,
+		)
 	})
 
 	AfterEach(func() {
+		if cancelCtx != nil {
+			cancelCtx()
+		}
 		if conn != nil {
 			conn.Close()
 		}
@@ -48,7 +59,10 @@ var _ = Describe("Auth gRPC Integration Tests", func() {
 	Describe("User Management Service", func() {
 		Describe("ListUsers", func() {
 			It("should reject a request without authentication", func() {
-				_, err := client.ListUsers(context.Background(), &pb.ListUsersRequest{})
+				unauthenticatedCtx, cancel := context.WithTimeout(context.Background(), grpcRequestTimeout)
+				defer cancel()
+
+				_, err := client.ListUsers(unauthenticatedCtx, &pb.ListUsersRequest{})
 				Expect(err).To(HaveOccurred())
 
 				st, ok := status.FromError(err)

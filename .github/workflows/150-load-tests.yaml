@@ -34,6 +34,11 @@ on:
         type: string
         default: ""
         description: "database_engine (leave empty to test all)"
+      timeout_minutes:
+        required: true
+        type: number
+        default: 10
+        description: "timeout_minutes"
   workflow_call:
     inputs:
       runs_on:
@@ -52,6 +57,9 @@ on:
         required: false
         type: string
         default: ""
+      timeout_minutes:
+        required: true
+        type: number
 
 permissions: {}
 
@@ -230,6 +238,7 @@ jobs:
     name: load-tests-${{ matrix.protocol }}-${{ matrix.database }}
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       packages: read
       pull-requests: write
