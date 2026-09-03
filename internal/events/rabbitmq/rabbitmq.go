@@ -48,6 +48,9 @@ func New(ctx context.Context, dsn string, consumerGroup string, opts ...Option) 
 		)
 	)
 
+	// @todo Reconsider `ChannelPoolSize` after `watermill-amqp` safely handles failed channel reopen.
+	// Pooling remains disabled because an interrupted reopen can leave a nil channel in the pool.
+	amqpConfig.Publish.ChannelPoolSize = 0
 	amqpConfig.Publish.ConfirmDelivery = true
 
 	for _, opt := range opts {

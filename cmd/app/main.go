@@ -381,7 +381,6 @@ func main() {
 			rabbitmq.WithReconnectBackoffMultiplier(cfg.Events.RabbitMQ.ReconnectMultiplier),
 			rabbitmq.WithReconnectBackoffMaxInterval(cfg.Events.RabbitMQ.ReconnectMaxInterval),
 			rabbitmq.WithPublishMandatory(cfg.Events.RabbitMQ.PublishMandatory),
-			rabbitmq.WithPublishChannelPoolSize(cfg.Events.RabbitMQ.PublishChannelPool),
 			rabbitmq.WithConsumeConsumerName(cfg.Events.RabbitMQ.ConsumeConsumerName),
 			rabbitmq.WithConsumeNoRequeueOnNack(cfg.Events.RabbitMQ.ConsumeNoRequeue),
 			rabbitmq.WithConsumeExclusive(cfg.Events.RabbitMQ.ConsumeExclusive),

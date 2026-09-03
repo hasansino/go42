@@ -336,7 +336,6 @@ func TestRabbitMQReconnectsAfterNetworkInterruption(t *testing.T) {
 		rabbitmqengine.WithReconnectBackoffInitialInterval(100*time.Millisecond),
 		rabbitmqengine.WithReconnectBackoffMultiplier(1.2),
 		rabbitmqengine.WithReconnectBackoffMaxInterval(time.Second),
-		rabbitmqengine.WithPublishChannelPoolSize(1),
 	)
 	if err != nil {
 		t.Fatalf("open RabbitMQ through Toxiproxy: %v", err)

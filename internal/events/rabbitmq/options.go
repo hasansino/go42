@@ -61,12 +61,6 @@ func WithPublishMandatory(mandatory bool) Option {
 	}
 }
 
-func WithPublishChannelPoolSize(size int) Option {
-	return func(_ *AMQP, cfg *amqp.Config) {
-		cfg.Publish.ChannelPoolSize = size
-	}
-}
-
 func WithConsumeNoRequeueOnNack(noRequeue bool) Option {
 	return func(_ *AMQP, cfg *amqp.Config) {
 		cfg.Consume.NoRequeueOnNack = noRequeue

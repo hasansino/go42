@@ -382,7 +382,6 @@ type EventsRabbitMQ struct {
 	ReconnectMultiplier      float64       `env:"RABBITMQ_RECONNECT_MULTIPLIER"       default:"1.5"`
 	ReconnectMaxInterval     time.Duration `env:"RABBITMQ_RECONNECT_MAX_INTERVAL"     default:"30s"`
 	PublishMandatory         bool          `env:"RABBITMQ_PUBLISH_MANDATORY"          default:"false"`
-	PublishChannelPool       int           `env:"RABBITMQ_PUBLISH_CHANNEL_POOL"       default:"5"`
 	ConsumeNoRequeue         bool          `env:"RABBITMQ_CONSUME_NO_REQUEUE"         default:"false"`
 	ConsumeConsumerName      string        `env:"RABBITMQ_CONSUME_CONSUMER_NAME"      default:""`
 	ConsumeExclusive         bool          `env:"RABBITMQ_CONSUME_EXCLUSIVE"          default:"false"`

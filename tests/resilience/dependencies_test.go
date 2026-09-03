@@ -326,7 +326,6 @@ func openRabbitMQBackend(ctx context.Context, retryTimeout time.Duration) (event
 		rabbitmqengine.WithReconnectBackoffInitialInterval(50*time.Millisecond),
 		rabbitmqengine.WithReconnectBackoffMultiplier(1.2),
 		rabbitmqengine.WithReconnectBackoffMaxInterval(200*time.Millisecond),
-		rabbitmqengine.WithPublishChannelPoolSize(2),
 	)
 }
 
