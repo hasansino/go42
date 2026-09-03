@@ -2,15 +2,86 @@ package http
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net"
 	nethttp "net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/labstack/echo/v5"
 )
+
+func TestReadyReturnsDependencyStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		check      func(context.Context) error
+		wantStatus int
+	}{
+		{
+			name: "healthy",
+			check: func(context.Context) error {
+				return nil
+			},
+			wantStatus: nethttp.StatusOK,
+		},
+		{
+			name: "unhealthy",
+			check: func(context.Context) error {
+				return errors.New("dependency unavailable")
+			},
+			wantStatus: nethttp.StatusServiceUnavailable,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server := newTestServer(t, WithReadinessCheck(test.check))
+			server.readyStatus.Store(ReadyStatusServing)
+
+			if got := getReadyStatus(server); got != test.wantStatus {
+				t.Errorf("GET /ready status = %d, want %d", got, test.wantStatus)
+			}
+		})
+	}
+}
+
+func TestReadyReturnsServiceUnavailableWhenCheckTimesOut(t *testing.T) {
+	checkCanceled := make(chan struct{})
+	server := newTestServer(
+		t,
+		WithReadinessCheckTimeout(25*time.Millisecond),
+		WithReadinessCheck(func(ctx context.Context) error {
+			<-ctx.Done()
+			close(checkCanceled)
+			return ctx.Err()
+		}),
+	)
+	server.readyStatus.Store(ReadyStatusServing)
+
+	if got := getReadyStatus(server); got != nethttp.StatusServiceUnavailable {
+		t.Errorf("GET /ready status = %d, want %d", got, nethttp.StatusServiceUnavailable)
+	}
+	waitForSignal(t, checkCanceled, "readiness check cancellation")
+}
+
+func TestReadyReturnsServiceUnavailableAfterShutdown(t *testing.T) {
+	server := newTestServer(t)
+	_, serveResult := startTestServer(t, server)
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() error = %v", err)
+	}
+	if err := <-serveResult; err != nil {
+		t.Fatalf("Start() error = %v", err)
+	}
+
+	if got := getReadyStatus(server); got != nethttp.StatusServiceUnavailable {
+		t.Errorf("GET /ready status = %d, want %d", got, nethttp.StatusServiceUnavailable)
+	}
+}
 
 func TestShutdownWaitsForActiveHTTPRequest(t *testing.T) {
 	server := newTestServer(t)
@@ -168,4 +239,11 @@ func waitForSignal(t *testing.T, signal <-chan struct{}, description string) {
 	case <-time.After(2 * time.Second):
 		t.Fatalf("timed out waiting for %s", description)
 	}
+}
+
+func getReadyStatus(server *Server) int {
+	request := httptest.NewRequest(nethttp.MethodGet, "/ready", nil)
+	response := httptest.NewRecorder()
+	server.e.ServeHTTP(response, request)
+	return response.Code
 }

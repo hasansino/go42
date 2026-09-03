@@ -30,6 +30,12 @@ type Kafka struct {
 	connectRetryMaxBackoff     time.Duration
 }
 
+type connectionResult struct {
+	publisher  *wkafka.Publisher
+	subscriber *wkafka.Subscriber
+	err        error
+}
+
 func New(ctx context.Context, brokers []string, group string, opts ...Option) (*Kafka, error) {
 	var (
 		engine = &Kafka{
@@ -60,36 +66,12 @@ func New(ctx context.Context, brokers []string, group string, opts ...Option) (*
 	defer cancel()
 
 	err := retry.Do(func() error {
-		publisher, err := wkafka.NewPublisher(
-			wkafka.PublisherConfig{
-				Brokers:               brokers,
-				Marshaler:             wkafka.DefaultMarshaler{},
-				OverwriteSaramaConfig: pubCfg,
-			},
-			watermill.NewSlogLogger(engine.logger),
-		)
+		result, err := connect(retryCtx, brokers, group, pubCfg, subCfg, engine.logger)
 		if err != nil {
-			return fmt.Errorf("error creating kafka publisher: %w", err)
+			return err
 		}
-
-		subscriber, err := wkafka.NewSubscriber(
-			wkafka.SubscriberConfig{
-				Brokers:               brokers,
-				Unmarshaler:           wkafka.DefaultMarshaler{},
-				OverwriteSaramaConfig: subCfg,
-				ConsumerGroup:         group,
-			},
-			watermill.NewSlogLogger(engine.logger),
-		)
-		if err != nil {
-			return errors.Join(
-				fmt.Errorf("error creating kafka subscriber: %w", err),
-				publisher.Close(),
-			)
-		}
-
-		engine.publisher = publisher
-		engine.subscriber = subscriber
+		engine.publisher = result.publisher
+		engine.subscriber = result.subscriber
 		return nil
 	},
 		retry.Context(retryCtx),
@@ -114,6 +96,88 @@ func New(ctx context.Context, brokers []string, group string, opts ...Option) (*
 	}
 
 	return engine, nil
+}
+
+// connect enforces a hard startup deadline around the synchronous Watermill/Sarama constructors.
+// Those constructors do not accept a context and may otherwise continue blocking after the
+// configured connection retry timeout has expired.
+func connect(
+	ctx context.Context,
+	brokers []string,
+	group string,
+	pubCfg *sarama.Config,
+	subCfg *sarama.Config,
+	logger *slog.Logger,
+) (connectionResult, error) {
+	resultChan := make(chan connectionResult, 1)
+	go func() {
+		resultChan <- openConnections(brokers, group, pubCfg, subCfg, logger)
+	}()
+
+	select {
+	case result := <-resultChan:
+		if err := ctx.Err(); err != nil {
+			closeConnections(result)
+			return connectionResult{}, err
+		}
+		return result, result.err
+	case <-ctx.Done():
+		// The constructors cannot be interrupted. Return to the caller immediately, then close
+		// any connections they create when the in-flight attempt eventually completes.
+		go func() {
+			closeConnections(<-resultChan)
+		}()
+		return connectionResult{}, ctx.Err()
+	}
+}
+
+func openConnections(
+	brokers []string,
+	group string,
+	pubCfg *sarama.Config,
+	subCfg *sarama.Config,
+	logger *slog.Logger,
+) connectionResult {
+	publisher, err := wkafka.NewPublisher(
+		wkafka.PublisherConfig{
+			Brokers:               brokers,
+			Marshaler:             wkafka.DefaultMarshaler{},
+			OverwriteSaramaConfig: pubCfg,
+		},
+		watermill.NewSlogLogger(logger),
+	)
+	if err != nil {
+		return connectionResult{err: fmt.Errorf("error creating kafka publisher: %w", err)}
+	}
+
+	subscriber, err := wkafka.NewSubscriber(
+		wkafka.SubscriberConfig{
+			Brokers:               brokers,
+			Unmarshaler:           wkafka.DefaultMarshaler{},
+			OverwriteSaramaConfig: subCfg,
+			ConsumerGroup:         group,
+		},
+		watermill.NewSlogLogger(logger),
+	)
+	if err != nil {
+		return connectionResult{
+			err: errors.Join(
+				fmt.Errorf("error creating kafka subscriber: %w", err),
+				publisher.Close(),
+			),
+		}
+	}
+
+	return connectionResult{publisher: publisher, subscriber: subscriber}
+}
+
+func closeConnections(result connectionResult) {
+	if result.publisher != nil {
+		_ = result.publisher.Close()
+	}
+	if result.subscriber != nil {
+		_ = result.subscriber.Close()
+	}
 }
 
 func (k *Kafka) Publisher() message.Publisher {

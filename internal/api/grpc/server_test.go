@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -13,6 +14,34 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/test/bufconn"
 )
+
+func TestHealthStatusTracksDependencyAvailability(t *testing.T) {
+	healthCtx, cancelHealth := context.WithCancel(context.Background())
+	defer cancelHealth()
+	dependencyUnavailable := new(atomic.Bool)
+	server := New(
+		WithLogger(slog.New(slog.DiscardHandler)),
+		WitHealthCheckCtx(healthCtx),
+		WithReadinessCheck(func(context.Context) error {
+			if dependencyUnavailable.Load() {
+				return errors.New("dependency unavailable")
+			}
+			return nil
+		}),
+		WithReadinessCheckInterval(5*time.Millisecond),
+	)
+
+	waitForHealthStatus(t, server, healthpb.HealthCheckResponse_SERVING)
+
+	dependencyUnavailable.Store(true)
+	waitForHealthStatus(t, server, healthpb.HealthCheckResponse_NOT_SERVING)
+
+	dependencyUnavailable.Store(false)
+	waitForHealthStatus(t, server, healthpb.HealthCheckResponse_SERVING)
+
+	cancelHealth()
+	waitForHealthStatus(t, server, healthpb.HealthCheckResponse_NOT_SERVING)
+}
 
 func TestShutdownForcesGRPCServerAfterDeadline(t *testing.T) {
 	server := New(WithLogger(slog.New(slog.DiscardHandler)))
@@ -86,4 +115,24 @@ func TestShutdownGracefullyStopsIdleGRPCServer(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for graceful gRPC shutdown")
 	}
+}
+
+func waitForHealthStatus(
+	t *testing.T,
+	server *Server,
+	want healthpb.HealthCheckResponse_ServingStatus,
+) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		response, err := server.healthServer.Check(
+			context.Background(),
+			&healthpb.HealthCheckRequest{},
+		)
+		if err == nil && response.Status == want {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatalf("health status did not become %s", want)
 }

@@ -69,8 +69,19 @@ test-unit:
 
 ## test-integration | run integration tests (http and grpc)
 # -count=1 is needed to prevent caching of test results.
+# @note Eequires running application and dependencies.
 test-integration:
 	@go test -count=1 -v -race ./tests/integration/...
+
+## test-resilience | verify dependency recovery after network interruptions
+# Resilience tests are build-tagged and excluded from all other test targets.
+# @note Requires `toxiproxy pgsql mysql redis memcached nats kafka rabbitmq`
+# @note Because of the bug RabbitMQ tests are executed separately without race.
+# @see https://github.com/ThreeDotsLabs/watermill/issues/693
+test-resilience:
+	@go build -race -o ./build/resilience-app ./cmd/app
+	@RESILIENCE_APP_BINARY="$(CURDIR)/build/resilience-app" go test -count=1 -v -race -tags=resilience ./tests/resilience/...
+	@RESILIENCE_APP_BINARY="$(CURDIR)/build/resilience-app" go test -count=1 -v -tags=resilience ./tests/resilience/... -run '^TestRabbitMQ'
 
 ## test-load | run load tests (http and grpc)
 test-load:

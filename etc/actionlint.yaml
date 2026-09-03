@@ -22,6 +22,10 @@ config-variables:
   - SUMMARY_MODEL
 
 paths:
+  .github/workflows/150-resilience-tests.yaml:
+    ignore:
+      # actionlint does not support service container commands yet
+      - 'unexpected key "command" for "services" section.+'
   .github/workflows/*.{yml,yaml}:
     ignore:
       # actionlint does not support the `models` permission scope as of now

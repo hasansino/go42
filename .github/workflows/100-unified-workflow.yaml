@@ -245,17 +245,17 @@ jobs:
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
 
-  # stage 6: integration & load tests
+  # stage 6: integration, load & resilience tests
 
   # dummy job to create distinct group in GitHub UI
   functional-tests-group:
-    name: "Integration & Load Tests"
+    name: "Integration, Load & Resilience Tests"
     runs-on: ubuntu-latest
     needs:
       - docker-prepare-tag
       - docker-build
     steps:
-      - name: Create integration and load tests group
+      - name: Create integration, load and resilience tests group
         run: echo "Grouping job for tests"
 
   integration-tests:
@@ -283,6 +283,15 @@ jobs:
       database_engine: sqlite
       timeout_minutes: 10
 
+  resilience-tests:
+    uses: ./.github/workflows/150-resilience-tests.yaml
+    needs:
+      - functional-tests-group
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: true
+      timeout_minutes: 15
+
   # Stage 7: cleanup
 
   cleanup:
@@ -292,6 +301,7 @@ jobs:
       - security-extra
       - integration-tests
       - load-tests
+      - resilience-tests
     with:
       runs_on: ubuntu-latest
       service_name: "go42"
