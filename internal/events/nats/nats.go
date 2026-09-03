@@ -1,9 +1,5 @@
 package nats
 
-// @bug with WithConnectionRetry(true) option passed, driver will initialise successfully
-// without error and will try to reconnect (according to reconnection options). If all
-// attempts will fail, driver will call ClosedHandler(), but not fail in any way.
-
 import (
 	"context"
 	"errors"
@@ -104,26 +100,26 @@ func (n *NATS) Shutdown(ctx context.Context) error {
 func handlers(l *slog.Logger) []natsgo.Option {
 	return []natsgo.Option{
 		natsgo.ConnectHandler(func(conn *natsgo.Conn) {
-			l.Debug("connection established")
+			l.Info("connection established")
 		}),
 		natsgo.ErrorHandler(func(conn *natsgo.Conn, sub *natsgo.Subscription, err error) {
 			if err != nil {
-				l.Debug("connection error", slog.String("error", err.Error()))
+				l.Warn("connection error", slog.String("error", err.Error()))
 			}
 		}),
 		natsgo.DisconnectErrHandler(func(conn *natsgo.Conn, err error) {
 			if err != nil {
-				l.Debug("disconnection error", slog.String("error", err.Error()))
+				l.Warn("disconnection error", slog.String("error", err.Error()))
 			}
 		}),
 		natsgo.LameDuckModeHandler(func(conn *natsgo.Conn) {
-			l.Debug("server entering lame duck mode")
+			l.Warn("server entering lame duck mode")
 		}),
 		natsgo.ClosedHandler(func(conn *natsgo.Conn) {
-			l.Debug("connection closed")
+			l.Error("connection closed")
 		}),
 		natsgo.ReconnectHandler(func(conn *natsgo.Conn) {
-			l.Debug("reconnected")
+			l.Info("reconnected")
 		}),
 		natsgo.ReconnectErrHandler(func(conn *natsgo.Conn, err error) {
 			l.Debug("reconnect error", slog.String("error", err.Error()))

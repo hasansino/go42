@@ -353,7 +353,7 @@ type EventsNATS struct {
 	Token       string        `env:"NATS_TOKEN"        default:""`
 	ConnTimeout time.Duration `env:"NATS_CONN_TIMEOUT" default:"5s"`
 	ConnRetry   bool          `env:"NATS_CONN_RETRY"   default:"false"`
-	MaxRetry    int           `env:"NATS_MAX_RETRY"    default:"10"`
+	MaxRetry    int           `env:"NATS_MAX_RETRY"    default:"-1"`
 	RetryDelay  time.Duration `env:"NATS_RETRY_DELAY"  default:"1s"`
 	JetStream   EventsNATSJetStream
 	Subscriber  EventsNATSSubscriber
