@@ -12,6 +12,8 @@ import (
 	wkafka "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/avast/retry-go/v4"
+
+	"github.com/hasansino/go42/internal/metrics"
 )
 
 const (
@@ -66,12 +68,21 @@ func New(ctx context.Context, brokers []string, group string, opts ...Option) (*
 	defer cancel()
 
 	err := retry.Do(func() error {
+		resultLabel := "failure"
+		defer func() {
+			metrics.Counter("application_event_backend_connection_attempts_total", map[string]any{
+				"backend": "kafka",
+				"result":  resultLabel,
+			}).Inc()
+		}()
+
 		result, err := connect(retryCtx, brokers, group, pubCfg, subCfg, engine.logger)
 		if err != nil {
 			return err
 		}
 		engine.publisher = result.publisher
 		engine.subscriber = result.subscriber
+		resultLabel = "success"
 		return nil
 	},
 		retry.Context(retryCtx),

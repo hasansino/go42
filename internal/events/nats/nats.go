@@ -12,6 +12,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/avast/retry-go/v4"
 	natsgo "github.com/nats-io/nats.go"
+
+	"github.com/hasansino/go42/internal/metrics"
 )
 
 const (
@@ -66,13 +68,21 @@ func New(ctx context.Context, dsn string, opts ...Option) (*NATS, error) {
 		engine.logger = slog.New(slog.DiscardHandler)
 	}
 
-	pubCfg.NatsOptions = append(pubCfg.NatsOptions, handlers(engine.logger)...)
-	subCfg.NatsOptions = append(subCfg.NatsOptions, handlers(engine.logger)...)
+	pubCfg.NatsOptions = append(pubCfg.NatsOptions, handlers(engine.logger, "publisher")...)
+	subCfg.NatsOptions = append(subCfg.NatsOptions, handlers(engine.logger, "subscriber")...)
 
 	retryCtx, cancel := context.WithTimeout(ctx, engine.connectRetryTimeout)
 	defer cancel()
 
 	err := retry.Do(func() error {
+		result := "failure"
+		defer func() {
+			metrics.Counter("application_event_backend_connection_attempts_total", map[string]any{
+				"backend": "nats",
+				"result":  result,
+			}).Inc()
+		}()
+
 		publisher, err := wnats.NewPublisher(*pubCfg, watermill.NewSlogLogger(engine.logger))
 		if err != nil {
 			return fmt.Errorf("error creating nats publisher: %w", err)
@@ -88,6 +98,7 @@ func New(ctx context.Context, dsn string, opts ...Option) (*NATS, error) {
 
 		engine.publisher = publisher
 		engine.subscriber = subscriber
+		result = "success"
 		return nil
 	},
 		retry.Context(retryCtx),
@@ -142,32 +153,53 @@ func (n *NATS) Shutdown(ctx context.Context) error {
 	}
 }
 
-func handlers(l *slog.Logger) []natsgo.Option {
+func handlers(l *slog.Logger, connection string) []natsgo.Option {
+	observe := func(event string) {
+		metrics.Counter("application_event_backend_connection_events_total", map[string]any{
+			"backend":    "nats",
+			"connection": connection,
+			"event":      event,
+		}).Inc()
+	}
+
 	return []natsgo.Option{
 		natsgo.ConnectHandler(func(conn *natsgo.Conn) {
-			l.Info("connection established")
+			l.Info("connection established", slog.String("connection", connection))
 		}),
 		natsgo.ErrorHandler(func(conn *natsgo.Conn, sub *natsgo.Subscription, err error) {
 			if err != nil {
-				l.Warn("connection error", slog.String("error", err.Error()))
+				observe("error")
+				l.Warn("connection error",
+					slog.String("connection", connection), slog.String("error", err.Error()))
 			}
 		}),
 		natsgo.DisconnectErrHandler(func(conn *natsgo.Conn, err error) {
 			if err != nil {
-				l.Warn("disconnection error", slog.String("error", err.Error()))
+				observe("disconnect")
+				l.Warn("disconnection error",
+					slog.String("connection", connection), slog.String("error", err.Error()))
 			}
 		}),
 		natsgo.LameDuckModeHandler(func(conn *natsgo.Conn) {
-			l.Warn("server entering lame duck mode")
+			l.Warn("server entering lame duck mode", slog.String("connection", connection))
 		}),
 		natsgo.ClosedHandler(func(conn *natsgo.Conn) {
-			l.Error("connection closed")
+			if err := conn.LastError(); err != nil {
+				observe("closed")
+				l.Error("connection closed",
+					slog.String("connection", connection), slog.Any("error", err))
+				return
+			}
+			l.Info("connection closed", slog.String("connection", connection))
 		}),
 		natsgo.ReconnectHandler(func(conn *natsgo.Conn) {
-			l.Info("reconnected")
+			observe("reconnect")
+			l.Info("reconnected", slog.String("connection", connection))
 		}),
 		natsgo.ReconnectErrHandler(func(conn *natsgo.Conn, err error) {
-			l.Debug("reconnect error", slog.String("error", err.Error()))
+			observe("error")
+			l.Debug("reconnect error",
+				slog.String("connection", connection), slog.String("error", err.Error()))
 		}),
 	}
 }

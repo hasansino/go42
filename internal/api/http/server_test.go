@@ -206,6 +206,39 @@ func TestCORSAllowsAPIKeyHeader(t *testing.T) {
 	}
 }
 
+func TestClientIPUsesDirectPeerByDefault(t *testing.T) {
+	server := newTestServer(t)
+	request := httptest.NewRequest(nethttp.MethodGet, "/", nil)
+	request.RemoteAddr = "198.51.100.10:1234"
+	request.Header.Set(echo.HeaderXForwardedFor, "203.0.113.10")
+
+	if got := server.e.IPExtractor(request); got != "198.51.100.10" {
+		t.Errorf("IPExtractor() = %q, want direct peer IP", got)
+	}
+}
+
+func TestClientIPUsesForwardedAddressFromTrustedProxy(t *testing.T) {
+	server := newTestServer(t, WithTrustedProxyCIDRs([]string{"192.0.2.0/24"}))
+	request := httptest.NewRequest(nethttp.MethodGet, "/", nil)
+	request.RemoteAddr = "192.0.2.10:1234"
+	request.Header.Set(echo.HeaderXForwardedFor, "203.0.113.10")
+
+	if got := server.e.IPExtractor(request); got != "203.0.113.10" {
+		t.Errorf("IPExtractor() = %q, want forwarded client IP", got)
+	}
+}
+
+func TestClientIPIgnoresForwardedAddressFromUntrustedPeer(t *testing.T) {
+	server := newTestServer(t, WithTrustedProxyCIDRs([]string{"192.0.2.0/24"}))
+	request := httptest.NewRequest(nethttp.MethodGet, "/", nil)
+	request.RemoteAddr = "198.51.100.10:1234"
+	request.Header.Set(echo.HeaderXForwardedFor, "203.0.113.10")
+
+	if got := server.e.IPExtractor(request); got != "198.51.100.10" {
+		t.Errorf("IPExtractor() = %q, want direct peer IP", got)
+	}
+}
+
 func newTestServer(t *testing.T, extraOptions ...Option) *Server {
 	t.Helper()
 	options := []Option{

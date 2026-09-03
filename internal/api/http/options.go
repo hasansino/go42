@@ -3,7 +3,10 @@ package http
 import (
 	"context"
 	"log/slog"
+	"net"
 	"time"
+
+	"github.com/labstack/echo/v5"
 
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/tools"
@@ -111,5 +114,30 @@ func WithSwaggerDarkStyle(enabled bool) Option {
 func WithCORSAllowOrigins(allowedOrigins []string) Option {
 	return func(s *Server) {
 		s.allowOrigins = allowedOrigins
+	}
+}
+
+// WithTrustedProxyCIDRs trusts `X-Forwarded-For` values received through the given proxy networks.
+func WithTrustedProxyCIDRs(cidrs []string) Option {
+	return func(s *Server) {
+		if len(cidrs) == 0 {
+			return
+		}
+
+		trustOptions := []echo.TrustOption{
+			echo.TrustLoopback(false),
+			echo.TrustLinkLocal(false),
+			echo.TrustPrivateNet(false),
+		}
+
+		for _, cidr := range cidrs {
+			_, network, err := net.ParseCIDR(cidr)
+			if err != nil {
+				continue
+			}
+			trustOptions = append(trustOptions, echo.TrustIPRange(network))
+		}
+
+		s.e.IPExtractor = echo.ExtractIPFromXFFHeader(trustOptions...)
 	}
 }

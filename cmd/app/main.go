@@ -544,6 +544,7 @@ func main() {
 		httpAPI.WithBodyLimit(cfg.Server.HTTP.BodyLimitKB * 1024),
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
+		httpAPI.WithTrustedProxyCIDRs(cfg.Server.HTTP.TrustedProxyCIDRs),
 		httpAPI.WithGracefulTimeout(cfg.Core.ShutdownComponentTimeout),
 		httpAPI.WithReadinessCheckTimeout(cfg.Core.ReadinessCheckTimeout),
 		httpAPI.WithReadinessCheck(readinessCheck),

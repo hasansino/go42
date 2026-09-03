@@ -68,8 +68,11 @@ type Server struct {
 func New(opts ...Option) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 
+	echoServer := echo.New()
+	echoServer.IPExtractor = echo.ExtractIPDirect()
+
 	s := &Server{
-		e:                 echo.New(),
+		e:                 echoServer,
 		allowOrigins:      make([]string, 0),
 		serveDone:         make(chan struct{}),
 		shutdownCtx:       ctx,

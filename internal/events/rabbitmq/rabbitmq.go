@@ -11,6 +11,8 @@ import (
 	"github.com/ThreeDotsLabs/watermill-amqp/v3/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/avast/retry-go/v4"
+
+	"github.com/hasansino/go42/internal/metrics"
 )
 
 const (
@@ -60,6 +62,14 @@ func New(ctx context.Context, dsn string, consumerGroup string, opts ...Option) 
 	defer cancel()
 
 	err := retry.Do(func() error {
+		result := "failure"
+		defer func() {
+			metrics.Counter("application_event_backend_connection_attempts_total", map[string]any{
+				"backend": "rabbitmq",
+				"result":  result,
+			}).Inc()
+		}()
+
 		publisher, err := amqp.NewPublisher(
 			amqpConfig,
 			watermill.NewSlogLogger(engine.logger),
@@ -81,6 +91,7 @@ func New(ctx context.Context, dsn string, consumerGroup string, opts ...Option) 
 
 		engine.publisher = publisher
 		engine.subscriber = subscriber
+		result = "success"
 		return nil
 	},
 		retry.Context(retryCtx),
