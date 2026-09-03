@@ -170,14 +170,18 @@ func handlers(l *slog.Logger, connection string) []natsgo.Option {
 			if err != nil {
 				observe("error")
 				l.Warn("connection error",
-					slog.String("connection", connection), slog.String("error", err.Error()))
+					slog.String("connection", connection),
+					slog.String("error", err.Error()),
+				)
 			}
 		}),
 		natsgo.DisconnectErrHandler(func(conn *natsgo.Conn, err error) {
 			if err != nil {
 				observe("disconnect")
 				l.Warn("disconnection error",
-					slog.String("connection", connection), slog.String("error", err.Error()))
+					slog.String("connection", connection),
+					slog.String("error", err.Error()),
+				)
 			}
 		}),
 		natsgo.LameDuckModeHandler(func(conn *natsgo.Conn) {
@@ -187,7 +191,9 @@ func handlers(l *slog.Logger, connection string) []natsgo.Option {
 			if err := conn.LastError(); err != nil {
 				observe("closed")
 				l.Error("connection closed",
-					slog.String("connection", connection), slog.Any("error", err))
+					slog.String("connection", connection),
+					slog.Any("error", err),
+				)
 				return
 			}
 			l.Info("connection closed", slog.String("connection", connection))
@@ -199,7 +205,9 @@ func handlers(l *slog.Logger, connection string) []natsgo.Option {
 		natsgo.ReconnectErrHandler(func(conn *natsgo.Conn, err error) {
 			observe("error")
 			l.Debug("reconnect error",
-				slog.String("connection", connection), slog.String("error", err.Error()))
+				slog.String("connection", connection),
+				slog.String("error", err.Error()),
+			)
 		}),
 	}
 }

@@ -442,7 +442,7 @@ type HTTP struct {
 	SwaggerDark       bool          `env:"SERVER_HTTP_SWAGGER_DARK"        default:"true"`
 	BodyLimitKB       int64         `env:"SERVER_HTTP_BODY_LIMIT_KB"       default:"1024"`
 	CORSAllowOrigins  []string      `env:"SERVER_HTTP_CORS_ALLOW_ORIGINS"  default:"*"`
-	TrustedProxyCIDRs []string      `env:"SERVER_HTTP_TRUSTED_PROXY_CIDRS" v:"omitempty,dive,cidr"`
+	TrustedProxyCIDRs []string      `env:"SERVER_HTTP_TRUSTED_PROXY_CIDRS"                              v:"omitempty,dive,cidr"`
 	RateLimiter       HTTPRateLimiter
 }
 
