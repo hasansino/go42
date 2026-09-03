@@ -53,6 +53,7 @@ linters:
         # ignore lines like `defer rows.Close() etc.`
         - (*database/sql.DB).Close
         - (*database/sql.Rows).Close
+        - (*github.com/pressly/goose/v3.Provider).Close
     sloglint:
       attr-only: true
       key-naming-case: snake

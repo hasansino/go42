@@ -53,7 +53,10 @@ func New(dsn string, consumerGroup string, opts ...Option) (*AMQP, error) {
 		watermill.NewSlogLogger(engine.logger),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating amqp subscriber: %w", err)
+		return nil, errors.Join(
+			fmt.Errorf("error creating amqp subscriber: %w", err),
+			publisher.Close(),
+		)
 	}
 
 	engine.publisher = publisher

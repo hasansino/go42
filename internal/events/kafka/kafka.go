@@ -62,7 +62,10 @@ func New(brokers []string, group string, opts ...Option) (*Kafka, error) {
 		watermill.NewSlogLogger(engine.logger),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating kafka subscriber: %v", err)
+		return nil, errors.Join(
+			fmt.Errorf("error creating kafka subscriber: %w", err),
+			publisher.Close(),
+		)
 	}
 
 	engine.publisher = publisher

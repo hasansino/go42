@@ -60,7 +60,10 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 
 	subscriber, err := wnats.NewSubscriber(*subCfg, watermill.NewSlogLogger(engine.logger))
 	if err != nil {
-		return nil, fmt.Errorf("error creating nats subscriber: %w", err)
+		return nil, errors.Join(
+			fmt.Errorf("error creating nats subscriber: %w", err),
+			publisher.Close(),
+		)
 	}
 
 	engine.publisher = publisher

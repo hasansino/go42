@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -37,11 +38,14 @@ type Config struct {
 // ╰──────────────────────────────╯
 
 type Core struct {
-	ServiceName              string        `env:"SERVICE_NAME"               default:"go42"`
-	Environment              string        `env:"ENVIRONMENT"                default:"default"`
-	ShutdownGracePeriod      time.Duration `env:"SHUTDOWN_GRACE_PERIOD"      default:"10s"`
-	ShutdownWaitForProbe     time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"    default:"2s"`
-	ShutdownComponentTimeout time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT" default:"3s"      v:"gt=0"`
+	ServiceName                string        `env:"SERVICE_NAME"                  default:"go42"`
+	Environment                string        `env:"ENVIRONMENT"                   default:"default"`
+	StartupConnectTimeout      time.Duration `env:"STARTUP_CONNECT_TIMEOUT"       default:"1m"      v:"gt=0"`
+	StartupRetryInitialBackoff time.Duration `env:"STARTUP_RETRY_INITIAL_BACKOFF" default:"500ms"   v:"gt=0"`
+	StartupRetryMaxBackoff     time.Duration `env:"STARTUP_RETRY_MAX_BACKOFF"     default:"5s"      v:"gt=0"`
+	ShutdownGracePeriod        time.Duration `env:"SHUTDOWN_GRACE_PERIOD"         default:"10s"`
+	ShutdownWaitForProbe       time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"       default:"2s"`
+	ShutdownComponentTimeout   time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT"    default:"3s"      v:"gt=0"`
 }
 
 // ╭──────────────────────────────╮
@@ -510,7 +514,16 @@ func New() (*Config, error) {
 		return nil, err
 	}
 
-	return cfg, tools.ValidateStructCompact(cfg)
+	if err := tools.ValidateStructCompact(cfg); err != nil {
+		return nil, err
+	}
+	if cfg.Core.StartupRetryMaxBackoff < cfg.Core.StartupRetryInitialBackoff {
+		return nil, errors.New(
+			"startup retry maximum backoff must not be less than initial backoff",
+		)
+	}
+
+	return cfg, nil
 }
 
 func (c *Config) String() string {

@@ -143,6 +143,14 @@ func main() {
 			ctx,
 			cfg.Database.Mysql.Master.DSN(),
 			cfg.Database.FullMigratePath(),
+			mysqlMigrate.WithLogger(
+				slog.Default().With(slog.String("component", "migrate-mysql")),
+			),
+			mysqlMigrate.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			mysqlMigrate.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 		)
 		if err != nil {
 			log.Fatalf("failed to execute migrations: %v\n", err)
@@ -162,6 +170,11 @@ func main() {
 			mysql.WithMaxOpenConns(cfg.Database.Mysql.MaxOpenConns),
 			mysql.WithMaxIdleConns(cfg.Database.Mysql.MaxIdleConns),
 			mysql.WithQueryTimeout(cfg.Database.Mysql.QueryTimeout),
+			mysql.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			mysql.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 		)
 		if mysqlConnErr != nil {
 			log.Fatalf("failed to connect to mysql: %v\n", mysqlConnErr)
@@ -175,6 +188,14 @@ func main() {
 			ctx,
 			cfg.Database.Pgsql.Master.DSN(),
 			cfg.Database.FullMigratePath(),
+			pgsqlMigrate.WithLogger(
+				slog.Default().With(slog.String("component", "migrate-pgsql")),
+			),
+			pgsqlMigrate.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			pgsqlMigrate.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 		)
 		if err != nil {
 			log.Fatalf("failed to execute migrations: %v\n", err)
@@ -194,6 +215,11 @@ func main() {
 			pgsql.WithMaxOpenConns(cfg.Database.Pgsql.MaxOpenConns),
 			pgsql.WithMaxIdleConns(cfg.Database.Pgsql.MaxIdleConns),
 			pgsql.WithQueryTimeout(cfg.Database.Pgsql.QueryTimeout),
+			pgsql.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			pgsql.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 		)
 		if pgsqlConnErr != nil {
 			log.Fatalf("failed to connect to pgsql: %v\n", pgsqlConnErr)

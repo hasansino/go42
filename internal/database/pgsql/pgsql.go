@@ -20,6 +20,12 @@ import (
 	"gorm.io/plugin/opentelemetry/tracing"
 )
 
+const (
+	defaultConnectRetryTimeout        = time.Minute
+	defaultConnectRetryInitialBackoff = 500 * time.Millisecond
+	defaultConnectRetryMaxBackoff     = 5 * time.Second
+)
+
 type Postgres struct {
 	logger *slog.Logger
 
@@ -32,18 +38,25 @@ type Postgres struct {
 	connMaxLifetime time.Duration
 	maxOpenConns    int
 	maxIdleConns    int
-	queryTimeout    time.Duration
+
+	queryTimeout               time.Duration
+	connectRetryTimeout        time.Duration
+	connectRetryInitialBackoff time.Duration
+	connectRetryMaxBackoff     time.Duration
 
 	queryLogging bool
 }
 
 func Open(ctx context.Context, masterDSN string, slaveDSN string, opts ...Option) (*Postgres, error) {
-	w := new(Postgres)
+	w := &Postgres{
+		connectRetryTimeout:        defaultConnectRetryTimeout,
+		connectRetryInitialBackoff: defaultConnectRetryInitialBackoff,
+		connectRetryMaxBackoff:     defaultConnectRetryMaxBackoff,
+	}
 
 	for _, opt := range opts {
 		opt(w)
 	}
-
 	if w.logger == nil {
 		w.logger = slog.New(slog.DiscardHandler)
 	}
@@ -154,7 +167,12 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 	if err != nil {
 		return nil, err
 	}
+
+	// this affects only the initial connection ping
 	config.DisableAutomaticPing = true
+
+	retryCtx, cancel := context.WithTimeout(ctx, w.connectRetryTimeout)
+	defer cancel()
 
 	db, err := retry.DoWithData[*gorm.DB](func() (*gorm.DB, error) {
 		conn, err := gorm.Open(postgres.New(postgres.Config{DSN: dsn}), config)
@@ -165,7 +183,7 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get database instance: %w", err)
 		}
-		if err := connDB.PingContext(ctx); err != nil {
+		if err := connDB.PingContext(retryCtx); err != nil {
 			pingErr := fmt.Errorf("failed to ping database: %w", err)
 			if closeErr := connDB.Close(); closeErr != nil {
 				return nil, errors.Join(
@@ -177,18 +195,21 @@ func (w *Postgres) connect(ctx context.Context, dsn string, config *gorm.Config)
 		}
 		return conn, nil
 	},
-		retry.Context(ctx),
-		retry.Attempts(10),
-		retry.Delay(2*time.Second),
-		retry.MaxDelay(2*time.Second),
-		retry.LastErrorOnly(true),
+		retry.Context(retryCtx),
+		retry.Attempts(0), // we will retry until the context is done
+		retry.Delay(w.connectRetryInitialBackoff),
+		retry.MaxDelay(w.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
 		retry.OnRetry(func(n uint, err error) {
-			w.logger.WarnContext(
-				ctx,
-				"database connection attempt failed, retrying...",
-				slog.Any("attempt", n+1),
-				slog.String("error", err.Error()),
-			)
+			if retryCtx.Err() == nil {
+				w.logger.WarnContext(
+					ctx,
+					"database connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
 		}),
 	)
 	if err != nil {

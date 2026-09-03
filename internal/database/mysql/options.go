@@ -48,3 +48,16 @@ func WithQueryTimeout(timeout time.Duration) Option {
 		w.queryTimeout = timeout
 	}
 }
+
+func WithConnectRetryTimeout(timeout time.Duration) Option {
+	return func(w *Mysql) {
+		w.connectRetryTimeout = timeout
+	}
+}
+
+func WithConnectRetryBackoff(initial time.Duration, max time.Duration) Option {
+	return func(w *Mysql) {
+		w.connectRetryInitialBackoff = initial
+		w.connectRetryMaxBackoff = max
+	}
+}

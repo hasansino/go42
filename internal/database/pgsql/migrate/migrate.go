@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/pressly/goose/v3"
@@ -22,15 +21,31 @@ const (
 	lockAttemptCnt = 15
 )
 
-func Migrate(ctx context.Context, uri string, schemaPath string) (returnErr error) {
-	logger := slog.With(slog.String("component", "migrate"))
+func Migrate(
+	ctx context.Context,
+	uri string,
+	schemaPath string,
+	opts ...Option,
+) (returnErr error) {
+	config := defaultOptions()
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	logger := config.logger
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+
+	retryCtx, cancelRetry := context.WithTimeout(ctx, config.connectRetryTimeout)
 
 	db, err := retry.DoWithData[*sql.DB](func() (*sql.DB, error) {
 		db, err := sql.Open("pgx", uri)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open database connection: %w", err)
 		}
-		if err := db.PingContext(ctx); err != nil {
+		if err := db.PingContext(retryCtx); err != nil {
 			pingErr := fmt.Errorf("failed to ping database: %w", err)
 			if closeErr := db.Close(); closeErr != nil {
 				return nil, errors.Join(
@@ -42,20 +57,24 @@ func Migrate(ctx context.Context, uri string, schemaPath string) (returnErr erro
 		}
 		return db, nil
 	},
-		retry.Context(ctx),
-		retry.Attempts(10),
-		retry.Delay(2*time.Second),
-		retry.MaxDelay(2*time.Second),
-		retry.LastErrorOnly(true),
+		retry.Context(retryCtx),
+		retry.Attempts(0),
+		retry.Delay(config.connectRetryInitialBackoff),
+		retry.MaxDelay(config.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
 		retry.OnRetry(func(n uint, err error) {
-			logger.WarnContext(
-				ctx,
-				"database connection attempt failed, retrying...",
-				slog.Any("attempt", n+1),
-				slog.String("error", err.Error()),
-			)
+			if retryCtx.Err() == nil {
+				logger.WarnContext(
+					ctx,
+					"database connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
 		}),
 	)
+	cancelRetry()
 	if err != nil {
 		return err
 	}
@@ -92,6 +111,8 @@ func Migrate(ctx context.Context, uri string, schemaPath string) (returnErr erro
 	if err != nil {
 		return fmt.Errorf("failed to create goose provider: %w", err)
 	}
+
+	defer provider.Close()
 
 	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("migration failed: %w", err)

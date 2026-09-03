@@ -42,9 +42,12 @@ paths = [
     '''verification-metadata\.xml''',
     '''Database.refactorlog''',
     '''(?:^|/)\.git$''',
-    '''api/gen/.*''', # go42 custom
-    '''.*\.gen\.go$''' # go42 custom
+    '''^api/gen/.*''', # generated files
+    '''^tests/.*''', # integration and load tests
+    '''(^|/)[^/]*_test\.go$''', # go test files
+    '''^\.github/workflows/150-(integration|load)-tests\.yaml$''' # ci/cd tests
 ]
+
 regexes = [
     '''(?i)^true|false|null$''',
     '''^(?i:a+|b+|c+|d+|e+|f+|g+|h+|i+|j+|k+|l+|m+|n+|o+|p+|q+|r+|s+|t+|u+|v+|w+|x+|y+|z+|\*+|\.+)$''',
@@ -60,6 +63,7 @@ regexes = [
     '''^/Users/(?i)[a-z0-9]+/[\w .-/]+$''',
     '''^/(?:bin|etc|home|opt|tmp|usr|var)/[\w ./-]+$''',
 ]
+
 stopwords = [
     "014df517-39d1-4453-b7b3-9930c563627c",
     "abcdefghijklmnopqrstuvwxyz",
