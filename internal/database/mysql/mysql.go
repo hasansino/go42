@@ -252,6 +252,18 @@ func (w *Mysql) Slave() *gorm.DB {
 	return w.slave
 }
 
+func (w *Mysql) Ping(ctx context.Context) error {
+	if err := w.masterConn.PingContext(ctx); err != nil {
+		return fmt.Errorf("master database ping failed: %w", err)
+	}
+	if w.slaveConn != w.masterConn {
+		if err := w.slaveConn.PingContext(ctx); err != nil {
+			return fmt.Errorf("slave database ping failed: %w", err)
+		}
+	}
+	return nil
+}
+
 func (w *Mysql) IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }

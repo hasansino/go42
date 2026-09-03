@@ -43,6 +43,7 @@ type Core struct {
 	StartupConnectTimeout      time.Duration `env:"STARTUP_CONNECT_TIMEOUT"       default:"1m"      v:"gt=0"`
 	StartupRetryInitialBackoff time.Duration `env:"STARTUP_RETRY_INITIAL_BACKOFF" default:"500ms"   v:"gt=0"`
 	StartupRetryMaxBackoff     time.Duration `env:"STARTUP_RETRY_MAX_BACKOFF"     default:"5s"      v:"gt=0"`
+	ReadinessCheckTimeout      time.Duration `env:"READINESS_CHECK_TIMEOUT"       default:"2s"      v:"gt=0"`
 	ShutdownGracePeriod        time.Duration `env:"SHUTDOWN_GRACE_PERIOD"         default:"10s"`
 	ShutdownWaitForProbe       time.Duration `env:"SHUTDOWN_WAIT_FOR_PROBE"       default:"2s"`
 	ShutdownComponentTimeout   time.Duration `env:"SHUTDOWN_COMPONENT_TIMEOUT"    default:"3s"      v:"gt=0"`

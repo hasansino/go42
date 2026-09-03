@@ -93,6 +93,10 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
+func (w *Wrapper) Ping(ctx context.Context) error {
+	return ctx.Err()
+}
+
 func channelClosed(channel <-chan struct{}) bool {
 	select {
 	case <-channel:

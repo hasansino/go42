@@ -94,6 +94,23 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
+func (w *Wrapper) Ping(ctx context.Context) error {
+	done := make(chan error, 1)
+	go func() {
+		done <- w.client.Ping()
+	}()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-done:
+		if err != nil {
+			return fmt.Errorf("memcached ping failed: %w", err)
+		}
+		return nil
+	}
+}
+
 func (w *Wrapper) Get(_ context.Context, key string) (string, bool, error) {
 	item, err := w.client.Get(key)
 	if err != nil {

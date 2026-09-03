@@ -44,14 +44,16 @@ type Server struct {
 	staticRoot  string
 	swaggerRoot string
 
-	readyStatus atomic.Int32
 	rateLimiter rateLimiterAccessor
 
-	serveDone chan struct{}
+	readyStatus       atomic.Int32
+	readyCheck        func(context.Context) error
+	readyCheckTimeout time.Duration
 
-	shutdownCtx    context.Context
-	shutdownCancel context.CancelFunc
+	serveDone   chan struct{}
+	shutdownCtx context.Context
 
+	shutdownCancel   context.CancelFunc
 	tracingEnabled   bool
 	swaggerDarkStyle bool
 	bodyLimit        int64
@@ -65,11 +67,12 @@ func New(opts ...Option) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	s := &Server{
-		e:              echo.New(),
-		allowOrigins:   make([]string, 0),
-		serveDone:      make(chan struct{}),
-		shutdownCtx:    ctx,
-		shutdownCancel: cancel,
+		e:                 echo.New(),
+		allowOrigins:      make([]string, 0),
+		serveDone:         make(chan struct{}),
+		shutdownCtx:       ctx,
+		shutdownCancel:    cancel,
+		readyCheckTimeout: time.Second,
 	}
 
 	for _, opt := range opts {
@@ -139,7 +142,9 @@ func New(opts ...Option) *Server {
 		s.e.Use(echo.WrapMiddleware(otelhttp.NewMiddleware(
 			"http-server",
 			otelhttp.WithFilter(func(r *http.Request) bool {
-				return r.URL.Path != "/health" && r.URL.Path != "/metrics"
+				return r.URL.Path != "/health" &&
+					r.URL.Path != "/ready" &&
+					r.URL.Path != "/metrics"
 			}),
 		)))
 	}
@@ -311,11 +316,23 @@ func (s *Server) health(ctx *echo.Context) error {
 	return ctx.NoContent(http.StatusOK)
 }
 
-func (s *Server) ready(ctx *echo.Context) error {
-	if s.readyStatus.Load() == ReadyStatusServing {
-		return ctx.NoContent(http.StatusOK)
+func (s *Server) ready(echoCtx *echo.Context) error {
+	if s.readyStatus.Load() != ReadyStatusServing {
+		return echoCtx.NoContent(http.StatusServiceUnavailable)
 	}
-	return ctx.NoContent(http.StatusServiceUnavailable)
+	if s.readyCheck == nil {
+		return echoCtx.NoContent(http.StatusOK)
+	}
+
+	ctx, cancel := context.WithTimeout(echoCtx.Request().Context(), s.readyCheckTimeout)
+	defer cancel()
+
+	if err := s.readyCheck(ctx); err != nil {
+		s.l.DebugContext(ctx, "readiness check failed", slog.Any("error", err))
+		return echoCtx.NoContent(http.StatusServiceUnavailable)
+	}
+
+	return echoCtx.NoContent(http.StatusOK)
 }
 
 // parseSpecDir Reads the directory with OpenAPI spec files and returns a map.

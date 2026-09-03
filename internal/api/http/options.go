@@ -72,6 +72,20 @@ func WitHealthCheckCtx(ctx context.Context) Option {
 	}
 }
 
+// WithReadinessCheck sets the readiness check function.
+func WithReadinessCheck(check func(context.Context) error) Option {
+	return func(s *Server) {
+		s.readyCheck = check
+	}
+}
+
+// WithReadinessCheckTimeout sets the timeout for the readiness check function.
+func WithReadinessCheckTimeout(timeout time.Duration) Option {
+	return func(s *Server) {
+		s.readyCheckTimeout = timeout
+	}
+}
+
 // WithRateLimiter enables/disables rate limiting.
 func WithRateLimiter(cacheEngine cache.Engine, rate int, burst int, ttl time.Duration) Option {
 	return func(s *Server) {

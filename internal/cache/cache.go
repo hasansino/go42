@@ -32,6 +32,7 @@ type Cache interface {
 
 type Engine interface {
 	Cache
+	Ping(ctx context.Context) error
 	Shutdown(ctx context.Context) error
 }
 
@@ -78,6 +79,10 @@ func (NoopCache) Invalidate(_ context.Context, _ string) error {
 
 func (NoopCache) Shutdown(_ context.Context) error {
 	return nil
+}
+
+func (NoopCache) Ping(ctx context.Context) error {
+	return ctx.Err()
 }
 
 // ----

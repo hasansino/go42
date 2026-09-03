@@ -91,7 +91,16 @@ func NewRouter(backend Backend, policy DeliveryPolicy, opts ...Option) (*Router,
 
 func (r *Router) Publish(topic string, event []byte) error {
 	msg := message.NewMessage(watermill.NewUUID(), event)
-	return r.backend.Publisher().Publish(topic, msg)
+	err := r.backend.Publisher().Publish(topic, msg)
+	result := "success"
+	if err != nil {
+		result = "error"
+	}
+	metrics.Counter("application_event_publish_total", map[string]any{
+		"result": result,
+		"topic":  topic,
+	}).Inc()
+	return err
 }
 
 func (r *Router) Subscribe(
@@ -191,6 +200,9 @@ func (r *Router) Start(ctx context.Context) error {
 		if ctx.Err() != nil {
 			return
 		}
+		metrics.Counter("application_event_router_stops_total", map[string]any{
+			"reason": "unexpected",
+		}).Inc()
 		// otherwise this is unexpected and we should log it
 		if err != nil {
 			r.logger.ErrorContext(ctx, "event router stopped", slog.Any("error", err))

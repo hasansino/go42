@@ -535,6 +535,13 @@ func main() {
 		httpAPI.WithSwaggerDarkStyle(cfg.Server.HTTP.SwaggerDark),
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
 		httpAPI.WithGracefulTimeout(cfg.Core.ShutdownComponentTimeout),
+		httpAPI.WithReadinessCheckTimeout(cfg.Core.ReadinessCheckTimeout),
+		httpAPI.WithReadinessCheck(func(ctx context.Context) error {
+			return errors.Join(
+				dbEngine.Ping(ctx),
+				cacheEngine.Ping(ctx),
+			)
+		}),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {

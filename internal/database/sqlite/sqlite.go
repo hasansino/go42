@@ -114,6 +114,13 @@ func (w *Sqlite) Slave() *gorm.DB {
 	return w.gormDB
 }
 
+func (w *Sqlite) Ping(ctx context.Context) error {
+	if err := w.sqlDB.PingContext(ctx); err != nil {
+		return fmt.Errorf("database ping failed: %w", err)
+	}
+	return nil
+}
+
 func AddConnectionOptions(dbPath string, connOpts []ConnectionOption) string {
 	dbPath += "?"
 	for _, option := range connOpts {

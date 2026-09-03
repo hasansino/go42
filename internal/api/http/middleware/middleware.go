@@ -8,7 +8,7 @@ import (
 )
 
 var DefaultSkipper = func(c *echo.Context) bool {
-	if c.Path() == "/health" || c.Path() == "/metrics" {
+	if c.Path() == "/health" || c.Path() == "/ready" || c.Path() == "/metrics" {
 		return true
 	}
 	return false

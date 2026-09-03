@@ -123,6 +123,13 @@ func (w *Wrapper) Shutdown(ctx context.Context) error {
 	}
 }
 
+func (w *Wrapper) Ping(ctx context.Context) error {
+	if err := w.client.Ping(ctx).Err(); err != nil {
+		return fmt.Errorf("redis ping failed: %w", err)
+	}
+	return nil
+}
+
 func (w *Wrapper) Get(ctx context.Context, key string) (string, bool, error) {
 	cmd := w.client.Get(ctx, key)
 	if cmd.Err() != nil {

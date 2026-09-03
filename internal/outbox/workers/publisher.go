@@ -59,12 +59,22 @@ func (p *OutboxMessagePublisher) Run(
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			p.run(ctx, batchSize)
+			err := p.run(ctx, batchSize)
+			if ctx.Err() != nil {
+				return
+			}
+			result := "success"
+			if err != nil {
+				result = "error"
+			}
+			metrics.Counter("application_outbox_worker_runs_total", map[string]interface{}{
+				"result": result,
+			}).Inc()
 		}
 	}
 }
 
-func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
+func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) error {
 	err := p.repository.WithTransaction(ctx, func(txCtx context.Context) error {
 		p.logger.Debug("running outbox publisher job")
 
@@ -95,20 +105,22 @@ func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
 			if err != nil {
 				message.RetryCount++
 				message.LastError = err.Error()
-				if message.RetryCount == message.MaxRetries {
+				result := "retry"
+				if message.RetryCount >= message.MaxRetries {
 					message.Status = models.MessageStatusFailed
+					result = "permanently_failed"
 				}
+				observeDelivery(message.CreatedAt, result)
 				failed = append(failed, message)
 				p.logger.Error("failed to publish message", slog.Any("error", err))
 				metrics.Counter("application_errors", map[string]interface{}{
 					"type": "outbox_publisher_error",
 				}).Inc()
-				metrics.Counter("application_outbox_worker_failed", nil).Inc()
 				continue
 			}
+			observeDelivery(message.CreatedAt, "processed")
 			processed = append(processed, message)
 			p.logger.Debug("published message", slog.Any("message", message))
-			metrics.Counter("application_outbox_worker_processed", nil).Inc()
 		}
 
 		if len(processed) > 0 {
@@ -134,6 +146,21 @@ func (p *OutboxMessagePublisher) run(ctx context.Context, batchSize int) {
 			"type": "outbox_publisher_error",
 		}).Inc()
 	}
+	return err
+}
+
+func observeDelivery(createdAt time.Time, result string) {
+	metrics.Counter("application_outbox_messages_total", map[string]interface{}{
+		"result": result,
+	}).Inc()
+
+	delay := time.Since(createdAt).Seconds()
+	if delay < 0 {
+		delay = 0
+	}
+	metrics.Histogram("application_outbox_delivery_delay_seconds", map[string]interface{}{
+		"result": result,
+	}).Update(delay)
 }
 
 type OutboxMessagePublisherOption func(*OutboxMessagePublisher)
