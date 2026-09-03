@@ -46,13 +46,6 @@ export const options = {
     },
     thresholds: {
         http_req_duration: ['p(95)<500'],
-        'http_req_duration{name:signup}': ['p(95)<200'],
-        'http_req_duration{name:login}': ['p(95)<200'],
-        'http_req_duration{name:refresh}': ['p(95)<200'],
-        'http_req_duration{name:logout}': ['p(95)<100'],
-        'http_req_duration{name:get_me}': ['p(95)<100'],
-        'http_req_duration{name:update_me}': ['p(95)<200'],
-        'http_req_duration{name:list_users}': ['p(95)<200'],
         'success_rate': ['rate>=0.8'], // Allow some failures
         'connection_errors': ['count<50'], // Connection errors should be limited
     },

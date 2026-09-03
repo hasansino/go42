@@ -280,12 +280,12 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
-      database_engine: sqlite
       timeout_minutes: 10
 
   resilience-tests:
     uses: ./.github/workflows/150-resilience-tests.yaml
     needs:
+      - docker-prepare-tag
       - functional-tests-group
     with:
       runs_on: ubuntu-latest

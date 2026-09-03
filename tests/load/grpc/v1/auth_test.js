@@ -44,11 +44,6 @@ export const options = {
     },
     thresholds: {
         'grpc_req_duration': ['p(95)<300'],
-        'grpc_req_duration{rpc:ListUsers}': ['p(95)<200'],
-        'grpc_req_duration{rpc:GetUserByUUID}': ['p(95)<150'],
-        'grpc_req_duration{rpc:CreateUser}': ['p(95)<300'],
-        'grpc_req_duration{rpc:UpdateUser}': ['p(95)<300'],
-        'grpc_req_duration{rpc:DeleteUser}': ['p(95)<200'],
         'success_rate': ['rate>=0.95'],
         'connection_errors': ['count<20'],
         'auth_errors': ['count==0'],

@@ -29,11 +29,6 @@ on:
         type: string
         default: "tmp"
         description: "image_tag"
-      database_engine:
-        required: false
-        type: string
-        default: ""
-        description: "database_engine (leave empty to test all)"
       timeout_minutes:
         required: true
         type: number
@@ -53,10 +48,6 @@ on:
       image_tag:
         required: true
         type: string
-      database_engine:
-        required: false
-        type: string
-        default: ""
       timeout_minutes:
         required: true
         type: number
@@ -256,7 +247,6 @@ jobs:
           # HTTP configurations
           - protocol: http
             database: sqlite
-            database_engine: sqlite
             app_port: 44441
             grpc_port: 55551
             test_path: ./tests/load/http/v1/auth_test.js
@@ -265,7 +255,6 @@ jobs:
             grpc_auth_enabled: true
           - protocol: http
             database: mysql
-            database_engine: mysql
             app_port: 44442
             grpc_port: 55552
             test_path: ./tests/load/http/v1/auth_test.js
@@ -274,7 +263,6 @@ jobs:
             grpc_auth_enabled: true
           - protocol: http
             database: pgsql
-            database_engine: pgsql
             app_port: 44443
             grpc_port: 55553
             test_path: ./tests/load/http/v1/auth_test.js
@@ -284,7 +272,6 @@ jobs:
           # GRPC configurations
           - protocol: grpc
             database: sqlite
-            database_engine: sqlite
             app_port: 44444
             grpc_port: 55554
             test_path: ./tests/load/grpc/v1/auth_test.js
@@ -293,7 +280,6 @@ jobs:
             grpc_auth_enabled: true
           - protocol: grpc
             database: mysql
-            database_engine: mysql
             app_port: 44445
             grpc_port: 55555
             test_path: ./tests/load/grpc/v1/auth_test.js
@@ -302,18 +288,12 @@ jobs:
             grpc_auth_enabled: true
           - protocol: grpc
             database: pgsql
-            database_engine: pgsql
             app_port: 44446
             grpc_port: 55556
             test_path: ./tests/load/grpc/v1/auth_test.js
             env_name: ci-load-tests
             server_address_env: GRPC_SERVER_ADDRESS
             grpc_auth_enabled: true
-        exclude:
-          # Exclude combinations if specific database_engine is requested
-          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'sqlite' && 'sqlite' || '' }}
-          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'mysql' && 'mysql' || '' }}
-          - database: ${{ inputs.database_engine != '' && inputs.database_engine != 'pgsql' && 'pgsql' || '' }}
     services:
       mysql:
         image: ${{ matrix.database == 'mysql' && 'mysql:latest' || '' }}
@@ -349,7 +329,7 @@ jobs:
           SERVER_HTTP_LISTEN: :8080
           SERVER_GRPC_LISTEN: :50051
           SERVER_GRPC_AUTHORIZATION_ENABLED: ${{ matrix.grpc_auth_enabled }}
-          DATABASE_ENGINE: ${{ matrix.database_engine }}
+          DATABASE_ENGINE: ${{ matrix.database }}
           DATABASE_MYSQL_MASTER_HOST: mysql
           DATABASE_MYSQL_SLAVE_HOST: mysql
           DATABASE_PGSQL_MASTER_HOST: pgsql
