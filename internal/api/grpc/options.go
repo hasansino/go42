@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/hasansino/go42/internal/cache"
 	"github.com/hasansino/go42/internal/tools"
@@ -46,10 +45,25 @@ func WithMaxSendMsgSize(size int) Option {
 // Once context is canceled, health-check will return error.
 func WitHealthCheckCtx(ctx context.Context) Option {
 	return func(s *Server) {
-		go func() {
-			<-ctx.Done()
-			s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
-		}()
+		s.healthCheckCtx = ctx
+	}
+}
+
+func WithReadinessCheck(check func(context.Context) error) Option {
+	return func(s *Server) {
+		s.readyCheck = check
+	}
+}
+
+func WithReadinessCheckTimeout(timeout time.Duration) Option {
+	return func(s *Server) {
+		s.readyCheckTimeout = timeout
+	}
+}
+
+func WithReadinessCheckInterval(interval time.Duration) Option {
+	return func(s *Server) {
+		s.readyCheckInterval = interval
 	}
 }
 

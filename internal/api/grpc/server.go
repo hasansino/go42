@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"runtime/debug"
+	"time"
 
 	"buf.build/go/protovalidate"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
@@ -30,6 +31,11 @@ const (
 	InterceptorPriorityBusinessLogic  = 4
 )
 
+const (
+	defaultReadinessCheckTimeout  = 2 * time.Second
+	defaultReadinessCheckInterval = 5 * time.Second
+)
+
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type adapterAccessor interface {
@@ -49,6 +55,12 @@ type Server struct {
 	tracingEnabled bool
 	withReflection bool
 	healthServer   *health.Server
+	healthCheckCtx context.Context
+
+	readyCheck          func(context.Context) error
+	readyCheckTimeout   time.Duration
+	readyCheckInterval  time.Duration
+	healthMonitorCancel context.CancelFunc
 
 	rateLimiter rateLimiterAccessor
 
@@ -60,6 +72,8 @@ func New(opts ...Option) *Server {
 	s := &Server{
 		extraUnaryInterceptors:  make(map[int][]grpc.UnaryServerInterceptor),
 		extraStreamInterceptors: make(map[int][]grpc.StreamServerInterceptor),
+		readyCheckTimeout:       defaultReadinessCheckTimeout,
+		readyCheckInterval:      defaultReadinessCheckInterval,
 	}
 	for _, o := range opts {
 		o(s)
@@ -154,6 +168,7 @@ func New(opts ...Option) *Server {
 	s.healthServer = health.NewServer()
 	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 	healthpb.RegisterHealthServer(s.grpcServer, s.healthServer)
+	s.startHealthMonitor()
 
 	return s
 }
@@ -167,6 +182,9 @@ func (s *Server) Serve(listen string) error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.healthMonitorCancel != nil {
+		s.healthMonitorCancel()
+	}
 	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
 
 	stopped := make(chan struct{})
@@ -186,6 +204,57 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		<-stopped
 		return ctx.Err()
 	}
+}
+
+func (s *Server) startHealthMonitor() {
+	if s.healthCheckCtx == nil && s.readyCheck == nil {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(s.healthCheckCtx)
+	s.healthMonitorCancel = cancel
+
+	go s.monitorHealth(ctx)
+}
+
+func (s *Server) monitorHealth(ctx context.Context) {
+	if s.readyCheck == nil {
+		<-ctx.Done()
+		s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+		return
+	}
+
+	ticker := time.NewTicker(s.readyCheckInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			s.updateHealthStatus(ctx)
+		case <-ctx.Done():
+			s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+			return
+		}
+	}
+}
+
+func (s *Server) updateHealthStatus(ctx context.Context) {
+	checkCtx, cancel := context.WithTimeout(ctx, s.readyCheckTimeout)
+	err := s.readyCheck(checkCtx)
+	cancel()
+
+	if ctx.Err() != nil {
+		s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+		return
+	}
+
+	if err != nil {
+		s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+		s.logger.DebugContext(ctx, "readiness check failed", slog.Any("error", err))
+		return
+	}
+
+	s.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 }
 
 func (s *Server) Register(adapters ...adapterAccessor) {

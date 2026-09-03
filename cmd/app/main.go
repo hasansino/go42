@@ -521,11 +521,21 @@ func main() {
 		go outboxPublisher.Run(ctx, cfg.Outbox.WorkerRunInterval, cfg.Outbox.WorkerBatchSize)
 	}
 
-	// http server
+	// Define readiness check function for both HTTP and GRPC servers.
+	// Any Ping() fail will change status of readiness endpoint to failing.
+	// Subsequently, kubernetes will stop sending traffic to this pod.
+	// Kubernetes will also restart the pod if liveness probe fails.
+	readinessCheck := func(ctx context.Context) error {
+		return errors.Join(
+			dbEngine.Ping(ctx),
+			cacheEngine.Ping(ctx),
+		)
+	}
 
+	// http server
 	httpServerOpts := []httpAPI.Option{
-		httpAPI.WitHealthCheckCtx(ctx),
 		httpAPI.WithLogger(slog.Default().With(slog.String("component", "http-server"))),
+		httpAPI.WitHealthCheckCtx(ctx),
 		httpAPI.WithTracing(cfg.Tracing.Enable),
 		httpAPI.WithReadTimeout(cfg.Server.HTTP.ReadTimeout),
 		httpAPI.WithWriteTimeout(cfg.Server.HTTP.WriteTimeout),
@@ -536,12 +546,7 @@ func main() {
 		httpAPI.WithCORSAllowOrigins(cfg.Server.HTTP.CORSAllowOrigins),
 		httpAPI.WithGracefulTimeout(cfg.Core.ShutdownComponentTimeout),
 		httpAPI.WithReadinessCheckTimeout(cfg.Core.ReadinessCheckTimeout),
-		httpAPI.WithReadinessCheck(func(ctx context.Context) error {
-			return errors.Join(
-				dbEngine.Ping(ctx),
-				cacheEngine.Ping(ctx),
-			)
-		}),
+		httpAPI.WithReadinessCheck(readinessCheck),
 	}
 
 	if cfg.Server.HTTP.RateLimiter.Enabled {
@@ -573,8 +578,11 @@ func main() {
 	// grpc server
 
 	grpcServerOpts := []grpcAPI.Option{
-		grpcAPI.WitHealthCheckCtx(ctx),
 		grpcAPI.WithLogger(slog.Default().With(slog.String("component", "grpc-server"))),
+		grpcAPI.WitHealthCheckCtx(ctx),
+		grpcAPI.WithReadinessCheck(readinessCheck),
+		grpcAPI.WithReadinessCheckTimeout(cfg.Core.ReadinessCheckTimeout),
+		grpcAPI.WithReadinessCheckInterval(cfg.Core.ReadinessCheckInterval),
 		grpcAPI.WithTracing(cfg.Tracing.Enable),
 		grpcAPI.WithMaxRecvMsgSize(cfg.Server.GRPC.MaxRecvMsgSize),
 		grpcAPI.WithMaxSendMsgSize(cfg.Server.GRPC.MaxSendMsgSize),

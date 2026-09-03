@@ -25,6 +25,8 @@ const (
 	ReadyStatusShuttingDown
 )
 
+const defaultReadinessCheckTimeout = 2 * time.Second
+
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go
 
 type adapterAccessor interface {
@@ -72,7 +74,7 @@ func New(opts ...Option) *Server {
 		serveDone:         make(chan struct{}),
 		shutdownCtx:       ctx,
 		shutdownCancel:    cancel,
-		readyCheckTimeout: time.Second,
+		readyCheckTimeout: defaultReadinessCheckTimeout,
 	}
 
 	for _, opt := range opts {
