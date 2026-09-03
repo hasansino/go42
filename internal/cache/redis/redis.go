@@ -12,8 +12,19 @@ import (
 )
 
 type Wrapper struct {
+	logger *slog.Logger
 	client *redis.Client
+
+	connectRetryTimeout        time.Duration
+	connectRetryInitialBackoff time.Duration
+	connectRetryMaxBackoff     time.Duration
 }
+
+const (
+	defaultConnectRetryTimeout        = time.Minute
+	defaultConnectRetryInitialBackoff = 500 * time.Millisecond
+	defaultConnectRetryMaxBackoff     = 5 * time.Second
+)
 
 // allowRateLimitScript implements GCRA atomically inside Redis.
 var allowRateLimitScript = redis.NewScript(`
@@ -40,7 +51,11 @@ return 1
 `)
 
 func Open(ctx context.Context, host string, db int, opts ...Option) (*Wrapper, error) {
-	w := new(Wrapper)
+	w := &Wrapper{
+		connectRetryTimeout:        defaultConnectRetryTimeout,
+		connectRetryInitialBackoff: defaultConnectRetryInitialBackoff,
+		connectRetryMaxBackoff:     defaultConnectRetryMaxBackoff,
+	}
 
 	cfg := &redis.Options{
 		Addr: host,
@@ -49,28 +64,42 @@ func Open(ctx context.Context, host string, db int, opts ...Option) (*Wrapper, e
 	for _, opt := range opts {
 		opt(w, cfg)
 	}
+	if w.logger == nil {
+		w.logger = slog.New(slog.DiscardHandler)
+	}
+
+	retryCtx, cancel := context.WithTimeout(ctx, w.connectRetryTimeout)
+	defer cancel()
 
 	rdb, err := retry.DoWithData[*redis.Client](func() (*redis.Client, error) {
 		rdb := redis.NewClient(cfg)
-		status := rdb.Ping(context.Background())
-		if status.Err() != nil {
-			return nil, status.Err()
+		if err := rdb.Ping(retryCtx).Err(); err != nil {
+			pingErr := fmt.Errorf("failed to ping redis: %w", err)
+			if closeErr := rdb.Close(); closeErr != nil {
+				return nil, errors.Join(
+					pingErr,
+					fmt.Errorf("failed to close redis client: %w", closeErr),
+				)
+			}
+			return nil, pingErr
 		}
 		return rdb, nil
 	},
-		retry.Context(ctx),
-		retry.Attempts(10),
-		retry.Delay(2*time.Second),
-		retry.MaxDelay(2*time.Second),
-		retry.LastErrorOnly(true),
+		retry.Context(retryCtx),
+		retry.Attempts(0),
+		retry.Delay(w.connectRetryInitialBackoff),
+		retry.MaxDelay(w.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
 		retry.OnRetry(func(n uint, err error) {
-			slog.Default().WarnContext(
-				ctx,
-				"cache connection attempt failed, retrying...",
-				slog.String("component", "redis"),
-				slog.Any("attempt", n+1),
-				slog.String("error", err.Error()),
-			)
+			if retryCtx.Err() == nil {
+				w.logger.WarnContext(
+					ctx,
+					"cache connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
 		}),
 	)
 	if err != nil {

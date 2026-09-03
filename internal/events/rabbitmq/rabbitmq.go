@@ -5,25 +5,41 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-amqp/v3/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/avast/retry-go/v4"
+)
+
+const (
+	defaultConnectRetryTimeout        = time.Minute
+	defaultConnectRetryInitialBackoff = 500 * time.Millisecond
+	defaultConnectRetryMaxBackoff     = 5 * time.Second
 )
 
 type AMQP struct {
 	logger     *slog.Logger
 	publisher  *amqp.Publisher
 	subscriber *amqp.Subscriber
+
+	connectRetryTimeout        time.Duration
+	connectRetryInitialBackoff time.Duration
+	connectRetryMaxBackoff     time.Duration
 }
 
-func New(dsn string, consumerGroup string, opts ...Option) (*AMQP, error) {
+func New(ctx context.Context, dsn string, consumerGroup string, opts ...Option) (*AMQP, error) {
 	if len(consumerGroup) == 0 {
 		return nil, errors.New("consumer group is required")
 	}
 
 	var (
-		engine     = new(AMQP)
+		engine = &AMQP{
+			connectRetryTimeout:        defaultConnectRetryTimeout,
+			connectRetryInitialBackoff: defaultConnectRetryInitialBackoff,
+			connectRetryMaxBackoff:     defaultConnectRetryMaxBackoff,
+		}
 		amqpConfig = amqp.NewDurablePubSubConfig(
 			dsn,
 			amqp.GenerateQueueNameTopicNameWithSuffix(consumerGroup),
@@ -40,27 +56,53 @@ func New(dsn string, consumerGroup string, opts ...Option) (*AMQP, error) {
 		engine.logger = slog.New(slog.DiscardHandler)
 	}
 
-	publisher, err := amqp.NewPublisher(
-		amqpConfig,
-		watermill.NewSlogLogger(engine.logger),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error creating amqp publisher: %w", err)
-	}
+	retryCtx, cancel := context.WithTimeout(ctx, engine.connectRetryTimeout)
+	defer cancel()
 
-	subscriber, err := amqp.NewSubscriber(
-		amqpConfig,
-		watermill.NewSlogLogger(engine.logger),
-	)
-	if err != nil {
-		return nil, errors.Join(
-			fmt.Errorf("error creating amqp subscriber: %w", err),
-			publisher.Close(),
+	err := retry.Do(func() error {
+		publisher, err := amqp.NewPublisher(
+			amqpConfig,
+			watermill.NewSlogLogger(engine.logger),
 		)
-	}
+		if err != nil {
+			return fmt.Errorf("error creating amqp publisher: %w", err)
+		}
 
-	engine.publisher = publisher
-	engine.subscriber = subscriber
+		subscriber, err := amqp.NewSubscriber(
+			amqpConfig,
+			watermill.NewSlogLogger(engine.logger),
+		)
+		if err != nil {
+			return errors.Join(
+				fmt.Errorf("error creating amqp subscriber: %w", err),
+				publisher.Close(),
+			)
+		}
+
+		engine.publisher = publisher
+		engine.subscriber = subscriber
+		return nil
+	},
+		retry.Context(retryCtx),
+		retry.Attempts(0),
+		retry.Delay(engine.connectRetryInitialBackoff),
+		retry.MaxDelay(engine.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
+		retry.OnRetry(func(n uint, err error) {
+			if retryCtx.Err() == nil {
+				engine.logger.WarnContext(
+					ctx,
+					"broker connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return engine, nil
 }

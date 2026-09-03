@@ -15,6 +15,19 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
+func WithConnectRetryTimeout(timeout time.Duration) Option {
+	return func(amqp *AMQP, cfg *amqp.Config) {
+		amqp.connectRetryTimeout = timeout
+	}
+}
+
+func WithConnectRetryBackoff(initial time.Duration, max time.Duration) Option {
+	return func(amqp *AMQP, cfg *amqp.Config) {
+		amqp.connectRetryInitialBackoff = initial
+		amqp.connectRetryMaxBackoff = max
+	}
+}
+
 func WithReconnectBackoffInitialInterval(interval time.Duration) Option {
 	return func(_ *AMQP, cfg *amqp.Config) {
 		if cfg.Connection.Reconnect == nil {

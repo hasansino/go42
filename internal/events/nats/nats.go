@@ -5,22 +5,38 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
 	wnats "github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/avast/retry-go/v4"
 	natsgo "github.com/nats-io/nats.go"
+)
+
+const (
+	defaultConnectRetryTimeout        = time.Minute
+	defaultConnectRetryInitialBackoff = 500 * time.Millisecond
+	defaultConnectRetryMaxBackoff     = 5 * time.Second
 )
 
 type NATS struct {
 	logger     *slog.Logger
 	publisher  *wnats.Publisher
 	subscriber *wnats.Subscriber
+
+	connectRetryTimeout        time.Duration
+	connectRetryInitialBackoff time.Duration
+	connectRetryMaxBackoff     time.Duration
 }
 
-func New(dsn string, opts ...Option) (*NATS, error) {
+func New(ctx context.Context, dsn string, opts ...Option) (*NATS, error) {
 	var (
-		engine          = new(NATS)
+		engine = &NATS{
+			connectRetryTimeout:        defaultConnectRetryTimeout,
+			connectRetryInitialBackoff: defaultConnectRetryInitialBackoff,
+			connectRetryMaxBackoff:     defaultConnectRetryMaxBackoff,
+		}
 		jetStreamConfig = wnats.JetStreamConfig{
 			AutoProvision: true,
 			SubscribeOptions: []natsgo.SubOpt{
@@ -53,21 +69,47 @@ func New(dsn string, opts ...Option) (*NATS, error) {
 	pubCfg.NatsOptions = append(pubCfg.NatsOptions, handlers(engine.logger)...)
 	subCfg.NatsOptions = append(subCfg.NatsOptions, handlers(engine.logger)...)
 
-	publisher, err := wnats.NewPublisher(*pubCfg, watermill.NewSlogLogger(engine.logger))
-	if err != nil {
-		return nil, fmt.Errorf("error creating nats publisher: %w", err)
-	}
+	retryCtx, cancel := context.WithTimeout(ctx, engine.connectRetryTimeout)
+	defer cancel()
 
-	subscriber, err := wnats.NewSubscriber(*subCfg, watermill.NewSlogLogger(engine.logger))
-	if err != nil {
-		return nil, errors.Join(
-			fmt.Errorf("error creating nats subscriber: %w", err),
-			publisher.Close(),
-		)
-	}
+	err := retry.Do(func() error {
+		publisher, err := wnats.NewPublisher(*pubCfg, watermill.NewSlogLogger(engine.logger))
+		if err != nil {
+			return fmt.Errorf("error creating nats publisher: %w", err)
+		}
 
-	engine.publisher = publisher
-	engine.subscriber = subscriber
+		subscriber, err := wnats.NewSubscriber(*subCfg, watermill.NewSlogLogger(engine.logger))
+		if err != nil {
+			return errors.Join(
+				fmt.Errorf("error creating nats subscriber: %w", err),
+				publisher.Close(),
+			)
+		}
+
+		engine.publisher = publisher
+		engine.subscriber = subscriber
+		return nil
+	},
+		retry.Context(retryCtx),
+		retry.Attempts(0),
+		retry.Delay(engine.connectRetryInitialBackoff),
+		retry.MaxDelay(engine.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
+		retry.OnRetry(func(n uint, err error) {
+			if retryCtx.Err() == nil {
+				engine.logger.WarnContext(
+					ctx,
+					"broker connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	return engine, nil
 }

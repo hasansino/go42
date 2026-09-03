@@ -1,12 +1,32 @@
 package redis
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type Option func(*Wrapper, *redis.Options)
+
+func WithLogger(logger *slog.Logger) Option {
+	return func(w *Wrapper, opts *redis.Options) {
+		w.logger = logger
+	}
+}
+
+func WithConnectRetryTimeout(timeout time.Duration) Option {
+	return func(w *Wrapper, opts *redis.Options) {
+		w.connectRetryTimeout = timeout
+	}
+}
+
+func WithConnectRetryBackoff(initial time.Duration, max time.Duration) Option {
+	return func(w *Wrapper, opts *redis.Options) {
+		w.connectRetryInitialBackoff = initial
+		w.connectRetryMaxBackoff = max
+	}
+}
 
 func WithClientName(name string) Option {
 	return func(w *Wrapper, opts *redis.Options) {

@@ -13,36 +13,72 @@ import (
 )
 
 type Wrapper struct {
+	logger *slog.Logger
 	client *memcache.Client
+
+	connectRetryTimeout        time.Duration
+	connectRetryInitialBackoff time.Duration
+	connectRetryMaxBackoff     time.Duration
 }
 
+const (
+	defaultConnectRetryTimeout        = time.Minute
+	defaultConnectRetryInitialBackoff = 500 * time.Millisecond
+	defaultConnectRetryMaxBackoff     = 5 * time.Second
+)
+
 func Open(ctx context.Context, hosts []string, opts ...Option) (*Wrapper, error) {
-	client, err := retry.DoWithData[*memcache.Client](func() (*memcache.Client, error) {
-		client := memcache.New(hosts...)
-		for _, opt := range opts {
-			opt(client)
+	w := &Wrapper{
+		connectRetryTimeout:        defaultConnectRetryTimeout,
+		connectRetryInitialBackoff: defaultConnectRetryInitialBackoff,
+		connectRetryMaxBackoff:     defaultConnectRetryMaxBackoff,
+	}
+	client := memcache.New(hosts...)
+	for _, opt := range opts {
+		opt(w, client)
+	}
+	if w.logger == nil {
+		w.logger = slog.New(slog.DiscardHandler)
+	}
+
+	retryCtx, cancel := context.WithTimeout(ctx, w.connectRetryTimeout)
+	defer cancel()
+
+	err := retry.Do(func() error {
+		if err := client.Ping(); err != nil {
+			pingErr := fmt.Errorf("failed to ping memcached: %w", err)
+			if closeErr := client.Close(); closeErr != nil {
+				return errors.Join(
+					pingErr,
+					fmt.Errorf("failed to close memcached client: %w", closeErr),
+				)
+			}
+			return pingErr
 		}
-		return client, client.Ping()
+		return nil
 	},
-		retry.Context(ctx),
-		retry.Attempts(10),
-		retry.Delay(2*time.Second),
-		retry.MaxDelay(2*time.Second),
-		retry.LastErrorOnly(true),
+		retry.Context(retryCtx),
+		retry.Attempts(0),
+		retry.Delay(w.connectRetryInitialBackoff),
+		retry.MaxDelay(w.connectRetryMaxBackoff),
+		retry.DelayType(retry.FullJitterBackoffDelay),
+		retry.WrapContextErrorWithLastError(true),
 		retry.OnRetry(func(n uint, err error) {
-			slog.Default().WarnContext(
-				ctx,
-				"cache connection attempt failed, retrying...",
-				slog.String("component", "memcached"),
-				slog.Any("attempt", n+1),
-				slog.String("error", err.Error()),
-			)
+			if retryCtx.Err() == nil {
+				w.logger.WarnContext(
+					ctx,
+					"cache connection attempt failed, retrying...",
+					slog.Any("attempt", n+1),
+					slog.Any("error", err),
+				)
+			}
 		}),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &Wrapper{client: client}, client.Ping()
+	w.client = client
+	return w, nil
 }
 
 func (w *Wrapper) Shutdown(ctx context.Context) error {

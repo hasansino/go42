@@ -15,6 +15,19 @@ func WithLogger(logger *slog.Logger) Option {
 	}
 }
 
+func WithConnectRetryTimeout(timeout time.Duration) Option {
+	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
+		k.connectRetryTimeout = timeout
+	}
+}
+
+func WithConnectRetryBackoff(initial time.Duration, max time.Duration) Option {
+	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
+		k.connectRetryInitialBackoff = initial
+		k.connectRetryMaxBackoff = max
+	}
+}
+
 func WithClientID(clientID string) Option {
 	return func(k *Kafka, pubCfg *sarama.Config, subCfg *sarama.Config) {
 		if clientID != "" {

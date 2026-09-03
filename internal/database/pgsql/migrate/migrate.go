@@ -112,8 +112,6 @@ func Migrate(
 		return fmt.Errorf("failed to create goose provider: %w", err)
 	}
 
-	defer provider.Close()
-
 	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("migration failed: %w", err)
 	}

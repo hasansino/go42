@@ -37,6 +37,19 @@ func WithConnectTimeout(timeout time.Duration) Option {
 	}
 }
 
+func WithConnectRetryTimeout(timeout time.Duration) Option {
+	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
+		n.connectRetryTimeout = timeout
+	}
+}
+
+func WithConnectRetryBackoff(initial time.Duration, max time.Duration) Option {
+	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
+		n.connectRetryInitialBackoff = initial
+		n.connectRetryMaxBackoff = max
+	}
+}
+
 func WithConnectionRetry(retry bool) Option {
 	return func(n *NATS, pubCfg *nats.PublisherConfig, subCfg *nats.SubscriberConfig) {
 		pubCfg.NatsOptions = append(pubCfg.NatsOptions, natsgo.RetryOnFailedConnect(retry))

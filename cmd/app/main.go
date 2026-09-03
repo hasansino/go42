@@ -275,6 +275,14 @@ func main() {
 		cacheEngine, err = memcached.Open(
 			ctx,
 			cfg.Cache.Memcached.Hosts,
+			memcached.WithLogger(
+				slog.Default().With(slog.String("component", "cache-memcached")),
+			),
+			memcached.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			memcached.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 			memcached.WithTimeout(cfg.Cache.Memcached.Timeout),
 			memcached.WithMaxIdleConns(cfg.Cache.Memcached.MaxIdleConns),
 		)
@@ -287,6 +295,12 @@ func main() {
 		cacheEngine, err = redis.Open(
 			ctx,
 			cfg.Cache.Redis.Host, cfg.Cache.Redis.DB,
+			redis.WithLogger(slog.Default().With(slog.String("component", "cache-redis"))),
+			redis.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			redis.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 			redis.WithClientName(cfg.Core.ServiceName),
 			redis.WithUserName(cfg.Cache.Redis.Username),
 			redis.WithPassword(cfg.Cache.Redis.Password),
@@ -325,8 +339,14 @@ func main() {
 		slog.Info("gochan event engine initialized")
 	case "nats":
 		eventsBackend, err = nats.New(
+			ctx,
 			cfg.Events.NATS.DSN,
 			nats.WithLogger(slog.Default().With(slog.String("component", "events-nats"))),
+			nats.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			nats.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 			nats.WithClientName(cfg.Events.NATS.ClientName),
 			nats.WithClientToken(cfg.Events.NATS.Token),
 			nats.WithConnectTimeout(cfg.Events.NATS.ConnTimeout),
@@ -346,9 +366,15 @@ func main() {
 		slog.Info("nats event engine initialized")
 	case "rabbitmq":
 		eventsBackend, err = rabbitmq.New(
+			ctx,
 			cfg.Events.RabbitMQ.DSN,
 			cfg.Events.Consumer.Group,
 			rabbitmq.WithLogger(slog.Default().With(slog.String("component", "events-rabbitmq"))),
+			rabbitmq.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			rabbitmq.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 			rabbitmq.WithReconnectBackoffInitialInterval(
 				cfg.Events.RabbitMQ.ReconnectInitialInterval,
 			),
@@ -370,9 +396,15 @@ func main() {
 		slog.Info("rabbitmq event engine initialized")
 	case "kafka":
 		eventsBackend, err = kafka.New(
+			ctx,
 			cfg.Events.Kafka.Brokers,
 			cfg.Events.Consumer.Group,
 			kafka.WithLogger(slog.Default().With(slog.String("component", "events-kafka"))),
+			kafka.WithConnectRetryTimeout(cfg.Core.StartupConnectTimeout),
+			kafka.WithConnectRetryBackoff(
+				cfg.Core.StartupRetryInitialBackoff,
+				cfg.Core.StartupRetryMaxBackoff,
+			),
 			kafka.WithClientID(cfg.Events.Kafka.ClientID),
 			kafka.WithKafkaVersion(cfg.Events.Kafka.Version),
 			kafka.WithDialTimeout(cfg.Events.Kafka.DialTimeout),
