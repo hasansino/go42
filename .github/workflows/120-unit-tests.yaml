@@ -18,7 +18,7 @@ on:
         default: false
         description: 'continue_on_error'
       timeout_minutes:
-        required: true
+        required: false
         type: number
         default: 10
         description: 'timeout_minutes'
@@ -31,8 +31,9 @@ on:
         required: true
         type: boolean
       timeout_minutes:
-        required: true
+        required: false
         type: number
+        default: 10
 
 permissions: {}
 
@@ -55,6 +56,12 @@ jobs:
       - name: 'Download Go modules'
         run: go mod download
       - name: 'Run unit tests with race detector'
-        run: go list ./... | grep -v '/tests/' | xargs go test -count=1 -v -race
+        run: |-
+          go list ./... | grep -v '/tests/' | \
+            xargs go test -count=1 -v -race -covermode=atomic -coverprofile=coverage.out
         env:
           CGO_ENABLED: 1 # needed for -race
+      - name: 'Check test coverage'
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          config: ./etc/testcoverage.yaml
