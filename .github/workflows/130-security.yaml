@@ -166,7 +166,7 @@ jobs:
   # 205-scorecard-publish.yaml to satisfy the Scorecard workflow restrictions.
   scorecard:
     if: github.event_name == 'pull_request'
-    name: scorecard-analysis
+    name: scorecard
     runs-on: ubuntu-latest # MUST be hardcoded for OSSF scorecards
     continue-on-error: ${{ inputs.continue_on_error }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
