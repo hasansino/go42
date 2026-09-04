@@ -337,7 +337,26 @@ jobs:
       continue_on_error: false
       timeout_minutes: 15
 
-  # stage 7: required finish gate
+  # stage 7: cleanup
+
+  cleanup:
+    if: ${{ always() }}
+    uses: ./.github/workflows/160-cleanup.yaml
+    permissions:
+      contents: read
+      packages: write
+    needs:
+      - docker-prepare-tag
+      - security-extra
+      - integration-tests
+      - load-tests
+    with:
+      runs_on: ubuntu-latest
+      service_name: "go42"
+      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      timeout_minutes: 10
+
+  # stage 8: required finish gate
 
   gate-finish:
     name: gate-finish
@@ -348,16 +367,20 @@ jobs:
       - security
       - integration-tests
       - resilience-tests
+      - cleanup
     steps:
+      # Cleanup is advisory, but waiting for it makes this the terminal workflow gate.
       - name: Require blocking jobs to succeed
         env:
           SECURITY_RESULT: ${{ needs.security.result }}
           INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
           RESILIENCE_RESULT: ${{ needs.resilience-tests.result }}
-        run: |
+          CLEANUP_RESULT: ${{ needs.cleanup.result }}
+        run: |-
           echo "security: $SECURITY_RESULT"
           echo "integration-tests: $INTEGRATION_RESULT"
           echo "resilience-tests: $RESILIENCE_RESULT"
+          echo "cleanup (advisory): $CLEANUP_RESULT"
 
           if [ "$SECURITY_RESULT" != "success" ] || \
             [ "$INTEGRATION_RESULT" != "success" ] || \
@@ -365,22 +388,3 @@ jobs:
             echo "::error::One or more blocking CI branches did not succeed."
             exit 1
           fi
-
-  # stage 8: cleanup
-
-  cleanup:
-    uses: ./.github/workflows/160-cleanup.yaml
-    permissions:
-      contents: read
-      packages: write
-    needs:
-      - docker-prepare-tag
-      - security-extra
-      - integration-tests
-      - load-tests
-      - resilience-tests
-    with:
-      runs_on: ubuntu-latest
-      service_name: "go42"
-      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
-      timeout_minutes: 10
