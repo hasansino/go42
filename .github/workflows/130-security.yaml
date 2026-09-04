@@ -175,7 +175,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Run OSSF Scorecard analysis'
-        uses: ossf/scorecard-action@v2.4.3
+        uses: ossf/scorecard-action@v2.4.4
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
@@ -202,7 +202,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Publish OSSF Scorecard results'
-        uses: ossf/scorecard-action@v2.4.3
+        uses: ossf/scorecard-action@v2.4.4
         with:
           results_file: scorecard-publish-results.json
           results_format: json
@@ -225,7 +225,7 @@ jobs:
         with:
           ref: master
       - name: 'Setup Go'
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
       - name: 'Install capslock'
