@@ -16,19 +16,21 @@ on:
     branches:
       - master
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: "github-pages"
+  queue: max
   cancel-in-progress: false
 
 jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: read
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
@@ -70,6 +72,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      pages: write
     needs: build
     steps:
       - name: 'Generate GitHub App Token'

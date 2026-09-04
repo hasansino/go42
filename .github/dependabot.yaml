@@ -7,6 +7,7 @@ multi-ecosystem-groups:
       interval: "weekly"
     pull-request-branch-name:
       separator: "-"
+    open-pull-requests-limit: 10
 
 updates:
   - package-ecosystem: "gomod"
@@ -14,18 +15,24 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: "all-dependencies"
-    open-pull-requests-limit: 10
 
   - package-ecosystem: "github-actions"
     directory: "/"
     patterns:
       - "*"
     multi-ecosystem-group: "all-dependencies"
-    open-pull-requests-limit: 10
 
   - package-ecosystem: "docker"
     directory: "/"
     patterns:
       - "*"
     multi-ecosystem-group: "all-dependencies"
-    open-pull-requests-limit: 10
+
+  # Documentation tooling is not part of the service or runtime image. Ignore
+  # all of its version and security updates to avoid PRs such as #397.
+  - package-ecosystem: "npm"
+    directory: "/docs/pages"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "*"

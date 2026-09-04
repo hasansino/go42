@@ -84,7 +84,7 @@ FROM alpine:3.24
 # for that specific alpine version you are updating to.
 RUN apk add --no-cache \
     ca-certificates=20260611-r0 \
-    curl=8.21.0-r0 \
+    curl=8.22.0-r0 \
     libcrypto3=3.5.8-r0 \
     libssl3=3.5.8-r0 \
     tini=0.19.0-r3 \

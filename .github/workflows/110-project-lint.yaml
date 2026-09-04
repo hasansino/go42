@@ -1,3 +1,4 @@
+---
 name: project-lint
 # Linter specific to current project.
 # This workflow checks for uncommitted changes after running 'make generate'.
@@ -15,6 +16,11 @@ on:
         type: boolean
         default: false
         description: 'continue_on_error'
+      timeout_minutes:
+        required: false
+        type: number
+        default: 10
+        description: 'timeout_minutes'
   workflow_call:
     inputs:
       runs_on:
@@ -23,12 +29,17 @@ on:
       continue_on_error:
         required: true
         type: boolean
+      timeout_minutes:
+        required: false
+        type: number
+        default: 10
 permissions: {}
 jobs:
   project-lint:
     name: project-lint
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
     # -----

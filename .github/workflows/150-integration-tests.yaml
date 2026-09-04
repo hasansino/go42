@@ -29,7 +29,7 @@ on:
         default: "tmp"
         description: "image_tag"
       timeout_minutes:
-        required: true
+        required: false
         type: number
         default: 10
         description: "timeout_minutes"
@@ -48,8 +48,9 @@ on:
         required: true
         type: string
       timeout_minutes:
-        required: true
+        required: false
         type: number
+        default: 10
 
 permissions: {}
 

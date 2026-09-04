@@ -24,6 +24,16 @@ on:
         type: boolean
         default: false
         description: 'continue_on_error'
+      timeout_minutes:
+        required: false
+        type: number
+        default: 15
+        description: 'timeout_minutes'
+      codeql_timeout_minutes:
+        required: false
+        type: number
+        default: 30
+        description: 'codeql_timeout_minutes'
   workflow_call:
     inputs:
       runs_on:
@@ -32,6 +42,14 @@ on:
       continue_on_error:
         required: true
         type: boolean
+      timeout_minutes:
+        required: false
+        type: number
+        default: 15
+      codeql_timeout_minutes:
+        required: false
+        type: number
+        default: 30
 
 permissions: {}
 
@@ -41,6 +59,7 @@ jobs:
     name: gitleaks
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
     # -----
@@ -61,9 +80,9 @@ jobs:
     name: gosec
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
-      security-events: write
     # -----
     steps:
       - name: 'Checkout repository'
@@ -82,6 +101,7 @@ jobs:
     name: govulncheck
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
     # -----
@@ -95,12 +115,15 @@ jobs:
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
+          # Match the production entry point built by Dockerfile.
+          go-package: ./cmd/app
           cache: false
 
   codeql:
     name: codeql
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.codeql_timeout_minutes }}
     permissions:
       contents: read
       security-events: write
@@ -118,11 +141,14 @@ jobs:
         uses: github/codeql-action/autobuild@v4
       - name: 'Perform CodeQL analysis'
         uses: github/codeql-action/analyze@v4
+        with:
+          upload: ${{ github.ref == 'refs/heads/master' && 'always' || 'never' }}
 
   licenses:
     name: licenses
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
     # -----
@@ -140,9 +166,9 @@ jobs:
     name: scorecard
     runs-on: ubuntu-latest # MUST be hardcoded for OSSF scorecards
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
-      id-token: write
       security-events: write
     # ----
     steps:
@@ -153,12 +179,34 @@ jobs:
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
-          # this updates badge, we want it to reflect only master branch
-          publish_results: ${{ github.ref == 'refs/heads/master' }}
+          publish_results: false
       - name: 'Upload Scorecard results to Security tab'
+        if: github.ref == 'refs/heads/master'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: scorecard-results.sarif
+
+  # Keep public Scorecard publishing separate from PR analysis because
+  # publish_results requires id-token: write. This master-only job prevents
+  # pull request runs from receiving OIDC permission while updating the badge.
+  scorecard-publish:
+    if: github.ref == 'refs/heads/master'
+    name: scorecard-publish
+    runs-on: ubuntu-latest # MUST be hardcoded for OSSF scorecards
+    continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v7
+      - name: 'Publish OSSF Scorecard results'
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: scorecard-publish-results.json
+          results_format: json
+          publish_results: true
 
   # run capslock only on non-master branches to determine difference
   # between the current branch and master branch in capabilities
@@ -167,6 +215,7 @@ jobs:
     name: capslock
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       contents: read
     # -----
