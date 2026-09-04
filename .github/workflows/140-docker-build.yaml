@@ -192,7 +192,9 @@ jobs:
           file: ${{ github.workspace }}/Dockerfile
           platforms: ${{ inputs.platforms }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache export is an optimization, not a publication requirement.
+          # A cache-service write failure must not cancel the image push.
+          cache-to: type=gha,mode=max,ignore-error=true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
