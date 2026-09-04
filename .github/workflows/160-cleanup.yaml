@@ -17,6 +17,10 @@ on:
       image_tag:
         required: true
         type: string
+      timeout_minutes:
+        required: false
+        type: number
+        default: 10
 
 permissions: {}
 
@@ -24,6 +28,7 @@ jobs:
   cleanup:
     name: cleanup
     runs-on: ${{ inputs.runs_on }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       packages: write
       contents: read

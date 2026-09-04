@@ -30,7 +30,7 @@ on:
         default: "tmp"
         description: "image_tag"
       timeout_minutes:
-        required: true
+        required: false
         type: number
         default: 10
         description: "timeout_minutes"
@@ -49,8 +49,9 @@ on:
         required: true
         type: string
       timeout_minutes:
-        required: true
+        required: false
         type: number
+        default: 10
 
 permissions: {}
 
@@ -58,6 +59,7 @@ jobs:
   report:
     name: report
     runs-on: ${{ inputs.runs_on }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     needs: load-tests
     if: always()
     permissions:
@@ -231,9 +233,8 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
+      contents: read
       packages: read
-      pull-requests: write
-      issues: write
     strategy:
       matrix:
         protocol:
