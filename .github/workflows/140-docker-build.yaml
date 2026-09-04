@@ -28,10 +28,6 @@ on:
         required: true
         type: string
         description: "image_tag"
-      tag_latest:
-        required: false
-        type: boolean
-        description: "tag_latest"
       platforms:
         required: true
         type: choice
@@ -54,6 +50,11 @@ on:
         type: boolean
         default: false
         description: "attestation_sbom"
+      timeout_minutes:
+        required: false
+        type: number
+        default: 30
+        description: "timeout_minutes"
   workflow_call:
     inputs:
       runs_on:
@@ -68,9 +69,6 @@ on:
       image_tag:
         required: true
         type: string
-      tag_latest:
-        required: false
-        type: boolean
       platforms:
         required: true
         type: string
@@ -83,6 +81,10 @@ on:
       attestation_sbom:
         required: true
         type: boolean
+      timeout_minutes:
+        required: false
+        type: number
+        default: 30
 
 permissions: {}
 
@@ -92,6 +94,7 @@ jobs:
     name: docker-build
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
       packages: write
       contents: read
@@ -141,8 +144,6 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           tags: |
             type=raw,value=${{ inputs.image_tag }}
-          flavor: |
-            latest=${{ inputs.tag_latest }}
           # @see https://github.com/opencontainers/image-spec/blob/main/annotations.md
           labels: |
             org.opencontainers.image.title: ${{ inputs.service_name }}
@@ -184,7 +185,7 @@ jobs:
         with:
           image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: spdx-json
-          output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
+          output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           artifact-name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           upload-artifact: true
@@ -202,5 +203,5 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           subject-digest: ${{ steps.build.outputs.digest }}
-          sbom-path: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.json
+          sbom-path: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           show-summary: true
