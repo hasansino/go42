@@ -685,7 +685,7 @@ func initLogging(_ context.Context, cfg *config.Config) {
 			Level:      cfg.Logger.Level(),
 			TimeFormat: time.Kitchen,
 		}
-		slogHandler = tint.NewHandler(slogOutput, loggerOpts)
+		slogHandler = tint.NewTextHandler(slogOutput, loggerOpts)
 	default:
 		log.Fatalf("unsupported logging format: %s", cfg.Logger.LogFormat)
 	}
@@ -808,7 +808,7 @@ func initEtcd(ctx context.Context, cfg *config.Config) ShutMeDown {
 
 func initLimits(_ context.Context, cfg *config.Config) {
 	if cfg.Limits.AutoMemLimitEnabled {
-		_, err := memlimit.SetGoMemLimitWithOpts(
+		_, err := memlimit.Set(
 			memlimit.WithLogger(slog.Default().With(slog.String("component", "memlimit"))),
 			memlimit.WithRatio(cfg.Limits.MemLimitRatio),
 			memlimit.WithProvider(

@@ -1,27 +1,22 @@
 ---
 
-name: master-update
+name: dep-submission
 
-# Syncs go dependencies with GitHub dependency submission API.
-# Updates capabilities.json with the latest information from the codebase.
+# Manually submits Go dependencies to GitHub's dependency graph.
+# Automatic submissions are handled by GitHub's managed Dependency Graph job.
 
 on:
-  # manual trigger
   workflow_dispatch:
-  # push or merge to master
-  push:
-    branches:
-      - master
 
 permissions: {}
 
 concurrency:
-  group: master-update-${{ github.ref }}
+  group: dep-submission-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   dep-submission:
-    name: master-update
+    name: dep-submission
     if: |
       github.ref == 'refs/heads/master' &&
       github.event.head_commit.message != 'initial commit' &&
@@ -34,7 +29,7 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Setup Go environment'
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
       - name: 'Submit Go dependencies to GitHub'

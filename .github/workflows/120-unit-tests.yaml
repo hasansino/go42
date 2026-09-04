@@ -44,13 +44,15 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
     permissions:
+      actions: read
       contents: read
+      pull-requests: write
     # ----
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       - name: 'Setup Go'
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
       - name: 'Download Go modules'
@@ -72,19 +74,8 @@ jobs:
           name: code-coverage
           path: coverage.out
           if-no-files-found: error
-
-  coverage-report:
-    name: coverage-report
-    if: github.event_name == 'pull_request'
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: write
-    steps:
       - name: 'Generate coverage report'
+        if: github.event_name == 'pull_request'
         id: coverage_report
         continue-on-error: true
         uses: fgrosse/go-coverage-report@e432de98ee94a276e8f666d25bfd76347665f75b # v1.3.1
@@ -99,7 +90,7 @@ jobs:
           skip-comment: >-
             ${{ github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]' }}
       - name: 'Add coverage report to job summary'
-        if: steps.coverage_report.outputs.coverage_report != ''
+        if: github.event_name == 'pull_request' && steps.coverage_report.outputs.coverage_report != ''
         run: printf '%s\n' "$COVERAGE_REPORT" >> "$GITHUB_STEP_SUMMARY"
         env:
           COVERAGE_REPORT: ${{ steps.coverage_report.outputs.coverage_report }}
