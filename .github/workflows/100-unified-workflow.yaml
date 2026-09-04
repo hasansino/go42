@@ -204,7 +204,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      id-token: write
       security-events: write
     needs:
       - unit-tests
