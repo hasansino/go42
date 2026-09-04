@@ -285,7 +285,7 @@ jobs:
 
   # dummy job to create distinct group in GitHub UI
   functional-tests-group:
-    name: "Integration, Load & Resilience Tests"
+    name: "Functional Tests"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
@@ -323,6 +323,19 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      generate_report: false
+      timeout_minutes: 10
+
+  # Reporting does not use the temporary image, so run it independently of cleanup.
+  load-tests-report:
+    if: ${{ !cancelled() && needs.load-tests.result != 'skipped' }}
+    uses: ./.github/workflows/150-load-tests-report.yaml
+    permissions:
+      contents: read
+    needs:
+      - load-tests
+    with:
+      runs_on: ubuntu-latest
       timeout_minutes: 10
 
   resilience-tests:
@@ -340,7 +353,9 @@ jobs:
   # stage 7: cleanup
 
   cleanup:
-    if: ${{ always() }}
+    # Without a prepared tag no image could have been published; avoid an empty-tag API request.
+    if: >-
+      ${{ always() && needs.docker-prepare-tag.result == 'success' && needs.docker-prepare-tag.outputs.tag != '' }}
     uses: ./.github/workflows/160-cleanup.yaml
     permissions:
       contents: read
@@ -368,19 +383,22 @@ jobs:
       - integration-tests
       - resilience-tests
       - cleanup
+      - load-tests-report
     steps:
-      # Cleanup is advisory, but waiting for it makes this the terminal workflow gate.
+      # Cleanup and load reporting are advisory, but waiting for them makes this the terminal workflow gate.
       - name: Require blocking jobs to succeed
         env:
           SECURITY_RESULT: ${{ needs.security.result }}
           INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
           RESILIENCE_RESULT: ${{ needs.resilience-tests.result }}
           CLEANUP_RESULT: ${{ needs.cleanup.result }}
+          LOAD_TESTS_REPORT_RESULT: ${{ needs.load-tests-report.result }}
         run: |-
           echo "security: $SECURITY_RESULT"
           echo "integration-tests: $INTEGRATION_RESULT"
           echo "resilience-tests: $RESILIENCE_RESULT"
           echo "cleanup (advisory): $CLEANUP_RESULT"
+          echo "load-tests-report (advisory): $LOAD_TESTS_REPORT_RESULT"
 
           if [ "$SECURITY_RESULT" != "success" ] || \
             [ "$INTEGRATION_RESULT" != "success" ] || \
