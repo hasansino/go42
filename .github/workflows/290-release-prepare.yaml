@@ -1,6 +1,7 @@
 ---
 
 name: release-prepare
+run-name: 'release-prepare ${{ inputs.version }}'
 
 # Validate a requested version from the current, tested master commit and open
 # the deterministic, signed Helm appVersion pull request. Publishing happens
@@ -31,7 +32,7 @@ jobs:
       pull-requests: read
     steps:
       - name: 'Checkout trusted release version helper'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: .trusted-release-prepare
@@ -143,13 +144,6 @@ jobs:
             echo "Current master Chart appVersion is not a supported release version" >&2
             exit 1
           fi
-          if ! grep -Fqx -- "$current_version" "$tag_names_file" || \
-            ! grep -Fqx -- "$current_version" "$published_names_file"; then
-            echo "Current Chart version $current_version is not fully published yet" >&2
-            echo "Finish or repair that release before preparing another one" >&2
-            exit 1
-          fi
-
           pull_pages="${RUNNER_TEMP}/release-prepare-open-pulls-pages.json"
           open_pulls="${RUNNER_TEMP}/release-prepare-open-pulls.json"
           gh api --paginate \
@@ -189,13 +183,16 @@ jobs:
 
           # Compare using one tested SemVer implementation shared by every
           # release stage, including prerelease identifier precedence.
-          python3 "$SEMVER_TOOL" prepare \
-            "$RELEASE_VERSION" "$current_version" "$published_names_file"
+          previous_tag="$(python3 "$SEMVER_TOOL" prepare \
+            "$RELEASE_VERSION" \
+            "$current_version" \
+            "$published_names_file")"
 
           {
             echo "ci_run_id=$ci_run_id"
             echo "current_version=$current_version"
             echo "master_sha=$master_sha"
+            echo "previous_tag=$previous_tag"
             echo "release_version=$RELEASE_VERSION"
           } >> "$GITHUB_OUTPUT"
       # ----
@@ -216,7 +213,7 @@ jobs:
       # ----
       - name: 'Generate repository-scoped release App token'
         id: release-app
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -253,7 +250,7 @@ jobs:
           fi
       # ----
       - name: 'Checkout exact validated master commit'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -269,7 +266,7 @@ jobs:
         env:
           SUMMARY_ENABLE: 'false'
         with:
-          base_ref: ${{ steps.admission.outputs.current_version }}
+          base_ref: ${{ steps.admission.outputs.previous_tag }}
           head_ref: ${{ steps.admission.outputs.release_version }}
           target_commitish: ${{ steps.admission.outputs.master_sha }}
           context_type: release
@@ -356,8 +353,8 @@ jobs:
         env:
           CI_RUN_ID: ${{ steps.admission.outputs.ci_run_id }}
           COMPARISON_URL: ${{ steps.release-summary.outputs.comparison_url }}
-          CURRENT_VERSION: ${{ steps.admission.outputs.current_version }}
           MASTER_SHA: ${{ steps.admission.outputs.master_sha }}
+          PREVIOUS_TAG: ${{ steps.admission.outputs.previous_tag }}
           RELEASE_SUMMARY: ${{ steps.release-summary.outputs.summary }}
           RELEASE_VERSION: ${{ steps.admission.outputs.release_version }}
           REPOSITORY: ${{ github.repository }}
@@ -368,9 +365,9 @@ jobs:
           if [[ -z "$summary" ]]; then
             notes="$(git log \
               --pretty=format:"- %s ([%h](${GITHUB_SERVER_URL}/${REPOSITORY}/commit/%H))" \
-              "${CURRENT_VERSION}..${MASTER_SHA}")"
+              "${PREVIOUS_TAG}..${MASTER_SHA}")"
             if [[ -z "$notes" ]]; then
-              notes="- No changes since \`${CURRENT_VERSION}\`."
+              notes="- No changes since \`${PREVIOUS_TAG}\`."
             fi
             summary="$(printf \
               '### Highlights\nSee changes below for details.\n\n### Changes\n%s' \
@@ -379,7 +376,7 @@ jobs:
 
           comparison_url="$COMPARISON_URL"
           if [[ -z "$comparison_url" ]]; then
-            comparison_url="${GITHUB_SERVER_URL}/${REPOSITORY}/compare/${CURRENT_VERSION}...${MASTER_SHA}"
+            comparison_url="${GITHUB_SERVER_URL}/${REPOSITORY}/compare/${PREVIOUS_TAG}...${MASTER_SHA}"
           fi
 
           {
@@ -389,7 +386,7 @@ jobs:
             echo "**Unified CI:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${CI_RUN_ID}"
             echo "**Prepare workflow:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             echo
-            echo "**Full changelog:** [${CURRENT_VERSION}...${RELEASE_VERSION}](${comparison_url})"
+            echo "**Full changelog:** [${PREVIOUS_TAG}...${RELEASE_VERSION}](${comparison_url})"
             echo
             echo '---'
             echo
@@ -398,7 +395,7 @@ jobs:
       # ----
       - name: 'Create or update release pull request'
         id: release-pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.release-app.outputs.token }}
           branch-token: ${{ steps.release-app.outputs.token }}

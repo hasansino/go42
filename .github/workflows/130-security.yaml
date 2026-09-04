@@ -43,11 +43,11 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository with full history'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: 'Run Gitleaks scan'
-        uses: gitleaks/gitleaks-action@v3
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
@@ -64,11 +64,11 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Gosec security scanner'
-        uses: securego/gosec@master
+        uses: securego/gosec@598d6146b91b2370c6f11f7d3cb256119d8cbfc4 # master
         env:
           GO111MODULE: on # will download go modules
           GOSECGOVERSION: ${{ env.go_version }}
@@ -85,11 +85,11 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Go vulnerability check'
-        uses: golang/govulncheck-action@v1
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
@@ -109,16 +109,16 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # -----
       - name: 'Initialize CodeQL'
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           languages: go
       - name: 'Build'
-        uses: github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
       - name: 'Perform CodeQL analysis'
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           upload: ${{ github.ref == 'refs/heads/master' && 'always' || 'never' }}
 
@@ -132,9 +132,9 @@ jobs:
     # -----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Check Go licenses'
-        uses: joeig/go-licenses-action@v1.2
+        uses: joeig/go-licenses-action@14ffdafa825ad1c78cb30af8d8cb8e242c2fd36e # v1.2
         with:
           # some packages may miss license files, or they are linked to outside libraries
           # for stricter checks, add `unknown` to this list
@@ -153,9 +153,9 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Run OSSF Scorecard analysis'
-        uses: ossf/scorecard-action@v2.4.4
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
@@ -174,11 +174,11 @@ jobs:
     # -----
     steps:
       - name: 'Checkout master branch'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: master
       - name: 'Setup Go'
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
       - name: 'Install capslock'
@@ -189,6 +189,6 @@ jobs:
         run: mv capabilities.json /tmp/capabilities.json
       # -----
       - name: 'Checkout current branch'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Compare capabilities with master'
         run: capslock -packages ./... -output=compare /tmp/capabilities.json

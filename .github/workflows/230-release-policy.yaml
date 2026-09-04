@@ -36,7 +36,7 @@ jobs:
       # Pull-request content is never checked out. This fetches only the helper
       # from the same trusted commit that supplied this workflow definition.
       - name: 'Checkout trusted release version helper'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           path: .trusted-release-policy
@@ -509,13 +509,20 @@ jobs:
           if ! python3 "$SEMVER_TOOL" validate "$base_version"; then
             fail 'Merge-base Chart appVersion is not supported strict SemVer'
           fi
-          if ! python3 "$SEMVER_TOOL" newer "$release_tag" "$base_version"; then
-            fail 'Release version must be newer than the current Chart appVersion'
+
+          published_names_file="${work_dir}/published-release-names"
+          if ! gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft == false) | .tag_name' > "$published_names_file"; then
+            fail 'Could not list published GitHub releases'
           fi
 
-          if ! gh api "repos/${REPOSITORY}/git/ref/tags/${base_version}" >/dev/null || \
-            ! gh api "repos/${REPOSITORY}/releases/tags/${base_version}" >/dev/null; then
-            fail "Current Chart version ${base_version} is not fully published"
+          if ! published_baseline="$(
+            python3 "$SEMVER_TOOL" prepare \
+              "$release_tag" \
+              "$base_version" \
+              "$published_names_file"
+          )"; then
+            fail 'Release transition is inconsistent with repository publication state'
           fi
 
           base_chart_blob="$(jq -er '.sha' "${base_chart}.json")"
@@ -606,6 +613,7 @@ jobs:
             echo '### Release policy'
             echo
             echo "Authorized release pull request for \`${release_tag}\`."
+            echo "Published release baseline: \`${published_baseline}\`."
           } >> "$GITHUB_STEP_SUMMARY"
       # A failure before the evaluator starts (for example, checkout failure)
       # must still conclude the custom status required by the ruleset.

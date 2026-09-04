@@ -7,6 +7,7 @@ import functools
 import re
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 
 PATTERN = re.compile(
@@ -67,6 +68,26 @@ def latest_version(path: Path) -> str:
     return max(versions, key=functools.cmp_to_key(compare))
 
 
+def prepare_release(
+    requested: str,
+    current: str,
+    published_releases: Path,
+) -> str:
+    """Return the latest published baseline for a new release."""
+    parse(requested)
+    parse(current)
+    previous = latest_version(published_releases)
+    if requested == current:
+        raise ValueError(f"{requested} already matches the Chart appVersion")
+    if compare(current, previous) < 0:
+        raise ValueError(
+            f"Chart appVersion {current} is older than published release {previous}"
+        )
+    if compare(requested, previous) <= 0:
+        raise ValueError(f"{requested} must be newer than published release {previous}")
+    return previous
+
+
 def self_test() -> None:
     ordered = [
         "v0.9.71",
@@ -92,6 +113,27 @@ def self_test() -> None:
             continue
         raise AssertionError(f"accepted invalid version: {invalid}")
 
+    with TemporaryDirectory() as directory:
+        published_file = Path(directory) / "published-releases"
+        published_file.write_text("v0.9.71\nv0.9.72\n", encoding="utf-8")
+        assert prepare_release("v0.9.73", "v0.9.72", published_file) == "v0.9.72"
+        assert prepare_release("v0.9.74", "v0.9.73", published_file) == "v0.9.72"
+        # A failed version is not an ordering baseline: a lower unused version
+        # remains valid when it is newer than the latest published version.
+        assert prepare_release("v0.9.73", "v0.9.74", published_file) == "v0.9.72"
+
+        rejected = [
+            ("v0.9.72", "v0.9.73", published_file),
+            ("v0.9.73", "v0.9.73", published_file),
+            ("v0.9.74", "v0.9.71", published_file),
+        ]
+        for arguments in rejected:
+            try:
+                prepare_release(*arguments)
+            except ValueError:
+                continue
+            raise AssertionError(f"accepted invalid release transition: {arguments}")
+
 
 def main(argv: list[str]) -> int:
     try:
@@ -103,14 +145,7 @@ def main(argv: list[str]) -> int:
                 raise ValueError(f"{argv[2]} must be newer than {argv[3]}")
         elif command == "prepare" and len(argv) == 5:
             requested, current, releases_path = argv[2], argv[3], Path(argv[4])
-            latest = latest_version(releases_path)
-            if current != latest:
-                raise ValueError(
-                    f"Chart appVersion {current} does not match latest published release {latest}"
-                )
-            if compare(requested, latest) <= 0:
-                raise ValueError(f"{requested} must be newer than published release {latest}")
-            print(latest)
+            print(prepare_release(requested, current, releases_path))
         elif command == "self-test" and len(argv) == 2:
             self_test()
         else:

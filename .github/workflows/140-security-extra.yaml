@@ -45,7 +45,7 @@ jobs:
       # every severity and unfixed findings, so the enforcement policy below
       # does not hide vulnerabilities that currently have no remediation.
       - name: 'Report all image vulnerabilities'
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
@@ -57,7 +57,7 @@ jobs:
       # to enforce the narrower merge policy while reusing the installation
       # from the reporting pass above.
       - name: 'Enforce fixable high and critical image vulnerabilities'
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
@@ -91,10 +91,10 @@ jobs:
     # ----
     steps:
       - name: 'Checkout repository'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # ----
       - name: 'Run ZAP API scan'
-        uses: zaproxy/action-api-scan@v0.10.0
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
         with:
           target: 'http://localhost:44441/api/v1/.combined.yaml'
           format: openapi

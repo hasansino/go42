@@ -1,3 +1,5 @@
+---
+
 name: ai-prepare-env
 description: 'Prepares the environment for ai agents'
 # Prepares the environment for ai agents.
@@ -5,7 +7,7 @@ runs:
   using: composite
   steps:
     - name: 'Setup Go'
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
         go-version-file: 'go.mod'
         cache: true
@@ -18,7 +20,7 @@ runs:
       shell: bash
     # -----
     - name: 'Cache Homebrew and formulae'
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: |
           /home/linuxbrew/.linuxbrew
@@ -29,7 +31,7 @@ runs:
           homebrew-${{ runner.os }}-
     # -----
     - name: 'Setup Homebrew'
-      uses: Homebrew/actions/setup-homebrew@main
+      uses: Homebrew/actions/setup-homebrew@f8d4222eb633e65c2a0157383cf80861fc7fae7f # main
     # -----
     - name: 'Setup project dependencies'
       run: make setup

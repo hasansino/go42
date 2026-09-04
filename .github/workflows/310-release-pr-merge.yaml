@@ -201,7 +201,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       # ----
       - name: 'Checkout exact merge commit'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -241,13 +241,8 @@ jobs:
           merge_parent="${merge_line[1]}"
           prior_app_line="$(git show "${merge_parent}:${chart_file}" | grep '^appVersion:' || true)"
           prior_version="$(sed -n 's/^appVersion: "\([^"]*\)"$/\1/p' <<< "$prior_app_line")"
-          if ! python3 "$SEMVER_TOOL" newer "$RELEASE_TAG" "$prior_version"; then
-            echo "Release version is not newer than the master version it replaces" >&2
-            exit 1
-          fi
-          if ! gh api "repos/${REPOSITORY}/git/ref/tags/${prior_version}" >/dev/null || \
-            ! gh api "repos/${REPOSITORY}/releases/tags/${prior_version}" >/dev/null; then
-            echo "Previous Chart version is not fully published: $prior_version" >&2
+          if ! python3 "$SEMVER_TOOL" validate "$prior_version"; then
+            echo "Previous Chart version is not strict SemVer: $prior_version" >&2
             exit 1
           fi
 
@@ -305,9 +300,12 @@ jobs:
 
           release_pages="${RUNNER_TEMP}/release-validation-pages.json"
           releases_file="${RUNNER_TEMP}/release-validation-releases.json"
+          published_names_file="${RUNNER_TEMP}/release-validation-published-names.txt"
           gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" > "$release_pages"
           jq -cs 'add // []' "$release_pages" > "$releases_file"
           releases="$(cat "$releases_file")"
+          jq -r '.[] | select(.draft == false) | .tag_name' \
+            "$releases_file" > "$published_names_file"
           existing_release="$(jq --arg tag "$RELEASE_TAG" '[.[] | select(.tag_name == $tag)]' <<< "$releases")"
           if [[ "$(jq 'length' <<< "$existing_release")" -gt 1 ]]; then
             echo "Multiple GitHub releases use $RELEASE_TAG" >&2
@@ -344,10 +342,19 @@ jobs:
             exit 1
           fi
 
+          previous_tag="$prior_version"
+          if [[ "$already_released" == false ]]; then
+            # A failed Chart version is not the changelog or ordering baseline.
+            previous_tag="$(python3 "$SEMVER_TOOL" prepare \
+              "$RELEASE_TAG" \
+              "$prior_version" \
+              "$published_names_file")"
+          fi
+
           {
             echo "already_released=$already_released"
             echo "is_prerelease=$is_prerelease"
-            echo "previous_tag=$prior_version"
+            echo "previous_tag=$previous_tag"
             echo "tag_exists=$tag_exists"
           } >> "$GITHUB_OUTPUT"
       # ----
@@ -373,7 +380,7 @@ jobs:
       - name: 'Generate repository-scoped release App preflight token'
         if: steps.validate-source.outputs.already_released == 'false'
         id: release-app-preflight
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -444,7 +451,7 @@ jobs:
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
       - name: 'Checkout exact release source'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -499,9 +506,9 @@ jobs:
       packages: read
     steps:
       - name: 'Set up Docker Buildx'
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
       - name: 'Log in to GitHub Container Registry'
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -590,7 +597,7 @@ jobs:
       # ----
       - name: 'Generate repository-scoped release App token'
         id: release-app
-        uses: actions/create-github-app-token@v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
