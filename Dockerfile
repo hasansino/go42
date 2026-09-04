@@ -109,6 +109,6 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh"]
 
 # Application will be started by appuser inside isolated home directory.
-USER appuser
+USER 1000
 WORKDIR /home/appuser
 CMD ["/usr/local/bin/app"]
