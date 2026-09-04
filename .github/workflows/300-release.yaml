@@ -1,34 +1,291 @@
 ---
 
-name: release
+name: release-publish
 
-# Release.
-# Triggered by v{semver} tag push.
+# Publish the exact source selected by release-finalize. The immutable Git tag,
+# Helm appVersion, OCI tag, provenance, and GitHub Release all use one version.
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-  packages: write
-  attestations: write
-  id-token: write
-  pull-requests: write
-  actions: read
-  models: read
+permissions: {}
+
+concurrency:
+  group: release-publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  validate-release:
+    name: validate-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      already_released: ${{ steps.validate.outputs.already_released }}
+      ci_run_id: ${{ steps.validate.outputs.ci_run_id }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+      previous_tag: ${{ steps.validate.outputs.previous_tag }}
+      release_tag: ${{ steps.validate.outputs.release_tag }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+    steps:
+      - name: 'Checkout tagged source'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # ----
+      - name: 'Validate release source'
+        id: validate
+        env:
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ACTOR: ${{ github.actor }}
+          RELEASE_APP_ID: ${{ vars.RELEASE_APP_ID }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          semver_pattern='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?$'
+
+          if [[ ! "$RELEASE_APP_ID" =~ ^[1-9][0-9]*$ ]] || \
+            [[ ! "$EXPECTED_APP_SLUG" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "Release App identity configuration is invalid" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_ACTOR" != "${EXPECTED_APP_SLUG}[bot]" ]]; then
+            echo "Release tags must be created by ${EXPECTED_APP_SLUG}[bot]" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ $semver_pattern || ${#RELEASE_TAG} -gt 128 ]]; then
+            echo "Release tag must be strict SemVer without build metadata: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin master:refs/remotes/origin/master
+          source_sha="$(git rev-parse --verify "refs/tags/${RELEASE_TAG}^{commit}")"
+          if ! git merge-base --is-ancestor "$source_sha" refs/remotes/origin/master; then
+            echo "Release tag is not part of master history" >&2
+            exit 1
+          fi
+          if [[ "$(grep -c '^appVersion:' infra/helm/app/Chart.yaml)" -ne 1 ]] || \
+            ! grep -Fqx "appVersion: \"${RELEASE_TAG}\"" infra/helm/app/Chart.yaml; then
+            echo "Tagged Helm appVersion does not equal $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          # Do not trust App authorship alone: the Release App also creates the
+          # preparation branch. Prove that this tag targets the exact merge
+          # result of the reviewed, signed, one-line release pull request.
+          pull_pages="${RUNNER_TEMP}/release-source-pulls-pages.json"
+          release_pulls="${RUNNER_TEMP}/release-source-pulls.json"
+          gh api --paginate \
+            "repos/${REPOSITORY}/commits/${source_sha}/pulls?per_page=100" > "$pull_pages"
+          jq -cs 'add // []' "$pull_pages" > "$release_pulls"
+          release_pr="$(jq \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg branch "auto-release-${RELEASE_TAG}" \
+            --arg repository "$REPOSITORY" \
+            --arg sha "$source_sha" \
+            --arg title "Release ${RELEASE_TAG}" '
+              [
+                .[]
+                | select(
+                    .state == "closed"
+                    and .merged_at != null
+                    and .merge_commit_sha == $sha
+                    and .title == $title
+                    and .user.login == $author
+                    and .base.ref == "master"
+                    and .base.repo.full_name == $repository
+                    and .head.ref == $branch
+                    and .head.repo.full_name == $repository
+                  )
+              ]
+            ' "$release_pulls")"
+          if [[ "$(jq 'length' <<< "$release_pr")" -ne 1 ]]; then
+            echo "Tag source is not the unique merge result of the expected release pull request" >&2
+            exit 1
+          fi
+
+          pr_number="$(jq -r '.[0].number' <<< "$release_pr")"
+          pr_head_sha="$(jq -r '.[0].head.sha' <<< "$release_pr")"
+          if [[ ! "$pr_number" =~ ^[1-9][0-9]*$ || ! "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Release pull request identity is invalid" >&2
+            exit 1
+          fi
+          pull_request="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}")"
+          if ! jq -e \
+            --arg head_sha "$pr_head_sha" \
+            --arg merge_sha "$source_sha" '
+              .merged == true
+                and .changed_files == 1
+                and .commits == 1
+                and .head.sha == $head_sha
+                and .merge_commit_sha == $merge_sha
+            ' <<< "$pull_request" >/dev/null; then
+            echo "Release pull request shape changed or is incomplete" >&2
+            exit 1
+          fi
+
+          changed_files="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}/files?per_page=100")"
+          if ! jq -e --arg chart 'infra/helm/app/Chart.yaml' '
+            length == 1
+              and .[0].filename == $chart
+              and .[0].status == "modified"
+              and .[0].additions == 1
+              and .[0].deletions == 1
+          ' <<< "$changed_files" >/dev/null; then
+            echo "Release pull request did not contain the expected one-line Chart change" >&2
+            exit 1
+          fi
+
+          commits="$(gh api "repos/${REPOSITORY}/pulls/${pr_number}/commits?per_page=100")"
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg head_sha "$pr_head_sha" '
+              length == 1
+                and .[0].sha == $head_sha
+                and .[0].author.login == $author
+                and .[0].commit.verification.verified == true
+            ' <<< "$commits" >/dev/null; then
+            echo "Release pull request commit is not signed by the release App" >&2
+            exit 1
+          fi
+
+          # The tag is created immediately after merge, while the master run can
+          # still be active. Only the exact tagged commit is accepted.
+          ci_run_id=""
+          for attempt in $(seq 1 40); do
+            runs="$(gh api --method GET \
+              "repos/${REPOSITORY}/actions/workflows/100-unified-workflow.yaml/runs" \
+              -f event=push \
+              -f head_sha="$source_sha" \
+              -f per_page=100)"
+            ci_run_id="$(jq -r --arg sha "$source_sha" '
+              [
+                .workflow_runs[]
+                | select(
+                    .event == "push"
+                    and .head_branch == "master"
+                    and .head_sha == $sha
+                    and .status == "completed"
+                    and .conclusion == "success"
+                  )
+                | .id
+              ][0] // empty
+            ' <<< "$runs")"
+            [[ -n "$ci_run_id" ]] && break
+            if (( attempt < 40 )); then
+              echo "Waiting for successful master CI for $source_sha ($attempt/40)"
+              sleep 15
+            fi
+          done
+          if [[ -z "$ci_run_id" ]]; then
+            echo "No successful master CI run found for $source_sha" >&2
+            exit 1
+          fi
+
+          # Recheck ancestry after waiting in case master history changed.
+          git fetch --force --no-tags origin master:refs/remotes/origin/master
+          git merge-base --is-ancestor "$source_sha" refs/remotes/origin/master
+
+          published_tags="$(gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft == false) | .tag_name')"
+          previous_tag=""
+          while IFS= read -r candidate; do
+            if [[ "$candidate" != "$RELEASE_TAG" && "$candidate" =~ $semver_pattern ]] && \
+              git rev-parse --verify --quiet "refs/tags/${candidate}^{commit}" >/dev/null && \
+              git merge-base --is-ancestor "refs/tags/${candidate}^{commit}" "$source_sha"; then
+              previous_tag="$candidate"
+              break
+            fi
+          done <<< "$published_tags"
+
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            is_prerelease=true
+          else
+            is_prerelease=false
+          fi
+
+          error_file="${RUNNER_TEMP}/release-query-error"
+          set +e
+          existing_release="$(gh api "repos/${REPOSITORY}/releases/tags/${RELEASE_TAG}" 2> "$error_file")"
+          api_exit=$?
+          set -e
+          if (( api_exit == 0 )); then
+            if ! jq -e \
+              --arg author "${EXPECTED_APP_SLUG}[bot]" \
+              --arg tag "$RELEASE_TAG" \
+              --argjson prerelease "$is_prerelease" \
+              '.tag_name == $tag
+                and .name == ("Release " + $tag)
+                and .author.login == $author
+                and .draft == false
+                and .prerelease == $prerelease' <<< "$existing_release" >/dev/null; then
+              echo "Existing GitHub release conflicts with $RELEASE_TAG" >&2
+              exit 1
+            fi
+            already_released=true
+          elif grep -Fq 'HTTP 404' "$error_file"; then
+            already_released=false
+          else
+            cat "$error_file" >&2
+            exit "$api_exit"
+          fi
+
+          {
+            echo "already_released=$already_released"
+            echo "ci_run_id=$ci_run_id"
+            echo "is_prerelease=$is_prerelease"
+            echo "previous_tag=$previous_tag"
+            echo "release_tag=$RELEASE_TAG"
+            echo "source_sha=$source_sha"
+          } >> "$GITHUB_OUTPUT"
+      # ----
+      # Generate a short-lived token now so configuration failures happen before
+      # an image is published. The write token is generated only in the final job.
+      - name: 'Validate release App credentials'
+        if: steps.validate.outputs.already_released == 'false'
+        id: release-app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+      - name: 'Verify release App identity'
+        if: steps.validate.outputs.already_released == 'false'
+        env:
+          ACTUAL_APP_SLUG: ${{ steps.release-app.outputs.app-slug }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+        run: |
+          if [[ "$ACTUAL_APP_SLUG" != "$EXPECTED_APP_SLUG" ]]; then
+            echo "Release App slug mismatch" >&2
+            exit 1
+          fi
+
   docker-build:
     name: docker-build
+    if: needs.validate-release.outputs.already_released == 'false'
+    needs:
+      - validate-release
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
     uses: ./.github/workflows/140-docker-build.yaml
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
       service_name: "go42"
-      image_tag: ${{ github.ref_name }}
+      image_tag: ${{ needs.validate-release.outputs.release_tag }}
       platforms: "linux/amd64,linux/arm64"
       attestation: true
       generate_sbom: true
@@ -37,87 +294,235 @@ jobs:
 
   generate-summary:
     name: generate-summary
+    if: needs.validate-release.outputs.already_released == 'false'
     needs:
-      - docker-build
+      - validate-release
     runs-on: ubuntu-latest
+    continue-on-error: true
     timeout-minutes: 10
     permissions:
       contents: read
       models: read
     outputs:
-      summary: ${{ steps.ai_summary.outputs.summary }}
-      previous_tag: ${{ steps.prev_tag.outputs.previous_tag }}
+      summary: ${{ steps.ai-summary.outputs.summary }}
     env:
       SUMMARY_ENABLE: ${{ vars.SUMMARY_ENABLE }}
       SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL }}
     steps:
-      - name: 'Checkout repository with full history'
+      - name: 'Checkout tagged source'
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      # ----
-      - name: 'Get previous tag'
-        id: prev_tag
-        run: |
-          PREVIOUS_TAG="$(git tag --sort=-version:refname | head -2 | tail -1 2>/dev/null || echo "")"
-          echo "previous_tag=$PREVIOUS_TAG" >> "$GITHUB_OUTPUT"
-      # ----
-      - name: 'Generate AI Summary'
-        id: ai_summary
+          persist-credentials: false
+          ref: ${{ needs.validate-release.outputs.source_sha }}
+      - name: 'Generate AI summary'
+        id: ai-summary
         uses: ./.github/actions/ai-generate-summary
         with:
-          base_ref: ${{ steps.prev_tag.outputs.previous_tag }}
-          head_ref: ${{ github.ref_name }}
+          base_ref: ${{ needs.validate-release.outputs.previous_tag }}
+          head_ref: ${{ needs.validate-release.outputs.release_tag }}
           context_type: release
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  create-pr:
-    name: create-pr
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  integration-tests:
+    name: integration-tests
+    if: needs.validate-release.outputs.already_released == 'false'
     needs:
+      - validate-release
+      - docker-build
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/150-integration-tests.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: false
+      service_name: "go42"
+      image_tag: ${{ needs.validate-release.outputs.release_tag }}
+      image_reference: ghcr.io/${{ github.repository_owner }}/go42@${{ needs.docker-build.outputs.image_digest }}
+      timeout_minutes: 10
+
+  publish-release:
+    name: publish-release
+    if: |
+      !cancelled() &&
+      needs.validate-release.result == 'success' &&
+      needs.validate-release.outputs.already_released == 'false' &&
+      needs.docker-build.result == 'success' &&
+      needs.integration-tests.result == 'success'
+    needs:
+      - validate-release
       - docker-build
       - generate-summary
-    if: always() && needs.docker-build.result == 'success'
+      - integration-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
-      contents: write
-      pull-requests: write
+      attestations: read
+      contents: read
+      packages: read
     steps:
-      - name: 'Generate GitHub App Token'
-        id: generate_token
-        if: ${{ vars.RELEASE_APP_ID }}
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v4
+      - name: 'Log in to GitHub Container Registry'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # ----
+      - name: 'Verify image, provenance, and release run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_DIGEST: ${{ needs.docker-build.outputs.image_digest }}
+          IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/go42
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ needs.validate-release.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          image_metadata="$(docker buildx imagetools inspect \
+            "${IMAGE_REPOSITORY}:${RELEASE_TAG}" --format '{{json .}}')"
+          current_digest="$(jq -r '.manifest.digest // empty' <<< "$image_metadata")"
+          if [[ "$current_digest" != "$IMAGE_DIGEST" ]]; then
+            echo "Release tag does not point to the tested image digest" >&2
+            exit 1
+          fi
+
+          attestation_file="${RUNNER_TEMP}/provenance.json"
+          signer_workflow="${GITHUB_SERVER_URL#https://}/${REPOSITORY}/.github/workflows/140-docker-build.yaml"
+          gh attestation verify "oci://${IMAGE_REPOSITORY}@${IMAGE_DIGEST}" \
+            --repo "$REPOSITORY" \
+            --signer-workflow "$signer_workflow" \
+            --source-digest "$SOURCE_SHA" \
+            --source-ref "refs/tags/${RELEASE_TAG}" \
+            --format json > "$attestation_file"
+
+          expected_config="${GITHUB_SERVER_URL}/${REPOSITORY}/.github/workflows/300-release.yaml@refs/tags/${RELEASE_TAG}"
+          expected_invocation="${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}"
+          if ! jq -e \
+            --arg config "$expected_config" \
+            --arg invocation "$expected_invocation" \
+            --arg source "$SOURCE_SHA" \
+            'any(.[].verificationResult.signature.certificate;
+              .buildConfigURI == $config
+              and .buildConfigDigest == $source
+              and .runInvocationURI == $invocation)' "$attestation_file" >/dev/null; then
+            echo "Provenance is not bound to this successful release run attempt" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Prepare release notes'
+        env:
+          CI_RUN_ID: ${{ needs.validate-release.outputs.ci_run_id }}
+          IMAGE_DIGEST: ${{ needs.docker-build.outputs.image_digest }}
+          PREVIOUS_TAG: ${{ needs.validate-release.outputs.previous_tag }}
+          RELEASE_SUMMARY: ${{ needs.generate-summary.outputs.summary }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ needs.validate-release.outputs.source_sha }}
+        run: |
+          {
+            echo "**Source commit:** \`${SOURCE_SHA}\`"
+            echo "**Image:** \`ghcr.io/${REPOSITORY}@${IMAGE_DIGEST}\`"
+            echo "**Master CI:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${CI_RUN_ID}"
+            echo "**Release workflow:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            if [[ -n "$PREVIOUS_TAG" ]]; then
+              echo "**Previous version:** \`${PREVIOUS_TAG}\`"
+              echo "**Full changelog:** ${GITHUB_SERVER_URL}/${REPOSITORY}/compare/${PREVIOUS_TAG}...${RELEASE_TAG}"
+            fi
+            echo
+            echo '---'
+            echo
+            if [[ -n "$RELEASE_SUMMARY" ]]; then
+              printf '%s\n' "$RELEASE_SUMMARY"
+            else
+              echo '### Release Summary'
+              echo
+              echo 'No automated summary is available. Review the changelog above.'
+            fi
+          } > release-summary.md
+      # ----
+      - name: 'Check for a concurrently created release'
+        id: release-state
+        env:
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_PRERELEASE: ${{ needs.validate-release.outputs.is_prerelease }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          error_file="${RUNNER_TEMP}/release-query-error"
+          set +e
+          existing_release="$(gh api "repos/${REPOSITORY}/releases/tags/${RELEASE_TAG}" 2> "$error_file")"
+          api_exit=$?
+          set -e
+          if (( api_exit == 0 )); then
+            if ! jq -e \
+              --arg author "${EXPECTED_APP_SLUG}[bot]" \
+              --arg tag "$RELEASE_TAG" \
+              --argjson prerelease "$IS_PRERELEASE" \
+              '.tag_name == $tag
+                and .name == ("Release " + $tag)
+                and .author.login == $author
+                and .draft == false
+                and .prerelease == $prerelease' <<< "$existing_release" >/dev/null; then
+              echo "Existing GitHub release conflicts with $RELEASE_TAG" >&2
+              exit 1
+            fi
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif grep -Fq 'HTTP 404' "$error_file"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            cat "$error_file" >&2
+            exit "$api_exit"
+          fi
+      # ----
+      - name: 'Generate repository-scoped release App token'
+        if: steps.release-state.outputs.exists == 'false'
+        id: release-app
         uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      # ----
-      - name: 'Checkout repository with full history'
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      # ----
-      - name: 'Update Helm Chart appVersion'
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - name: 'Verify release App identity'
+        if: steps.release-state.outputs.exists == 'false'
+        env:
+          ACTUAL_APP_SLUG: ${{ steps.release-app.outputs.app-slug }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
         run: |
-          sed -i "s/^appVersion:.*/appVersion: \"${{ github.ref_name }}\"/" infra/helm/app/Chart.yaml
-      # ----
-      - name: 'Create pull request for release'
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          commit-message: "auto-release-${{ github.ref_name }}"
-          title: "Release ${{ github.ref_name }}"
-          body: |
-            This is an automated release PR. Merging this PR will trigger a deployment.
-
-            ${{ needs.generate-summary.outputs.previous_tag && format('**Previous version:** `{0}`', needs.generate-summary.outputs.previous_tag) || '' }}
-            ${{ needs.generate-summary.outputs.previous_tag && format('**Full changelog:** https://github.com/{0}/compare/{1}...{2}', github.repository, needs.generate-summary.outputs.previous_tag, github.ref_name) || '' }}
-
-            ---
-
-            ${{ needs.generate-summary.outputs.summary || '## Release Summary\n\nNo automated summary available. Please review the changelog link above.' }}
-          branch: "auto-release-${{ github.ref_name }}"
-          delete-branch: true
-          branch-suffix: random
-          sign-commits: true
-          base: master
-          assignees: ${{ github.actor }} # will be whoever created a tag
+          if [[ "$ACTUAL_APP_SLUG" != "$EXPECTED_APP_SLUG" ]]; then
+            echo "Release App slug mismatch" >&2
+            exit 1
+          fi
+      - name: 'Create GitHub release'
+        if: steps.release-state.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          IS_PRERELEASE: ${{ needs.validate-release.outputs.is_prerelease }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ needs.validate-release.outputs.source_sha }}
+        run: |-
+          set -euo pipefail
+          payload="${RUNNER_TEMP}/release-payload.json"
+          jq -n \
+            --arg tag "$RELEASE_TAG" \
+            --arg source_sha "$SOURCE_SHA" \
+            --argjson prerelease "$IS_PRERELEASE" \
+            --rawfile body release-summary.md \
+            '{
+              tag_name: $tag,
+              target_commitish: $source_sha,
+              name: ("Release " + $tag),
+              body: $body,
+              draft: false,
+              prerelease: $prerelease,
+              generate_release_notes: true,
+              make_latest: (if $prerelease then "false" else "true" end)
+            }' > "$payload"
+          gh api --method POST "repos/${REPOSITORY}/releases" --input "$payload" >/dev/null

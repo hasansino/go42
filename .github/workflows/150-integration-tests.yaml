@@ -28,6 +28,11 @@ on:
         type: string
         default: "tmp"
         description: "image_tag"
+      image_reference:
+        required: false
+        type: string
+        default: ""
+        description: "Exact image reference; overrides image_tag when set"
       timeout_minutes:
         required: false
         type: number
@@ -47,6 +52,10 @@ on:
       image_tag:
         required: true
         type: string
+      image_reference:
+        required: false
+        type: string
+        default: ""
       timeout_minutes:
         required: false
         type: number
@@ -108,7 +117,9 @@ jobs:
           --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1" --health-start-period
           10s --health-interval 5s --health-timeout 5s --health-retries 5
       app:
-        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+        image: >-
+          ${{ inputs.image_reference || format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.service_name, inputs.image_tag)
+          }}
         ports:
           - ${{ matrix.app_port }}:8080 # unique ports to avoid conflicts on self-hosted runners
           - ${{ matrix.grpc_port }}:50051 # unique ports to avoid conflicts on self-hosted runners

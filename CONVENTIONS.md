@@ -30,8 +30,8 @@ This file outlines conventions for the go42 project.
 
 ## CI/CD
 
-* Use `gh` client to access github resources
-* Any destructive operation should require user confirmation in interactive mode, or not be allowed in non-interactive mode.
+* Use `gh` client to access github resources.
+* Any destructive operation should require user confirmation in interactive mode, or not be allowed in non-interactive mode unless explicitly mentioned by the user.
 
 ## Golang
 
@@ -58,29 +58,28 @@ This file outlines conventions for the go42 project.
 * Never define types or constants inside functions
 * Never use anonymous structs
 * Put DI interfaces in accessors.go with mock generation into mocks/ directory
-
-* naming interfaces and generating mocks
-* retry pattern
-* panic recovery
+* DI dependencies should be interfaces wherever possible, name interfaces `xxxAccessor` or if possible simple name of sub-system: `cache`, `events`.
+* Panic recovery should be handled by upstream framework, e.g., echo, gin, fiber, etc. and not in the business logic layer.
 
 ### Linting
 
-* Use linters defined in `make lint` target with corresponding configurations from etc folder if present.
 * Prefer `make lint` to manually invoking linters.
+* Use linters defined in `make lint` target with corresponding configurations from etc folder if present.
+
+### Testing
+
+* Prefer `make test-*` to manually invoking tests.
+* When implementing tests, always name test file after the file being tested, e.g., `foo_test.go` for `foo.go`.
 
 ### Observability
 
-* Pass logger as dependancy injection with component field, but can be used globally where needed
+* Pass logger as dependency injection with component field, but can be used globally where needed
 * Log fields with dash, metric labels with underscore
 * Logger should be passed as option, if not passed, must default to noop logger
 * log.fatal can be used only during init phase in main functions
 * Use `slog.Any("error", err)` for slog errors
 * Prefer xContext() version of slog methods where context is available
 
-### Testing
-
-* Prefer `make test-*` to manually invoking tests.
-* When implementing tests, always name test file after the file being tested, e.g., `foo_test.go` for `foo.go`.
 
 ## SQL
 

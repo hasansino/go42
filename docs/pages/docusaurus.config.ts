@@ -11,6 +11,7 @@ const config: Config = {
   favicon: 'img/go42-logo.svg',
   onBrokenLinks: 'throw',
   markdown: {
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
@@ -56,6 +57,7 @@ const config: Config = {
     ],
   ],
   themes: [
+    '@docusaurus/theme-mermaid',
     [
       require.resolve("@easyops-cn/docusaurus-search-local"),
       {

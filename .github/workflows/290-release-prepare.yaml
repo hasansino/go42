@@ -1,0 +1,424 @@
+---
+
+name: release-prepare
+
+# Validate a requested version from the current, tested master commit and open
+# the deterministic, signed Helm appVersion pull request. Publishing happens
+# only after that pull request is reviewed and merged.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Strict v-prefixed SemVer (for example, v1.2.3 or v1.2.3-rc.1)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-prepare
+  cancel-in-progress: false
+
+jobs:
+  release-prepare:
+    name: release-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+      - name: 'Checkout trusted release version helper'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          path: .trusted-release-prepare
+          persist-credentials: false
+          ref: refs/heads/master
+          sparse-checkout: .github/scripts/release-semver.py
+          sparse-checkout-cone-mode: false
+      - name: 'Validate release request'
+        id: admission
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_SHA: ${{ github.sha }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          REPOSITORY: ${{ github.repository }}
+          SEMVER_TOOL: >-
+            ${{ github.workspace }}/.trusted-release-prepare/.github/scripts/release-semver.py
+        run: |
+          set -euo pipefail
+
+          if ! python3 "$SEMVER_TOOL" validate "$RELEASE_VERSION"; then
+            echo "Version must be strict v-prefixed SemVer without build metadata: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+          if [[ "$DISPATCH_REF" != 'refs/heads/master' ]]; then
+            echo "Release preparation must be dispatched from master, not $DISPATCH_REF" >&2
+            exit 1
+          fi
+          if [[ ! "$DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Workflow dispatch resolved to an invalid commit SHA" >&2
+            exit 1
+          fi
+
+          master_sha="$(gh api "repos/${REPOSITORY}/branches/master" --jq '.commit.sha')"
+          if [[ ! "$master_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The current master commit SHA is invalid" >&2
+            exit 1
+          fi
+          if [[ "$DISPATCH_SHA" != "$master_sha" ]]; then
+            echo "Workflow dispatch is not running on the current master commit" >&2
+            echo "dispatch: $DISPATCH_SHA" >&2
+            echo "master:   $master_sha" >&2
+            exit 1
+          fi
+
+          # Wait for the exact master push to finish rather than accepting an
+          # older successful run for the branch.
+          ci_run_id=''
+          for attempt in $(seq 1 40); do
+            runs="$(gh api --method GET \
+              "repos/${REPOSITORY}/actions/workflows/100-unified-workflow.yaml/runs" \
+              -f branch=master \
+              -f event=push \
+              -f head_sha="$master_sha" \
+              -f per_page=100)"
+            ci_run_id="$(jq -r --arg repository "$REPOSITORY" --arg sha "$master_sha" '
+              [
+                .workflow_runs[]
+                | select(
+                    .event == "push"
+                    and .head_branch == "master"
+                    and .head_sha == $sha
+                    and .head_repository.full_name == $repository
+                    and .status == "completed"
+                    and .conclusion == "success"
+                  )
+                | .id
+              ][0] // empty
+            ' <<< "$runs")"
+            if [[ -n "$ci_run_id" ]]; then
+              break
+            fi
+            if (( attempt < 40 )); then
+              echo "Waiting for successful unified CI at $master_sha ($attempt/40)"
+              sleep 15
+            fi
+          done
+          if [[ -z "$ci_run_id" ]]; then
+            echo "No successful unified CI push run exists for master at $master_sha" >&2
+            exit 1
+          fi
+
+          tag_names_file="${RUNNER_TEMP}/release-prepare-tags-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          release_names_file="${RUNNER_TEMP}/release-prepare-releases-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          published_names_file="${RUNNER_TEMP}/release-prepare-published-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          gh api --paginate "repos/${REPOSITORY}/tags?per_page=100" \
+            --jq '.[].name' > "$tag_names_file"
+          gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[].tag_name' > "$release_names_file"
+          gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft == false) | .tag_name' > "$published_names_file"
+
+          chart_json="${RUNNER_TEMP}/release-prepare-current-chart.json"
+          chart_file="${RUNNER_TEMP}/release-prepare-current-Chart.yaml"
+          gh api --method GET \
+            "repos/${REPOSITORY}/contents/infra/helm/app/Chart.yaml" \
+            --raw-field ref="$master_sha" > "$chart_json"
+          jq -er '
+            select(.type == "file" and .encoding == "base64" and .size <= 1048576)
+            | .content
+          ' "$chart_json" | tr -d '\n' | base64 --decode > "$chart_file"
+          if [[ "$(grep -c '^appVersion:' "$chart_file")" -ne 1 ]]; then
+            echo "Current master Chart.yaml must contain one top-level appVersion" >&2
+            exit 1
+          fi
+          current_version="$(sed -n 's/^appVersion: "\([^"]*\)"$/\1/p' "$chart_file")"
+          if ! python3 "$SEMVER_TOOL" validate "$current_version"; then
+            echo "Current master Chart appVersion is not a supported release version" >&2
+            exit 1
+          fi
+          if ! grep -Fqx -- "$current_version" "$tag_names_file" || \
+            ! grep -Fqx -- "$current_version" "$published_names_file"; then
+            echo "Current Chart version $current_version is not fully published yet" >&2
+            echo "Finish or repair that release before preparing another one" >&2
+            exit 1
+          fi
+
+          pull_pages="${RUNNER_TEMP}/release-prepare-open-pulls-pages.json"
+          open_pulls="${RUNNER_TEMP}/release-prepare-open-pulls.json"
+          gh api --paginate \
+            "repos/${REPOSITORY}/pulls?state=open&base=master&per_page=100" > "$pull_pages"
+          jq -cs 'add // []' "$pull_pages" > "$open_pulls"
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg branch "auto-release-${RELEASE_VERSION}" \
+            --arg repository "$REPOSITORY" \
+            --arg title "Release ${RELEASE_VERSION}" '
+              [
+                .[]
+                | select(
+                    .head.repo.full_name == $repository
+                    and (.head.ref | startswith("auto-release-v"))
+                  )
+              ] as $release_prs
+              | ($release_prs | length) <= 1
+                and all($release_prs[];
+                  .head.ref == $branch
+                  and .title == $title
+                  and .user.login == $author
+                )
+            ' "$open_pulls" >/dev/null; then
+            echo "A different or ambiguous release pull request already targets master" >&2
+            exit 1
+          fi
+
+          if grep -Fqx -- "$RELEASE_VERSION" "$tag_names_file"; then
+            echo "Git tag already exists: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+          if grep -Fqx -- "$RELEASE_VERSION" "$release_names_file"; then
+            echo "GitHub release already exists: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+
+          # Compare using one tested SemVer implementation shared by every
+          # release stage, including prerelease identifier precedence.
+          python3 "$SEMVER_TOOL" prepare \
+            "$RELEASE_VERSION" "$current_version" "$published_names_file"
+
+          {
+            echo "ci_run_id=$ci_run_id"
+            echo "master_sha=$master_sha"
+            echo "release_version=$RELEASE_VERSION"
+          } >> "$GITHUB_OUTPUT"
+      # ----
+      - name: 'Validate release App configuration'
+        env:
+          RELEASE_APP_ID: ${{ vars.RELEASE_APP_ID }}
+          RELEASE_APP_NAME: ${{ vars.RELEASE_APP_NAME }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_APP_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "RELEASE_APP_ID must be a positive numeric GitHub App ID" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_APP_NAME" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "RELEASE_APP_NAME must contain the expected GitHub App slug" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Generate repository-scoped release App token'
+        id: release-app
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: 'Verify release App identity and scope'
+        env:
+          ACTUAL_APP_SLUG: ${{ steps.release-app.outputs.app-slug }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          INSTALLATION_ID: ${{ steps.release-app.outputs.installation-id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ "$ACTUAL_APP_SLUG" != "$EXPECTED_APP_SLUG" ]]; then
+            echo "Release App slug mismatch" >&2
+            echo "expected: $EXPECTED_APP_SLUG" >&2
+            echo "actual:   $ACTUAL_APP_SLUG" >&2
+            exit 1
+          fi
+          if [[ ! "$INSTALLATION_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Release App installation ID is invalid" >&2
+            exit 1
+          fi
+
+          scoped_repositories="$(gh api --paginate 'installation/repositories?per_page=100' \
+            --jq '.repositories[].full_name' | sort)"
+          if [[ "$scoped_repositories" != "$REPOSITORY" ]]; then
+            echo "Release App token is not scoped exclusively to $REPOSITORY" >&2
+            printf 'Accessible repositories:\n%s\n' "$scoped_repositories" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Checkout exact validated master commit'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ steps.admission.outputs.master_sha }}
+      # ----
+      - name: 'Update Helm appVersion'
+        env:
+          MASTER_SHA: ${{ steps.admission.outputs.master_sha }}
+          RELEASE_VERSION: ${{ steps.admission.outputs.release_version }}
+        run: |
+          set -euo pipefail
+          chart_file='infra/helm/app/Chart.yaml'
+
+          if [[ "$(git rev-parse HEAD)" != "$MASTER_SHA" ]]; then
+            echo "Checkout did not resolve to the validated master commit" >&2
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Checkout is not clean before generating release metadata" >&2
+            git status --short >&2
+            exit 1
+          fi
+          if [[ "$(grep -c '^appVersion:' "$chart_file")" -ne 1 ]]; then
+            echo "Chart.yaml must contain exactly one top-level appVersion" >&2
+            exit 1
+          fi
+
+          sed -i "s/^appVersion:.*/appVersion: \"${RELEASE_VERSION}\"/" "$chart_file"
+          grep -Fqx "appVersion: \"${RELEASE_VERSION}\"" "$chart_file"
+          git diff --check
+
+          changed_files="$(git diff --name-only)"
+          if [[ "$changed_files" != "$chart_file" ]]; then
+            echo "Release preparation changed files outside Chart.yaml" >&2
+            printf 'Changed files:\n%s\n' "$changed_files" >&2
+            exit 1
+          fi
+          expected_numstat=$'1\t1\tinfra/helm/app/Chart.yaml'
+          actual_numstat="$(git diff --numstat -- "$chart_file")"
+          if [[ "$actual_numstat" != "$expected_numstat" ]]; then
+            echo "Release preparation must change exactly one Chart.yaml line" >&2
+            git diff --numstat -- "$chart_file" >&2
+            exit 1
+          fi
+          if ! diff -u \
+            <(git show "HEAD:${chart_file}" | sed '/^appVersion:/d') \
+            <(sed '/^appVersion:/d' "$chart_file"); then
+            echo "Chart.yaml changed outside appVersion" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Revalidate release write target'
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          MASTER_SHA: ${{ steps.admission.outputs.master_sha }}
+          RELEASE_VERSION: ${{ steps.admission.outputs.release_version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          current_master_sha="$(gh api "repos/${REPOSITORY}/branches/master" --jq '.commit.sha')"
+          if [[ "$current_master_sha" != "$MASTER_SHA" ]]; then
+            echo "Master advanced after release validation; dispatch the workflow again" >&2
+            echo "validated: $MASTER_SHA" >&2
+            echo "current:   $current_master_sha" >&2
+            exit 1
+          fi
+
+          fresh_tags="${RUNNER_TEMP}/release-prepare-fresh-tags-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          fresh_releases="${RUNNER_TEMP}/release-prepare-fresh-releases-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          gh api --paginate "repos/${REPOSITORY}/tags?per_page=100" \
+            --jq '.[].name' > "$fresh_tags"
+          gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" \
+            --jq '.[].tag_name' > "$fresh_releases"
+          if grep -Fqx -- "$RELEASE_VERSION" "$fresh_tags"; then
+            echo "Git tag appeared during validation: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+          if grep -Fqx -- "$RELEASE_VERSION" "$fresh_releases"; then
+            echo "GitHub release appeared during validation: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Create or update release pull request'
+        id: release-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.release-app.outputs.token }}
+          branch-token: ${{ steps.release-app.outputs.token }}
+          commit-message: "chore(release): ${{ steps.admission.outputs.release_version }}"
+          title: "Release ${{ steps.admission.outputs.release_version }}"
+          body: |
+            This automated pull request prepares `${{ steps.admission.outputs.release_version }}` from the tested master commit.
+
+            **Source commit:** `${{ steps.admission.outputs.master_sha }}`
+            **Unified CI:** https://github.com/${{ github.repository }}/actions/runs/${{ steps.admission.outputs.ci_run_id }}
+            **Prepare workflow:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          branch: "auto-release-${{ steps.admission.outputs.release_version }}"
+          base: master
+          add-paths: |
+            infra/helm/app/Chart.yaml
+          delete-branch: false
+          maintainer-can-modify: false
+          sign-commits: true
+      # ----
+      - name: 'Verify release pull request'
+        env:
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          EXPECTED_BRANCH: auto-release-${{ steps.admission.outputs.release_version }}
+          EXPECTED_HEAD_SHA: ${{ steps.release-pr.outputs.pull-request-head-sha }}
+          EXPECTED_TITLE: Release ${{ steps.admission.outputs.release_version }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          PR_BRANCH: ${{ steps.release-pr.outputs.pull-request-branch }}
+          PR_NUMBER: ${{ steps.release-pr.outputs.pull-request-number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |-
+          set -euo pipefail
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Release pull request number is missing or invalid" >&2
+            exit 1
+          fi
+          if [[ "$PR_BRANCH" != "$EXPECTED_BRANCH" ]]; then
+            echo "Release pull request branch mismatch" >&2
+            exit 1
+          fi
+          if [[ ! "$EXPECTED_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Release pull request head SHA is missing or invalid" >&2
+            exit 1
+          fi
+          pull_request="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}")"
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg branch "$EXPECTED_BRANCH" \
+            --arg head_sha "$EXPECTED_HEAD_SHA" \
+            --arg repository "$REPOSITORY" \
+            --arg title "$EXPECTED_TITLE" \
+            '.state == "open"
+              and .title == $title
+              and .base.ref == "master"
+              and .head.ref == $branch
+              and .head.repo.full_name == $repository
+              and .head.sha == $head_sha
+              and .user.login == $author' <<< "$pull_request" >/dev/null; then
+            echo "Created pull request does not match the validated release identity" >&2
+            exit 1
+          fi
+
+          changed_files="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100")"
+          if ! jq -e --arg chart 'infra/helm/app/Chart.yaml' '
+            length == 1
+              and .[0].filename == $chart
+              and .[0].status == "modified"
+              and .[0].additions == 1
+              and .[0].deletions == 1
+          ' <<< "$changed_files" >/dev/null; then
+            echo "Release pull request does not contain the expected one-line Chart.yaml change" >&2
+            exit 1
+          fi
+
+          commits="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits?per_page=100")"
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg head_sha "$EXPECTED_HEAD_SHA" \
+            'length == 1
+              and .[0].sha == $head_sha
+              and .[0].author.login == $author
+              and .[0].commit.verification.verified == true' <<< "$commits" >/dev/null; then
+            echo "Release pull request must contain one verified commit created by the release App" >&2
+            exit 1
+          fi

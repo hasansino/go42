@@ -56,6 +56,10 @@ on:
         default: 30
         description: "timeout_minutes"
   workflow_call:
+    outputs:
+      image_digest:
+        description: "Manifest digest of the pushed image"
+        value: ${{ jobs.docker-build.outputs.image_digest }}
     inputs:
       runs_on:
         required: true
@@ -95,6 +99,8 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     continue-on-error: ${{ inputs.continue_on_error }}
     timeout-minutes: ${{ inputs.timeout_minutes }}
+    outputs:
+      image_digest: ${{ steps.validate-digest.outputs.image_digest }}
     permissions:
       packages: write
       contents: read
@@ -103,6 +109,30 @@ jobs:
       actions: read
     # ----
     steps:
+      - name: 'Validate image publication target'
+        env:
+          CALLER_WORKFLOW: ${{ github.workflow }}
+          EVENT_NAME: ${{ github.event_name }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "Invalid OCI image tag: $IMAGE_TAG" >&2
+            exit 1
+          fi
+
+          # Version tags are permanent release aliases. Only the tag-triggered
+          # release publisher may create them; manual Docker runs must not be
+          # able to replace an already published release image.
+          if [[ "$IMAGE_TAG" == v* ]] && \
+            [[ "$EVENT_NAME" != "push" || "$REF_TYPE" != "tag" || \
+              "$REF_NAME" != "$IMAGE_TAG" || "$CALLER_WORKFLOW" != "release-publish" ]]; then
+            echo "Release image tags may only be published by release-publish" >&2
+            exit 1
+          fi
+      # ----
       - name: 'Checkout repository'
         uses: actions/checkout@v7
       # ----
@@ -178,12 +208,34 @@ jobs:
           SOURCE_DATE_EPOCH: 0
           # @see https://github.com/orgs/community/discussions/45969
           BUILDX_NO_DEFAULT_ATTESTATIONS: true
+      - name: 'Validate image digest'
+        id: validate-digest
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Invalid image digest: $IMAGE_DIGEST" >&2
+            exit 1
+          fi
+          echo "image_digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
+      # ----
+      # Record provenance immediately after publication. Later SBOM processing
+      # cannot leave a pushed image without a source/run identity attestation.
+      - name: 'Attest build provenance'
+        if: ${{ inputs.attestation }}
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          show-summary: true
       # ----
       - name: 'Generate SBOM'
         if: ${{ inputs.generate_sbom }}
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          # Generate the SBOM from the immutable manifest that was just built,
+          # not from a tag that another workflow could move concurrently.
+          image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           artifact-name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
@@ -192,18 +244,11 @@ jobs:
           dependency-snapshot: false
           upload-artifact: true
       # ----
-      - name: 'Attest build provenance'
-        if: ${{ inputs.attestation }}
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          show-summary: true
       - name: 'Attest SBOM'
         if: ${{ inputs.attestation_sbom }}
         uses: actions/attest-sbom@v4
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           subject-digest: ${{ steps.build.outputs.digest }}
           sbom-path: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           show-summary: true

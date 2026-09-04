@@ -1,8 +1,10 @@
 ---
 
-name: release-pr-merge
+name: release-finalize
 
-# After auto-release pull request is merged, create release and delete branch.
+# A release PR is policy-checked before merge. After merge, independently
+# revalidate its identity and one-line appVersion change, then create only the
+# immutable version tag at the exact merge commit. The tag starts release-publish.
 
 on:
   pull_request:
@@ -11,86 +13,420 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: release-finalize-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
-  release-pr-merge:
+  release-finalize:
+    name: release-finalize
     if: |
       github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.title, 'Release') &&
-      contains(github.event.pull_request.user.login, format('{0}[bot]', vars.RELEASE_APP_NAME || 'github-actions'))
-    name: release-pr-merge
+      github.event.pull_request.base.ref == 'master' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'auto-release-v')
     runs-on: ubuntu-latest
-    continue-on-error: false
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
-      contents: write
-    # ----
+      actions: read
+      contents: read
+      pull-requests: read
+      statuses: read
     steps:
-      - name: 'Generate GitHub App Token'
-        id: generate_token
-        if: ${{ vars.RELEASE_APP_ID }}
+      - name: 'Validate merged release pull request'
+        id: validate-pr
+        env:
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          semver_pattern='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?$'
+
+          if [[ ! "$EXPECTED_APP_SLUG" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "RELEASE_APP_NAME must contain the expected GitHub App slug" >&2
+            exit 1
+          fi
+          if [[ ! "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Pull request number is invalid" >&2
+            exit 1
+          fi
+
+          pull_request="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}")"
+          head_branch="$(jq -r '.head.ref' <<< "$pull_request")"
+          release_tag="${head_branch#auto-release-}"
+          expected_title="Release ${release_tag}"
+
+          if [[ "$head_branch" != "auto-release-${release_tag}" || \
+            ! "$release_tag" =~ $semver_pattern || ${#release_tag} -gt 128 ]]; then
+            echo "Release branch does not contain a strict SemVer version" >&2
+            exit 1
+          fi
+
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg branch "$head_branch" \
+            --arg repository "$REPOSITORY" \
+            --arg title "$expected_title" \
+            '.state == "closed"
+              and .merged == true
+              and .title == $title
+              and .base.ref == "master"
+              and .base.repo.full_name == $repository
+              and .head.ref == $branch
+              and .head.repo.full_name == $repository
+              and .user.login == $author
+              and .changed_files == 1
+              and .commits == 1
+              and (.head.sha | test("^[0-9a-f]{40}$"))
+              and (.merge_commit_sha | test("^[0-9a-f]{40}$"))' \
+            <<< "$pull_request" >/dev/null; then
+            echo "Merged pull request does not match the release identity" >&2
+            exit 1
+          fi
+
+          head_sha="$(jq -r '.head.sha' <<< "$pull_request")"
+          merge_sha="$(jq -r '.merge_commit_sha' <<< "$pull_request")"
+          if [[ "$head_sha" != "$EVENT_HEAD_SHA" || "$merge_sha" != "$EVENT_MERGE_SHA" ]]; then
+            echo "Pull request API state differs from the closed event" >&2
+            exit 1
+          fi
+
+          changed_files="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100")"
+          if ! jq -e --arg chart 'infra/helm/app/Chart.yaml' '
+            length == 1
+              and .[0].filename == $chart
+              and .[0].status == "modified"
+              and .[0].additions == 1
+              and .[0].deletions == 1
+          ' <<< "$changed_files" >/dev/null; then
+            echo "Release pull request must change one Chart.yaml line" >&2
+            exit 1
+          fi
+
+          commits="$(gh api "repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits?per_page=100")"
+          if ! jq -e \
+            --arg author "${EXPECTED_APP_SLUG}[bot]" \
+            --arg head_sha "$head_sha" \
+            'length == 1
+              and .[0].sha == $head_sha
+              and .[0].author.login == $author
+              and .[0].commit.verification.verified == true
+              and (.[0].parents | length == 1)' <<< "$commits" >/dev/null; then
+            echo "Release pull request must contain one verified release App commit" >&2
+            exit 1
+          fi
+
+          status_pages="${RUNNER_TEMP}/release-policy-status-pages.json"
+          policy_statuses="${RUNNER_TEMP}/release-policy-statuses.json"
+          policy_status="${RUNNER_TEMP}/release-policy-status.json"
+          gh api --paginate \
+            "repos/${REPOSITORY}/commits/${head_sha}/statuses?per_page=100" > "$status_pages"
+          jq -cs 'add // []' "$status_pages" > "$policy_statuses"
+          jq '[.[] | select(.context == "release-policy")] | max_by(.id)' \
+            "$policy_statuses" > "$policy_status"
+          if ! jq -e \
+            --arg description "Authorized release PR #${PR_NUMBER} validated." \
+            --arg target_prefix "${SERVER_URL}/${REPOSITORY}/actions/runs/" '
+              .state == "success"
+                and .description == $description
+                and .creator.login == "github-actions[bot]"
+                and (.target_url | startswith($target_prefix))
+                and (.target_url | test("/actions/runs/[0-9]+$"))
+            ' "$policy_status" >/dev/null; then
+            echo "The exact release commit has no successful release-policy status" >&2
+            exit 1
+          fi
+
+          policy_run_url="$(jq -r '.target_url' "$policy_status")"
+          policy_run_id="${policy_run_url##*/}"
+          policy_run=''
+          for attempt in $(seq 1 6); do
+            policy_run="$(gh api "repos/${REPOSITORY}/actions/runs/${policy_run_id}")"
+            [[ "$(jq -r '.status' <<< "$policy_run")" == 'completed' ]] && break
+            if (( attempt < 6 )); then
+              sleep 5
+            fi
+          done
+          if ! jq -e \
+            --arg repository "$REPOSITORY" \
+            --argjson run_id "$policy_run_id" '
+              .id == $run_id
+                and .event == "pull_request_target"
+                and .path == ".github/workflows/230-release-policy.yaml"
+                and .status == "completed"
+                and .conclusion == "success"
+                and .repository.full_name == $repository
+            ' <<< "$policy_run" >/dev/null; then
+            echo "release-policy status does not reference a successful trusted workflow run" >&2
+            exit 1
+          fi
+
+          {
+            echo "head_sha=$head_sha"
+            echo "merge_sha=$merge_sha"
+            echo "release_tag=$release_tag"
+          } >> "$GITHUB_OUTPUT"
+      # ----
+      - name: 'Checkout exact merge commit'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+          ref: ${{ steps.validate-pr.outputs.merge_sha }}
+      # ----
+      - name: 'Validate merged release source'
+        id: validate-source
+        env:
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.validate-pr.outputs.head_sha }}
+          MERGE_SHA: ${{ steps.validate-pr.outputs.merge_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEASE_TAG: ${{ steps.validate-pr.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+          SEMVER_TOOL: ${{ github.workspace }}/.github/scripts/release-semver.py
+        run: |
+          set -euo pipefail
+          chart_file='infra/helm/app/Chart.yaml'
+
+          if [[ "$(git rev-parse HEAD)" != "$MERGE_SHA" ]]; then
+            echo "Checkout did not resolve to the exact merge commit" >&2
+            exit 1
+          fi
+          git fetch --force --no-tags origin master:refs/remotes/origin/master
+          if ! git merge-base --is-ancestor "$MERGE_SHA" refs/remotes/origin/master; then
+            echo "Release merge commit is not part of current master history" >&2
+            exit 1
+          fi
+
+          read -r -a merge_line <<< "$(git rev-list --parents -n 1 "$MERGE_SHA")"
+          if (( ${#merge_line[@]} < 2 || ${#merge_line[@]} > 3 )); then
+            echo "Release result has an unexpected parent structure" >&2
+            exit 1
+          fi
+          merge_parent="${merge_line[1]}"
+          prior_app_line="$(git show "${merge_parent}:${chart_file}" | grep '^appVersion:' || true)"
+          prior_version="$(sed -n 's/^appVersion: "\([^"]*\)"$/\1/p' <<< "$prior_app_line")"
+          if ! python3 "$SEMVER_TOOL" newer "$RELEASE_TAG" "$prior_version"; then
+            echo "Release version is not newer than the master version it replaces" >&2
+            exit 1
+          fi
+          if ! gh api "repos/${REPOSITORY}/git/ref/tags/${prior_version}" >/dev/null || \
+            ! gh api "repos/${REPOSITORY}/releases/tags/${prior_version}" >/dev/null; then
+            echo "Previous Chart version is not fully published: $prior_version" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin \
+            "refs/pull/${PR_NUMBER}/head:refs/remotes/pull/${PR_NUMBER}/head"
+          if [[ "$(git rev-parse "refs/remotes/pull/${PR_NUMBER}/head")" != "$HEAD_SHA" ]]; then
+            echo "Pull request head ref does not match the closed event" >&2
+            exit 1
+          fi
+          read -r -a head_line <<< "$(git rev-list --parents -n 1 "$HEAD_SHA")"
+          if (( ${#head_line[@]} != 2 )); then
+            echo "Release App commit must have exactly one parent" >&2
+            exit 1
+          fi
+          parent_sha="${head_line[1]}"
+
+          changed_files="$(git diff --name-only "$parent_sha" "$HEAD_SHA")"
+          if [[ "$changed_files" != "$chart_file" ]]; then
+            echo "Release App commit changed files outside Chart.yaml" >&2
+            printf 'Changed files:\n%s\n' "$changed_files" >&2
+            exit 1
+          fi
+          expected_numstat=$'1\t1\tinfra/helm/app/Chart.yaml'
+          actual_numstat="$(git diff --numstat "$parent_sha" "$HEAD_SHA" -- "$chart_file")"
+          if [[ "$actual_numstat" != "$expected_numstat" ]]; then
+            echo "Release App commit must change exactly one Chart.yaml line" >&2
+            exit 1
+          fi
+          if [[ "$(git show "${parent_sha}:${chart_file}" | grep -c '^appVersion:')" -ne 1 || \
+            "$(git show "${HEAD_SHA}:${chart_file}" | grep -c '^appVersion:')" -ne 1 ]]; then
+            echo "Chart.yaml must contain one top-level appVersion before and after" >&2
+            exit 1
+          fi
+          if ! diff -u \
+            <(git show "${parent_sha}:${chart_file}" | sed '/^appVersion:/d') \
+            <(git show "${HEAD_SHA}:${chart_file}" | sed '/^appVersion:/d'); then
+            echo "Release App commit changed Chart.yaml outside appVersion" >&2
+            exit 1
+          fi
+          if [[ "$(grep -c '^appVersion:' "$chart_file")" -ne 1 ]] || \
+            ! grep -Fqx "appVersion: \"${RELEASE_TAG}\"" "$chart_file"; then
+            echo "Merged Helm appVersion does not equal $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          tag_exists=false
+          if git show-ref --verify --quiet "refs/tags/${RELEASE_TAG}"; then
+            tag_sha="$(git rev-list -n 1 "refs/tags/${RELEASE_TAG}")"
+            if [[ "$tag_sha" != "$MERGE_SHA" ]]; then
+              echo "Existing tag points to $tag_sha instead of $MERGE_SHA" >&2
+              exit 1
+            fi
+            tag_exists=true
+          fi
+
+          releases="$(gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" | jq -s 'add')"
+          existing_release="$(jq --arg tag "$RELEASE_TAG" '[.[] | select(.tag_name == $tag)]' <<< "$releases")"
+          if [[ "$(jq 'length' <<< "$existing_release")" -gt 1 ]]; then
+            echo "Multiple GitHub releases use $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$(jq 'length' <<< "$existing_release")" -eq 1 ]]; then
+            if [[ "$RELEASE_TAG" == *-* ]]; then
+              is_prerelease=true
+            else
+              is_prerelease=false
+            fi
+            if ! jq -e \
+              --arg author "${EXPECTED_APP_SLUG}[bot]" \
+              --arg tag "$RELEASE_TAG" \
+              --argjson prerelease "$is_prerelease" \
+              '.[0].tag_name == $tag
+                and .[0].name == ("Release " + $tag)
+                and .[0].author.login == $author
+                and .[0].draft == false
+                and .[0].prerelease == $prerelease' <<< "$existing_release" >/dev/null; then
+              echo "Existing GitHub release conflicts with $RELEASE_TAG" >&2
+              exit 1
+            fi
+            if [[ "$tag_exists" != true ]]; then
+              echo "GitHub release exists without the validated Git tag" >&2
+              exit 1
+            fi
+          fi
+
+          echo "tag_exists=$tag_exists" >> "$GITHUB_OUTPUT"
+      # ----
+      # The PR checks validated its proposed merge, but the immutable tag must
+      # identify a commit that also completed the real master push workflow.
+      - name: 'Require successful CI for the exact merge commit'
+        if: steps.validate-source.outputs.tag_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_SHA: ${{ steps.validate-pr.outputs.merge_sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ci_run_id=''
+          for attempt in $(seq 1 40); do
+            runs="$(gh api --method GET \
+              "repos/${REPOSITORY}/actions/workflows/100-unified-workflow.yaml/runs" \
+              -f branch=master \
+              -f event=push \
+              -f head_sha="$MERGE_SHA" \
+              -f per_page=100)"
+            ci_run_id="$(jq -r --arg repository "$REPOSITORY" --arg sha "$MERGE_SHA" '
+              [
+                .workflow_runs[]
+                | select(
+                    .event == "push"
+                    and .head_branch == "master"
+                    and .head_sha == $sha
+                    and .head_repository.full_name == $repository
+                    and .status == "completed"
+                    and .conclusion == "success"
+                  )
+                | .id
+              ][0] // empty
+            ' <<< "$runs")"
+            [[ -n "$ci_run_id" ]] && break
+            if (( attempt < 40 )); then
+              echo "Waiting for successful unified CI at $MERGE_SHA ($attempt/40)"
+              sleep 15
+            fi
+          done
+          if [[ -z "$ci_run_id" ]]; then
+            echo "No successful unified CI push run exists for $MERGE_SHA" >&2
+            echo 'Rerun release-finalize after the exact master CI succeeds.' >&2
+            exit 1
+          fi
+          echo "Validated unified CI run ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${ci_run_id}"
+      # ----
+      - name: 'Validate release App configuration'
+        if: steps.validate-source.outputs.tag_exists == 'false'
+        env:
+          RELEASE_APP_ID: ${{ vars.RELEASE_APP_ID }}
+          RELEASE_APP_NAME: ${{ vars.RELEASE_APP_NAME }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_APP_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "RELEASE_APP_ID must be a positive numeric GitHub App ID" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_APP_NAME" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "RELEASE_APP_NAME must contain the expected GitHub App slug" >&2
+            exit 1
+          fi
+      # ----
+      - name: 'Generate repository-scoped release App token'
+        if: steps.validate-source.outputs.tag_exists == 'false'
+        id: release-app
         uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      # ----
-      - name: 'Checkout repository with full history'
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      # ----
-      - id: extract_semver
-        name: 'Extract version from PR title'
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - name: 'Verify release App identity'
+        if: steps.validate-source.outputs.tag_exists == 'false'
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          ACTUAL_APP_SLUG: ${{ steps.release-app.outputs.app-slug }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
         run: |
-          VERSION=$(echo "$PR_TITLE" | grep -oP '\d+\.\d+\.\d+' | head -n 1)
-          if [ -z "$VERSION" ]; then
-            echo "Error: No valid semver version found in PR title"
+          if [[ "$ACTUAL_APP_SLUG" != "$EXPECTED_APP_SLUG" ]]; then
+            echo "Release App slug mismatch" >&2
             exit 1
           fi
-          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
-      # ----
-      - id: extract_summary
-        name: 'Extract summary from PR body'
+      - name: 'Revalidate release destination with App visibility'
+        if: steps.validate-source.outputs.tag_exists == 'false'
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          RELEASE_TAG: ${{ steps.validate-pr.outputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          # Extract the summary part from PR body (everything after the --- separator)
-          # The PR body format includes metadata at the top, then ---, then the actual summary
-          SUMMARY=$(echo "$PR_BODY" | awk '/^---$/{p=1; next} p' | sed '/^$/d')
-
-          if [ -z "$SUMMARY" ]; then
-            echo "No summary found in PR body, using default"
-            SUMMARY="Release ${{ steps.extract_semver.outputs.version }}"
+          set -euo pipefail
+          error_file="${RUNNER_TEMP}/release-tag-query-error"
+          if gh api "repos/${REPOSITORY}/git/ref/tags/${RELEASE_TAG}" \
+            >/dev/null 2> "$error_file"; then
+            echo "Git tag appeared during release finalization: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if ! grep -Fq 'HTTP 404' "$error_file"; then
+            cat "$error_file" >&2
+            exit 1
           fi
 
-          # Save summary to file to handle multiline content properly
-          echo "$SUMMARY" > release_summary.md
-
-          echo "Summary extracted successfully"
-      # ----
-      - name: 'Create GitHub release'
-        uses: softprops/action-gh-release@v3
-        with:
-          token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
-          name: Release ${{ steps.extract_semver.outputs.version }}
-          tag_name: ${{ steps.extract_semver.outputs.version }}
-          body_path: release_summary.md
-          generate_release_notes: true
-          append_body: true
-          make_latest: true
-      # ----
-      - name: 'Delete PR branch after merge'
+          release_pages="${RUNNER_TEMP}/release-finalize-pages.json"
+          releases="${RUNNER_TEMP}/release-finalize-releases.json"
+          gh api --paginate "repos/${REPOSITORY}/releases?per_page=100" > "$release_pages"
+          jq -cs 'add // []' "$release_pages" > "$releases"
+          if ! jq -e --arg tag "$RELEASE_TAG" \
+            'all(.[]; .tag_name != $tag)' "$releases" >/dev/null; then
+            echo "GitHub release appeared during release finalization: $RELEASE_TAG" >&2
+            exit 1
+          fi
+      - name: 'Create immutable release tag'
+        if: steps.validate-source.outputs.tag_exists == 'false'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          MERGE_SHA: ${{ steps.validate-pr.outputs.merge_sha }}
+          RELEASE_TAG: ${{ steps.validate-pr.outputs.release_tag }}
           REPOSITORY: ${{ github.repository }}
         run: |-
-          # Check if branch exists before trying to delete
-          if gh api "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}" >/dev/null 2>&1; then
-            echo "Branch ${BRANCH_NAME} exists, deleting..."
-            gh api -X DELETE "repos/${REPOSITORY}/git/refs/heads/${BRANCH_NAME}"
-            echo "Branch ${BRANCH_NAME} deleted successfully"
-          else
-            echo "Branch ${BRANCH_NAME} does not exist or was already deleted"
-          fi
+          set -euo pipefail
+          jq -n \
+            --arg ref "refs/tags/${RELEASE_TAG}" \
+            --arg sha "$MERGE_SHA" \
+            '{ref: $ref, sha: $sha}' \
+            | gh api --method POST "repos/${REPOSITORY}/git/refs" --input - >/dev/null
