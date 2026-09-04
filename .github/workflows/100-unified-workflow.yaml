@@ -269,10 +269,8 @@ jobs:
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
     permissions:
-      actions: read
       contents: read
       packages: read
-      security-events: write
     needs:
       - docker-prepare-tag
       - security-extra-group

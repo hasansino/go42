@@ -115,6 +115,8 @@ jobs:
         with:
           repo-checkout: false
           go-version-input: ${{ env.go_version }}
+          # Match the production entry point built by Dockerfile.
+          go-package: ./cmd/app
           cache: false
 
   codeql:

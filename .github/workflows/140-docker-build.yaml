@@ -186,8 +186,10 @@ jobs:
           image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: spdx-json
           output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-          # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
           artifact-name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
+          # Do not publish image-derived dependencies; master Go dependencies
+          # are submitted by 200-master-update.yaml.
+          dependency-snapshot: false
           upload-artifact: true
       # ----
       - name: 'Attest build provenance'

@@ -5,7 +5,8 @@ name: security-extra
 # Vulnerability scan of final artifacts.
 # @see https://trivy.dev/latest/
 # @see https://www.zaproxy.org/
-# @see https://github.com/google/osv-scanner
+# Go call reachability is checked by govulncheck in 130-security.yaml;
+# an image SBOM does not contain the symbol data needed for that analysis.
 
 on:
   workflow_dispatch:
@@ -67,15 +68,31 @@ jobs:
       packages: read
     # ----
     steps:
-      - name: 'Run Trivy vulnerability scanner'
+      # Keep a complete, non-blocking inventory in the job log. This includes
+      # every severity and unfixed findings, so the enforcement policy below
+      # does not hide vulnerabilities that currently have no remediation.
+      - name: 'Report all image vulnerabilities'
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: false
+          vuln-type: 'os,library'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+      # Trivy has one severity/fixability policy per invocation. Run it again
+      # to enforce the narrower merge policy while reusing the installation
+      # from the reporting pass above.
+      - name: 'Enforce fixable high and critical image vulnerabilities'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
           format: 'table'
           exit-code: '1'
-          ignore-unfixed: true
+          ignore-unfixed: true # fail only when remediation exists
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+          skip-setup-trivy: true
 
   zap-api-scan:
     name: zap-api-scan
@@ -109,53 +126,3 @@ jobs:
           target: 'http://localhost:44441/api/v1/.combined.yaml'
           format: openapi
           allow_issue_writing: false
-
-  osv-scanner:
-    name: osv-scanner
-    runs-on: ${{ inputs.runs_on }}
-    continue-on-error: ${{ inputs.continue_on_error }}
-    timeout-minutes: ${{ inputs.timeout_minutes }}
-    permissions:
-      contents: read
-      packages: read
-      actions: read
-      security-events: write
-    steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@v7
-      - name: 'Download SBOM artifact'
-        uses: actions/download-artifact@v8
-        with:
-          # @see https://google.github.io/osv-scanner/usage/scan-source#sbom-scanning
-          name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-      - name: 'Run OSV Scanner'
-        uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
-        continue-on-error: true
-        with:
-          scan-args: |-
-            --output=results.json
-            --all-vulns
-            --format=json
-            -L
-            sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-      - name: 'Generate OSV Scanner report'
-        uses: google/osv-scanner-action/osv-reporter-action@v2.3.8
-        with:
-          scan-args: |-
-            --output=osv-scanner-results.sarif
-            --new=results.json
-            --gh-annotations=true
-            --fail-on-vuln=true
-            --all-vulns
-      - name: 'Upload OSV Scanner results'
-        if: ${{ !cancelled() && hashFiles('osv-scanner-results.sarif') != '' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: osv-scanner-results.sarif
-          path: osv-scanner-results.sarif
-      - name: 'Upload SARIF to GitHub Security'
-        # upload to code scanning only for master branch
-        if: ${{ !cancelled() && github.ref == 'refs/heads/master' && hashFiles('osv-scanner-results.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: osv-scanner-results.sarif
