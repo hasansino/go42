@@ -187,8 +187,8 @@ jobs:
           format: spdx-json
           output-file: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
           artifact-name: sbom-${{ inputs.service_name }}-${{ inputs.image_tag }}.spdx.json
-          # Do not publish image-derived dependencies; master Go dependencies
-          # are submitted by 200-master-update.yaml.
+          # Go dependencies are already captured by GitHub's managed
+          # Dependency Graph job.
           dependency-snapshot: false
           upload-artifact: true
       # ----
