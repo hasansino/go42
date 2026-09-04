@@ -40,50 +40,87 @@ jobs:
           PACKAGE_NAME: ${{ inputs.service_name }}
           TARGET_TAG: ${{ inputs.image_tag }}
         run: |-
+          set -euo pipefail
+
           echo "Starting cleanup for $PACKAGE_NAME with tag: $TARGET_TAG"
 
-          echo "Fetching package versions..."
-          response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/users/$OWNER/packages/container/$PACKAGE_NAME/versions")
-
-          http_code=$(echo "$response" | tail -n1)
-          versions=$(echo "$response" | sed '$ d')
-
-          if [ "$http_code" != "200" ]; then
-            echo "Error fetching versions: HTTP status $http_code"
-            echo "Response: $versions"
+          # This reusable workflow has package deletion permission. Restrict it
+          # to the exact temporary-tag format produced by the unified workflow.
+          if [[ ! "$TARGET_TAG" =~ ^ci-[1-9][0-9]*-[1-9][0-9]*$ ]]; then
+            echo "Refusing to delete invalid or non-CI image tag: $TARGET_TAG"
             exit 1
           fi
 
-          if ! echo "$versions" | jq . > /dev/null 2>&1; then
-            echo "Error: Invalid JSON response"
-            echo "Response: $versions"
+          if [[ ! "$PACKAGE_NAME" =~ ^[a-z0-9][a-z0-9._-]{0,127}$ ]]; then
+            echo "Refusing invalid package name: $PACKAGE_NAME"
             exit 1
           fi
 
-          echo "Searching for version with tag: $TARGET_TAG"
-          version_id=$(echo "$versions" | jq -r ".[] | select(.metadata.container.tags[]? == \"$TARGET_TAG\") | .id")
+          owner_type=$(gh api "users/$OWNER" --jq '.type')
+          case "$owner_type" in
+            Organization) package_endpoint="orgs/$OWNER/packages/container/$PACKAGE_NAME" ;;
+            User) package_endpoint="users/$OWNER/packages/container/$PACKAGE_NAME" ;;
+            *)
+              echo "Unsupported package owner type: $owner_type"
+              exit 1
+              ;;
+          esac
 
-          if [ -z "$version_id" ]; then
+          echo "Fetching all package versions..."
+          versions=$(gh api --paginate "$package_endpoint/versions?per_page=100" | jq -s 'add // []')
+
+          if ! printf '%s' "$versions" | jq -e '
+            type == "array" and
+            all(.[];
+              (.id | type) == "number" and
+              (.name | type) == "string" and
+              (.metadata.container.tags | type) == "array" and
+              all(.metadata.container.tags[]; type == "string")
+            )
+          ' >/dev/null; then
+            echo "Package version response was incomplete or malformed"
+            exit 1
+          fi
+
+          matches=$(printf '%s' "$versions" | jq --arg target "$TARGET_TAG" \
+            '[.[] | select(any(.metadata.container.tags[]; . == $target))]')
+          match_count=$(printf '%s' "$matches" | jq 'length')
+
+          if [ "$match_count" -eq 0 ]; then
             echo "No version found with tag $TARGET_TAG"
             exit 0
           fi
 
-          echo "Found version with ID: $version_id, preparing to delete..."
-
-          delete_response=$(curl -s -w "%{http_code}" -X DELETE \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/users/$OWNER/packages/container/$PACKAGE_NAME/versions/$version_id")
-
-          delete_http_code=$(echo "$delete_response" | tail -n1)
-          delete_body=$(echo "$delete_response" | sed '$ d')
-
-          if [ "$delete_http_code" = "204" ]; then
-            echo "Successfully deleted version with tag $TARGET_TAG (ID: $version_id)"
-          else
-            echo "Error deleting version: HTTP status $delete_http_code"
-            echo "Response: $delete_body"
+          if [ "$match_count" -ne 1 ]; then
+            echo "Refusing to delete: found $match_count versions with tag $TARGET_TAG"
             exit 1
           fi
+
+          # Do not delete a manifest that is also reachable through another tag.
+          if ! printf '%s' "$matches" | jq -e --arg target "$TARGET_TAG" \
+            '([.[0].metadata.container.tags[]] | sort | unique) == [$target]' >/dev/null; then
+            echo "Refusing to delete a version shared by another tag"
+            exit 1
+          fi
+
+          version_id=$(printf '%s' "$matches" | jq -r '.[0].id')
+          version_name=$(printf '%s' "$matches" | jq -r '.[0].name')
+
+          # Re-read immediately before deletion to narrow the race in which a
+          # previously safe candidate is concurrently retagged.
+          current=$(gh api "$package_endpoint/versions/$version_id")
+          if ! printf '%s' "$current" | jq -e \
+            --argjson expected_id "$version_id" \
+            --arg expected_name "$version_name" \
+            --arg target "$TARGET_TAG" '
+              .id == $expected_id and
+              .name == $expected_name and
+              ((.metadata.container.tags | sort | unique) == [$target])
+            ' >/dev/null; then
+            echo "Refusing to delete: the package version or its complete tag set changed"
+            exit 1
+          fi
+
+          echo "Deleting CI image version $version_id..."
+          gh api --method DELETE "$package_endpoint/versions/$version_id" >/dev/null
+          echo "Successfully deleted version with tag $TARGET_TAG (ID: $version_id)"
