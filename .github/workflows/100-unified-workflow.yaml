@@ -177,7 +177,9 @@ jobs:
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
     permissions:
+      actions: read
       contents: read
+      pull-requests: write
     needs:
       - git-lint
       - golangci-lint
