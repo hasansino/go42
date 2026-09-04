@@ -8,53 +8,6 @@ name: docker-build
 # Pushes image to ghcr.io.
 
 on:
-  workflow_dispatch:
-    inputs:
-      runs_on:
-        required: true
-        type: string
-        default: ubuntu-latest
-        description: "runs_on"
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
-        description: "continue_on_error"
-      service_name:
-        required: true
-        type: string
-        description: "service_name"
-      image_tag:
-        required: true
-        type: string
-        description: "image_tag"
-      platforms:
-        required: true
-        type: choice
-        options:
-          - linux/amd64
-          - linux/arm64
-        description: "platforms"
-      attestation:
-        required: true
-        type: boolean
-        default: false
-        description: "attestation"
-      generate_sbom:
-        required: true
-        type: boolean
-        default: false
-        description: "generate_sbom"
-      attestation_sbom:
-        required: true
-        type: boolean
-        default: false
-        description: "attestation_sbom"
-      timeout_minutes:
-        required: false
-        type: number
-        default: 30
-        description: "timeout_minutes"
   workflow_call:
     outputs:
       image_digest:

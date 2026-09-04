@@ -9,33 +9,6 @@ name: security-extra
 # an image SBOM does not contain the symbol data needed for that analysis.
 
 on:
-  workflow_dispatch:
-    inputs:
-      runs_on:
-        required: true
-        type: string
-        default: ubuntu-latest
-        description: "runs_on"
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
-        description: "continue_on_error"
-      service_name:
-        required: true
-        type: string
-        default: "go42"
-        description: "service_name"
-      image_tag:
-        required: true
-        type: string
-        default: "tmp"
-        description: "image_tag"
-      timeout_minutes:
-        required: false
-        type: number
-        default: 15
-        description: "timeout_minutes"
   workflow_call:
     inputs:
       runs_on:

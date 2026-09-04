@@ -14,6 +14,10 @@ inputs:
   head_ref:
     description: 'Head reference (branch, tag, or commit SHA)'
     required: true
+  target_commitish:
+    description: 'Commit to use when head_ref is a proposed tag that does not exist yet'
+    required: false
+    default: ''
   context_type:
     description: 'Context type for summary (release, pr, custom)'
     required: false
@@ -37,21 +41,31 @@ runs:
       id: generate_notes
       shell: bash
       env:
+        BASE_REF: ${{ inputs.base_ref }}
         GH_TOKEN: ${{ inputs.github_token }}
+        HEAD_REF: ${{ inputs.head_ref }}
+        TARGET_COMMITISH: ${{ inputs.target_commitish }}
       run: |
-        # Generate comparison URL
-        echo "comparison_url=https://github.com/${{ github.repository }}/compare/${{ inputs.base_ref }}...${{ inputs.head_ref }}" >> "$GITHUB_OUTPUT"
+        comparison_ref="${TARGET_COMMITISH:-$HEAD_REF}"
+        echo "comparison_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${BASE_REF}...${comparison_ref}" >> "$GITHUB_OUTPUT"
 
-        # Generate raw notes via GitHub Releases API (PRs + contributors)
         NOTES_FILE="${RUNNER_TEMP}/NOTES.md"
-        gh api repos/${{ github.repository }}/releases/generate-notes \
-          -f tag_name='${{ inputs.head_ref }}' \
-          -f previous_tag_name='${{ inputs.base_ref }}' \
-          --jq '.body' > "$NOTES_FILE" || {
-            # Fallback if API fails - get commit messages
-            git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" \
-              "${{ inputs.base_ref }}..${{ inputs.head_ref }}" > "$NOTES_FILE"
-          }
+        write_git_notes() {
+          git log --pretty=format:"- %s ([%h](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/%H))" \
+            "${BASE_REF}..${comparison_ref}" > "$NOTES_FILE"
+        }
+
+        # A proposed release tag cannot be resolved by the release-notes API
+        # with this read-only token. Build the exact, deterministic commit list
+        # locally instead of granting contents: write for PR prose.
+        if [[ -n "$TARGET_COMMITISH" ]]; then
+          write_git_notes
+        else
+          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f "tag_name=${HEAD_REF}" \
+            -f "previous_tag_name=${BASE_REF}" \
+            --jq '.body' > "$NOTES_FILE" || write_git_notes
+        fi
 
     - name: 'Install GitHub Models CLI extension'
       if: env.SUMMARY_ENABLE != 'false'
@@ -76,7 +90,7 @@ runs:
           # Use simple list format without AI
           SUMMARY=$(cat <<EOF
         ### Highlights
-        Summary generation is disabled. See changes below.
+        See changes below for details.
 
         ### Changes
         $(cat "$NOTES_FILE")

@@ -4,23 +4,6 @@ name: project-lint
 # This workflow checks for uncommitted changes after running 'make generate'.
 # It is used to ensure that the relevant generated files are committed to the repository.
 on:
-  workflow_dispatch:
-    inputs:
-      runs_on:
-        required: true
-        type: string
-        default: ubuntu-latest
-        description: 'runs_on'
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
-        description: 'continue_on_error'
-      timeout_minutes:
-        required: false
-        type: number
-        default: 10
-        description: 'timeout_minutes'
   workflow_call:
     inputs:
       runs_on:

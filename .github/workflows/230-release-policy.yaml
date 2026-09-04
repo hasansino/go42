@@ -49,6 +49,9 @@ jobs:
           EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEASE_APP_AUTHORED: >-
+            ${{ vars.RELEASE_APP_NAME != '' && github.event.pull_request.user.login == format('{0}[bot]', vars.RELEASE_APP_NAME)
+            }}
           REPOSITORY: ${{ github.repository }}
           SEMVER_TOOL: >-
             ${{ github.workspace }}/.trusted-release-policy/.github/scripts/release-semver.py
@@ -347,6 +350,18 @@ jobs:
           snapshot_json="${work_dir}/pull-request-snapshot.json"
           cp "$pr_json" "$snapshot_json"
 
+          # Unified CI recognizes this reserved branch shape before inspecting
+          # files. Such a PR must never receive a not-applicable policy result.
+          head_ref="$(jq -er '.head.ref' "$pr_json")"
+          release_shaped=false
+          # GitHub expression string functions are case-insensitive, so match
+          # gate-start's branch classification before enforcing canonical case.
+          # The same expression engine identifies Release App authors, closing
+          # differences between GitHub expression and shell case handling.
+          if [[ "${head_ref,,}" == auto-release-v* || "$RELEASE_APP_AUTHORED" == 'true' ]]; then
+            release_shaped=true
+          fi
+
           changed_files="$(jq -er '.changed_files' "$pr_json")"
           if [[ ! "$changed_files" =~ ^[0-9]+$ ]] || (( changed_files > 3000 )); then
             fail 'Pull request file list cannot be validated safely'
@@ -378,6 +393,9 @@ jobs:
           ' "$files_json" > "$chart_entries"
           chart_entry_count="$(jq -r 'length' "$chart_entries")"
           if [[ "$chart_entry_count" == '0' ]]; then
+            if [[ "$release_shaped" == true ]]; then
+              fail 'A release-shaped pull request must modify Chart appVersion'
+            fi
             not_applicable
           fi
           if [[ "$chart_entry_count" != '1' ]]; then
@@ -413,6 +431,9 @@ jobs:
           awk '/^appVersion:/{print}' "$base_chart" > "$base_app_lines"
           awk '/^appVersion:/{print}' "$head_chart" > "$head_app_lines"
           if cmp -s "$base_app_lines" "$head_app_lines"; then
+            if [[ "$release_shaped" == true ]]; then
+              fail 'A release-shaped pull request must change Chart appVersion'
+            fi
             not_applicable
           fi
           if [[ -z "$merge_sha" ]]; then
@@ -432,7 +453,6 @@ jobs:
           pr_author_type="$(jq -er '.user.type' "$pr_json")"
           pr_base="$(jq -er '.base.ref' "$pr_json")"
           base_repository="$(jq -er '.base.repo.full_name' "$pr_json")"
-          head_ref="$(jq -er '.head.ref' "$pr_json")"
           pr_title="$(jq -er '.title' "$pr_json")"
 
           if [[ "$pr_author" != "$expected_bot" || "$pr_author_type" != 'Bot' ]]; then

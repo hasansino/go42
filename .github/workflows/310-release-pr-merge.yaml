@@ -26,7 +26,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       startsWith(github.event.pull_request.head.ref, 'auto-release-v')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       actions: read
       contents: read
@@ -318,7 +318,9 @@ jobs:
         run: |
           set -euo pipefail
           ci_run_id=''
-          for attempt in $(seq 1 40); do
+          # Full master CI currently takes about 14-16 minutes. Allow up to
+          # roughly 30 minutes while keeping the finalizer itself bounded.
+          for attempt in $(seq 1 120); do
             runs="$(gh api --method GET \
               "repos/${REPOSITORY}/actions/workflows/100-unified-workflow.yaml/runs" \
               -f branch=master \
@@ -340,8 +342,8 @@ jobs:
               ][0] // empty
             ' <<< "$runs")"
             [[ -n "$ci_run_id" ]] && break
-            if (( attempt < 40 )); then
-              echo "Waiting for successful unified CI at $MERGE_SHA ($attempt/40)"
+            if (( attempt < 120 )); then
+              echo "Waiting for successful unified CI at $MERGE_SHA ($attempt/120)"
               sleep 15
             fi
           done

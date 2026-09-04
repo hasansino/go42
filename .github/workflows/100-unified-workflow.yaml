@@ -44,12 +44,26 @@ jobs:
 
   # stage 1: linting
 
+  # A trusted release PR is authorized by the separately required release-policy
+  # status. Its exact merged commit receives full CI before release-finalize tags it.
   gate-start:
     name: gate-start
+    if: >-
+      ${{
+        github.event_name != 'pull_request' ||
+        vars.RELEASE_APP_NAME == '' ||
+        github.event.pull_request.user.login != format('{0}[bot]', vars.RELEASE_APP_NAME) ||
+        github.event.pull_request.user.type != 'Bot' ||
+        github.event.pull_request.head.repo.full_name != github.repository ||
+        github.event.pull_request.base.repo.full_name != github.repository ||
+        github.event.pull_request.base.ref != 'master' ||
+        !startsWith(github.event.pull_request.head.ref, 'auto-release-v')
+      }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Start workflow
-        run: echo "Workflow started."
+      - name: Start full CI
+        run: echo "Full CI started."
 
   git-lint:
     uses: ./.github/workflows/110-git-lint.yaml
@@ -379,6 +393,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs:
+      - gate-start
       - security
       - integration-tests
       - resilience-tests
@@ -386,19 +401,41 @@ jobs:
       - load-tests-report
     steps:
       # Cleanup and load reporting are advisory, but waiting for them makes this the terminal workflow gate.
+      # release-policy independently authorizes the lightweight release-PR path in the repository ruleset.
       - name: Require blocking jobs to succeed
         env:
+          GATE_START_RESULT: ${{ needs.gate-start.result }}
           SECURITY_RESULT: ${{ needs.security.result }}
           INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
           RESILIENCE_RESULT: ${{ needs.resilience-tests.result }}
           CLEANUP_RESULT: ${{ needs.cleanup.result }}
           LOAD_TESTS_REPORT_RESULT: ${{ needs.load-tests-report.result }}
         run: |-
+          echo "gate-start: $GATE_START_RESULT"
           echo "security: $SECURITY_RESULT"
           echo "integration-tests: $INTEGRATION_RESULT"
           echo "resilience-tests: $RESILIENCE_RESULT"
           echo "cleanup (advisory): $CLEANUP_RESULT"
           echo "load-tests-report (advisory): $LOAD_TESTS_REPORT_RESULT"
+
+          if [[ "$GATE_START_RESULT" == 'skipped' ]]; then
+            if [[ "$SECURITY_RESULT" != 'skipped' || \
+              "$INTEGRATION_RESULT" != 'skipped' || \
+              "$RESILIENCE_RESULT" != 'skipped' || \
+              "$CLEANUP_RESULT" != 'skipped' || \
+              "$LOAD_TESTS_REPORT_RESULT" != 'skipped' ]]; then
+              echo "::error::A lightweight release PR produced an unexpected CI result."
+              exit 1
+            fi
+            echo "Full CI is deferred to the exact merged master commit."
+            echo "The separately required release-policy status authorizes this release PR."
+            exit 0
+          fi
+
+          if [[ "$GATE_START_RESULT" != 'success' ]]; then
+            echo "::error::Full CI did not start successfully."
+            exit 1
+          fi
 
           if [ "$SECURITY_RESULT" != "success" ] || \
             [ "$INTEGRATION_RESULT" != "success" ] || \

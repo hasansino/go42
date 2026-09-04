@@ -6,7 +6,6 @@ name: scorecard-publish
 # to code scanning. OIDC is isolated here to satisfy Scorecard restrictions.
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - master

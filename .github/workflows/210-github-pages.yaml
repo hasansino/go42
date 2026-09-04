@@ -9,8 +9,6 @@ name: github-pages
 # create an Actions variable for it.
 
 on:
-  # manual trigger
-  workflow_dispatch:
   # push or merge to master
   push:
     branches:

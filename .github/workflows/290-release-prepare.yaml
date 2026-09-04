@@ -194,6 +194,7 @@ jobs:
 
           {
             echo "ci_run_id=$ci_run_id"
+            echo "current_version=$current_version"
             echo "master_sha=$master_sha"
             echo "release_version=$RELEASE_VERSION"
           } >> "$GITHUB_OUTPUT"
@@ -257,6 +258,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           ref: ${{ steps.admission.outputs.master_sha }}
+      # ----
+      # Keep model inference out of the release preparation job. This action's
+      # deterministic mode reproduces the complete commit list used by earlier
+      # release pull requests without adding optional AI to the critical path.
+      - name: 'Generate deterministic release summary'
+        id: release-summary
+        continue-on-error: true
+        uses: ./.github/actions/ai-generate-summary
+        env:
+          SUMMARY_ENABLE: 'false'
+        with:
+          base_ref: ${{ steps.admission.outputs.current_version }}
+          head_ref: ${{ steps.admission.outputs.release_version }}
+          target_commitish: ${{ steps.admission.outputs.master_sha }}
+          context_type: release
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       # ----
       - name: 'Update Helm appVersion'
         env:
@@ -335,6 +352,50 @@ jobs:
             exit 1
           fi
       # ----
+      - name: 'Prepare release pull request body'
+        env:
+          CI_RUN_ID: ${{ steps.admission.outputs.ci_run_id }}
+          COMPARISON_URL: ${{ steps.release-summary.outputs.comparison_url }}
+          CURRENT_VERSION: ${{ steps.admission.outputs.current_version }}
+          MASTER_SHA: ${{ steps.admission.outputs.master_sha }}
+          RELEASE_SUMMARY: ${{ steps.release-summary.outputs.summary }}
+          RELEASE_VERSION: ${{ steps.admission.outputs.release_version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          summary="$RELEASE_SUMMARY"
+          if [[ -z "$summary" ]]; then
+            notes="$(git log \
+              --pretty=format:"- %s ([%h](${GITHUB_SERVER_URL}/${REPOSITORY}/commit/%H))" \
+              "${CURRENT_VERSION}..${MASTER_SHA}")"
+            if [[ -z "$notes" ]]; then
+              notes="- No changes since \`${CURRENT_VERSION}\`."
+            fi
+            summary="$(printf \
+              '### Highlights\nSee changes below for details.\n\n### Changes\n%s' \
+              "$notes")"
+          fi
+
+          comparison_url="$COMPARISON_URL"
+          if [[ -z "$comparison_url" ]]; then
+            comparison_url="${GITHUB_SERVER_URL}/${REPOSITORY}/compare/${CURRENT_VERSION}...${MASTER_SHA}"
+          fi
+
+          {
+            echo "This automated pull request prepares \`${RELEASE_VERSION}\` from the tested master commit."
+            echo
+            echo "**Source commit:** \`${MASTER_SHA}\`"
+            echo "**Unified CI:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${CI_RUN_ID}"
+            echo "**Prepare workflow:** ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "**Full changelog:** [${CURRENT_VERSION}...${RELEASE_VERSION}](${comparison_url})"
+            echo
+            echo '---'
+            echo
+            printf '%s\n' "$summary"
+          } > "${RUNNER_TEMP}/release-pr-body.md"
+      # ----
       - name: 'Create or update release pull request'
         id: release-pr
         uses: peter-evans/create-pull-request@v8
@@ -343,12 +404,7 @@ jobs:
           branch-token: ${{ steps.release-app.outputs.token }}
           commit-message: "chore(release): ${{ steps.admission.outputs.release_version }}"
           title: "Release ${{ steps.admission.outputs.release_version }}"
-          body: |
-            This automated pull request prepares `${{ steps.admission.outputs.release_version }}` from the tested master commit.
-
-            **Source commit:** `${{ steps.admission.outputs.master_sha }}`
-            **Unified CI:** https://github.com/${{ github.repository }}/actions/runs/${{ steps.admission.outputs.ci_run_id }}
-            **Prepare workflow:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          body-path: ${{ runner.temp }}/release-pr-body.md
           branch: "auto-release-${{ steps.admission.outputs.release_version }}"
           base: master
           add-paths: |

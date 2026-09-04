@@ -12,28 +12,6 @@ name: security
 # @see https://github.com/google/capslock
 
 on:
-  workflow_dispatch:
-    inputs:
-      runs_on:
-        required: true
-        type: string
-        default: ubuntu-latest
-        description: 'runs_on'
-      continue_on_error:
-        required: true
-        type: boolean
-        default: false
-        description: 'continue_on_error'
-      timeout_minutes:
-        required: false
-        type: number
-        default: 15
-        description: 'timeout_minutes'
-      codeql_timeout_minutes:
-        required: false
-        type: number
-        default: 30
-        description: 'codeql_timeout_minutes'
   workflow_call:
     inputs:
       runs_on:
