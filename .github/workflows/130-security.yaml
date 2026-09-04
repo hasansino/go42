@@ -184,6 +184,9 @@ jobs:
         with:
           sarif_file: scorecard-results.sarif
 
+  # Keep public Scorecard publishing separate from PR analysis because
+  # publish_results requires id-token: write. This master-only job prevents
+  # pull request runs from receiving OIDC permission while updating the badge.
   scorecard-publish:
     if: github.ref == 'refs/heads/master'
     name: scorecard-publish
