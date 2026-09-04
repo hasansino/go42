@@ -3,8 +3,8 @@
 name: load-tests
 
 # Load tests.
-# Simulates load on application and records statistics.
-# When this workflow is triggered in pull request, it will post statistics to pull request.
+# Simulates load on the application and uploads raw K6 results.
+# Aggregate reporting is orchestrated separately so image cleanup does not wait for summary generation.
 
 on:
   workflow_dispatch:
@@ -29,11 +29,6 @@ on:
         type: string
         default: "tmp"
         description: "image_tag"
-      generate_report:
-        required: false
-        type: boolean
-        default: true
-        description: "generate_report"
       timeout_minutes:
         required: false
         type: number
@@ -53,10 +48,6 @@ on:
       image_tag:
         required: true
         type: string
-      generate_report:
-        required: false
-        type: boolean
-        default: true
       timeout_minutes:
         required: false
         type: number
@@ -65,20 +56,6 @@ on:
 permissions: {}
 
 jobs:
-  # Standalone runs report here. Unified CI invokes reporting separately so
-  # registry cleanup can run in parallel after the load-test matrix finishes.
-  report:
-    name: report
-    needs:
-      - load-tests
-    if: ${{ !cancelled() && inputs.generate_report }}
-    uses: ./.github/workflows/150-load-tests-report.yaml
-    permissions:
-      contents: read
-    with:
-      runs_on: ${{ inputs.runs_on }}
-      timeout_minutes: ${{ inputs.timeout_minutes }}
-
   load-tests:
     name: load-tests-${{ matrix.protocol }}-${{ matrix.database }}
     runs-on: ${{ inputs.runs_on }}
