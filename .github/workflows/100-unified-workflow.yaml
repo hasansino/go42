@@ -44,8 +44,8 @@ jobs:
 
   # stage 1: linting
 
-  gate:
-    name: gate
+  gate-start:
+    name: gate-start
     runs-on: ubuntu-latest
     steps:
       - name: Start workflow
@@ -56,7 +56,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -67,7 +67,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -78,7 +78,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -89,7 +89,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -100,7 +100,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -111,7 +111,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -122,7 +122,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -133,7 +133,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -144,7 +144,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -155,7 +155,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -166,7 +166,7 @@ jobs:
     permissions:
       contents: read
     needs:
-      - gate
+      - gate-start
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
@@ -339,7 +339,36 @@ jobs:
       continue_on_error: false
       timeout_minutes: 15
 
-  # Stage 7: cleanup
+  # stage 7: required finish gate
+
+  gate-finish:
+    name: gate-finish
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - security
+      - integration-tests
+      - resilience-tests
+    steps:
+      - name: Require blocking jobs to succeed
+        env:
+          SECURITY_RESULT: ${{ needs.security.result }}
+          INTEGRATION_RESULT: ${{ needs.integration-tests.result }}
+          RESILIENCE_RESULT: ${{ needs.resilience-tests.result }}
+        run: |
+          echo "security: $SECURITY_RESULT"
+          echo "integration-tests: $INTEGRATION_RESULT"
+          echo "resilience-tests: $RESILIENCE_RESULT"
+
+          if [ "$SECURITY_RESULT" != "success" ] || \
+            [ "$INTEGRATION_RESULT" != "success" ] || \
+            [ "$RESILIENCE_RESULT" != "success" ]; then
+            echo "::error::One or more blocking CI branches did not succeed."
+            exit 1
+          fi
+
+  # stage 8: cleanup
 
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
