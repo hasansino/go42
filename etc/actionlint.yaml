@@ -1,7 +1,7 @@
 ---
 
 config-variables:
-  - RELEASE_APP_ID
+  - RELEASE_APP_CLIENT_ID
   - RELEASE_APP_NAME
   # ----
   - CLAUDE_ENABLE
@@ -26,6 +26,10 @@ paths:
     ignore:
       # GitHub supports concurrency queueing, but actionlint 1.7.12 does not yet
       # recognize the `queue` key: https://github.com/rhysd/actionlint/issues/680
+      - 'unexpected key "queue" for "concurrency" section.+'
+  .github/workflows/310-release-pr-merge.yaml:
+    ignore:
+      # Serialize every release without replacing an older pending release.
       - 'unexpected key "queue" for "concurrency" section.+'
   .github/workflows/150-resilience-tests.yaml:
     ignore:

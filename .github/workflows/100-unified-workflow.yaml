@@ -45,7 +45,7 @@ jobs:
   # stage 1: linting
 
   # A trusted release PR is authorized by the separately required release-policy
-  # status. Its exact merged commit receives full CI before release-finalize tags it.
+  # status. The release workflow revalidates its one-line metadata change after merge.
   gate-start:
     name: gate-start
     if: >-
@@ -427,7 +427,7 @@ jobs:
               echo "::error::A lightweight release PR produced an unexpected CI result."
               exit 1
             fi
-            echo "Full CI is deferred to the exact merged master commit."
+            echo "Full CI is skipped for this policy-controlled release metadata PR."
             echo "The separately required release-policy status authorizes this release PR."
             exit 0
           fi

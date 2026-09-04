@@ -201,12 +201,12 @@ jobs:
       # ----
       - name: 'Validate release App configuration'
         env:
-          RELEASE_APP_ID: ${{ vars.RELEASE_APP_ID }}
+          RELEASE_APP_CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
           RELEASE_APP_NAME: ${{ vars.RELEASE_APP_NAME }}
         run: |
           set -euo pipefail
-          if [[ ! "$RELEASE_APP_ID" =~ ^[1-9][0-9]*$ ]]; then
-            echo "RELEASE_APP_ID must be a positive numeric GitHub App ID" >&2
+          if [[ -z "$RELEASE_APP_CLIENT_ID" ]]; then
+            echo "RELEASE_APP_CLIENT_ID must contain the GitHub App Client ID" >&2
             exit 1
           fi
           if [[ ! "$RELEASE_APP_NAME" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
@@ -216,9 +216,9 @@ jobs:
       # ----
       - name: 'Generate repository-scoped release App token'
         id: release-app
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.2.0
         with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}

@@ -42,7 +42,6 @@ runs:
       shell: bash
       env:
         BASE_REF: ${{ inputs.base_ref }}
-        GH_TOKEN: ${{ inputs.github_token }}
         HEAD_REF: ${{ inputs.head_ref }}
         TARGET_COMMITISH: ${{ inputs.target_commitish }}
       run: |
@@ -55,17 +54,11 @@ runs:
             "${BASE_REF}..${comparison_ref}" > "$NOTES_FILE"
         }
 
-        # A proposed release tag cannot be resolved by the release-notes API
-        # with this read-only token. Build the exact, deterministic commit list
-        # locally instead of granting contents: write for PR prose.
-        if [[ -n "$TARGET_COMMITISH" ]]; then
-          write_git_notes
-        else
-          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
-            -f "tag_name=${HEAD_REF}" \
-            -f "previous_tag_name=${BASE_REF}" \
-            --jq '.body' > "$NOTES_FILE" || write_git_notes
-        fi
+        # This action also runs from PR checkouts. Keep it read-only and use the
+        # exact local range as summary input rather than granting contents: write
+        # for the release-notes API. The final release creation separately asks
+        # GitHub to append its generated release notes with the Release App token.
+        write_git_notes
 
     - name: 'Install GitHub Models CLI extension'
       if: env.SUMMARY_ENABLE != 'false'

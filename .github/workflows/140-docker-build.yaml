@@ -26,6 +26,10 @@ on:
       image_tag:
         required: true
         type: string
+      source_sha:
+        required: false
+        type: string
+        default: ""
       platforms:
         required: true
         type: string
@@ -64,37 +68,79 @@ jobs:
     steps:
       - name: 'Validate image publication target'
         env:
-          CALLER_WORKFLOW: ${{ github.workflow }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          CALLER_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_MERGED: ${{ github.event.pull_request.merged }}
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           IMAGE_TAG: ${{ inputs.image_tag }}
-          REF_NAME: ${{ github.ref_name }}
-          REF_TYPE: ${{ github.ref_type }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           set -euo pipefail
           if [[ ! "$IMAGE_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
             echo "Invalid OCI image tag: $IMAGE_TAG" >&2
             exit 1
           fi
-
-          # Version tags are permanent release aliases. Only the tag-triggered
-          # release publisher may create them; manual Docker runs must not be
-          # able to replace an already published release image.
-          if [[ "$IMAGE_TAG" == v* ]] && \
-            [[ "$EVENT_NAME" != "push" || "$REF_TYPE" != "tag" || \
-              "$REF_NAME" != "$IMAGE_TAG" || "$CALLER_WORKFLOW" != "release-publish" ]]; then
-            echo "Release image tags may only be published by release-publish" >&2
+          if [[ -n "$SOURCE_SHA" && ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid source commit SHA: $SOURCE_SHA" >&2
             exit 1
+          fi
+
+          # Version tags are permanent release aliases. Only the merged-PR
+          # release workflow may create them. Bind the reusable workflow to the
+          # exact merged release event and source commit so manual Docker runs
+          # cannot replace a published release image.
+          if [[ "$IMAGE_TAG" == v* ]]; then
+            expected_workflow_ref="${REPOSITORY}/.github/workflows/310-release-pr-merge.yaml@refs/heads/master"
+            if [[ "$EVENT_NAME" != "pull_request" || "$EVENT_ACTION" != "closed" || \
+              "$EVENT_MERGED" != "true" || "$BASE_REF" != "master" || \
+              "$HEAD_REPOSITORY" != "$REPOSITORY" || "$HEAD_REF" != "auto-release-${IMAGE_TAG}" || \
+              "$CALLER_WORKFLOW_REF" != "$expected_workflow_ref" || \
+              "$CALLER_WORKFLOW_SHA" != "$MERGE_SHA" || "$SOURCE_SHA" != "$MERGE_SHA" || \
+              "$EVENT_SHA" != "$MERGE_SHA" ]]; then
+              echo "Release image tags may only be published for a validated merged release PR" >&2
+              exit 1
+            fi
           fi
       # ----
       - name: 'Checkout repository'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+      - name: 'Validate checked-out source'
+        if: inputs.source_sha != ''
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$(git rev-parse HEAD)" != "$SOURCE_SHA" ]]; then
+            echo "Checkout did not resolve to $SOURCE_SHA" >&2
+            exit 1
+          fi
       # ----
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Extract commit hash'
         run: echo "commit_hash=$(git rev-parse HEAD 2>/dev/null || echo '')" >> "$GITHUB_ENV"
       - name: 'Extract release tag'
-        run: echo "release_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo '')" >> "$GITHUB_ENV"
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          release_tag=''
+          if [[ "$IMAGE_TAG" == v* ]]; then
+            release_tag="$IMAGE_TAG"
+          else
+            release_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          fi
+          echo "release_tag=$release_tag" >> "$GITHUB_ENV"
       # ----
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v4
@@ -199,7 +245,7 @@ jobs:
       # ----
       - name: 'Attest SBOM'
         if: ${{ inputs.attestation_sbom }}
-        uses: actions/attest-sbom@v4
+        uses: actions/attest@v4
         with:
           subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
           subject-digest: ${{ steps.build.outputs.digest }}

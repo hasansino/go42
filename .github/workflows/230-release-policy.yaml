@@ -115,7 +115,7 @@ jobs:
             fi
 
             # Reject stale candidates before publishing success. HEAD is the
-            # authorization consumed by release-finalize, so write it strictly
+            # authorization consumed by the release workflow, so write it strictly
             # last with no later fallible work.
             for sha in "${status_shas[@]}"; do
               if [[ "$sha" != "$head_sha" && "$sha" != "$merge_sha" ]]; then

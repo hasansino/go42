@@ -78,10 +78,10 @@ jobs:
     steps:
       - name: 'Generate GitHub App Token'
         id: generate_token
-        if: ${{ vars.RELEASE_APP_ID }}
-        uses: actions/create-github-app-token@v3
+        if: ${{ vars.RELEASE_APP_CLIENT_ID }}
+        uses: actions/create-github-app-token@v3.2.0
         with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - name: 'Deploy to GitHub Pages'
         id: deployment

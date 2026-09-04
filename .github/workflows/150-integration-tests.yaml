@@ -24,6 +24,10 @@ on:
         required: false
         type: string
         default: ""
+      source_sha:
+        required: false
+        type: string
+        default: ""
       timeout_minutes:
         required: false
         type: number
@@ -110,6 +114,19 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+      - name: 'Validate checked-out source'
+        if: inputs.source_sha != ''
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ || "$(git rev-parse HEAD)" != "$SOURCE_SHA" ]]; then
+            echo "Checkout did not resolve to the expected source commit" >&2
+            exit 1
+          fi
       - name: 'Setup Go'
         uses: actions/setup-go@v7
         with:
