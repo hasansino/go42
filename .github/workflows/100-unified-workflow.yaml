@@ -32,134 +32,152 @@ on:
     branches:
       - master
 
-permissions:
-  contents: write
-  packages: write
-  attestations: write
-  id-token: write
-  security-events: write
-  pull-requests: write
-  issues: write
-  actions: read
+permissions: {}
+
+concurrency:
+  group: >-
+    ${{ github.event_name == 'pull_request' && format('unified-pr-{0}', github.event.pull_request.number) || format('unified-run-{0}-{1}',
+    github.run_id, github.run_attempt) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
 
   # stage 1: linting
 
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start workflow
+        run: echo "Workflow started."
+
   git-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-git-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
+      timeout_minutes: 10
 
   golangci-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-golangci-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   docker-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-docker-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   proto-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-proto-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   openapi-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-openapi-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   markdown-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-markdown-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   writing-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-writing-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   action-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-action-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   sql-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-sql-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   project-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-project-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   editorconfig-lint:
-    if: |
-      github.event_name == 'workflow_dispatch' || !endsWith(github.actor, '[bot]') &&
-      ( github.event.head_commit.message != 'initial commit'
-      && !startsWith(github.event.head_commit.message, 'auto-release-'))
     uses: ./.github/workflows/110-editorconfig-lint.yaml
+    permissions:
+      contents: read
+    needs:
+      - gate
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 10
 
   # stage 2: unit tests
 
   unit-tests:
     uses: ./.github/workflows/120-unit-tests.yaml
+    permissions:
+      contents: read
     needs:
       - git-lint
       - golangci-lint
@@ -174,18 +192,25 @@ jobs:
       - editorconfig-lint
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
       timeout_minutes: 10
 
   # stage 3: pre-build security scans
 
   security:
     uses: ./.github/workflows/130-security.yaml
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      security-events: write
     needs:
       - unit-tests
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
+      timeout_minutes: 15
+      codeql_timeout_minutes: 30
 
   # stage 4: build artifacts
 
@@ -193,6 +218,7 @@ jobs:
   # because it may contain characters that are not allowed in docker image tags
   docker-prepare-tag:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - unit-tests
     outputs:
@@ -201,14 +227,18 @@ jobs:
       - name: Prepare Docker image tag
         id: docker-prepare-tag
         run: |
-          REF_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          IMAGE_TAG=$(echo "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[\/ @]/-/g')
-          IMAGE_TAG="${IMAGE_TAG:0:60}-${GITHUB_RUN_ID}"
+          IMAGE_TAG="ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           echo "tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "$IMAGE_TAG"
 
   docker-build:
     uses: ./.github/workflows/140-docker-build.yaml
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
     needs:
       - docker-prepare-tag
     with:
@@ -220,6 +250,7 @@ jobs:
       attestation: ${{ github.ref == 'refs/heads/master' }}
       generate_sbom: true
       attestation_sbom: false
+      timeout_minutes: 30
 
   # stage 5: post-build security scans
 
@@ -227,6 +258,7 @@ jobs:
   security-extra-group:
     name: "Security Scans"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - docker-prepare-tag
       - docker-build
@@ -236,6 +268,11 @@ jobs:
 
   security-extra:
     uses: ./.github/workflows/140-security-extra.yaml
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
     needs:
       - docker-prepare-tag
       - security-extra-group
@@ -244,6 +281,7 @@ jobs:
       continue_on_error: true
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      timeout_minutes: 15
 
   # stage 6: integration, load & resilience tests
 
@@ -251,6 +289,7 @@ jobs:
   functional-tests-group:
     name: "Integration, Load & Resilience Tests"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - docker-prepare-tag
       - docker-build
@@ -260,18 +299,24 @@ jobs:
 
   integration-tests:
     uses: ./.github/workflows/150-integration-tests.yaml
+    permissions:
+      contents: read
+      packages: read
     needs:
       - docker-prepare-tag
       - functional-tests-group
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
       timeout_minutes: 10
 
   load-tests:
     uses: ./.github/workflows/150-load-tests.yaml
+    permissions:
+      contents: read
+      packages: read
     needs:
       - docker-prepare-tag
       - functional-tests-group
@@ -284,18 +329,23 @@ jobs:
 
   resilience-tests:
     uses: ./.github/workflows/150-resilience-tests.yaml
+    permissions:
+      contents: read
     needs:
       - docker-prepare-tag
       - functional-tests-group
     with:
       runs_on: ubuntu-latest
-      continue_on_error: true
+      continue_on_error: false
       timeout_minutes: 15
 
   # Stage 7: cleanup
 
   cleanup:
     uses: ./.github/workflows/160-cleanup.yaml
+    permissions:
+      contents: read
+      packages: write
     needs:
       - docker-prepare-tag
       - security-extra
@@ -306,3 +356,4 @@ jobs:
       runs_on: ubuntu-latest
       service_name: "go42"
       image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      timeout_minutes: 10
