@@ -28,6 +28,10 @@ on:
         required: false
         type: number
         default: 30
+    secrets:
+      GITLEAKS_LICENSE:
+        description: "Gitleaks Action license for organization-owned repositories"
+        required: false
 
 permissions: {}
 
@@ -51,6 +55,7 @@ jobs:
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
           GITLEAKS_CONFIG: etc/gitleaks.toml
           GITLEAKS_VERSION: 8.30.1
