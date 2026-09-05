@@ -19,12 +19,7 @@ concurrency:
   group: gemini-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  id-token: write
-  pull-requests: write
-  issues: write
-  statuses: write
+permissions: {}
 
 jobs:
   gemini:
@@ -62,6 +57,12 @@ jobs:
       )
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+      statuses: write
 
     steps:
       - name: 'Checkout repository'

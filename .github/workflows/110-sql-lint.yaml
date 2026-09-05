@@ -50,7 +50,11 @@ jobs:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # -----
-      - name: 'Install SQLFluff'
-        run: pip install sqlfluff
       - name: 'Run SQLFluff linter'
-        run: sqlfluff lint --config etc/sqlfluff.toml ${{ matrix.path }} --dialect ${{ matrix.dialect }}
+        run: |-
+          docker run --rm \
+            --network none \
+            --volume "${{ github.workspace }}:/workspace:ro" \
+            --workdir /workspace \
+            sqlfluff/sqlfluff:4.3.0@sha256:8003e7099a43661bb972bb29b6c66ef0954545586a047bd88cdbdfb6d758f144 \
+            lint --config etc/sqlfluff.toml ${{ matrix.path }} --dialect ${{ matrix.dialect }}

@@ -8,6 +8,8 @@ name: copilot-setup-steps
 on:
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   copilot-setup-steps:
     name: copilot-setup-steps

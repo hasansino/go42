@@ -38,6 +38,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: 'Install editorconfig-checker'
-        run: go install github.com/editorconfig-checker/editorconfig-checker/cmd/editorconfig-checker@latest
+        run: go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@v3.11.3
       - name: 'Run editorconfig-checker'
         run: editorconfig-checker -v

@@ -38,5 +38,5 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/workdir" \
             -w /workdir \
-            ghcr.io/redocly/cli:latest \
+            ghcr.io/redocly/cli:2.51.2@sha256:2dcc3939c2180e1da96db06a40aa079cb32c4ef3bac8b35ff061f2140322da64 \
             lint --config etc/redocly.yaml --format github-actions api/openapi/**/*.yaml

@@ -52,7 +52,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
           GITLEAKS_CONFIG: etc/gitleaks.toml
-          GITLEAKS_VERSION: latest
+          GITLEAKS_VERSION: 8.30.1
 
   gosec:
     name: gosec
@@ -182,7 +182,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - name: 'Install capslock'
-        run: go install github.com/google/capslock/cmd/capslock@latest
+        run: go install github.com/google/capslock/cmd/capslock@v0.3.3
       - name: 'Generate master branch capabilities'
         run: capslock -packages ./... -output=json > capabilities.json
       - name: 'Save master capabilities'

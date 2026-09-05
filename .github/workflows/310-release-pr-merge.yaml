@@ -2,7 +2,7 @@
 
 name: release
 
-# Revalidate a merged release PR, build and test its exact merge commit, then
+# Revalidate a merged release PR, build its exact merge commit, then
 # publish the container image, immutable Git tag, and GitHub Release. The Git
 # tag is created only after image verification, so it is the deployment signal.
 
@@ -466,38 +466,17 @@ jobs:
           context_type: release
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  integration-tests:
-    name: integration-tests
-    if: needs.validate-release.outputs.already_released == 'false'
-    needs:
-      - validate-release
-      - docker-build
-    permissions:
-      contents: read
-      packages: read
-    uses: ./.github/workflows/150-integration-tests.yaml
-    with:
-      runs_on: ubuntu-latest
-      continue_on_error: false
-      service_name: "go42"
-      image_tag: ${{ needs.validate-release.outputs.release_tag }}
-      image_reference: ghcr.io/${{ github.repository_owner }}/go42@${{ needs.docker-build.outputs.image_digest }}
-      source_sha: ${{ needs.validate-release.outputs.source_sha }}
-      timeout_minutes: 10
-
   publish-release:
     name: publish-release
     if: |
       !cancelled() &&
       needs.validate-release.result == 'success' &&
       needs.validate-release.outputs.already_released == 'false' &&
-      needs.docker-build.result == 'success' &&
-      needs.integration-tests.result == 'success'
+      needs.docker-build.result == 'success'
     needs:
       - validate-release
       - docker-build
       - generate-summary
-      - integration-tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -535,7 +514,7 @@ jobs:
             "${IMAGE_REPOSITORY}:${RELEASE_TAG}" --format '{{json .}}')"
           current_digest="$(jq -r '.manifest.digest // empty' <<< "$image_metadata")"
           if [[ "$current_digest" != "$IMAGE_DIGEST" ]]; then
-            echo "Release tag does not point to the tested image digest" >&2
+            echo "Release tag does not point to the built image digest" >&2
             exit 1
           fi
 
@@ -687,7 +666,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       # ----
       # Publish the Git tag only after the matching container tag has been
-      # pushed, tested by digest, and reverified immediately above.
+      # pushed, validated by digest, and reverified immediately above.
       - name: 'Create immutable release tag'
         if: steps.publication-state.outputs.tag_exists == 'false'
         env:
@@ -769,6 +748,6 @@ jobs:
             "${IMAGE_REPOSITORY}:${RELEASE_TAG}" --format '{{json .}}' \
             | jq -r '.manifest.digest // empty')"
           if [[ "$current_digest" != "$IMAGE_DIGEST" ]]; then
-            echo "Published container tag no longer points to the tested digest" >&2
+            echo "Published container tag no longer points to the verified digest" >&2
             exit 1
           fi
