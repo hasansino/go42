@@ -58,10 +58,10 @@ jobs:
       memcached:
         image: memcached:1.6.45@sha256:75c93cc91e76853da7c029e74d6e8dbd44774dd3713c93be8cd1971ad26120a4
       nats:
-        image: nats:2
+        image: nats:2.14.6@sha256:d4a8980c1ee558257f196f86693ec919c7a8b8095dd678e2cb5ff1adcfe03ecb
         command: -js -m 8222
       rabbitmq:
-        image: rabbitmq:3-management
+        image: rabbitmq:3.13.7-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
         env:
           RABBITMQ_DEFAULT_USER: user
           RABBITMQ_DEFAULT_PASS: qwerty
@@ -69,7 +69,7 @@ jobs:
           --health-cmd "rabbitmq-diagnostics -q ping" --health-start-period 10s --health-interval 5s --health-timeout 5s --health-retries
           10
       kafka:
-        image: apache/kafka:4.0.0
+        image: apache/kafka:4.0.0@sha256:3f7b939115cd4872e9cee9369d80bd69712fde55f9902f46d793f64848dedc75
         env:
           KAFKA_NODE_ID: 1
           KAFKA_PROCESS_ROLES: broker,controller
@@ -85,7 +85,7 @@ jobs:
           KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
           KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       toxiproxy:
-        image: ghcr.io/shopify/toxiproxy:2.12.0
+        image: ghcr.io/shopify/toxiproxy:2.12.0@sha256:9378ed52a28bc50edc1350f936f518f31fa95f0d15917d6eb40b8e376d1a214e
         ports:
           - 8474:8474
           - 15432:15432

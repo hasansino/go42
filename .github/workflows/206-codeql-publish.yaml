@@ -2,31 +2,24 @@
 
 name: codeql-publish
 
-# Unified CI runs a read-only CodeQL check for every change. After a successful
-# master build, this isolated workflow analyzes the exact commit and publishes it.
+# Unified CI runs a read-only CodeQL check for every change. This isolated
+# workflow analyzes and publishes every commit pushed to master.
 
 on:
-  workflow_run:
-    workflows:
-      - unified-workflow
-    types:
-      - completed
+  push:
     branches:
       - master
 
 permissions: {}
 
+concurrency:
+  group: codeql-publish-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   codeql-publish:
     name: codeql-publish
-    if: >-
-      ${{
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'push' &&
-        github.event.workflow_run.head_branch == 'master' &&
-        github.event.workflow_run.head_repository.full_name == github.repository &&
-        github.event.workflow_run.path == '.github/workflows/100-unified-workflow.yaml'
-      }}
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -34,10 +27,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: 'Checkout tested master commit'
+      - name: 'Checkout master commit'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
       - name: 'Initialize CodeQL'
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
@@ -56,5 +49,3 @@ jobs:
         with:
           sarif_file: ${{ steps.codeql-analysis.outputs.sarif-output }}
           category: '.github/workflows/100-unified-workflow.yaml:codeql'
-          ref: refs/heads/master
-          sha: ${{ github.event.workflow_run.head_sha }}
