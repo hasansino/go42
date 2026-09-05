@@ -13,6 +13,9 @@ on:
       image_digest:
         description: "Manifest digest of the pushed image"
         value: ${{ jobs.docker-build.outputs.image_digest }}
+      image_reference:
+        description: "Immutable reference of the pushed image"
+        value: ${{ jobs.docker-build.outputs.image_reference }}
     inputs:
       runs_on:
         required: true
@@ -58,6 +61,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     outputs:
       image_digest: ${{ steps.validate-digest.outputs.image_digest }}
+      image_reference: ${{ steps.validate-digest.outputs.image_reference }}
     permissions:
       packages: write
       contents: read
@@ -214,12 +218,14 @@ jobs:
         id: validate-digest
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}
         run: |
           if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "Invalid image digest: $IMAGE_DIGEST" >&2
             exit 1
           fi
           echo "image_digest=$IMAGE_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "image_reference=${IMAGE_NAME}@${IMAGE_DIGEST}" >> "$GITHUB_OUTPUT"
       # ----
       # Record provenance immediately after publication. Later SBOM processing
       # cannot leave a pushed image without a source/run identity attestation.

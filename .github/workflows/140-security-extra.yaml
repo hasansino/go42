@@ -17,10 +17,7 @@ on:
       continue_on_error:
         required: true
         type: boolean
-      service_name:
-        required: true
-        type: string
-      image_tag:
+      image_reference:
         required: true
         type: string
       timeout_minutes:
@@ -47,7 +44,7 @@ jobs:
       - name: 'Report all image vulnerabilities'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          image-ref: ${{ inputs.image_reference }}
           format: 'table'
           exit-code: '0'
           ignore-unfixed: false
@@ -59,7 +56,7 @@ jobs:
       - name: 'Enforce fixable high and critical image vulnerabilities'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+          image-ref: ${{ inputs.image_reference }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true # fail only when remediation exists
@@ -78,7 +75,7 @@ jobs:
     # ----
     services:
       app:
-        image: ghcr.io/${{ github.repository_owner }}/${{ inputs.service_name }}:${{ inputs.image_tag }}
+        image: ${{ inputs.image_reference }}
         ports:
           - 44441:8080 # should be unique to avoid conflicts on self-hosted runners
         env:

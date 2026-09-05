@@ -304,6 +304,8 @@ jobs:
     name: "Security Scans"
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      image_reference: ${{ needs.docker-build.outputs.image_reference }}
     needs:
       - docker-prepare-tag
       - docker-build
@@ -317,13 +319,11 @@ jobs:
       contents: read
       packages: read
     needs:
-      - docker-prepare-tag
       - security-extra-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
-      service_name: "go42"
-      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      image_reference: ${{ needs.security-extra-group.outputs.image_reference }}
       timeout_minutes: 15
 
   # stage 6: integration, load & resilience tests
@@ -333,6 +333,8 @@ jobs:
     name: "Functional Tests"
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      image_reference: ${{ needs.docker-build.outputs.image_reference }}
     needs:
       - docker-prepare-tag
       - docker-build
@@ -346,13 +348,11 @@ jobs:
       contents: read
       packages: read
     needs:
-      - docker-prepare-tag
       - functional-tests-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: false
-      service_name: "go42"
-      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      image_reference: ${{ needs.functional-tests-group.outputs.image_reference }}
       timeout_minutes: 10
 
   load-tests:
@@ -361,13 +361,11 @@ jobs:
       contents: read
       packages: read
     needs:
-      - docker-prepare-tag
       - functional-tests-group
     with:
       runs_on: ubuntu-latest
       continue_on_error: true
-      service_name: "go42"
-      image_tag: ${{ needs.docker-prepare-tag.outputs.tag }}
+      image_reference: ${{ needs.functional-tests-group.outputs.image_reference }}
       timeout_minutes: 10
 
   # Reporting does not use the temporary image, so run it independently of cleanup.
@@ -387,8 +385,17 @@ jobs:
     permissions:
       contents: read
     needs:
-      - docker-prepare-tag
-      - functional-tests-group
+      - git-lint
+      - golangci-lint
+      - docker-lint
+      - proto-lint
+      - openapi-lint
+      - markdown-lint
+      - writing-lint
+      - action-lint
+      - sql-lint
+      - project-lint
+      - editorconfig-lint
     with:
       runs_on: ubuntu-latest
       continue_on_error: false

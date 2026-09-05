@@ -14,16 +14,9 @@ on:
       continue_on_error:
         required: true
         type: boolean
-      service_name:
-        required: true
-        type: string
-      image_tag:
-        required: true
-        type: string
       image_reference:
-        required: false
+        required: true
         type: string
-        default: ""
       source_sha:
         required: false
         type: string
@@ -93,9 +86,7 @@ jobs:
           --health-cmd "PGPASSWORD=qwerty psql -h localhost -U user -d go42 -c 'SELECT 1' || exit 1" --health-start-period
           10s --health-interval 5s --health-timeout 5s --health-retries 5
       app:
-        image: >-
-          ${{ inputs.image_reference || format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.service_name, inputs.image_tag)
-          }}
+        image: ${{ inputs.image_reference }}
         ports:
           - ${{ matrix.app_port }}:8080 # unique ports to avoid conflicts on self-hosted runners
           - ${{ matrix.grpc_port }}:50051 # unique ports to avoid conflicts on self-hosted runners
