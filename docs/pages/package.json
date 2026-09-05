@@ -18,22 +18,23 @@
     "prestart": "npm run assemble-docs"
   },
   "dependencies": {
-    "@docusaurus/core": "3.9.2",
-    "@docusaurus/preset-classic": "3.9.2",
-    "@docusaurus/theme-mermaid": "3.9.2",
-    "@easyops-cn/docusaurus-search-local": "^0.52.1",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/theme-mermaid": "3.10.2",
+    "@easyops-cn/docusaurus-search-local": "^0.55.3",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
     "prism-react-renderer": "^2.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "redocusaurus": "^2.5.0"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "redocusaurus": "^2.5.2"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.9.2",
-    "@docusaurus/tsconfig": "3.9.2",
-    "@docusaurus/types": "3.9.2",
-    "fs-extra": "^11.2.0",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "fs-extra": "^11.4.0",
     "glob": "^10.3.10",
     "typescript": "~5.6.2"
   },
@@ -50,6 +51,13 @@
     ]
   },
   "engines": {
-    "node": ">=18.0"
+    "node": ">=20.0"
+  },
+  "overrides": {
+    "qs": "6.16.0",
+    "serialize-javascript": "7.1.1",
+    "sockjs": {
+      "uuid": "11.1.1"
+    }
   }
 }

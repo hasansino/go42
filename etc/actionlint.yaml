@@ -31,6 +31,12 @@ paths:
     ignore:
       # Serialize every release without replacing an older pending release.
       - 'unexpected key "queue" for "concurrency" section.+'
+  .github/workflows/400-cleanup-registry.yaml:
+    ignore:
+      # GitHub supports concurrency queueing, but actionlint 1.7.12 does not yet
+      # recognize the `queue` key.
+      # Serialize every cleanup without replacing an older pending run.
+      - 'unexpected key "queue" for "concurrency" section.+'
   .github/workflows/150-resilience-tests.yaml:
     ignore:
       # actionlint does not support service container commands yet
