@@ -1,0 +1,222 @@
+---
+
+name: release
+run-name: 'release ${{ inputs.version }}'
+
+# Publish one already-tested master commit. Deployment is intentionally
+# separate and may consume the resulting release using Helm or another tool.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "v-prefixed SemVer without +metadata (for example, v1.2.3-build.7)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  validate-release:
+    name: validate-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      ci_url: ${{ steps.validate.outputs.ci_url }}
+      is_prerelease: ${{ steps.validate.outputs.is_prerelease }}
+      release_version: ${{ steps.validate.outputs.release_version }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+    steps:
+      - name: 'Validate release request'
+        id: validate
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.RELEASE_VERSION;
+            const sourceSha = context.sha;
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            const expectedWorkflowRef =
+              `${repository}/.github/workflows/300-release.yaml@refs/heads/master`;
+            const semver =
+              /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
+
+            if (!semver.test(version) || version.length > 128) {
+              throw new Error(`Version must be v-prefixed SemVer without build metadata: ${version}`);
+            }
+            if (context.ref !== 'refs/heads/master') {
+              throw new Error(`Release must be dispatched from master, not ${context.ref}`);
+            }
+            if (process.env.WORKFLOW_REF !== expectedWorkflowRef ||
+                process.env.WORKFLOW_SHA !== sourceSha) {
+              throw new Error('Release workflow is not bound to the selected master commit');
+            }
+
+            const branch = await github.rest.repos.getBranch({
+              ...context.repo,
+              branch: 'master',
+            });
+            if (branch.data.commit.sha !== sourceSha) {
+              throw new Error('Master advanced after this release was dispatched; run it again');
+            }
+
+            try {
+              await github.rest.git.getRef({
+                ...context.repo,
+                ref: `tags/${version}`,
+              });
+              throw new Error(`Git tag already exists: ${version}`);
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            try {
+              await github.rest.repos.getReleaseByTag({
+                ...context.repo,
+                tag: version,
+              });
+              throw new Error(`GitHub release already exists: ${version}`);
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            const runs = await github.paginate(
+              github.rest.actions.listWorkflowRuns,
+              {
+                ...context.repo,
+                workflow_id: '100-unified-workflow.yaml',
+                branch: 'master',
+                event: 'push',
+                head_sha: sourceSha,
+                status: 'completed',
+                per_page: 100,
+              },
+            );
+            const ciRun = runs.find((run) =>
+              run.event === 'push' &&
+              run.head_branch === 'master' &&
+              run.head_sha === sourceSha &&
+              run.head_repository?.full_name === repository &&
+              run.status === 'completed' &&
+              run.conclusion === 'success'
+            );
+            if (!ciRun) {
+              throw new Error(`No successful Unified CI run exists for ${sourceSha}`);
+            }
+
+            core.setOutput('ci_url', ciRun.html_url);
+            core.setOutput('is_prerelease', version.includes('-'));
+            core.setOutput('release_version', version);
+            core.setOutput('source_sha', sourceSha);
+            await core.summary
+              .addHeading(`Release ${version}`)
+              .addRaw(`Source: \`${sourceSha}\`\n\n`)
+              .addLink('Successful Unified CI', ciRun.html_url)
+              .write();
+
+  docker-build:
+    name: docker-build
+    needs:
+      - validate-release
+    permissions:
+      actions: read
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/140-docker-build.yaml
+    with:
+      runs_on: ubuntu-latest
+      continue_on_error: false
+      service_name: "go42"
+      image_tag: ${{ needs.validate-release.outputs.release_version }}
+      source_sha: ${{ needs.validate-release.outputs.source_sha }}
+      platforms: "linux/amd64,linux/arm64"
+      attestation: true
+      generate_sbom: true
+      attestation_sbom: true
+      timeout_minutes: 30
+
+  publish-release:
+    name: publish-release
+    needs:
+      - validate-release
+      - docker-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # An App token is used so the release.published event can start optional
+      # deployment workflows; events created by GITHUB_TOKEN do not do that.
+      - name: 'Generate repository-scoped release App token'
+        id: release-app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - name: 'Create Git tag and GitHub release'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ACTUAL_APP_SLUG: ${{ steps.release-app.outputs.app-slug }}
+          CI_URL: ${{ needs.validate-release.outputs.ci_url }}
+          EXPECTED_APP_SLUG: ${{ vars.RELEASE_APP_NAME }}
+          IMAGE_DIGEST: ${{ needs.docker-build.outputs.image_digest }}
+          IS_PRERELEASE: ${{ needs.validate-release.outputs.is_prerelease }}
+          RELEASE_VERSION: ${{ needs.validate-release.outputs.release_version }}
+          SOURCE_SHA: ${{ needs.validate-release.outputs.source_sha }}
+        with:
+          github-token: ${{ steps.release-app.outputs.token }}
+          script: |-
+            if (process.env.ACTUAL_APP_SLUG !== process.env.EXPECTED_APP_SLUG) {
+              throw new Error('Release App slug does not match RELEASE_APP_NAME');
+            }
+
+            const version = process.env.RELEASE_VERSION;
+            const sourceSha = process.env.SOURCE_SHA;
+            const image =
+              `ghcr.io/${context.repo.owner}/go42@${process.env.IMAGE_DIGEST}`;
+            const prerelease = process.env.IS_PRERELEASE === 'true';
+            const body = [
+              `**Source commit:** \`${sourceSha}\``,
+              `**Image:** \`${image}\``,
+              `**Unified CI:** ${process.env.CI_URL}`,
+              `**Release workflow:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+
+            const release = await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name: version,
+              target_commitish: sourceSha,
+              name: `Release ${version}`,
+              body,
+              draft: false,
+              prerelease,
+              generate_release_notes: true,
+              make_latest: prerelease ? 'false' : 'legacy',
+            });
+            if (release.data.tag_name !== version || release.data.draft) {
+              throw new Error('GitHub returned an unexpected release');
+            }
+
+            await core.summary
+              .addHeading(`Published ${version}`)
+              .addRaw(`Image: \`${image}\`\n\n`)
+              .addLink('GitHub release', release.data.html_url)
+              .write();

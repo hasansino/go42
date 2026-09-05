@@ -72,17 +72,12 @@ jobs:
     steps:
       - name: 'Validate image publication target'
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
           CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
           CALLER_WORKFLOW_SHA: ${{ github.workflow_sha }}
-          EVENT_ACTION: ${{ github.event.action }}
-          EVENT_MERGED: ${{ github.event.pull_request.merged }}
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
           EVENT_SHA: ${{ github.sha }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           IMAGE_TAG: ${{ inputs.image_tag }}
-          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
           REPOSITORY: ${{ github.repository }}
           SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
@@ -96,19 +91,15 @@ jobs:
             exit 1
           fi
 
-          # Version tags are permanent release aliases. Only the merged-PR
-          # release workflow may create them. Bind the reusable workflow to the
-          # exact merged release event and source commit so manual Docker runs
-          # cannot replace a published release image.
+          # Version tags are permanent release aliases. Only the master-only
+          # release workflow may create them. Bind publication to its exact
+          # dispatch commit so another caller cannot replace a release image.
           if [[ "$IMAGE_TAG" == v* ]]; then
-            expected_workflow_ref="${REPOSITORY}/.github/workflows/310-release-pr-merge.yaml@refs/heads/master"
-            if [[ "$EVENT_NAME" != "pull_request" || "$EVENT_ACTION" != "closed" || \
-              "$EVENT_MERGED" != "true" || "$BASE_REF" != "master" || \
-              "$HEAD_REPOSITORY" != "$REPOSITORY" || "$HEAD_REF" != "auto-release-${IMAGE_TAG}" || \
+            expected_workflow_ref="${REPOSITORY}/.github/workflows/300-release.yaml@refs/heads/master"
+            if [[ "$EVENT_NAME" != "workflow_dispatch" || "$EVENT_REF" != "refs/heads/master" || \
               "$CALLER_WORKFLOW_REF" != "$expected_workflow_ref" || \
-              "$CALLER_WORKFLOW_SHA" != "$MERGE_SHA" || "$SOURCE_SHA" != "$MERGE_SHA" || \
-              "$EVENT_SHA" != "$MERGE_SHA" ]]; then
-              echo "Release image tags may only be published for a validated merged release PR" >&2
+              "$CALLER_WORKFLOW_SHA" != "$SOURCE_SHA" || "$EVENT_SHA" != "$SOURCE_SHA" ]]; then
+              echo "Release image tags may only be published by the master release workflow" >&2
               exit 1
             fi
           fi

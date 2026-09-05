@@ -2,6 +2,10 @@
 
 image:
   repository: ghcr.io/hasansino/go42
+  # Prefer the immutable digest published with a GitHub release. When digest
+  # is empty, tag is required instead.
+  tag: ""
+  digest: ""
   pullPolicy: Always
 
 imagePullSecrets: {}
