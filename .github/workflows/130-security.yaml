@@ -103,9 +103,9 @@ jobs:
     continue-on-error: ${{ inputs.continue_on_error }}
     timeout-minutes: ${{ inputs.codeql_timeout_minutes }}
     permissions:
-      contents: read
-      security-events: write
       actions: read
+      contents: read
+      security-events: read
     # -----
     steps:
       - name: 'Checkout repository'
@@ -120,7 +120,8 @@ jobs:
       - name: 'Perform CodeQL analysis'
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
-          upload: ${{ github.ref == 'refs/heads/master' && 'always' || 'never' }}
+          upload: never
+          upload-database: false
 
   licenses:
     name: licenses

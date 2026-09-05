@@ -218,7 +218,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-      security-events: write
+      security-events: read
     needs:
       - unit-tests
     with:
