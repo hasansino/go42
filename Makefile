@@ -21,7 +21,7 @@ setup: setup-git-hooks setup-linters setup-generators
 	@go mod tidy -e && go mod download
 	@brew install -q \
 		buf sqlfluff \
-		hadolint actionlint \
+		hadolint actionlint zizmor \
 		redocly-cli markdownlint-cli2 vale \
 		gitleaks dlv jq yq k6
 	@vale --config etc/vale.ini sync
@@ -162,6 +162,7 @@ lint:
 	@markdownlint-cli2 --config etc/.markdownlint.yaml README.md docs/**/*.md || true
 	@vale --no-exit --config etc/vale.ini README.md docs/**/*.md internal/ cmd/ pkg/ tests/ || true
 	@actionlint -oneline --config-file etc/actionlint.yaml
+	@zizmor -q --persona regular --min-severity high --min-confidence high --offline --format plain --color never --no-progress .
 	@editorconfig-checker
 
 ## generate | generate code for all modules

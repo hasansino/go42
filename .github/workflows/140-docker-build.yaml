@@ -156,9 +156,10 @@ jobs:
       # For single platform builds `index` annotations will fail - check and set levels accordingly.
       - name: 'Determine annotation levels'
         id: annotations-levels
+        env:
+          PLATFORMS: ${{ inputs.platforms }}
         run: |
-          platforms="${{ inputs.platforms }}"
-          count=$(echo "$platforms" | awk -F',' '{print NF}')
+          count=$(echo "$PLATFORMS" | awk -F',' '{print NF}')
           if [ "$count" -gt 1 ]; then
             echo "levels=manifest,index" >> "$GITHUB_OUTPUT"
           else

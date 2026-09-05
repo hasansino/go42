@@ -23,13 +23,16 @@ jobs:
       - name: 'Check PR details'
         id: pr_check
         env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          echo "PR #${{ github.event.pull_request.number }} from ${{ github.event.pull_request.user.login }}"
+          echo "PR #${PR_NUMBER} from ${PR_AUTHOR}"
           echo "Current body length: ${#PR_BODY}"
 
           # Skip if author is a bot
-          if [[ "${{ github.event.pull_request.user.type }}" == "Bot" ]]; then
+          if [[ "$PR_AUTHOR_TYPE" == "Bot" ]]; then
             echo "::notice::Skipping summary generation for bot PR"
             echo "should_generate=false" >> "$GITHUB_OUTPUT"
             exit 0

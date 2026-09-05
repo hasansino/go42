@@ -78,16 +78,8 @@ jobs:
       pages: write
     needs: build
     steps:
-      - name: 'Generate GitHub App Token'
-        id: generate_token
-        if: ${{ vars.RELEASE_APP_CLIENT_ID }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - name: 'Deploy to GitHub Pages'
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
         with:
-          token: ${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}
           artifact_name: 'github-pages'

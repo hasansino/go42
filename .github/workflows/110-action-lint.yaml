@@ -44,3 +44,27 @@ jobs:
         with:
           version: v1.7.12
           flags: --config-file etc/actionlint.yaml
+
+  zizmor:
+    name: zizmor
+    runs-on: ${{ inputs.runs_on }}
+    continue-on-error: ${{ inputs.continue_on_error }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    permissions:
+      contents: read
+    # ----
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # ----
+      - name: 'Run zizmor security audit'
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          advanced-security: false
+          online-audits: false
+          persona: regular
+          min-severity: high
+          min-confidence: high
+          version: 1.30.0
