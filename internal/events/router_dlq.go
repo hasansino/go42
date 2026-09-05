@@ -6,7 +6,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 
-	"github.com/hasansino/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 type deadLetterPublisher struct {

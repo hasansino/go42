@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/cache/local"
-	"github.com/hasansino/go42/internal/cache/memcached"
-	"github.com/hasansino/go42/internal/cache/redis"
+	"github.com/go42-dev/go42/internal/cache"
+	"github.com/go42-dev/go42/internal/cache/local"
+	"github.com/go42-dev/go42/internal/cache/memcached"
+	"github.com/go42-dev/go42/internal/cache/redis"
 )
 
 const (

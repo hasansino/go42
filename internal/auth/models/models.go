@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
-	"github.com/hasansino/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/domain"
 )
 
 type User struct {

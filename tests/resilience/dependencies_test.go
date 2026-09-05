@@ -12,14 +12,14 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 
-	"github.com/hasansino/go42/internal/cache/memcached"
-	"github.com/hasansino/go42/internal/cache/redis"
-	"github.com/hasansino/go42/internal/database/mysql"
-	"github.com/hasansino/go42/internal/database/pgsql"
-	"github.com/hasansino/go42/internal/events"
-	kafkaengine "github.com/hasansino/go42/internal/events/kafka"
-	natsengine "github.com/hasansino/go42/internal/events/nats"
-	rabbitmqengine "github.com/hasansino/go42/internal/events/rabbitmq"
+	"github.com/go42-dev/go42/internal/cache/memcached"
+	"github.com/go42-dev/go42/internal/cache/redis"
+	"github.com/go42-dev/go42/internal/database/mysql"
+	"github.com/go42-dev/go42/internal/database/pgsql"
+	"github.com/go42-dev/go42/internal/events"
+	kafkaengine "github.com/go42-dev/go42/internal/events/kafka"
+	natsengine "github.com/go42-dev/go42/internal/events/nats"
+	rabbitmqengine "github.com/go42-dev/go42/internal/events/rabbitmq"
 )
 
 const dependencyOperationTimeout = time.Second

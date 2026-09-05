@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: process.env.DOCUSAURUS_TITLE || 'go42',
-  url: process.env.DOCUSAURUS_URL || 'https://hasansino.github.io',
+  url: process.env.DOCUSAURUS_URL || 'https://go42-dev.github.io',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/go42/',
   favicon: 'img/go42-logo.svg',
   onBrokenLinks: 'throw',

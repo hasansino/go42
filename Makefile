@@ -25,7 +25,7 @@ setup: setup-git-hooks setup-linters setup-generators
 		redocly-cli markdownlint-cli2 vale \
 		gitleaks dlv jq yq k6
 	@vale --config etc/vale.ini sync
-	@go install github.com/hasansino/go42x@latest
+	@go install github.com/go42-dev/go42x@latest
 
 ## setup-git-hooks | install git hooks
 setup-git-hooks:
@@ -145,7 +145,7 @@ image:
 	--build-arg "GO_VERSION=$(shell grep '^go ' go.mod | awk '{print $$2}')" \
 	--build-arg "COMMIT_HASH=$(shell git rev-parse HEAD 2>/dev/null || echo '')" \
 	--build-arg "RELEASE_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo '')" \
-	-t ghcr.io/hasansino/go42:dev \
+	-t ghcr.io/go42-dev/go42:dev \
 	.
 
 ## lint | run all validation tools
@@ -202,7 +202,7 @@ generate-migration-id:
 #   * brew install graphviz
 #   * go install github.com/loov/goda@latest
 generate-dep-graph:
-	@goda graph "github.com/hasansino/go42/..." | dot -Tsvg -o dep-graph.svg
+	@goda graph "github.com/go42-dev/go42/..." | dot -Tsvg -o dep-graph.svg
 
 ## grpcui | run grpcui for debugging gRPC services
 # Dependencies:

@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/events"
-	"github.com/hasansino/go42/internal/metrics"
-	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/events"
+	"github.com/go42-dev/go42/internal/metrics"
+	outboxDomain "github.com/go42-dev/go42/internal/outbox/domain"
 )
 
 type AuthEventSubscriber struct {

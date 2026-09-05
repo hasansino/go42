@@ -5,8 +5,8 @@ import (
 
 	"github.com/hasansino/cfg2env"
 
-	"github.com/hasansino/go42/internal/config"
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/config"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 func main() {

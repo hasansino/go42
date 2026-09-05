@@ -12,7 +12,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/avast/retry-go/v4"
 
-	"github.com/hasansino/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 const (

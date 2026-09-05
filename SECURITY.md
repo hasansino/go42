@@ -20,7 +20,7 @@ how to apply those changes to an existing project.
 Do not disclose security vulnerabilities through public GitHub issues,
 discussions, or pull requests.
 
-Use [GitHub private vulnerability reporting](https://github.com/hasansino/go42/security/advisories/new)
+Use [GitHub private vulnerability reporting](https://github.com/go42-dev/go42/security/advisories/new)
 to report a vulnerability in the Go42 template or its distribution tooling.
 Include the affected version, potential impact, reproduction steps, and any
 known mitigations when possible.

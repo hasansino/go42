@@ -9,11 +9,11 @@ import (
 
 	"gorm.io/gorm/clause"
 
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/database"
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/cache"
+	"github.com/go42-dev/go42/internal/database"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 type cacheAccessor interface {

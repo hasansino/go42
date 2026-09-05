@@ -14,8 +14,8 @@ import (
 	reflect "reflect"
 	time "time"
 
-	models "github.com/hasansino/go42/internal/auth/models"
-	domain "github.com/hasansino/go42/internal/outbox/domain"
+	models "github.com/go42-dev/go42/internal/auth/models"
+	domain "github.com/go42-dev/go42/internal/outbox/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 

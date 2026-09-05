@@ -8,8 +8,8 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/hasansino/go42/internal/cache"
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/cache"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 type Option func(s *Server)

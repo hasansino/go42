@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/hasansino/go42/internal/api/grpc/interceptors"
-	"github.com/hasansino/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/api/grpc/interceptors"
+	"github.com/go42-dev/go42/internal/auth"
 )
 
 type permissionsRegistryAccessor interface {

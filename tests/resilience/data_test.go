@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hasansino/go42/internal/database/mysql"
-	"github.com/hasansino/go42/internal/database/pgsql"
+	"github.com/go42-dev/go42/internal/database/mysql"
+	"github.com/go42-dev/go42/internal/database/pgsql"
 )
 
 const (

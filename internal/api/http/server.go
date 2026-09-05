@@ -15,8 +15,8 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
-	customMiddleware "github.com/hasansino/go42/internal/api/http/middleware"
-	"github.com/hasansino/go42/internal/metrics"
+	customMiddleware "github.com/go42-dev/go42/internal/api/http/middleware"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 const (

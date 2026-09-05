@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	v1 "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
+	v1 "github.com/go42-dev/go42/api/gen/sdk/grpc/auth/v1"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )

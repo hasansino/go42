@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hasansino/go42/tests/integration"
+	"github.com/go42-dev/go42/tests/integration"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

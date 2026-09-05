@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/hasansino/go42/internal/metrics"
-	"github.com/hasansino/go42/internal/outbox/domain"
-	"github.com/hasansino/go42/internal/outbox/models"
+	"github.com/go42-dev/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/outbox/models"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

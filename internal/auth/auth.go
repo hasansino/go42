@@ -19,11 +19,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/metrics"
-	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/metrics"
+	outboxDomain "github.com/go42-dev/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 const (

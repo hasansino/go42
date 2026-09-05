@@ -5,7 +5,7 @@ name: go42
 description: go42 service
 type: application
 version: 0.10.0
-icon: https://raw.githubusercontent.com/hasansino/go42/master/static/favicon.svg
-home: https://github.com/hasansino/go42
+icon: https://raw.githubusercontent.com/go42-dev/go42/master/static/favicon.svg
+home: https://github.com/go42-dev/go42
 sources:
-  - https://github.com/hasansino/go42
+  - https://github.com/go42-dev/go42

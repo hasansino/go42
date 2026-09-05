@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hasansino/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 const defaultObserveInterval = 5 * time.Second

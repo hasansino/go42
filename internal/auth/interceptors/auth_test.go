@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
-	authInterceptors "github.com/hasansino/go42/internal/auth/interceptors"
-	authMocks "github.com/hasansino/go42/internal/auth/mocks"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/cache"
+	"github.com/go42-dev/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	authInterceptors "github.com/go42-dev/go42/internal/auth/interceptors"
+	authMocks "github.com/go42-dev/go42/internal/auth/mocks"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/cache"
 )
 
 func TestUnaryAuthInterceptor_APITokenUsesOwnerIdentityAndTokenPermissions(t *testing.T) {

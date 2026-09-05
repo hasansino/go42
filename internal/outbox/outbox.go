@@ -9,9 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/hasansino/go42/internal/outbox/domain"
-	"github.com/hasansino/go42/internal/outbox/models"
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/outbox/models"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

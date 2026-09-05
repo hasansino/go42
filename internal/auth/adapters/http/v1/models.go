@@ -3,7 +3,7 @@ package adapter
 import (
 	"time"
 
-	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 type UserResponse struct {

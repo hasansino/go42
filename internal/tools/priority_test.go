@@ -3,7 +3,7 @@ package tools_test
 import (
 	"testing"
 
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 func TestPriorityQueue_EnqueueDequeue(t *testing.T) {

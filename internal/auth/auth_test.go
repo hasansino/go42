@@ -17,11 +17,11 @@ import (
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
-	authMocks "github.com/hasansino/go42/internal/auth/mocks"
-	"github.com/hasansino/go42/internal/auth/models"
-	outboxDomain "github.com/hasansino/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	authMocks "github.com/go42-dev/go42/internal/auth/mocks"
+	"github.com/go42-dev/go42/internal/auth/models"
+	outboxDomain "github.com/go42-dev/go42/internal/outbox/domain"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/hasansino/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 func NewMetricsCollector() echo.MiddlewareFunc {

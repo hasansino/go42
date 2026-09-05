@@ -10,10 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
-	"github.com/hasansino/go42/internal/auth/adapters/grpc/v1/mocks"
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
+	pb "github.com/go42-dev/go42/api/gen/sdk/grpc/auth/v1"
+	"github.com/go42-dev/go42/internal/auth/adapters/grpc/v1/mocks"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 type invalidPaginationTestCase struct {

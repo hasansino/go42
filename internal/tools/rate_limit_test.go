@@ -11,9 +11,9 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	"github.com/hasansino/go42/internal/cache/local"
-	"github.com/hasansino/go42/internal/tools"
-	toolsMocks "github.com/hasansino/go42/internal/tools/mocks"
+	"github.com/go42-dev/go42/internal/cache/local"
+	"github.com/go42-dev/go42/internal/tools"
+	toolsMocks "github.com/go42-dev/go42/internal/tools/mocks"
 )
 
 func TestRateLimiter_AllowsWithinLimit(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/caarlos0/env/v11"
 
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 type Config struct {
@@ -156,7 +156,7 @@ type Vault struct {
 	Timeout    time.Duration `env:"VAULT_TIMEOUT"     default:"5s"`
 	AuthType   string        `env:"VAULT_AUTH_TYPE"   default:"token"`
 	Token      string        `env:"VAULT_TOKEN"       default:"qwerty"`
-	SecretPath string        `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/hasansino/go42"`
+	SecretPath string        `env:"VAULT_SECRET_PATH" default:"/secret/data/github.com/go42-dev/go42"`
 	MountPath  string        `env:"VAULT_MOUNT_PATH"  default:"secret"`
 }
 

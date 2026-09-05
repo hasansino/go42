@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm/clause"
 
-	"github.com/hasansino/go42/internal/database"
-	"github.com/hasansino/go42/internal/outbox/models"
+	"github.com/go42-dev/go42/internal/database"
+	"github.com/go42-dev/go42/internal/outbox/models"
 )
 
 type Repository struct {

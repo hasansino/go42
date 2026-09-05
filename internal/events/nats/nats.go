@@ -13,7 +13,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	natsgo "github.com/nats-io/nats.go"
 
-	"github.com/hasansino/go42/internal/metrics"
+	"github.com/go42-dev/go42/internal/metrics"
 )
 
 const (

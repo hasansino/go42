@@ -193,7 +193,7 @@ resource "kubernetes_manifest" "application" {
     spec = {
       project = "default"
       source = {
-        repoURL = "https://github.com/hasansino/go42.git"
+        repoURL = "https://github.com/go42-dev/go42.git"
         # Only stable Git release tags are deployable. The release workflow
         # creates the tag after the matching container image passes its tests.
         targetRevision = "*"

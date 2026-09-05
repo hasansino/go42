@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/hasansino/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/domain"
 )
 
 type contextKey string

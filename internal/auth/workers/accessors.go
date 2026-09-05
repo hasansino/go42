@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

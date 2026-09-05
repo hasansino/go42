@@ -12,10 +12,10 @@ import (
 	"github.com/labstack/echo/v5"
 	"go.uber.org/mock/gomock"
 
-	adapter "github.com/hasansino/go42/internal/auth/adapters/http/v1"
-	"github.com/hasansino/go42/internal/auth/adapters/http/v1/mocks"
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
+	adapter "github.com/go42-dev/go42/internal/auth/adapters/http/v1"
+	"github.com/go42-dev/go42/internal/auth/adapters/http/v1/mocks"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 func TestReadSelf_CacheIsIsolatedByAuthenticatedUser(t *testing.T) {

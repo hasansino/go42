@@ -7,7 +7,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 const headerNameRequestID = "x-request-id"

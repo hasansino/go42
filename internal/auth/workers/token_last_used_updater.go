@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 type buffer struct {

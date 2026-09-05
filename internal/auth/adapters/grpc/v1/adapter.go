@@ -7,9 +7,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
+	pb "github.com/go42-dev/go42/api/gen/sdk/grpc/auth/v1"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 var adapterPermissionMapping = map[string]string{

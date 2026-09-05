@@ -13,8 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	domain "github.com/hasansino/go42/internal/auth/domain"
-	models "github.com/hasansino/go42/internal/auth/models"
+	domain "github.com/go42-dev/go42/internal/auth/domain"
+	models "github.com/go42-dev/go42/internal/auth/models"
 	gomock "go.uber.org/mock/gomock"
 )
 

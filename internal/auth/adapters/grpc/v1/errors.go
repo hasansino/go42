@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/hasansino/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/domain"
 )
 
 func (a *Adapter) processError(err error) error {

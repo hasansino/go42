@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
-	grpcmocks "github.com/hasansino/go42/internal/api/grpc/mocks"
+	grpcmocks "github.com/go42-dev/go42/internal/api/grpc/mocks"
 )
 
 const testClientMethod = "/payments.v1.PaymentService/Charge"

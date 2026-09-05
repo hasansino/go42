@@ -6,8 +6,8 @@ import (
 
 	"github.com/labstack/echo/v5"
 
-	httpAPI "github.com/hasansino/go42/internal/api/http"
-	"github.com/hasansino/go42/internal/auth/domain"
+	httpAPI "github.com/go42-dev/go42/internal/api/http"
+	"github.com/go42-dev/go42/internal/auth/domain"
 )
 
 func (a *Adapter) processError(ctx *echo.Context, err error) error {

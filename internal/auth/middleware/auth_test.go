@@ -14,12 +14,12 @@ import (
 	"github.com/labstack/echo/v5"
 	"go.uber.org/mock/gomock"
 
-	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/middleware"
-	authMocks "github.com/hasansino/go42/internal/auth/mocks"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/cache"
+	"github.com/go42-dev/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/middleware"
+	authMocks "github.com/go42-dev/go42/internal/auth/mocks"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/cache"
 )
 
 func TestAuthMiddleware_RequiresAccessToken(t *testing.T) {

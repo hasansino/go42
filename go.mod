@@ -1,4 +1,4 @@
-module github.com/hasansino/go42
+module github.com/go42-dev/go42
 
 go 1.27
 

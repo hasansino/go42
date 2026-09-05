@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/hasansino/go42/internal/outbox/domain"
-	"github.com/hasansino/go42/internal/outbox/models"
-	"github.com/hasansino/go42/internal/outbox/workers/mocks"
+	"github.com/go42-dev/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/outbox/models"
+	"github.com/go42-dev/go42/internal/outbox/workers/mocks"
 )
 
 func TestOutboxPublisherMarksPublishedMessageProcessed(t *testing.T) {

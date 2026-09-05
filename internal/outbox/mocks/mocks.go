@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	models "github.com/hasansino/go42/internal/outbox/models"
+	models "github.com/go42-dev/go42/internal/outbox/models"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 
-	httpAPI "github.com/hasansino/go42/internal/api/http"
-	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
-	authMiddleware "github.com/hasansino/go42/internal/auth/middleware"
-	"github.com/hasansino/go42/internal/auth/models"
-	"github.com/hasansino/go42/internal/tools"
+	httpAPI "github.com/go42-dev/go42/internal/api/http"
+	"github.com/go42-dev/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	authMiddleware "github.com/go42-dev/go42/internal/auth/middleware"
+	"github.com/go42-dev/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 //go:generate mockgen -source $GOFILE -package mocks -destination mocks/mocks.go

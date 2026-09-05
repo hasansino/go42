@@ -13,8 +13,8 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/hasansino/go42/api/gen/sdk/grpc/auth/v1"
-	"github.com/hasansino/go42/tests/integration"
+	pb "github.com/go42-dev/go42/api/gen/sdk/grpc/auth/v1"
+	"github.com/go42-dev/go42/tests/integration"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -12,7 +12,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 
-	"github.com/hasansino/go42/internal/events"
+	"github.com/go42-dev/go42/internal/events"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/hasansino/go42/internal/tools"
+	"github.com/go42-dev/go42/internal/tools"
 )
 
 const headerNameRequestID = "x-request-id"

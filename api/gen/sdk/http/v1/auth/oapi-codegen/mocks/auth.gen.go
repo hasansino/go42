@@ -15,7 +15,7 @@ import (
 	http "net/http"
 	reflect "reflect"
 
-	auth "github.com/hasansino/go42/api/gen/sdk/http/v1/auth/oapi-codegen"
+	auth "github.com/go42-dev/go42/api/gen/sdk/http/v1/auth/oapi-codegen"
 	types "github.com/oapi-codegen/runtime/types"
 	gomock "go.uber.org/mock/gomock"
 )

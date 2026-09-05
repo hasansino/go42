@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 
-	"github.com/hasansino/go42/internal/outbox"
-	"github.com/hasansino/go42/internal/outbox/domain"
-	"github.com/hasansino/go42/internal/outbox/mocks"
-	"github.com/hasansino/go42/internal/outbox/models"
+	"github.com/go42-dev/go42/internal/outbox"
+	"github.com/go42-dev/go42/internal/outbox/domain"
+	"github.com/go42-dev/go42/internal/outbox/mocks"
+	"github.com/go42-dev/go42/internal/outbox/models"
 )
 
 func TestServiceCreatesPendingOutboxMessage(t *testing.T) {

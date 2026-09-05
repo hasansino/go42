@@ -8,10 +8,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/hasansino/go42/internal/api/grpc/interceptors"
-	"github.com/hasansino/go42/internal/auth"
-	"github.com/hasansino/go42/internal/auth/domain"
-	"github.com/hasansino/go42/internal/auth/models"
+	"github.com/go42-dev/go42/internal/api/grpc/interceptors"
+	"github.com/go42-dev/go42/internal/auth"
+	"github.com/go42-dev/go42/internal/auth/domain"
+	"github.com/go42-dev/go42/internal/auth/models"
 )
 
 const (
