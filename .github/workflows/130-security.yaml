@@ -46,6 +46,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: 'Run Gitleaks scan'
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
@@ -65,6 +66,8 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Gosec security scanner'
@@ -86,6 +89,8 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 'Extract Go version'
         run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_ENV"
       - name: 'Run Go vulnerability check'
@@ -110,6 +115,8 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # -----
       - name: 'Initialize CodeQL'
         uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
@@ -134,6 +141,8 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 'Check Go licenses'
         uses: joeig/go-licenses-action@14ffdafa825ad1c78cb30af8d8cb8e242c2fd36e # v1.2
         with:
@@ -155,6 +164,8 @@ jobs:
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 'Run OSSF Scorecard analysis'
         uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:
@@ -177,6 +188,7 @@ jobs:
       - name: 'Checkout master branch'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: master
       - name: 'Setup Go'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -191,5 +203,7 @@ jobs:
       # -----
       - name: 'Checkout current branch'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: 'Compare capabilities with master'
         run: capslock -packages ./... -output=compare /tmp/capabilities.json
