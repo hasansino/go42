@@ -39,6 +39,11 @@ env:
 
 permissions: {}
 
+concurrency:
+  group: cleanup-registry
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   cleanup-registry:
     name: cleanup-registry
